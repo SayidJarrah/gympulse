@@ -1,0 +1,141 @@
+# GymFlow — Gym Membership & Class Booking Platform
+
+## Project Overview
+A full-stack gym management app where users can buy memberships, browse and book classes,
+and admins can manage everything from a dashboard.
+
+## Architecture
+- **Backend:** Kotlin + Spring Boot 3.x, Gradle (Kotlin DSL)
+- **Frontend:** React 18 + TypeScript + Vite + TailwindCSS
+- **Database:** PostgreSQL 15
+- **Auth:** JWT tokens (access + refresh)
+- **Local dev:** Docker Compose
+
+## Project Structure
+````
+gymflow/
+├── backend/          # Kotlin Spring Boot app
+│   ├── src/main/kotlin/com/gymflow/
+│   │   ├── config/       # Spring configs (Security, CORS, DB)
+│   │   ├── domain/       # Entities (User, Membership, Class, Booking)
+│   │   ├── repository/   # Spring Data JPA repos
+│   │   ├── service/      # Business logic
+│   │   ├── controller/   # REST endpoints
+│   │   └── dto/          # Request/Response DTOs
+│   └── src/main/resources/
+│       ├── application.yml
+│       └── db/migration/  # Flyway migrations (V1__, V2__, ...)
+├── frontend/         # React app
+│   ├── src/
+│   │   ├── api/          # Axios API calls
+│   │   ├── components/   # Reusable UI components
+│   │   ├── pages/        # Page-level components
+│   │   ├── store/        # Zustand global state
+│   │   ├── hooks/        # Custom React hooks
+│   │   └── types/        # TypeScript types matching backend DTOs
+│   └── vite.config.ts
+└── docker-compose.yml
+````
+
+## Coding Conventions
+### Backend (Kotlin)
+- Use data classes for DTOs
+- All entities annotated with `@Entity`, `@Table`
+- Services are `@Transactional` where needed
+- Always validate inputs with `@Valid` and Bean Validation
+- Return `ResponseEntity<T>` from controllers
+- Use `@PreAuthorize` for role-based access
+- Database migrations go in `backend/src/main/resources/db/migration/`
+  naming: `V{number}__{description}.sql` (e.g. `V1__create_users_table.sql`)
+
+### Frontend (React/TypeScript)
+- Functional components only, no class components
+- State management: Zustand for global, useState for local
+- API calls via Axios in `src/api/`, never inline in components
+- TypeScript strict mode — no `any` types
+- Tailwind for all styling — no inline styles
+
+## Common Commands
+````bash
+# Start everything locally
+docker-compose up -d        # starts postgres
+cd backend && ./gradlew bootRun
+cd frontend && npm run dev
+
+# Run backend tests
+cd backend && ./gradlew test
+
+# Run frontend tests
+cd frontend && npm test
+
+# Apply DB migrations (auto on startup)
+./gradlew flywayMigrate
+
+# Build for production
+./gradlew build
+npm run build
+````
+
+## API Conventions
+- Base URL: `/api/v1`
+- Auth header: `Authorization: Bearer <token>`
+- Error format: `{ "error": "message", "code": "ERROR_CODE" }`
+- Pagination: `?page=0&size=20&sort=createdAt,desc`
+
+## Domain Model (Core Entities)
+- **User** — id, email, passwordHash, role (USER/ADMIN), createdAt
+- **MembershipPlan** — id, name, price, durationDays, maxBookingsPerMonth
+- **UserMembership** — id, userId, planId, startDate, endDate, status
+- **GymClass** — id, name, trainerId, scheduledAt, durationMinutes, capacity
+- **Booking** — id, userId, classId, bookedAt, status (CONFIRMED/CANCELLED)
+- **Trainer** — id, name, bio, specializations, userId
+
+## Environment Variables (.env, never commit)
+````
+DB_URL=jdbc:postgresql://localhost:5432/gymflow
+DB_USER=gymflow
+DB_PASSWORD=secret
+JWT_SECRET=your-secret-key
+JWT_EXPIRY_MS=3600000
+````
+
+## Implementation Status
+
+<!--
+  HOW TO READ THIS TABLE:
+  ✅ = done  🔄 = in progress  ❌ = not started
+
+  WHO UPDATES EACH COLUMN:
+  - PRD column   → business-analyst agent updates when PRD is written
+  - SDD column   → solution-architect agent updates when SDD is written
+  - DB column    → db-architect agent updates when migration is applied
+  - Backend col  → backend-dev agent updates when endpoints are implemented
+  - Frontend col → frontend-dev agent updates when pages/components are built
+  - Tests col    → backend-dev / frontend-dev update when tests pass
+
+  WHERE THE DOCS LIVE:
+  - PRDs → docs/prd/{feature-slug}.md
+  - SDDs → docs/sdd/{feature-slug}.md
+-->
+
+| Feature | PRD | SDD | DB | Backend | Frontend | Tests |
+|---------|-----|-----|----|---------|----------|-------|
+| Project scaffold & Docker | — | — | ❌ | ❌ | ❌ | — |
+| Auth (register/login/JWT) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Membership plans | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| User membership purchase | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Class schedule | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Class booking & cancellation | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Trainer profiles | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Attendance check-in | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Admin dashboard | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Notifications | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+
+**Reading this table:** Before implementing anything, Claude checks this table.
+If Backend = ❌ but PRD = ✅ and SDD = ✅, Claude knows documents exist and reads
+them before starting. If PRD = ❌, Claude knows to run business-analyst first.
+A row with all ✅ means Claude will NOT re-implement — it will only modify on request.
+
+**Adding new features:** When business-analyst writes a new PRD for a feature not
+in this table, add a new row with the feature name and set PRD = 🔄. Each agent
+updates their column to ✅ when their work is complete.
