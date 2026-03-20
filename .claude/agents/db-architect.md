@@ -1,5 +1,6 @@
 ---
 name: db-architect
+model: sonnet
 description: Use this agent for database design questions, schema review, writing complex
   SQL queries, indexing strategy, and Flyway migration review. Invoke when you need
   to design tables, optimize queries, or review migration files.
