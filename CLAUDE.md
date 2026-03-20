@@ -121,7 +121,7 @@ JWT_EXPIRY_MS=3600000
 | Feature | PRD | SDD | DB | Backend | Frontend | Tests |
 |---------|-----|-----|----|---------|----------|-------|
 | Project scaffold & Docker | — | — | ❌ | ❌ | ❌ | — |
-| Auth (register/login/JWT) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Auth (register/login/JWT) | ✅ | ✅ | 🔄 | ❌ | ❌ | ❌ |
 | Membership plans | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | User membership purchase | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Class schedule | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |

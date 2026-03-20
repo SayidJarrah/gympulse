@@ -1,0 +1,30 @@
+{
+  "defaultMode": "acceptEdits",
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew *)",
+      "Bash(npm *)",
+      "Bash(docker-compose *)",
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git checkout *)",
+      "Bash(git branch *)",
+      "Bash(git stash *)",
+      "Bash(git revert *)",
+      "Bash(curl http://localhost*)",
+      "Bash(psql *)",
+      "Read(*)"
+    ],
+    "deny": [
+      "Bash(git push --force *)",
+      "Bash(git reset --hard *)",
+      "Bash(rm -rf *)",
+      "Bash(sudo *)",
+      "Edit(.env)",
+      "Edit(.env.*)"
+    ]
+  }
+}
