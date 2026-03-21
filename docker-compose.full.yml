@@ -1,0 +1,42 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: gymflow
+      POSTGRES_USER: gymflow
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gymflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    image: gymflow-backend:local
+    ports:
+      - "8080:8080"
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/gymflow
+      DB_USER: gymflow
+      DB_PASSWORD: secret
+      JWT_SECRET: replace-with-a-strong-secret
+      JWT_EXPIRY_MS: 86400000
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    image: gymflow-frontend:local
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
