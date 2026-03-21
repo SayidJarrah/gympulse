@@ -100,3 +100,10 @@ Do not ask about things that are clearly implied or covered by the domain glossa
 - **After writing the PRD:** update the PRD column for this feature in the
   Implementation Status table in CLAUDE.md from ❌ to ✅. If the feature row
   doesn't exist yet, add it with all other columns set to ❌.
+
+## Maintaining Product Docs
+After writing a PRD:
+1. Add a row to the Feature Registry in docs/product-overview.md:
+   `| {Feature Name} | 🔄 In progress | {one sentence description} |`
+2. Add a line under "In Progress" in CHANGELOG.md
+3. Update "What's Being Built Next" in product-overview.md

@@ -47,3 +47,8 @@ Fix any issues before finishing.
 - Test results summary
 - Any issues found and fixed by /review
 - Any PRD acceptance criteria that could not be implemented (flag as risk)
+
+After /review passes, update product docs:
+1. Change the feature row in docs/product-overview.md from 🔄 to ✅
+2. Move the CHANGELOG.md entry from "In Progress" to "Completed":
+   `- YYYY-MM-DD — {Feature Name}: {one sentence of what was built}`

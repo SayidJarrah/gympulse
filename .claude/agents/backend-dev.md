@@ -65,3 +65,9 @@ table in CLAUDE.md from ❌ to ✅.
 ## Migration Naming
 `V{next_number}__{snake_case_description}.sql`
 Check existing migrations to find the next number.
+
+## Maintaining Product Docs
+After all endpoints are implemented:
+1. Add an API section to docs/product-overview.md under "Current API Surface"
+   with each new endpoint: method, path, auth required, one-line description
+2. Add any new entities to the "Data Model" section with their key fields

@@ -112,6 +112,14 @@ JWT_SECRET=your-secret-key
 JWT_EXPIRY_MS=3600000
 ````
 
+
+## Living Documentation
+- Product overview (features, roles, API surface): `docs/product-overview.md`
+- Per-feature requirements: `docs/prd/{feature-slug}.md`
+- Per-feature technical design: `docs/sdd/{feature-slug}.md`
+- Changelog: `CHANGELOG.md`
+- Interactive API reference: http://localhost:8080/api/docs (Swagger, auto-generated)
+
 ## Implementation Status
 
 <!--
