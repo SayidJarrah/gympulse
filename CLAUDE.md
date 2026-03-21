@@ -76,6 +76,19 @@ cd frontend && npm test
 npm run build
 ````
 
+## Security Rules — Non-Negotiable
+These rules apply to every file, every agent, every session. No exceptions.
+
+- **Never hardcode secrets** — passwords, API keys, JWT secrets, DB credentials.
+  All must come from environment variables. Use `@Value("\${...}")` in Spring, `import.meta.env` in Vite.
+- **Never commit `.env`** — it is in `.gitignore`. Use `.env.example` with placeholder values only.
+- **Never log sensitive data** — no passwords, tokens, full credit card numbers, or personal data in any log statement.
+- **Never expose internals in error responses** — stack traces, SQL errors, and field names must not reach the client. Return a generic message + error code only.
+- **Passwords use bcrypt** — never MD5, SHA1, plain text, or any reversible encoding.
+- **JWT tokens are never stored in localStorage** — use httpOnly cookies or in-memory only.
+- **PII in the DB is minimal** — only store what is needed. Never store raw passwords (only hash).
+
+
 ## API Conventions
 - Base URL: `/api/v1`
 - Auth header: `Authorization: Bearer <token>`
@@ -121,7 +134,7 @@ JWT_EXPIRY_MS=3600000
 | Feature | PRD | SDD | DB | Backend | Frontend | Tests |
 |---------|-----|-----|----|---------|----------|-------|
 | Project scaffold & Docker | — | — | ❌ | ❌ | ❌ | — |
-| Auth (register/login/JWT) | ✅ | ✅ | 🔄 | ❌ | ❌ | ❌ |
+| Auth (register/login/JWT) | ✅ | ✅ | 🔄 | ✅ | ❌ | ✅ |
 | Membership plans | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | User membership purchase | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Class schedule | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
