@@ -52,3 +52,11 @@ After /review passes, update product docs:
 1. Change the feature row in docs/product-overview.md from 🔄 to ✅
 2. Move the CHANGELOG.md entry from "In Progress" to "Completed":
    `- YYYY-MM-DD — {Feature Name}: {one sentence of what was built}`
+
+## Final step — Open PR
+Use the GitHub MCP to create a pull request:
+- Title: "{Feature Name}: implementation"
+- Body: generated from docs/sdd/$ARGUMENTS.md — include endpoint list,
+  files created, test coverage summary
+- Base branch: main
+- Add label: "feature"

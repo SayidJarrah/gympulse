@@ -51,6 +51,11 @@ If $ARGUMENTS names a specific feature, also run the relevant curl checks
 from the SDD at docs/sdd/$ARGUMENTS.md (the example requests in the API
 contract section). Use a test user if auth is required.
 
+
+## Step 5b — Browser verification (if stack is healthy)
+Use the e2e-tester agent to run through the key user flow for this feature.
+Pass it: "Test the $ARGUMENTS feature. PRD is at docs/prd/$ARGUMENTS.md."
+
 ## Step 6 — Report
 
 Print a summary:
