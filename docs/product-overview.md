@@ -23,6 +23,8 @@ profile pages linked to their classes. Admins manage everything from a dashboard
 | Project scaffold | ✅ Done | Monorepo, Spring Boot skeleton, React skeleton, Docker Compose (dev + full-stack) |
 | Auth (register/login/JWT) | ✅ Done | JWT-based register, login, token refresh, and logout with role-based access |
 
+| Membership plans | 🔄 In progress | Admins create, edit, and deactivate membership plans; any visitor can list active plans |
+
 <!-- business-analyst adds a row here when each PRD is written -->
 
 ## Current API Surface
@@ -57,4 +59,4 @@ profile pages linked to their classes. Admins manage everything from a dashboard
 
 ## What's Being Built Next
 <!-- business-analyst updates this when a new PRD is written -->
-Nothing planned yet.
+- Membership plans — admin CRUD for plan catalogue; public read access for guests and members

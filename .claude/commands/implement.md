@@ -24,14 +24,26 @@ Confirm backend implementation is complete before continuing to Step 2.
 
 ## Step 2 — Frontend (frontend-dev agent)
 
+Check whether a design spec exists at `docs/design/$ARGUMENTS.md`.
+If it exists, include it in the instruction below. If not, proceed without it
+(the design step is optional — frontend-dev will use sensible defaults).
+
 Use the frontend-dev agent with this instruction:
-"Read the full SDD at docs/sdd/$ARGUMENTS.md.
+
+```text
+Read the full SDD at docs/sdd/$ARGUMENTS.md.
+[If design spec exists:] Also read docs/design/$ARGUMENTS.md — implement every
+screen and component exactly as specified there. Follow the design system at
+docs/design/system.md (colors, typography, spacing, component patterns).
+[If no design spec:] Follow the design system at docs/design/system.md if it
+exists, otherwise use sensible defaults consistent with existing components.
+```
 Implement every item in the '→ frontend-dev' task list:
 1. TypeScript types matching backend DTOs exactly (Section 4)
 2. Axios API functions (Section 4)
 3. Zustand store additions (Section 4)
 4. Custom hooks
-5. Page components and sub-components (Section 4)
+5. Page components and sub-components (Section 4 / design spec)
 6. Route registration in App.tsx
    Handle every error code from Section 2 with a user-friendly message.
    Follow all conventions in CLAUDE.md and the react-conventions skill.
@@ -47,16 +59,3 @@ Fix any issues before finishing.
 - Test results summary
 - Any issues found and fixed by /review
 - Any PRD acceptance criteria that could not be implemented (flag as risk)
-
-After /review passes, update product docs:
-1. Change the feature row in docs/product-overview.md from 🔄 to ✅
-2. Move the CHANGELOG.md entry from "In Progress" to "Completed":
-   `- YYYY-MM-DD — {Feature Name}: {one sentence of what was built}`
-
-## Final step — Open PR
-Use the GitHub MCP to create a pull request:
-- Title: "{Feature Name}: implementation"
-- Body: generated from docs/sdd/$ARGUMENTS.md — include endpoint list,
-  files created, test coverage summary
-- Base branch: main
-- Add label: "feature"

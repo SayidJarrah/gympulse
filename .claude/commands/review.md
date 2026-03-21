@@ -50,6 +50,8 @@ For each feature row, verify each column against actual files:
 **SDD column** — check `docs/sdd/{feature-slug}.md` exists
 **DB column** — check `backend/src/main/resources/db/migration/` for a migration
 whose name matches this feature
+**Design column** — check `docs/design/{feature-slug}.md` exists (mark — if the
+feature is infrastructure-only, e.g. scaffold, docker)
 **Backend column** — check that a service and controller for this feature exist
 in `backend/src/main/kotlin/com/gymflow/`
 **Frontend column** — check that a page or component for this feature exists

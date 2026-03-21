@@ -117,6 +117,8 @@ JWT_EXPIRY_MS=3600000
 - Product overview (features, roles, API surface): `docs/product-overview.md`
 - Per-feature requirements: `docs/prd/{feature-slug}.md`
 - Per-feature technical design: `docs/sdd/{feature-slug}.md`
+- Per-feature UI/UX design spec: `docs/design/{feature-slug}.md`
+- Design system (colors, typography, components): `docs/design/system.md`
 - Changelog: `CHANGELOG.md`
 - Interactive API reference: http://localhost:8080/api/docs (Swagger, auto-generated)
 
@@ -149,6 +151,7 @@ UPDATE, DELETE, or DDL. For schema changes use Flyway migrations via `./gradlew`
   - PRD column   → business-analyst agent updates when PRD is written
   - SDD column   → solution-architect agent updates when SDD is written
   - DB column    → db-architect agent updates when migration is applied
+  - Design col   → ui-ux-designer agent updates when design spec is written
   - Backend col  → backend-dev agent updates when endpoints are implemented
   - Frontend col → frontend-dev agent updates when pages/components are built
   - Tests col    → backend-dev / frontend-dev update when tests pass
@@ -156,20 +159,23 @@ UPDATE, DELETE, or DDL. For schema changes use Flyway migrations via `./gradlew`
   WHERE THE DOCS LIVE:
   - PRDs → docs/prd/{feature-slug}.md
   - SDDs → docs/sdd/{feature-slug}.md
+  - Designs  → docs/design/{feature-slug}.md
 -->
 
-| Feature | PRD | SDD | DB | Backend | Frontend | Tests |
-|---------|-----|-----|----|---------|----------|-------|
-| Project scaffold & Docker | — | — | — | ✅ | ✅ | — |
-| Auth (register/login/JWT) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Membership plans | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| User membership purchase | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Class schedule | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Class booking & cancellation | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Trainer profiles | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Attendance check-in | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Admin dashboard | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Notifications | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Feature | PRD | SDD | DB | Design | Backend | Frontend | Tests |
+|---------|---|---|--|------|-------|--------|------|
+| Project scaffold & Docker | — | — | — | — | ✅ | ✅ | — |
+| Auth (register/login/JWT) | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ |
+| Membership plans | ✅ | ✅ | 🔄 | ❌ | ❌ | ❌ | ❌ |
+| User membership purchase | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Class schedule | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Class booking & cancellation | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Trainer profiles | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Attendance check-in | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Admin dashboard | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Notifications | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+
+
 
 **Reading this table:** Before implementing anything, Claude checks this table.
 If Backend = ❌ but PRD = ✅ and SDD = ✅, Claude knows documents exist and reads
