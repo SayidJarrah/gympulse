@@ -18,13 +18,48 @@ If no argument given, review all uncommitted changes via `git diff --name-only`.
 - All backend error codes have a mapped user message in `errorMessages.ts`
 - No console.log left in production code
 
+## Security checks (every file)
+- No hardcoded secrets, API keys, passwords, or tokens anywhere in code
+- No sensitive data in log statements (passwords, tokens, PII)
+- Error responses return only `{ error, code }` — no stack traces or SQL errors exposed
+- Auth endpoints (`/auth/*`) excluded from JWT filter in SecurityConfig
+- Passwords hashed with BCrypt — never compared as plain strings
+- No `localStorage` / `sessionStorage` for JWT tokens in frontend code
+- No `dangerouslySetInnerHTML` in React components
+- No raw SQL string concatenation — JPA/JPQL only
+
 ## Cross-cutting checks
 - No hardcoded URLs, IDs, or magic strings — use constants or config
-- No secrets or credentials in any file
+- `.env` not committed — `.env.example` has placeholders only
 
 For each issue:
 1. State the file and line number
 2. Describe the problem in one sentence
 3. Show the fix
 
-Apply all fixes directly. Report a summary of what was changed.
+Apply all fixes directly.
+
+## Sync Implementation Status table in CLAUDE.md
+
+After code checks are done, verify every row in the Implementation Status table
+reflects reality. Do not trust the current values — check the codebase directly.
+
+For each feature row, verify each column against actual files:
+
+**PRD column** — check `docs/prd/{feature-slug}.md` exists
+**SDD column** — check `docs/sdd/{feature-slug}.md` exists
+**DB column** — check `backend/src/main/resources/db/migration/` for a migration
+whose name matches this feature
+**Backend column** — check that a service and controller for this feature exist
+in `backend/src/main/kotlin/com/gymflow/`
+**Frontend column** — check that a page or component for this feature exists
+in `frontend/src/pages/` or `frontend/src/components/`
+**Tests column** — check that a test file for the service exists in
+`backend/src/test/kotlin/com/gymflow/`
+
+Update any cell that does not match reality:
+- File exists and looks complete → ✅
+- File exists but is empty or clearly incomplete → 🔄
+- File does not exist → ❌
+
+Report a summary of any cells that were corrected and why.

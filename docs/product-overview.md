@@ -21,7 +21,7 @@ profile pages linked to their classes. Admins manage everything from a dashboard
 | Feature | Status | Description |
 |---------|--------|-------------|
 | Project scaffold | ✅ Done | Monorepo, Spring Boot skeleton, React skeleton, Docker Compose (dev + full-stack) |
-| Auth (register/login/JWT) | 🔄 In progress | JWT-based register, login, token refresh, and logout with role-based access; backend complete, frontend pending |
+| Auth (register/login/JWT) | ✅ Done | JWT-based register, login, token refresh, and logout with role-based access |
 
 <!-- business-analyst adds a row here when each PRD is written -->
 
@@ -57,4 +57,4 @@ profile pages linked to their classes. Admins manage everything from a dashboard
 
 ## What's Being Built Next
 <!-- business-analyst updates this when a new PRD is written -->
-- Auth frontend (register/login pages, Zustand auth store, Axios interceptor, protected routes)
+Nothing planned yet.
