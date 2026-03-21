@@ -14,7 +14,3 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
-
-JWT_SECRET: ${JWT_SECRET}
-JWT_EXPIRY_MS: ${JWT_EXPIRY_MS:3600000}
-REFRESH_TOKEN_EXPIRY_DAYS: ${REFRESH_TOKEN_EXPIRY_DAYS:30}

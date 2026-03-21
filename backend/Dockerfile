@@ -12,7 +12,7 @@ RUN apk add --no-cache curl \
     && addgroup -S gymflow \
     && adduser -S gymflow -G gymflow
 
-COPY --from=builder /app/build/libs/gymflow-0.0.1-SNAPSHOT.jar app.jar
+COPY --from=builder /app/build/libs/gymflow-backend-0.0.1-SNAPSHOT.jar app.jar
 RUN chown gymflow:gymflow app.jar
 
 USER gymflow

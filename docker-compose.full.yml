@@ -25,7 +25,7 @@ services:
       DB_URL: jdbc:postgresql://postgres:5432/gymflow
       DB_USER: gymflow
       DB_PASSWORD: secret
-      JWT_SECRET: replace-with-a-strong-secret
+      JWT_SECRET: replace-with-a-strong-secret-key!
       JWT_EXPIRY_MS: 86400000
     depends_on:
       postgres:

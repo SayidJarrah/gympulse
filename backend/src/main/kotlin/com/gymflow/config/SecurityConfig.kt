@@ -29,6 +29,7 @@ class SecurityConfig(
             }
             .authorizeHttpRequests { auth ->
                 auth
+                    .requestMatchers("/api/v1/health").permitAll()
                     .requestMatchers("/api/v1/auth/register").permitAll()
                     .requestMatchers("/api/v1/auth/login").permitAll()
                     .requestMatchers("/api/v1/auth/refresh").permitAll()

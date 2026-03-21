@@ -52,9 +52,38 @@ from the SDD at docs/sdd/$ARGUMENTS.md (the example requests in the API
 contract section). Use a test user if auth is required.
 
 ## Step 6 — Report
+
 Print a summary:
 - ✅ / ❌ Backend healthy (http://localhost:8080)
 - ✅ / ❌ Frontend serving (http://localhost:3000)
 - ✅ / ❌ Each smoke test result
-- Any errors with the relevant log lines
-- If all green: "Stack is running. Open http://localhost:3000 to review manually."
+
+If all green: "Stack is running. Open http://localhost:3000 to review manually."
+
+If anything failed, classify the failure and say exactly what to run next:
+
+**Gradle build failed** (Step 1 error):
+"Build error — code issue. Invoke:
+@backend-dev The bootJar build failed: [paste error]. Read docs/sdd/{feature}.md and fix."
+
+**Frontend npm build failed** (Step 2 error):
+"Build error — code issue. Invoke:
+@frontend-dev The npm build failed: [paste error]. Fix it."
+
+**Container built but won't stay healthy** — check logs first:
+`docker-compose -f docker-compose.full.yml logs backend`
+
+If the log shows a Spring exception (Flyway error, bean creation, NullPointer):
+"App startup error — code issue. Invoke:
+@backend-dev Spring Boot crashed on startup: [paste log]. Fix the issue."
+
+If the log shows connection refused, missing env var, or port conflict:
+"Infrastructure error — container config. Invoke:
+@devops Backend container failing: [paste log]. Check docker-compose.full.yml."
+
+**Frontend container unhealthy**:
+`docker-compose -f docker-compose.full.yml logs frontend`
+Nginx config issue → @devops. Build artefact missing → @frontend-dev.
+
+Always paste the actual error into the agent message.
+Agents cannot see what was printed here — they only know what you give them.
