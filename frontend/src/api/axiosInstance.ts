@@ -50,7 +50,13 @@ axiosInstance.interceptors.response.use(
       return Promise.reject(error)
     }
 
-    // Check if the 401 came from the refresh endpoint itself — if so, log out immediately
+    // Auth endpoints manage their own session state — propagate errors directly
+    const AUTH_PASSTHROUGH = ['/auth/login', '/auth/register']
+    if (AUTH_PASSTHROUGH.some(path => originalRequest.url === path)) {
+      return Promise.reject(error)
+    }
+
+    // Refresh endpoint failure means the session is dead — log out and redirect
     if (originalRequest.url === '/auth/refresh') {
       useAuthStore.getState().clearAuth()
       window.location.href = '/login'

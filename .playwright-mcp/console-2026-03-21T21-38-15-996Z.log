@@ -1,0 +1,4 @@
+[  105123ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ http://localhost:3000/api/v1/auth/login:0
+[  151338ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ http://localhost:3000/api/v1/auth/login:0
+[  155183ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ http://localhost:3000/api/v1/auth/login:0
+[  187438ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ http://localhost:3000/api/v1/auth/login:0

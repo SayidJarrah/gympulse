@@ -56,104 +56,102 @@ export function AuthForm({ mode, onSubmit, isLoading, error }: AuthFormProps) {
     <form
       onSubmit={handleSubmit(handleFormSubmit)}
       noValidate
-      aria-label={isRegister ? 'Register form' : 'Login form'}
-      className="space-y-5"
+      aria-label={isRegister ? 'Create account' : 'Sign in'}
+      className="flex flex-col gap-5"
     >
       {/* Email field */}
-      <div>
+      <div className="flex flex-col gap-1.5">
         <label
           htmlFor="email"
-          className="block text-sm font-medium text-gray-700"
+          className="text-sm font-semibold text-gray-700"
         >
           Email address
         </label>
-        <div className="mt-1">
-          <input
-            id="email"
-            type="email"
-            autoComplete="email"
-            disabled={isLoading}
-            placeholder="you@example.com"
-            {...register('email')}
-            className={[
-              'w-full rounded-md border px-3 py-2 text-sm shadow-sm',
-              'placeholder-gray-400 focus:outline-none focus:ring-2',
-              errors.email
-                ? 'border-red-500 focus:ring-red-400'
-                : 'border-gray-300 focus:ring-indigo-500',
-              isLoading ? 'cursor-not-allowed bg-gray-100 opacity-60' : 'bg-white',
-            ].join(' ')}
-          />
-          {errors.email && (
-            <p className="mt-1 text-xs text-red-600" role="alert">
-              {errors.email.message}
-            </p>
-          )}
-        </div>
+        <input
+          id="email"
+          type="email"
+          autoComplete="email"
+          disabled={isLoading}
+          placeholder="you@example.com"
+          {...register('email')}
+          aria-invalid={errors.email ? 'true' : undefined}
+          aria-describedby={errors.email ? 'email-error' : undefined}
+          className={[
+            'w-full rounded-md border bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:border-transparent',
+            errors.email
+              ? 'border-red-400 focus-visible:ring-red-400'
+              : 'border-gray-300 focus-visible:ring-indigo-500',
+            isLoading ? 'cursor-not-allowed bg-gray-100 opacity-60' : '',
+          ].join(' ')}
+        />
+        {errors.email && (
+          <p id="email-error" role="alert" className="mt-1 text-xs text-red-600">
+            {errors.email.message}
+          </p>
+        )}
       </div>
 
       {/* Password field */}
-      <div>
+      <div className="flex flex-col gap-1.5">
         <label
           htmlFor="password"
-          className="block text-sm font-medium text-gray-700"
+          className="text-sm font-semibold text-gray-700"
         >
           Password
         </label>
-        <div className="mt-1">
-          <Controller
-            name="password"
-            control={control}
-            render={({ field }) => (
-              <PasswordInput
-                id="password"
-                name="password"
-                value={field.value}
-                onChange={field.onChange}
-                error={errors.password?.message ?? null}
-                disabled={isLoading}
-                placeholder={
-                  isRegister
-                    ? 'Create a password (8-15 characters)'
-                    : 'Enter your password'
-                }
-              />
-            )}
-          />
-        </div>
+        <Controller
+          name="password"
+          control={control}
+          render={({ field }) => (
+            <PasswordInput
+              id="password"
+              value={field.value}
+              onChange={field.onChange}
+              error={errors.password?.message ?? null}
+              autoComplete={isRegister ? 'new-password' : 'current-password'}
+              disabled={isLoading}
+            />
+          )}
+        />
       </div>
 
       {/* Server-side error banner */}
       {error && (
         <div
           role="alert"
-          className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700 border border-red-200"
+          className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
         >
           {error}
         </div>
       )}
 
       {/* Submit button */}
-      <button
-        type="submit"
-        disabled={isLoading}
-        className={[
-          'w-full rounded-md px-4 py-2 text-sm font-semibold text-white',
-          'focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2',
-          'transition-colors duration-150',
-          isLoading
-            ? 'cursor-not-allowed bg-indigo-400'
-            : 'bg-indigo-600 hover:bg-indigo-700',
-        ].join(' ')}
-      >
-        {isLoading
-          ? isRegister
-            ? 'Creating account...'
-            : 'Signing in...'
-          : isRegister
-            ? 'Create account'
-            : 'Sign in'}
-      </button>
+      {isLoading ? (
+        <button
+          type="submit"
+          disabled
+          aria-busy="true"
+          className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-indigo-400 px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 cursor-not-allowed"
+        >
+          <svg
+            className="h-5 w-5 animate-spin text-white"
+            fill="none"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+          {isRegister ? 'Creating account...' : 'Signing in...'}
+        </button>
+      ) : (
+        <button
+          type="submit"
+          className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+        >
+          {isRegister ? 'Create account' : 'Sign in'}
+        </button>
+      )}
     </form>
   )
 }
