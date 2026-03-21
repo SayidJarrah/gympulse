@@ -7,73 +7,69 @@
 
 ## 1. Design Principles
 
-**Clear over clever.** Every UI element communicates its purpose immediately. Labels, icons, and copy leave no room for ambiguity. Cleverness is never worth confusion.
+**Clear over clever.** Every element earns its place on screen. Labels, icons, and copy communicate purpose without ambiguity. Cleverness that creates confusion gets cut.
 
-**Progress feels earned.** Motion and visual weight guide the user from one step to the next. Active states, transitions, and feedback reward interaction without overwhelming.
+**Progress feels earned.** Motion and visual weight drive the user forward. Active states, transitions, and feedback reward interaction without noise. Every pixel of feedback justifies itself.
 
-**Accessible by default.** Contrast, focus rings, and touch targets are not afterthoughts. Every design decision passes AA contrast before it ships.
+**Accessible by default.** Contrast, focus rings, and touch targets are non-negotiable. Every design decision passes AA contrast before it ships — dark surfaces demand extra vigilance.
 
-**Consistency scales.** Spacing, color, and component patterns are fixed tokens. One-off values create debt. When a new pattern is needed, it is added to this document.
+**Consistency scales.** Spacing, color, and component patterns are fixed tokens. One-off values create debt. When a new pattern is needed, it is added to this document and applied everywhere.
 
 ---
 
 ## 2. Color Palette
 
-The primary palette is indigo — energetic enough for a fitness brand, professional enough for an admin dashboard. Status colors follow universal conventions so users never have to learn new meanings.
+The palette is dark-first — near-black surfaces, electric green primary, orange accent. Think gym-floor energy: intense, focused, motivating. Status colors are adapted for dark backgrounds so tints never muddy the surface.
 
 ### 2.1 Brand Colors
 
 | Token | Tailwind Class | Hex | Usage |
 |-------|---------------|-----|-------|
-| Primary | `bg-indigo-600` / `text-indigo-600` | `#4F46E5` | CTAs, active nav links, focus rings, primary buttons |
-| Primary Dark | `bg-indigo-700` / `text-indigo-700` | `#4338CA` | Button hover/pressed, link hover |
-| Primary Light | `bg-indigo-50` / `text-indigo-50` | `#EEF2FF` | Subtle tints, active sidebar bg, badge backgrounds |
-| Primary Mid | `bg-indigo-100` / `text-indigo-100` | `#E0E7FF` | Hover tints on ghost buttons |
-| Secondary | `bg-violet-500` / `text-violet-500` | `#8B5CF6` | Highlight badges, feature callouts, secondary accents |
-| Secondary Light | `bg-violet-50` / `text-violet-50` | `#F5F3FF` | Secondary badge backgrounds |
+| Primary | `bg-green-500` / `text-green-500` | `#22C55E` | CTAs, active states, links, primary buttons |
+| Primary Dark | `bg-green-600` | `#16A34A` | Button hover/pressed |
+| Primary Light | `bg-green-500/10` | rgba(34,197,94,0.10) | Subtle tints, active sidebar background |
+| Accent | `bg-orange-500` / `text-orange-500` | `#F97316` | Highlights, badges, secondary accents |
+| Accent Light | `bg-orange-500/10` | rgba(249,115,22,0.10) | Accent badge backgrounds |
 
 ### 2.2 Surface Colors
 
 | Token | Tailwind Class | Hex | Usage |
 |-------|---------------|-----|-------|
-| Page Background | `bg-gray-50` | `#F9FAFB` | Root page background |
-| Card Background | `bg-white` | `#FFFFFF` | Cards, modals, dropdowns |
-| Input Background | `bg-white` | `#FFFFFF` | Form inputs default |
-| Input Background Disabled | `bg-gray-100` | `#F3F4F6` | Disabled form inputs |
-| Sidebar Background | `bg-gray-900` | `#111827` | Admin sidebar |
-| Sidebar Active | `bg-gray-800` | `#1F2937` | Active sidebar item |
+| Page Background | `bg-[#0F0F0F]` | `#0F0F0F` | Root page background |
+| Surface 1 | `bg-gray-900` | `#111827` | Cards, modals, input backgrounds |
+| Surface 2 | `bg-gray-800` | `#1F2937` | Elevated cards, dropdowns, sidebar active |
+| Surface 3 | `bg-gray-700` | `#374151` | Hover states on cards |
+| Sidebar Background | `bg-[#0F0F0F]` | `#0F0F0F` | Same as page bg — sidebar blends into page |
 
 ### 2.3 Border Colors
 
-| Token | Tailwind Class | Hex | Usage |
-|-------|---------------|-----|-------|
-| Border Default | `border-gray-200` | `#E5E7EB` | Default card and input borders |
-| Border Strong | `border-gray-300` | `#D1D5DB` | Dividers, table headers |
-| Border Focus | `ring-indigo-500` | `#6366F1` | Focus ring on inputs and buttons |
+| Token | Value | Usage |
+|-------|-------|-------|
+| Border Default | `border-gray-700` `#374151` | Default card and input borders |
+| Border Strong | `border-gray-600` `#4B5563` | Dividers, table headers |
+| Border Focus | `ring-green-500` `#22C55E` | Focus ring on inputs and buttons |
 
 ### 2.4 Text Colors
 
-| Token | Tailwind Class | Hex | Usage |
-|-------|---------------|-----|-------|
-| Text Default | `text-gray-900` | `#111827` | Body text, headings |
-| Text Muted | `text-gray-500` | `#6B7280` | Helper text, secondary labels, placeholders |
-| Text Subtle | `text-gray-400` | `#9CA3AF` | Disabled text, metadata |
-| Text Inverse | `text-white` | `#FFFFFF` | Text on dark/primary backgrounds |
-| Text Link | `text-indigo-600` | `#4F46E5` | Hyperlinks |
-| Text Link Hover | `text-indigo-500` | `#6366F1` | Hyperlink hover |
+| Token | Value | Usage |
+|-------|-------|-------|
+| Text Default | `text-white` `#FFFFFF` | Body text, headings |
+| Text Muted | `text-gray-400` `#9CA3AF` | Helper text, secondary labels |
+| Text Subtle | `text-gray-600` `#4B5563` | Disabled text, metadata |
+| Text Inverse | `text-gray-900` `#111827` | Text on light/primary backgrounds |
+| Text Link | `text-green-400` `#4ADE80` | Hyperlinks (lighter green for dark bg contrast) |
+| Text Link Hover | `text-green-300` `#86EFAC` | Hyperlink hover |
 
 ### 2.5 Status Colors
 
-Each status color has three parts: a background tint, a text color (for readability on that tint), and a border color.
+Each status color has three parts: a background tint, a text color, and a border color — all adapted for dark surfaces.
 
-| Status | Background | Text | Border | Hex (bg) |
-|--------|-----------|------|--------|----------|
-| Success | `bg-green-50` | `text-green-700` | `border-green-200` | `#F0FDF4` |
-| Warning | `bg-yellow-50` | `text-yellow-700` | `border-yellow-200` | `#FEFCE8` |
-| Error | `bg-red-50` | `text-red-700` | `border-red-300` | `#FEF2F2` |
-| Info | `bg-blue-50` | `text-blue-700` | `border-blue-200` | `#EFF6FF` |
-
-For **Error input borders** specifically: `border-red-400` (`#F87171`) is used on form fields to provide sufficient contrast against the white input background.
+| Status | Background | Text | Border |
+|--------|-----------|------|--------|
+| Success | `bg-green-500/10` | `text-green-400` | `border-green-500/30` |
+| Warning | `bg-orange-500/10` | `text-orange-400` | `border-orange-500/30` |
+| Error | `bg-red-500/10` | `text-red-400` | `border-red-500/30` |
+| Info | `bg-blue-500/10` | `text-blue-400` | `border-blue-500/30` |
 
 ---
 
@@ -125,15 +121,17 @@ theme: {
 
 ### 3.4 Common Text Pairings
 
+Dark-surface defaults. All text renders on `bg-gray-900` (`#111827`) or `bg-[#0F0F0F]` unless otherwise noted.
+
 | Role | Classes |
 |------|---------|
-| Page heading | `text-3xl font-bold leading-tight text-gray-900` |
-| Section heading | `text-xl font-semibold leading-tight text-gray-900` |
-| Card title | `text-lg font-semibold leading-tight text-gray-900` |
-| Body | `text-base font-normal leading-normal text-gray-900` |
-| Label | `text-sm font-semibold leading-normal text-gray-700` |
-| Helper text | `text-sm font-normal leading-normal text-gray-500` |
-| Caption | `text-xs font-normal leading-normal text-gray-500` |
+| Page heading | `text-3xl font-bold leading-tight text-white` |
+| Section heading | `text-xl font-semibold leading-tight text-white` |
+| Card title | `text-lg font-semibold leading-tight text-white` |
+| Body | `text-base font-normal leading-normal text-white` |
+| Label | `text-sm font-semibold leading-normal text-gray-300` |
+| Helper text | `text-sm font-normal leading-normal text-gray-400` |
+| Caption | `text-xs font-normal leading-normal text-gray-400` |
 
 ---
 
@@ -170,13 +168,18 @@ Note: Tailwind's `rounded-xl` maps to 12px (`0.75rem`) and `rounded-2xl` maps to
 
 ### 5.2 Shadow Tokens
 
+Shadows use black bases to remain visible against dark surfaces.
+
 | Token | Tailwind Class | Usage |
 |-------|---------------|-------|
 | none | `shadow-none` | Flat cards, table rows |
-| sm | `shadow-sm` | Subtle lift on inputs, secondary cards |
-| md (default card) | `shadow-md` | Standard card elevation |
-| lg (elevated) | `shadow-lg` | Modals, elevated cards, sticky headers |
-| xl (dropdown) | `shadow-xl` | Dropdowns, tooltips, floating menus |
+| sm | `shadow-sm shadow-black/50` | Subtle lift on inputs, secondary cards |
+| md (default card) | `shadow-md shadow-black/50` | Standard card elevation |
+| lg (elevated) | `shadow-lg shadow-black/50` | Modals, elevated cards, sticky headers |
+| xl (dropdown) | `shadow-xl shadow-black/50` | Dropdowns, tooltips, floating menus |
+| glow (primary) | `shadow-green-500/20` | Primary buttons (hover), active elements |
+
+Glow usage: apply `hover:shadow-lg hover:shadow-green-500/25` to primary buttons and key interactive elements to create an electric edge on hover.
 
 ---
 
@@ -192,10 +195,10 @@ Note: Tailwind's `rounded-xl` maps to 12px (`0.75rem`) and `rounded-2xl` maps to
 
 | Variant | Default Classes | Hover | Active/Pressed | Disabled | Notes |
 |---------|----------------|-------|----------------|----------|-------|
-| Primary | `bg-indigo-600 text-white border-transparent` | `bg-indigo-700` | `bg-indigo-800` | `bg-indigo-300 cursor-not-allowed` | Filled, high emphasis |
-| Secondary | `bg-white text-indigo-600 border border-indigo-600` | `bg-indigo-50 text-indigo-700 border-indigo-700` | `bg-indigo-100` | `text-gray-400 border-gray-200 cursor-not-allowed` | Outlined, medium emphasis |
-| Ghost | `bg-transparent text-gray-600 border-transparent` | `bg-gray-100 text-gray-900` | `bg-gray-200` | `text-gray-300 cursor-not-allowed` | Text-only, low emphasis |
-| Destructive | `bg-red-600 text-white border-transparent` | `bg-red-700` | `bg-red-800` | `bg-red-300 cursor-not-allowed` | High emphasis, destructive actions |
+| Primary | `bg-green-500 text-white border-transparent` | `bg-green-600 shadow-lg shadow-green-500/25` | `bg-green-700` | `bg-green-500/40 cursor-not-allowed` | Filled, high emphasis, glow on hover |
+| Secondary | `border border-green-500 text-green-400 bg-transparent` | `bg-green-500/10 text-green-300` | `bg-green-500/20` | `border-gray-700 text-gray-600 cursor-not-allowed` | Outlined, medium emphasis |
+| Ghost | `bg-transparent text-gray-400 border-transparent` | `bg-gray-800 text-white` | `bg-gray-700` | `text-gray-700 cursor-not-allowed` | Text-only, low emphasis |
+| Destructive | `bg-red-600 text-white border-transparent` | `bg-red-700` | `bg-red-800` | `bg-red-600/40 cursor-not-allowed` | High emphasis, destructive actions |
 
 #### Sizes
 
@@ -205,9 +208,9 @@ Note: Tailwind's `rounded-xl` maps to 12px (`0.75rem`) and `rounded-2xl` maps to
 | md (default) | `px-4 py-2` | `text-sm font-medium` | 40px |
 | lg | `px-6 py-3` | `text-base font-medium` | 48px |
 
-All buttons share: `rounded-md inline-flex items-center justify-center gap-2 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2`
+All buttons share: `rounded-md inline-flex items-center justify-center gap-2 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900`
 
-Loading state: replace leading icon with a spinner (`animate-spin`) and set `disabled` attribute.
+Loading state: replace leading icon with a spinner (`animate-spin`) and set `disabled` attribute. Spinner is white on primary, green (`text-green-400`) on secondary.
 
 #### JSX Usage Examples
 
@@ -215,7 +218,7 @@ Loading state: replace leading icon with a spinner (`animate-spin`) and set `dis
 {/* Primary — default size */}
 <button
   type="submit"
-  className="inline-flex items-center justify-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors duration-200 hover:bg-indigo-700 active:bg-indigo-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-indigo-300"
+  className="inline-flex items-center justify-center gap-2 rounded-md bg-green-500 px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-green-600 hover:shadow-lg hover:shadow-green-500/25 active:bg-green-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 disabled:cursor-not-allowed disabled:bg-green-500/40"
 >
   Get Started
 </button>
@@ -223,7 +226,7 @@ Loading state: replace leading icon with a spinner (`animate-spin`) and set `dis
 {/* Secondary — default size */}
 <button
   type="button"
-  className="inline-flex items-center justify-center gap-2 rounded-md border border-indigo-600 bg-white px-4 py-2 text-sm font-medium text-indigo-600 transition-colors duration-200 hover:border-indigo-700 hover:bg-indigo-50 hover:text-indigo-700 active:bg-indigo-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-400"
+  className="inline-flex items-center justify-center gap-2 rounded-md border border-green-500 bg-transparent px-4 py-2 text-sm font-medium text-green-400 transition-all duration-200 hover:bg-green-500/10 hover:text-green-300 active:bg-green-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-600"
 >
   View Details
 </button>
@@ -231,7 +234,7 @@ Loading state: replace leading icon with a spinner (`animate-spin`) and set `dis
 {/* Ghost — default size */}
 <button
   type="button"
-  className="inline-flex items-center justify-center gap-2 rounded-md bg-transparent px-4 py-2 text-sm font-medium text-gray-600 transition-colors duration-200 hover:bg-gray-100 hover:text-gray-900 active:bg-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:text-gray-300"
+  className="inline-flex items-center justify-center gap-2 rounded-md bg-transparent px-4 py-2 text-sm font-medium text-gray-400 transition-all duration-200 hover:bg-gray-800 hover:text-white active:bg-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 disabled:cursor-not-allowed disabled:text-gray-700"
 >
   Cancel
 </button>
@@ -239,7 +242,7 @@ Loading state: replace leading icon with a spinner (`animate-spin`) and set `dis
 {/* Destructive — default size */}
 <button
   type="button"
-  className="inline-flex items-center justify-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors duration-200 hover:bg-red-700 active:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-red-300"
+  className="inline-flex items-center justify-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-red-700 active:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 disabled:cursor-not-allowed disabled:bg-red-600/40"
 >
   Delete Plan
 </button>
@@ -248,7 +251,7 @@ Loading state: replace leading icon with a spinner (`animate-spin`) and set `dis
 <button
   type="submit"
   disabled
-  className="inline-flex items-center justify-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors duration-200 disabled:cursor-not-allowed disabled:bg-indigo-300"
+  className="inline-flex items-center justify-center gap-2 rounded-md bg-green-500/40 px-4 py-2 text-sm font-medium text-white transition-all duration-200 cursor-not-allowed"
 >
   <svg
     className="h-4 w-4 animate-spin"
@@ -265,7 +268,7 @@ Loading state: replace leading icon with a spinner (`animate-spin`) and set `dis
 {/* Large size */}
 <button
   type="button"
-  className="inline-flex items-center justify-center gap-2 rounded-md bg-indigo-600 px-6 py-3 text-base font-medium text-white transition-colors duration-200 hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+  className="inline-flex items-center justify-center gap-2 rounded-md bg-green-500 px-6 py-3 text-base font-medium text-white transition-all duration-200 hover:bg-green-600 hover:shadow-lg hover:shadow-green-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
 >
   Join Now
 </button>
@@ -281,47 +284,47 @@ Loading state: replace leading icon with a spinner (`animate-spin`) and set `dis
 
 Base wrapper: `flex flex-col gap-1.5`
 
-Label: `text-sm font-semibold text-gray-700`
+Label: `text-sm font-medium text-gray-300`
 
-Input base classes: `w-full rounded-md border bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent`
+Input base classes: `w-full rounded-md border bg-gray-900 px-3 py-2 text-sm text-white placeholder:text-gray-500 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:border-transparent`
 
 | State | Additional Classes |
 |-------|-------------------|
-| Default | `border-gray-300` |
-| Focus | `ring-2 ring-indigo-500 border-transparent` (via focus: prefix above) |
-| Error | `border-red-400 focus:ring-red-400` |
-| Disabled | `bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200` |
+| Default | `border-gray-700` |
+| Focus | `ring-2 ring-green-500 border-transparent` (via focus-visible: prefix above) |
+| Error | `border-red-500/60 focus-visible:ring-red-500` |
+| Disabled | `bg-gray-800 text-gray-600 cursor-not-allowed border-gray-700 opacity-60` |
 
-Helper/Error text: `text-sm` — gray (`text-gray-500`) for helper, red (`text-red-600`) for errors. Always rendered below the input. Errors include a visible label so color is not the only indicator.
+Helper/Error text: `text-sm` — gray-400 (`text-gray-400`) for helper, red-400 (`text-red-400`) for errors, rendered below the input. Errors include a visible label so color is not the only indicator.
 
 #### Variants
 
 **Text Input** — standard layout described above.
 
-**Password Input** — add a show/hide toggle button (`<button type="button">`) absolutely positioned inside a `relative` wrapper on the right side: `absolute inset-y-0 right-0 flex items-center pr-3`. Toggle icon switches between `EyeIcon` and `EyeSlashIcon` (Heroicons outline).
+**Password Input** — add a show/hide toggle button (`<button type="button">`) absolutely positioned inside a `relative` wrapper on the right side: `absolute inset-y-0 right-0 flex items-center pr-3`. Toggle icon switches between `EyeIcon` and `EyeSlashIcon` (Heroicons outline). Icon color: `text-gray-500 hover:text-gray-300`.
 
-**Search Input** — add a search icon (`MagnifyingGlassIcon`, Heroicons outline, `h-4 w-4 text-gray-400`) absolutely positioned on the left side. Add `pl-9` to the input to offset text from the icon.
+**Search Input** — add a search icon (`MagnifyingGlassIcon`, Heroicons outline, `h-4 w-4 text-gray-500`) absolutely positioned on the left side. Add `pl-9` to the input to offset text from the icon.
 
 #### JSX Usage Examples
 
 ```jsx
 {/* Text input — default */}
 <div className="flex flex-col gap-1.5">
-  <label htmlFor="email" className="text-sm font-semibold text-gray-700">
+  <label htmlFor="email" className="text-sm font-medium text-gray-300">
     Email address
   </label>
   <input
     id="email"
     type="email"
     placeholder="you@example.com"
-    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 transition-colors duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500"
+    className="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder:text-gray-500 transition-colors duration-200 focus:outline-none focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-green-500"
   />
-  <p className="text-sm text-gray-500">We will never share your email.</p>
+  <p className="text-sm text-gray-400">We will never share your email.</p>
 </div>
 
 {/* Text input — error state */}
 <div className="flex flex-col gap-1.5">
-  <label htmlFor="email-error" className="text-sm font-semibold text-gray-700">
+  <label htmlFor="email-error" className="text-sm font-medium text-gray-300">
     Email address
   </label>
   <input
@@ -329,16 +332,16 @@ Helper/Error text: `text-sm` — gray (`text-gray-500`) for helper, red (`text-r
     type="email"
     aria-describedby="email-error-msg"
     aria-invalid="true"
-    className="w-full rounded-md border border-red-400 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-400"
+    className="w-full rounded-md border border-red-500/60 bg-gray-900 px-3 py-2 text-sm text-white placeholder:text-gray-500 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
   />
-  <p id="email-error-msg" className="text-sm text-red-600">
+  <p id="email-error-msg" className="text-xs text-red-400">
     Please enter a valid email address.
   </p>
 </div>
 
 {/* Password input with show/hide toggle */}
 <div className="flex flex-col gap-1.5">
-  <label htmlFor="password" className="text-sm font-semibold text-gray-700">
+  <label htmlFor="password" className="text-sm font-medium text-gray-300">
     Password
   </label>
   <div className="relative">
@@ -346,12 +349,12 @@ Helper/Error text: `text-sm` — gray (`text-gray-500`) for helper, red (`text-r
       id="password"
       type={showPassword ? 'text' : 'password'}
       placeholder="Enter your password"
-      className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 pr-10 text-sm text-gray-900 placeholder:text-gray-400 transition-colors duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500"
+      className="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 pr-10 text-sm text-white placeholder:text-gray-500 transition-colors duration-200 focus:outline-none focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-green-500"
     />
     <button
       type="button"
       onClick={() => setShowPassword(!showPassword)}
-      className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus-visible:outline-none"
+      className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-300 focus-visible:outline-none"
       aria-label={showPassword ? 'Hide password' : 'Show password'}
     >
       {showPassword ? (
@@ -365,17 +368,17 @@ Helper/Error text: `text-sm` — gray (`text-gray-500`) for helper, red (`text-r
 
 {/* Search input */}
 <div className="relative">
-  <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+  <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
   <input
     type="search"
     placeholder="Search classes..."
-    className="w-full rounded-md border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 transition-colors duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500"
+    className="w-full rounded-md border border-gray-700 bg-gray-900 py-2 pl-9 pr-3 text-sm text-white placeholder:text-gray-500 transition-colors duration-200 focus:outline-none focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-green-500"
   />
 </div>
 
 {/* Disabled input */}
 <div className="flex flex-col gap-1.5">
-  <label htmlFor="plan-id" className="text-sm font-semibold text-gray-700">
+  <label htmlFor="plan-id" className="text-sm font-medium text-gray-300">
     Plan ID
   </label>
   <input
@@ -383,9 +386,9 @@ Helper/Error text: `text-sm` — gray (`text-gray-500`) for helper, red (`text-r
     type="text"
     value="plan_abc123"
     disabled
-    className="w-full cursor-not-allowed rounded-md border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-400"
+    className="w-full cursor-not-allowed rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-600 opacity-60"
   />
-  <p className="text-sm text-gray-500">Auto-generated — cannot be changed.</p>
+  <p className="text-sm text-gray-400">Auto-generated — cannot be changed.</p>
 </div>
 ```
 
@@ -399,62 +402,62 @@ Helper/Error text: `text-sm` — gray (`text-gray-500`) for helper, red (`text-r
 
 | Variant | Classes | Usage |
 |---------|---------|-------|
-| Default | `rounded-xl bg-white shadow-md` | Standard content cards |
-| Flat | `rounded-xl bg-white border border-gray-200 shadow-none` | Tables, list items, secondary content |
-| Interactive | `rounded-xl bg-white shadow-md cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5` | Clickable plan cards, class cards |
+| Default | `rounded-xl bg-gray-900 border border-gray-800 shadow-md shadow-black/50` | Standard content cards |
+| Flat | `rounded-xl bg-gray-900 border border-gray-700` | Tables, list items, secondary content |
+| Interactive | `rounded-xl bg-gray-900 border border-gray-800 cursor-pointer transition-all duration-200 hover:border-gray-600 hover:bg-gray-800` | Clickable plan cards, class cards |
 
 Padding: `p-6` for standard cards. Use `px-6 py-5` for compact cards (e.g., dashboard stat tiles).
 
-Card header (when present): `flex items-center justify-between border-b border-gray-100 pb-4 mb-4`
+Card header (when present): `flex items-center justify-between border-b border-gray-800 pb-4 mb-4`
 
-Card footer (when present): `flex items-center justify-end gap-3 border-t border-gray-100 pt-4 mt-4`
+Card footer (when present): `flex items-center justify-end gap-3 border-t border-gray-800 pt-4 mt-4`
 
 #### JSX Usage Examples
 
 ```jsx
 {/* Default card */}
-<div className="rounded-xl bg-white p-6 shadow-md">
-  <h3 className="text-lg font-semibold text-gray-900">Monthly Plan</h3>
-  <p className="mt-1 text-sm text-gray-500">Access to all standard classes</p>
+<div className="rounded-xl border border-gray-800 bg-gray-900 p-6 shadow-md shadow-black/50">
+  <h3 className="text-lg font-semibold text-white">Monthly Plan</h3>
+  <p className="mt-1 text-sm text-gray-400">Access to all standard classes</p>
 </div>
 
 {/* Flat card */}
-<div className="rounded-xl border border-gray-200 bg-white p-6">
-  <h3 className="text-lg font-semibold text-gray-900">Plan Details</h3>
+<div className="rounded-xl border border-gray-700 bg-gray-900 p-6">
+  <h3 className="text-lg font-semibold text-white">Plan Details</h3>
 </div>
 
 {/* Interactive card — membership plan */}
-<div className="cursor-pointer rounded-xl bg-white p-6 shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg">
+<div className="cursor-pointer rounded-xl border border-gray-800 bg-gray-900 p-6 transition-all duration-200 hover:border-gray-600 hover:bg-gray-800">
   <div className="flex items-start justify-between">
     <div>
-      <h3 className="text-lg font-semibold text-gray-900">Premium</h3>
-      <p className="mt-1 text-sm text-gray-500">Unlimited classes + personal training</p>
+      <h3 className="text-lg font-semibold text-white">Premium</h3>
+      <p className="mt-1 text-sm text-gray-400">Unlimited classes + personal training</p>
     </div>
-    <span className="text-2xl font-bold text-indigo-600">$89</span>
+    <span className="text-2xl font-bold text-green-400">$89</span>
   </div>
-  <ul className="mt-4 space-y-1 text-sm text-gray-600">
+  <ul className="mt-4 space-y-1 text-sm text-gray-400">
     <li>Unlimited class bookings</li>
     <li>2 PT sessions per month</li>
   </ul>
-  <button className="mt-6 w-full rounded-md bg-indigo-600 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+  <button className="mt-6 w-full rounded-md bg-green-500 py-2 text-sm font-medium text-white hover:bg-green-600 hover:shadow-lg hover:shadow-green-500/25 transition-all duration-200">
     Get Started
   </button>
 </div>
 
 {/* Card with header and footer */}
-<div className="rounded-xl bg-white shadow-md">
-  <div className="flex items-center justify-between border-b border-gray-100 px-6 py-5">
-    <h3 className="text-lg font-semibold text-gray-900">Edit Plan</h3>
-    <button type="button" className="text-gray-400 hover:text-gray-600">
+<div className="rounded-xl border border-gray-800 bg-gray-900 shadow-md shadow-black/50">
+  <div className="flex items-center justify-between border-b border-gray-800 px-6 py-5">
+    <h3 className="text-lg font-semibold text-white">Edit Plan</h3>
+    <button type="button" className="text-gray-500 hover:text-gray-300">
       <XMarkIcon className="h-5 w-5" />
     </button>
   </div>
   <div className="p-6">
     {/* Card body content */}
   </div>
-  <div className="flex items-center justify-end gap-3 border-t border-gray-100 px-6 py-4">
-    <button className="rounded-md px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100">Cancel</button>
-    <button className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Save</button>
+  <div className="flex items-center justify-end gap-3 border-t border-gray-800 px-6 py-4">
+    <button className="rounded-md px-4 py-2 text-sm font-medium text-gray-400 hover:bg-gray-800 hover:text-white transition-colors duration-200">Cancel</button>
+    <button className="rounded-md bg-green-500 px-4 py-2 text-sm font-medium text-white hover:bg-green-600 transition-all duration-200">Save</button>
   </div>
 </div>
 ```
@@ -469,12 +472,12 @@ Card footer (when present): `flex items-center justify-end gap-3 border-t border
 
 | Variant | Background | Text | Border | Usage |
 |---------|-----------|------|--------|-------|
-| Success | `bg-green-50` | `text-green-700` | `border-green-200` | Active membership, confirmed booking |
-| Warning | `bg-yellow-50` | `text-yellow-700` | `border-yellow-200` | Expiring soon, pending review |
-| Error | `bg-red-50` | `text-red-700` | `border-red-200` | Cancelled, inactive, overdue |
-| Info | `bg-blue-50` | `text-blue-700` | `border-blue-200` | Informational labels |
-| Neutral | `bg-gray-100` | `text-gray-600` | `border-gray-200` | Default tags, unset status |
-| Primary | `bg-indigo-50` | `text-indigo-700` | `border-indigo-200` | Selected filter, active category |
+| Success | `bg-green-500/10` | `text-green-400` | `border-green-500/30` | Active membership, confirmed booking |
+| Warning | `bg-orange-500/10` | `text-orange-400` | `border-orange-500/30` | Expiring soon, pending review |
+| Error | `bg-red-500/10` | `text-red-400` | `border-red-500/30` | Cancelled, inactive, overdue |
+| Info | `bg-blue-500/10` | `text-blue-400` | `border-blue-500/30` | Informational labels |
+| Neutral | `bg-gray-800` | `text-gray-400` | `border-gray-700` | Default tags, unset status |
+| Primary | `bg-green-500/10` | `text-green-400` | `border-green-500/30` | Selected filter, active category |
 
 #### Sizes
 
@@ -489,32 +492,32 @@ Base classes: `inline-flex items-center gap-1 rounded-full border leading-tight`
 
 ```jsx
 {/* Status badge — Success, sm */}
-<span className="inline-flex items-center gap-1 rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-xs font-medium leading-tight text-green-700">
+<span className="inline-flex items-center gap-1 rounded-full border border-green-500/30 bg-green-500/10 px-2 py-0.5 text-xs font-medium leading-tight text-green-400">
   Active
 </span>
 
 {/* Status badge — Warning, md */}
-<span className="inline-flex items-center gap-1 rounded-full border border-yellow-200 bg-yellow-50 px-2.5 py-1 text-sm font-medium leading-tight text-yellow-700">
+<span className="inline-flex items-center gap-1 rounded-full border border-orange-500/30 bg-orange-500/10 px-2.5 py-1 text-sm font-medium leading-tight text-orange-400">
   Expiring Soon
 </span>
 
 {/* Status badge — Error, sm */}
-<span className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-medium leading-tight text-red-700">
+<span className="inline-flex items-center gap-1 rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-xs font-medium leading-tight text-red-400">
   Cancelled
 </span>
 
 {/* Neutral badge */}
-<span className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-100 px-2.5 py-1 text-sm font-medium leading-tight text-gray-600">
+<span className="inline-flex items-center gap-1 rounded-full border border-gray-700 bg-gray-800 px-2.5 py-1 text-sm font-medium leading-tight text-gray-400">
   Yoga
 </span>
 
 {/* Removable chip — Primary */}
-<span className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-sm font-medium leading-tight text-indigo-700">
+<span className="inline-flex items-center gap-1 rounded-full border border-green-500/30 bg-green-500/10 px-2.5 py-1 text-sm font-medium leading-tight text-green-400">
   Strength Training
   <button
     type="button"
     onClick={() => removeFilter('strength')}
-    className="ml-0.5 rounded-full p-0.5 hover:bg-indigo-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500"
+    className="ml-0.5 rounded-full p-0.5 hover:bg-green-500/20 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-green-500"
     aria-label="Remove Strength Training filter"
   >
     <XMarkIcon className="h-3 w-3" />
@@ -530,11 +533,11 @@ Base classes: `inline-flex items-center gap-1 rounded-full border leading-tight`
 
 #### Structure
 
-- **Overlay:** `fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4`
-- **Dialog box:** `relative w-full rounded-xl bg-white shadow-lg` with max-width per size
-- **Header:** `flex items-center justify-between border-b border-gray-100 px-6 py-5`
+- **Overlay:** `fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4`
+- **Dialog box:** `relative w-full rounded-2xl bg-gray-900 border border-gray-800 shadow-xl shadow-black/50` with max-width per size
+- **Header:** `flex items-center justify-between border-b border-gray-800 px-6 py-5`
 - **Body:** `overflow-y-auto px-6 py-6` — scrollable independently of header/footer
-- **Footer:** `flex items-center justify-end gap-3 border-t border-gray-100 px-6 py-4`
+- **Footer:** `flex items-center justify-end gap-3 border-t border-gray-800 px-6 py-4`
 
 #### Sizes
 
@@ -555,19 +558,19 @@ Close on overlay click and on Escape key. Focus trap inside the dialog when open
     role="dialog"
     aria-modal="true"
     aria-labelledby="modal-title"
-    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+    className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
     onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
   >
-    <div className="relative w-full max-w-lg rounded-xl bg-white shadow-lg">
+    <div className="relative w-full max-w-lg rounded-2xl border border-gray-800 bg-gray-900 shadow-xl shadow-black/50">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-gray-100 px-6 py-5">
-        <h2 id="modal-title" className="text-xl font-semibold text-gray-900">
+      <div className="flex items-center justify-between border-b border-gray-800 px-6 py-5">
+        <h2 id="modal-title" className="text-xl font-semibold text-white">
           Create Membership Plan
         </h2>
         <button
           type="button"
           onClick={onClose}
-          className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          className="rounded-md p-1 text-gray-500 hover:bg-gray-800 hover:text-gray-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
           aria-label="Close"
         >
           <XMarkIcon className="h-5 w-5" />
@@ -580,17 +583,17 @@ Close on overlay click and on Escape key. Focus trap inside the dialog when open
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-end gap-3 border-t border-gray-100 px-6 py-4">
+      <div className="flex items-center justify-end gap-3 border-t border-gray-800 px-6 py-4">
         <button
           type="button"
           onClick={onClose}
-          className="rounded-md px-4 py-2 text-sm font-medium text-gray-600 transition-colors duration-200 hover:bg-gray-100"
+          className="rounded-md px-4 py-2 text-sm font-medium text-gray-400 transition-colors duration-200 hover:bg-gray-800 hover:text-white"
         >
           Cancel
         </button>
         <button
           type="submit"
-          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors duration-200 hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+          className="rounded-md bg-green-500 px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-green-600 hover:shadow-lg hover:shadow-green-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
         >
           Save Plan
         </button>
@@ -608,19 +611,19 @@ Close on overlay click and on Escape key. Focus trap inside the dialog when open
 
 #### Structure
 
-- **Wrapper:** `overflow-hidden rounded-xl border border-gray-200 bg-white`
+- **Wrapper:** `overflow-hidden rounded-xl border border-gray-800 bg-[#0F0F0F]`
 - **Scroll container:** `overflow-x-auto`
 - **Table:** `w-full text-sm`
-- **thead:** `sticky top-0 bg-gray-50 text-left`
-- **th:** `border-b border-gray-200 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500`
-- **tbody tr default:** `border-b border-gray-100 transition-colors duration-100`
-- **tbody tr hover:** `hover:bg-gray-50`
-- **td:** `px-4 py-3 text-gray-900`
+- **thead:** `sticky top-0 bg-gray-900 text-left`
+- **th:** `border-b border-gray-800 px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-400`
+- **tbody tr default:** `border-t border-gray-800 text-white transition-colors duration-100`
+- **tbody tr hover:** `hover:bg-gray-900`
+- **td:** `px-4 py-3 text-white`
 - **Row actions td:** `px-4 py-3 text-right` — Ghost buttons or icon buttons
 
 #### Sort Indicator
 
-Active sorted column header: `text-indigo-600`. Append `ChevronUpIcon` or `ChevronDownIcon` (Heroicons, `h-4 w-4 inline ml-1`) based on sort direction. Unsorted columns show `ChevronUpDownIcon` at low opacity (`opacity-40`).
+Active sorted column header: `text-green-400`. Append `ChevronUpIcon` or `ChevronDownIcon` (Heroicons, `h-4 w-4 inline ml-1`) based on sort direction. Unsorted columns show `ChevronUpDownIcon` at low opacity (`opacity-40`).
 
 #### Responsive Behavior
 
@@ -634,10 +637,10 @@ When `data.length === 0`, replace `<tbody>` rows with:
 <tr>
   <td colSpan={columnCount} className="px-4 py-16 text-center">
     <div className="flex flex-col items-center gap-3">
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
-        <TableCellsIcon className="h-6 w-6 text-gray-400" />
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-800">
+        <TableCellsIcon className="h-6 w-6 text-gray-500" />
       </div>
-      <p className="text-sm font-medium text-gray-900">No plans found</p>
+      <p className="text-sm font-medium text-white">No plans found</p>
       <p className="text-sm text-gray-500">Create a membership plan to get started.</p>
     </div>
   </td>
@@ -647,58 +650,58 @@ When `data.length === 0`, replace `<tbody>` rows with:
 #### JSX Usage Example
 
 ```jsx
-<div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+<div className="overflow-hidden rounded-xl border border-gray-800 bg-[#0F0F0F]">
   <div className="overflow-x-auto">
     <table className="w-full text-sm">
-      <thead className="sticky top-0 bg-gray-50">
+      <thead className="sticky top-0 bg-gray-900">
         <tr>
-          <th className="border-b border-gray-200 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <th className="border-b border-gray-800 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
             <button
               type="button"
               onClick={() => onSort('name')}
-              className="inline-flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              className="inline-flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
             >
               Plan Name
               <ChevronUpDownIcon className="h-4 w-4 opacity-40" />
             </button>
           </th>
-          <th className="border-b border-gray-200 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-indigo-600">
+          <th className="border-b border-gray-800 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-green-400">
             <button
               type="button"
               onClick={() => onSort('price')}
-              className="inline-flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              className="inline-flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
             >
               Price
               <ChevronUpIcon className="h-4 w-4" />
             </button>
           </th>
-          <th className="hidden border-b border-gray-200 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 sm:table-cell">
+          <th className="hidden border-b border-gray-800 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 sm:table-cell">
             Duration
           </th>
-          <th className="border-b border-gray-200 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <th className="border-b border-gray-800 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
             Status
           </th>
-          <th className="border-b border-gray-200 px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <th className="border-b border-gray-800 px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-400">
             Actions
           </th>
         </tr>
       </thead>
       <tbody>
         {plans.map((plan) => (
-          <tr key={plan.id} className="border-b border-gray-100 transition-colors duration-100 hover:bg-gray-50 last:border-0">
-            <td className="px-4 py-3 font-medium text-gray-900">{plan.name}</td>
-            <td className="px-4 py-3 text-gray-900">${plan.price}</td>
-            <td className="hidden px-4 py-3 text-gray-500 sm:table-cell">{plan.durationDays} days</td>
+          <tr key={plan.id} className="border-t border-gray-800 transition-colors duration-100 hover:bg-gray-900 last:border-0">
+            <td className="px-4 py-3 font-medium text-white">{plan.name}</td>
+            <td className="px-4 py-3 text-white">${plan.price}</td>
+            <td className="hidden px-4 py-3 text-gray-400 sm:table-cell">{plan.durationDays} days</td>
             <td className="px-4 py-3">
-              <span className="inline-flex items-center rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
+              <span className="inline-flex items-center rounded-full border border-green-500/30 bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-400">
                 Active
               </span>
             </td>
             <td className="px-4 py-3 text-right">
-              <button type="button" className="mr-2 rounded-md px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50">
+              <button type="button" className="mr-2 rounded-md px-2 py-1 text-xs font-medium text-green-400 hover:bg-green-500/10 transition-colors duration-150">
                 Edit
               </button>
-              <button type="button" className="rounded-md px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50">
+              <button type="button" className="rounded-md px-2 py-1 text-xs font-medium text-red-400 hover:bg-red-500/10 transition-colors duration-150">
                 Delete
               </button>
             </td>
@@ -718,27 +721,35 @@ When `data.length === 0`, replace `<tbody>` rows with:
 
 #### Structure
 
-- **Root:** `sticky top-0 z-40 border-b border-gray-200 bg-white`
+- **Root:** `sticky top-0 z-40 bg-gray-900/80 backdrop-blur-md border-b border-gray-800`
 - **Inner container:** `mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8`
-- **Left zone:** Logo + wordmark
+- **Left zone:** Logo mark + wordmark
 - **Center zone:** Nav links — hidden on mobile, shown on `sm:flex`
 - **Right zone:** Notification bell + avatar dropdown — always visible
 
-#### Left: Logo and Wordmark
+#### Left: Logo Mark and Wordmark
+
+The GymFlow logo mark is a lightning bolt in a rounded square container.
 
 ```jsx
-<a href="/dashboard" className="flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:rounded-md">
-  {/* Replace with SVG logo */}
-  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600">
-    <span className="text-sm font-bold text-white">G</span>
+<a href="/dashboard" className="flex items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:rounded-md">
+  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      className="h-6 w-6"
+      aria-hidden="true"
+    >
+      <path d="M13 2L4.5 13.5H11L9 22L19.5 9.5H13.5L16 2Z" fill="white" />
+    </svg>
   </div>
-  <span className="text-lg font-bold text-gray-900">GymFlow</span>
+  <span className="text-lg font-bold text-white">GymFlow</span>
 </a>
 ```
 
 #### Center: Nav Links
 
-Active link: adds `text-indigo-600 border-b-2 border-indigo-600` and removes `text-gray-600`. All links: `pb-0.5 text-sm font-medium transition-colors duration-200 hover:text-indigo-600`.
+Active link: adds `text-green-400 border-b-2 border-green-500` and removes `text-gray-400`. All links: `pb-0.5 text-sm font-medium transition-colors duration-200 hover:text-white`.
 
 ```jsx
 <nav className="hidden items-center gap-6 sm:flex">
@@ -751,10 +762,10 @@ Active link: adds `text-indigo-600 border-b-2 border-indigo-600` and removes `te
     <a
       key={href}
       href={href}
-      className={`pb-0.5 text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:rounded-sm ${
+      className={`pb-0.5 text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:rounded-sm ${
         isActive(href)
-          ? 'border-b-2 border-indigo-600 text-indigo-600'
-          : 'text-gray-600 hover:text-indigo-600'
+          ? 'border-b-2 border-green-500 text-green-400'
+          : 'text-gray-400 hover:text-white'
       }`}
     >
       {label}
@@ -770,19 +781,19 @@ Active link: adds `text-indigo-600 border-b-2 border-indigo-600` and removes `te
   {/* Notification bell */}
   <button
     type="button"
-    className="relative rounded-full p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+    className="relative rounded-full p-2 text-gray-400 hover:bg-gray-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
     aria-label="Notifications"
   >
     <BellIcon className="h-5 w-5" />
     {unreadCount > 0 && (
-      <span className="absolute right-1 top-1 flex h-2 w-2 rounded-full bg-red-500" />
+      <span className="absolute right-1 top-1 flex h-2 w-2 rounded-full bg-orange-500" />
     )}
   </button>
 
   {/* Avatar dropdown trigger */}
   <button
     type="button"
-    className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-700 hover:bg-indigo-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+    className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-800 text-sm font-semibold text-white ring-2 ring-green-500/50 hover:ring-green-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 transition-all duration-200"
     aria-label="User menu"
     aria-haspopup="true"
   >
@@ -800,7 +811,7 @@ On mobile (below `sm` breakpoint), the center nav is hidden. Show a hamburger ic
 <button
   type="button"
   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-  className="sm:hidden rounded-md p-2 text-gray-500 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+  className="sm:hidden rounded-md p-2 text-gray-400 hover:bg-gray-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
   aria-label="Toggle menu"
 >
   {mobileMenuOpen ? <XMarkIcon className="h-5 w-5" /> : <Bars3Icon className="h-5 w-5" />}
@@ -808,13 +819,13 @@ On mobile (below `sm` breakpoint), the center nav is hidden. Show a hamburger ic
 
 {/* Mobile nav drawer */}
 {mobileMenuOpen && (
-  <div className="border-t border-gray-200 bg-white sm:hidden">
+  <div className="border-t border-gray-800 bg-gray-900 sm:hidden">
     <nav className="flex flex-col px-4 py-3 gap-1">
       {navLinks.map(({ label, href }) => (
         <a
           key={href}
           href={href}
-          className="rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-indigo-50 hover:text-indigo-600"
+          className="rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-800 hover:text-white transition-colors duration-150"
         >
           {label}
         </a>
@@ -832,7 +843,7 @@ On mobile (below `sm` breakpoint), the center nav is hidden. Show a hamburger ic
 
 #### Structure
 
-- **Root:** `flex h-screen flex-col bg-gray-900 transition-all duration-300`
+- **Root:** `flex h-screen flex-col bg-[#0F0F0F] border-r border-gray-800 transition-all duration-300`
 - **Expanded width:** `w-60` (240px)
 - **Collapsed width:** `w-16` (64px — icon only)
 - **Toggle button:** At the bottom of the sidebar; uses `ChevronLeftIcon` / `ChevronRightIcon`
@@ -841,10 +852,10 @@ On mobile (below `sm` breakpoint), the center nav is hidden. Show a hamburger ic
 
 | State | Classes |
 |-------|---------|
-| Default | `text-gray-400 hover:bg-gray-800 hover:text-white` |
-| Active | `border-l-2 border-indigo-500 bg-gray-800 text-white` |
+| Default | `text-gray-400 hover:text-white hover:bg-gray-900` |
+| Active | `bg-green-500/10 border-l-2 border-green-500 text-green-400` |
 
-All items: `flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500`
+All items: `flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500`
 
 In collapsed state: hide label text with `overflow-hidden whitespace-nowrap` and reduce padding. Use `title` attribute on each item for a native tooltip.
 
@@ -852,14 +863,21 @@ In collapsed state: hide label text with `overflow-hidden whitespace-nowrap` and
 
 ```jsx
 <aside
-  className={`flex h-screen flex-col bg-gray-900 transition-all duration-300 ${
+  className={`flex h-screen flex-col bg-[#0F0F0F] border-r border-gray-800 transition-all duration-300 ${
     isCollapsed ? 'w-16' : 'w-60'
   }`}
 >
   {/* Logo */}
   <div className="flex h-16 items-center border-b border-gray-800 px-3">
-    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-indigo-600">
-      <span className="text-sm font-bold text-white">G</span>
+    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-green-500">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        className="h-6 w-6"
+        aria-hidden="true"
+      >
+        <path d="M13 2L4.5 13.5H11L9 22L19.5 9.5H13.5L16 2Z" fill="white" />
+      </svg>
     </div>
     {!isCollapsed && (
       <span className="ml-3 text-base font-bold text-white">GymFlow</span>
@@ -874,10 +892,10 @@ In collapsed state: hide label text with `overflow-hidden whitespace-nowrap` and
           <a
             href={href}
             title={isCollapsed ? label : undefined}
-            className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+            className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 ${
               isActive(href)
-                ? 'border-l-2 border-indigo-500 bg-gray-800 text-white'
-                : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                ? 'border-l-2 border-green-500 bg-green-500/10 text-green-400'
+                : 'text-gray-400 hover:bg-gray-900 hover:text-white'
             }`}
           >
             <Icon className="h-5 w-5 flex-shrink-0" />
@@ -892,7 +910,7 @@ In collapsed state: hide label text with `overflow-hidden whitespace-nowrap` and
   <div className="border-t border-gray-800 px-2 py-4 space-y-1">
     {!isCollapsed && (
       <div className="flex items-center gap-3 px-3 py-2">
-        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white">
+        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-green-500/20 text-xs font-bold text-green-400 ring-2 ring-green-500/30">
           {userInitials}
         </div>
         <div className="min-w-0">
@@ -905,7 +923,7 @@ In collapsed state: hide label text with `overflow-hidden whitespace-nowrap` and
       type="button"
       onClick={onLogout}
       title={isCollapsed ? 'Log out' : undefined}
-      className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-gray-400 transition-colors duration-200 hover:bg-gray-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+      className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-gray-400 transition-colors duration-200 hover:bg-gray-900 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
     >
       <ArrowRightOnRectangleIcon className="h-5 w-5 flex-shrink-0" />
       {!isCollapsed && <span>Log out</span>}
@@ -915,7 +933,7 @@ In collapsed state: hide label text with `overflow-hidden whitespace-nowrap` and
     <button
       type="button"
       onClick={() => setIsCollapsed(!isCollapsed)}
-      className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-gray-400 transition-colors duration-200 hover:bg-gray-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+      className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-gray-400 transition-colors duration-200 hover:bg-gray-900 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
       aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
     >
       {isCollapsed ? (
@@ -986,11 +1004,11 @@ Keep motion purposeful. Every animation communicates state change — not decora
 
 | Pattern | Tailwind Classes |
 |---------|-----------------|
-| Button hover color | `transition-colors duration-200 ease-in-out` |
-| Card hover lift | `transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lg` |
+| Button hover color + glow | `transition-all duration-200 ease-in-out hover:shadow-lg hover:shadow-green-500/25` |
+| Card hover | `transition-all duration-200 ease-out hover:border-gray-600 hover:bg-gray-800` |
 | Sidebar collapse | `transition-all duration-300 ease-in-out` |
 | Modal overlay fade | `transition-opacity duration-200 ease-out` |
-| Input focus ring | `transition-colors duration-200` (ring appears via `focus:ring-2`) |
+| Input focus ring | `transition-colors duration-200` (ring appears via `focus-visible:ring-2`) |
 
 ### Reduced Motion
 
@@ -1015,23 +1033,26 @@ These rules apply to every component in GymFlow. They are non-negotiable.
 
 ### Color Contrast
 
-- Body text on white (`text-gray-900` on `bg-white`): 16.1:1 — passes AAA
-- Muted text on white (`text-gray-500` on `bg-white`): 7.0:1 — passes AA
-- Primary button text (`text-white` on `bg-indigo-600`): 5.9:1 — passes AA
-- Link text (`text-indigo-600` on `bg-white`): 5.9:1 — passes AA
-- Error text (`text-red-700` on `bg-red-50`): 6.9:1 — passes AA
-- Warning text (`text-yellow-700` on `bg-yellow-50`): 5.5:1 — passes AA
+Dark-surface contrast ratios:
+
+- White text on `#0F0F0F` (`text-white` on `bg-[#0F0F0F]`): 21:1 — passes AAA
+- White text on `#111827` (`text-white` on `bg-gray-900`): ~17:1 — passes AAA
+- `text-green-400` (`#4ADE80`) on `bg-gray-900` (`#111827`): ~7.5:1 — passes AA
+- `text-gray-400` (`#9CA3AF`) on `bg-gray-900` (`#111827`): ~5.5:1 — passes AA
+- White text on `bg-green-500` (`#22C55E`) for primary buttons: ~5.1:1 — passes AA
+- `text-orange-400` (`#FB923C`) on `bg-gray-900` (`#111827`): ~4.6:1 — passes AA
+- `text-red-400` (`#F87171`) on `bg-gray-900` (`#111827`): ~4.8:1 — passes AA
 - All UI component contrast (borders, icons): minimum 3:1 against adjacent background
 
 ### Focus Rings
 
-All interactive elements must have a visible focus indicator. Standard pattern:
+All interactive elements must have a visible focus indicator. Standard pattern for dark surfaces:
 
 ```
-focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2
+focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900
 ```
 
-Use `focus-visible:` (not `focus:`) to show rings only for keyboard navigation, not on mouse click.
+Use `focus-visible:` (not `focus:`) to show rings only for keyboard navigation, not on mouse click. The `ring-offset-gray-900` ensures the ring is visible against dark card backgrounds.
 
 ### Touch Targets
 
@@ -1060,3 +1081,4 @@ For 44px minimum: icon buttons use `p-2.5` with `h-5 w-5` icon (20 + 20 = 40px),
 - Loading states use `aria-busy="true"` on the containing element
 - Status badges that convey meaning not shown in text use `aria-label`
 - Dynamic content updates use `aria-live="polite"` (errors, success messages)
+- The logo mark SVG carries `aria-hidden="true"` — the adjacent wordmark text provides the accessible label

@@ -15,7 +15,7 @@
    a "Already have an account? Sign in" link that navigates to `/login`.
 3. Guest fills in "Email address" and "Password" fields inside the card.
 4. While the form is submitting, the submit button enters the loading state: it becomes
-   non-interactive, turns `bg-indigo-400`, and shows a spinning SVG left of the
+   non-interactive, turns `bg-green-500/40`, and shows a spinning SVG left of the
    "Creating account..." label.
 5a. On success (201): the guest is redirected to `/login` (or auto-logged in — document
     the choice in code; spec does not mandate one path).
@@ -58,7 +58,7 @@
 
 Who sees it: Guest (unauthenticated visitors only; authenticated users are redirected away)
 
-Layout: full-screen column, `min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-12`
+Layout: full-screen column, `min-h-screen bg-[#0F0F0F] flex flex-col items-center justify-center px-4 py-12`
 
 The screen is divided into two stacked zones:
 
@@ -73,23 +73,26 @@ flex flex-col items-center gap-3 mb-8
 
 Elements in order:
 
-1. Logo mark: a 40x40 indigo rounded square containing a dumbbell SVG icon.
+1. Logo mark: a 40x40 green rounded square containing the lightning bolt SVG.
    ```jsx
-   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600">
-     {/* DumbbellIcon — custom SVG or closest Heroicons equivalent */}
-     <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-       <path strokeLinecap="round" strokeLinejoin="round"
-         d="M4.5 10.5h15M4.5 13.5h15M7.5 7.5v9M16.5 7.5v9" />
+   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500">
+     <svg
+       xmlns="http://www.w3.org/2000/svg"
+       viewBox="0 0 24 24"
+       className="h-6 w-6"
+       aria-hidden="true"
+     >
+       <path d="M13 2L4.5 13.5H11L9 22L19.5 9.5H13.5L16 2Z" fill="white" />
      </svg>
    </div>
    ```
-2. Wordmark: `<span className="text-3xl font-bold leading-tight text-gray-900">GymFlow</span>`
-3. Page heading: `<h1 className="text-xl font-semibold leading-tight text-gray-700">Sign in to your account</h1>`
+2. Wordmark: `<span className="text-3xl font-bold leading-tight text-white">GymFlow</span>`
+3. Page heading: `<h1 className="text-xl font-semibold leading-tight text-gray-400">Sign in to your account</h1>`
 4. Navigation link:
    ```jsx
    <p className="text-sm text-gray-500">
      Don't have an account?{' '}
-     <a href="/register" className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors duration-200 focus-visible:outline-none focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-indigo-500">
+     <a href="/register" className="font-medium text-green-400 hover:text-green-300 transition-colors duration-200 focus-visible:outline-none focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-green-500">
        Register
      </a>
    </p>
@@ -98,7 +101,7 @@ Elements in order:
 #### Card
 
 ```
-bg-white rounded-xl shadow-md px-8 py-10 w-full max-w-md
+bg-gray-900 border border-gray-800 rounded-xl px-8 py-10 w-full max-w-md
 ```
 
 Contains: `<AuthForm mode="login" ... />` — see AuthForm component spec below.
@@ -109,18 +112,18 @@ Contains: `<AuthForm mode="login" ... />` — see AuthForm component spec below.
 
 Who sees it: Guest (unauthenticated visitors only)
 
-Layout: identical to Login Page — `min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-12`
+Layout: identical to Login Page — `min-h-screen bg-[#0F0F0F] flex flex-col items-center justify-center px-4 py-12`
 
 #### Header Block
 
 Same structure as Login Page with these differences:
 
-- Page heading: `<h1 className="text-xl font-semibold leading-tight text-gray-700">Create your account</h1>`
+- Page heading: `<h1 className="text-xl font-semibold leading-tight text-gray-400">Create your account</h1>`
 - Navigation link:
   ```jsx
   <p className="text-sm text-gray-500">
     Already have an account?{' '}
-    <a href="/login" className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors duration-200 focus-visible:outline-none focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-indigo-500">
+    <a href="/login" className="font-medium text-green-400 hover:text-green-300 transition-colors duration-200 focus-visible:outline-none focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-green-500">
       Sign in
     </a>
   </p>
@@ -129,7 +132,7 @@ Same structure as Login Page with these differences:
 #### Card
 
 ```
-bg-white rounded-xl shadow-md px-8 py-10 w-full max-w-md
+bg-gray-900 border border-gray-800 rounded-xl px-8 py-10 w-full max-w-md
 ```
 
 Contains: `<AuthForm mode="register" ... />` — see AuthForm component spec below.
@@ -167,7 +170,7 @@ Wrapper: `flex flex-col gap-1.5`
 
 Label:
 ```jsx
-<label htmlFor="email" className="text-sm font-semibold text-gray-700">
+<label htmlFor="email" className="text-sm font-medium text-gray-300">
   Email address
 </label>
 ```
@@ -179,24 +182,24 @@ Input — default state:
   type="email"
   autoComplete="email"
   placeholder="you@example.com"
-  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 focus-visible:border-transparent"
+  className="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder:text-gray-500 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-1 focus-visible:ring-offset-gray-900 focus-visible:border-transparent"
 />
 ```
 
-Input — error state (add these classes, remove `border-gray-300`):
+Input — error state (add these classes, remove `border-gray-700`):
 ```
-border-red-400 focus-visible:ring-red-400
+border-red-500/60 focus-visible:ring-red-500
 ```
 Also add `aria-invalid="true"` and `aria-describedby="email-error"` attributes.
 
 Input — disabled/loading state (add these classes):
 ```
-cursor-not-allowed bg-gray-100 opacity-60
+cursor-not-allowed bg-gray-800 opacity-60
 ```
 
 Error message (rendered below the input when a field-level error exists):
 ```jsx
-<p id="email-error" role="alert" className="mt-1 text-xs text-red-600">
+<p id="email-error" role="alert" className="mt-1 text-xs text-red-400">
   {emailError}
 </p>
 ```
@@ -207,7 +210,7 @@ Wrapper: `flex flex-col gap-1.5`
 
 Label:
 ```jsx
-<label htmlFor="password" className="text-sm font-semibold text-gray-700">
+<label htmlFor="password" className="text-sm font-medium text-gray-300">
   Password
 </label>
 ```
@@ -218,7 +221,7 @@ Pass `autoComplete="current-password"` when `mode === 'login'`.
 Pass `autoComplete="new-password"` when `mode === 'register'`.
 
 For the error state on the password wrapper, follow the same pattern as the email
-field: `border-red-400 focus-visible:ring-red-400`, `aria-invalid`, `aria-describedby`.
+field: `border-red-500/60 focus-visible:ring-red-500`, `aria-invalid`, `aria-describedby`.
 
 #### Server Error Banner
 
@@ -228,7 +231,7 @@ Rendered between the last field and the submit button when `error` prop is non-n
 {error && (
   <div
     role="alert"
-    className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+    className="rounded-md border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400"
   >
     {error}
   </div>
@@ -243,7 +246,7 @@ Default state:
 ```jsx
 <button
   type="submit"
-  className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+  className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-green-500 px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:bg-green-600 hover:shadow-lg hover:shadow-green-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
 >
   {mode === 'login' ? 'Sign in' : 'Create account'}
 </button>
@@ -255,7 +258,7 @@ Loading state — replace the above with:
   type="submit"
   disabled
   aria-busy="true"
-  className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-indigo-400 px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 cursor-not-allowed"
+  className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-green-500/40 px-4 py-2 text-sm font-semibold text-white transition-all duration-200 cursor-not-allowed"
 >
   <svg
     className="h-5 w-5 animate-spin text-white"
@@ -306,11 +309,11 @@ Input:
   aria-invalid={error ? 'true' : undefined}
   aria-describedby={error ? `${id}-error` : undefined}
   className={[
-    'w-full rounded-md border bg-white px-3 py-2 pr-10 text-sm text-gray-900 placeholder:text-gray-400 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:border-transparent',
+    'w-full rounded-md border bg-gray-900 px-3 py-2 pr-10 text-sm text-white placeholder:text-gray-500 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-offset-gray-900 focus-visible:border-transparent',
     error
-      ? 'border-red-400 focus-visible:ring-red-400'
-      : 'border-gray-300 focus-visible:ring-indigo-500',
-    disabled ? 'cursor-not-allowed bg-gray-100 opacity-60' : '',
+      ? 'border-red-500/60 focus-visible:ring-red-500'
+      : 'border-gray-700 focus-visible:ring-green-500',
+    disabled ? 'cursor-not-allowed bg-gray-800 opacity-60' : '',
   ].join(' ')}
 />
 ```
@@ -320,7 +323,7 @@ Toggle button — positioned absolutely inside the wrapper:
 <button
   type="button"
   onClick={() => setShowPassword((prev) => !prev)}
-  className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-gray-700 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:rounded-sm"
+  className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-gray-300 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:rounded-sm"
   aria-label={showPassword ? 'Hide password' : 'Show password'}
   tabIndex={0}
 >
@@ -338,7 +341,7 @@ Import: `import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'`
 Error message (rendered below the wrapper, outside the `relative` div):
 ```jsx
 {error && (
-  <p id={`${id}-error`} role="alert" className="mt-1 text-xs text-red-600">
+  <p id={`${id}-error`} role="alert" className="mt-1 text-xs text-red-400">
     {error}
   </p>
 )}
@@ -350,10 +353,10 @@ Error message (rendered below the wrapper, outside the `relative` div):
 
 | Component | Loading | Empty / Blank | Error | Populated |
 |-----------|---------|---------------|-------|-----------|
-| Email input | `cursor-not-allowed bg-gray-100 opacity-60` | Default border, placeholder visible | `border-red-400`, inline `text-xs text-red-600` message below | Default border, user text in `text-gray-900` |
-| PasswordInput | Same disabled classes as email | Default border, `••••••••` placeholder | `border-red-400`, inline error below | Default border, masked or revealed text |
-| Server error banner | Not shown | Not shown (error prop is null) | `bg-red-50 border-red-200 text-red-700` block above button | N/A |
-| Submit button | `bg-indigo-400 cursor-not-allowed` + spinner + "...ing" label | — | — | `bg-indigo-600 hover:bg-indigo-700`, mode label |
+| Email input | `cursor-not-allowed bg-gray-800 opacity-60` | Default border `border-gray-700`, placeholder visible | `border-red-500/60`, inline `text-xs text-red-400` message below | Default border, user text in `text-white` |
+| PasswordInput | Same disabled classes as email | Default border `border-gray-700`, `••••••••` placeholder | `border-red-500/60`, inline error below | Default border, masked or revealed text |
+| Server error banner | Not shown | Not shown (error prop is null) | `bg-red-500/10 border-red-500/30 text-red-400` block above button | N/A |
+| Submit button | `bg-green-500/40 cursor-not-allowed` + spinner + "...ing" label | — | — | `bg-green-500 hover:bg-green-600 hover:shadow-green-500/25`, mode label |
 | AuthForm | All inputs disabled, button loading | All inputs empty, button enabled | Per-field or banner error shown | Inputs filled, button enabled |
 
 ---
@@ -382,7 +385,7 @@ Error message (rendered below the wrapper, outside the `relative` div):
 
 **Desktop (`sm` breakpoint and above):**
 - The card is centered and capped at `max-w-md` (448px). It does not expand further.
-- The page background (`bg-gray-50`) is visible on all sides around the card.
+- The page background (`bg-[#0F0F0F]`) is visible on all sides around the card.
 - No layout changes from the mobile spec — the centered column layout already handles
   desktop correctly.
 
@@ -403,14 +406,17 @@ Error message (rendered below the wrapper, outside the `relative` div):
 - The show/hide toggle button has an `aria-label` that updates between "Show password"
   and "Hide password".
 - All interactive elements (inputs, buttons, links) show a visible focus ring using
-  `focus-visible:ring-2 focus-visible:ring-indigo-500`. Mouse clicks do not trigger the
-  ring (use `focus-visible:` not `focus:`).
-- The logo mark icon SVG carries `aria-hidden="true"`.
+  `focus-visible:ring-2 focus-visible:ring-green-500`. Mouse clicks do not trigger the
+  ring (use `focus-visible:` not `focus:`). The `ring-offset-gray-900` offset ensures the
+  ring separates cleanly from dark card backgrounds.
+- The logo mark SVG carries `aria-hidden="true"`.
 - The `<h1>` page heading is the first heading on the page.
 - Color is never the sole indicator of state: error inputs show both a red border and an
   explicit error text message below.
 - Minimum touch target size for the show/hide toggle is met by `px-3 inset-y-0` giving a
   44px height target on a standard 40px input.
+- Contrast on dark surfaces: `text-white` on `bg-gray-900` is ~17:1 (AAA). `text-red-400`
+  on `bg-gray-900` is ~4.8:1 (AA). `text-green-400` on `bg-gray-900` is ~7.5:1 (AA).
 
 ---
 
@@ -421,7 +427,7 @@ Error message (rendered below the wrapper, outside the `relative` div):
 | Email input (color states) | `transition-colors duration-200` |
 | PasswordInput (color states) | `transition-colors duration-200` |
 | Show/hide toggle (icon color) | `transition-colors duration-150` |
-| Submit button (color states) | `transition-colors duration-200` |
+| Submit button (color + glow states) | `transition-all duration-200` |
 | Navigation links | `transition-colors duration-200` |
 | Card | No animation — static |
 
