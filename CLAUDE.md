@@ -33,6 +33,7 @@ gymflow/
 │   │   ├── store/        # Zustand global state
 │   │   ├── hooks/        # Custom React hooks
 │   │   └── types/        # TypeScript types matching backend DTOs
+│   ├── e2e/          # Playwright E2E specs (one file per feature)
 │   └── vite.config.ts
 └── docker-compose.yml
 ````
@@ -67,6 +68,9 @@ cd backend && ./gradlew test
 
 # Run frontend tests
 cd frontend && npm test
+
+# Run E2E tests (requires full stack running on ports 3000 and 8080)
+cd frontend && npm run test:e2e
 
 # Apply DB migrations (auto on startup)
 ./gradlew flywayMigrate
@@ -150,11 +154,11 @@ UPDATE, DELETE, or DDL. For schema changes use Flyway migrations via `./gradlew`
   WHO UPDATES EACH COLUMN:
   - PRD column   → business-analyst agent updates when PRD is written
   - SDD column   → solution-architect agent updates when SDD is written
-  - DB column    → db-architect agent updates when migration is applied
   - Design col   → ui-ux-designer agent updates when design spec is written
-  - Backend col  → backend-dev agent updates when endpoints are implemented
+  - Backend col  → backend-dev agent updates when endpoints + migrations are implemented
   - Frontend col → frontend-dev agent updates when pages/components are built
-  - Tests col    → backend-dev / frontend-dev update when tests pass
+  - Tests col    → backend-dev / frontend-dev update when unit tests pass
+  - E2E col      → e2e-tester agent updates when e2e/{feature}.spec.ts is written and passing
 
   WHERE THE DOCS LIVE:
   - PRDs → docs/prd/{feature-slug}.md
@@ -162,11 +166,11 @@ UPDATE, DELETE, or DDL. For schema changes use Flyway migrations via `./gradlew`
   - Designs  → docs/design/{feature-slug}.md
 -->
 
-| Feature | PRD | SDD | DB | Design | Backend | Frontend | Tests |
-|---------|---|---|--|------|-------|--------|------|
-| Project scaffold & Docker | — | — | — | — | ✅ | ✅ | — |
+| Feature | PRD | SDD | Design | Backend | Frontend | Tests | E2E |
+|---------|-----|-----|--------|---------|----------|-------|-----|
+| Project scaffold & Docker | — | — | — | ✅ | ✅ | — | — |
 | Auth (register/login/JWT) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Membership plans | ✅ | ✅ | 🔄 | ✅ | ✅ | ✅ | ✅ |
+| Membership plans | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | User membership purchase | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Class schedule | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Class booking & cancellation | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |

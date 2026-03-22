@@ -52,9 +52,21 @@ from the SDD at docs/sdd/$ARGUMENTS.md (the example requests in the API
 contract section). Use a test user if auth is required.
 
 
-## Step 5b — Browser verification (if stack is healthy)
-Use the e2e-tester agent to run through the key user flow for this feature.
-Pass it: "Test the $ARGUMENTS feature. PRD is at docs/prd/$ARGUMENTS.md."
+## Step 5b — Regression suite (if stack is healthy)
+
+Run the full E2E test suite:
+```bash
+cd frontend && npm run test:e2e
+```
+
+If all specs pass: report ✅ N tests passed across M spec files.
+
+If any spec fails:
+- Report which spec file and test name failed
+- Invoke e2e-tester agent in debug mode:
+  "Spec {name} failed in frontend/e2e/{feature}.spec.ts. The stack is running.
+   Use Playwright MCP to diagnose what the browser shows for this flow.
+   Fix the spec if it is wrong, or report the bug if the app is broken."
 
 ## Step 6 — Report
 

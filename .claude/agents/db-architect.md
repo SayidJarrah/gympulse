@@ -29,6 +29,3 @@ You are a PostgreSQL database architect for GymFlow.
 - "User's active membership" = membership where end_date > NOW() AND status = 'ACTIVE'
 - "Classes this week" = scheduled_at BETWEEN NOW() AND NOW() + INTERVAL '7 days'
 
-## Updating Implementation Status
-After a migration has been applied and verified, update the DB column for this
-feature in the Implementation Status table in CLAUDE.md from ❌ to ✅.

@@ -49,16 +49,27 @@ Implement every item in the '→ frontend-dev' task list:
    Follow all conventions in CLAUDE.md and the react-conventions skill.
    After completing, update the Frontend column in CLAUDE.md to ✅."
 
+## Step 2.5 — E2E spec (e2e-tester agent)
+
+Use the e2e-tester agent with this instruction:
+"Read the PRD at docs/prd/$ARGUMENTS.md (acceptance criteria) and the SDD at
+docs/sdd/$ARGUMENTS.md (API contract + error codes).
+Write frontend/e2e/$ARGUMENTS.spec.ts covering every acceptance criterion.
+The stack must already be running. After writing the spec, run:
+  cd frontend && npm run test:e2e -- --grep '$ARGUMENTS'
+Fix any failures before finishing.
+When all specs pass, update the E2E column in CLAUDE.md to ✅ for $ARGUMENTS."
+
 ## Step 3 — Quality gate
 
-Run the /review command scoped to all files created in Steps 1 and 2.
+Run the /review command scoped to all files created in Steps 1, 2, and 2.5.
 Fix any issues before finishing.
 
 ## Step 4 — GitHub PR
 
 Use the GitHub MCP to create a pull request:
 
-1. Check current git status and stage all files created or modified in Steps 1–3:
+1. Check current git status and stage all files created or modified in Steps 1–2.5:
    ```bash
    git checkout -b feature/$ARGUMENTS
    git add <all new/modified files>
@@ -87,8 +98,12 @@ PR body template:
 ### Frontend
 - List of TypeScript/TSX files created
 
+### E2E
+- frontend/e2e/$ARGUMENTS.spec.ts — N tests covering acceptance criteria
+
 ## Test coverage
 - Number of unit tests, what they cover
+- Number of E2E specs, pass/fail summary
 
 ## Quality gate
 - Issues found and fixed by /review, or "No issues found"

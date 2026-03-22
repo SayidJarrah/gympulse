@@ -25,17 +25,14 @@ Status table in CLAUDE.md to ✅."
 
 Confirm the SDD file exists before continuing to Step 2.
 
-## Step 2 — DB Review (db-architect agent)
+## Step 2 — DB Schema Review (db-architect agent)
 
 Use the db-architect agent with this instruction:
 "Read the Database Changes section of docs/sdd/$ARGUMENTS.md.
 Review every table, column type, constraint, and index.
 Check specifically for: missing indexes on foreign keys, race condition risks
 on capacity/count operations, missing NOT NULL constraints, cascade delete gaps.
-If changes are needed, edit docs/sdd/$ARGUMENTS.md directly.
-After review, update the DB column for this feature in the Implementation
-Status table in CLAUDE.md to ✅ if the schema is sound, or 🔄 if changes were made
-that need re-review."
+If changes are needed, edit docs/sdd/$ARGUMENTS.md directly and report what was changed."
 
 ## When done, report:
 - Path of the SDD file

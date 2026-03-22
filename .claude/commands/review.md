@@ -48,12 +48,11 @@ For each feature row, verify each column against actual files:
 
 **PRD column** — check `docs/prd/{feature-slug}.md` exists
 **SDD column** — check `docs/sdd/{feature-slug}.md` exists
-**DB column** — check `backend/src/main/resources/db/migration/` for a migration
-whose name matches this feature
 **Design column** — check `docs/design/{feature-slug}.md` exists (mark — if the
 feature is infrastructure-only, e.g. scaffold, docker)
-**Backend column** — check that a service and controller for this feature exist
-in `backend/src/main/kotlin/com/gymflow/`
+**Backend column** — check that a service, controller, and Flyway migration for
+this feature exist in `backend/src/main/kotlin/com/gymflow/` and
+`backend/src/main/resources/db/migration/`
 **Frontend column** — check that a page or component for this feature exists
 in `frontend/src/pages/` or `frontend/src/components/`
 **Tests column** — check that a test file for the service exists in

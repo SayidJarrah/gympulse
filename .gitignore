@@ -21,3 +21,7 @@ frontend/.env
 
 # E2E test screenshots
 screenshots/
+
+# Playwright output
+frontend/test-results/
+frontend/playwright-report/
