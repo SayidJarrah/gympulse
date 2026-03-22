@@ -63,7 +63,7 @@ export function AuthForm({ mode, onSubmit, isLoading, error }: AuthFormProps) {
       <div className="flex flex-col gap-1.5">
         <label
           htmlFor="email"
-          className="text-sm font-semibold text-gray-700"
+          className="text-sm font-medium text-gray-300"
         >
           Email address
         </label>
@@ -77,15 +77,15 @@ export function AuthForm({ mode, onSubmit, isLoading, error }: AuthFormProps) {
           aria-invalid={errors.email ? 'true' : undefined}
           aria-describedby={errors.email ? 'email-error' : undefined}
           className={[
-            'w-full rounded-md border bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:border-transparent',
+            'w-full rounded-md border bg-gray-900 px-3 py-2 text-sm text-white placeholder:text-gray-500 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-offset-gray-900 focus-visible:border-transparent',
             errors.email
-              ? 'border-red-400 focus-visible:ring-red-400'
-              : 'border-gray-300 focus-visible:ring-indigo-500',
-            isLoading ? 'cursor-not-allowed bg-gray-100 opacity-60' : '',
+              ? 'border-red-500/60 focus-visible:ring-red-500'
+              : 'border-gray-700 focus-visible:ring-green-500',
+            isLoading ? 'cursor-not-allowed bg-gray-800 opacity-60' : '',
           ].join(' ')}
         />
         {errors.email && (
-          <p id="email-error" role="alert" className="mt-1 text-xs text-red-600">
+          <p id="email-error" role="alert" className="mt-1 text-xs text-red-400">
             {errors.email.message}
           </p>
         )}
@@ -95,7 +95,7 @@ export function AuthForm({ mode, onSubmit, isLoading, error }: AuthFormProps) {
       <div className="flex flex-col gap-1.5">
         <label
           htmlFor="password"
-          className="text-sm font-semibold text-gray-700"
+          className="text-sm font-medium text-gray-300"
         >
           Password
         </label>
@@ -119,7 +119,7 @@ export function AuthForm({ mode, onSubmit, isLoading, error }: AuthFormProps) {
       {error && (
         <div
           role="alert"
-          className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          className="rounded-md border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400"
         >
           {error}
         </div>
@@ -131,7 +131,7 @@ export function AuthForm({ mode, onSubmit, isLoading, error }: AuthFormProps) {
           type="submit"
           disabled
           aria-busy="true"
-          className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-indigo-400 px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 cursor-not-allowed"
+          className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-green-500/40 px-4 py-2 text-sm font-semibold text-white transition-all duration-200 cursor-not-allowed"
         >
           <svg
             className="h-5 w-5 animate-spin text-white"
@@ -147,7 +147,7 @@ export function AuthForm({ mode, onSubmit, isLoading, error }: AuthFormProps) {
       ) : (
         <button
           type="submit"
-          className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+          className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-green-500 px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:bg-green-600 hover:shadow-lg hover:shadow-green-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0F0F0F]"
         >
           {isRegister ? 'Create account' : 'Sign in'}
         </button>
