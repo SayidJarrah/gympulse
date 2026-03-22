@@ -3,6 +3,7 @@ package com.gymflow.config
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.http.HttpMethod
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
@@ -33,6 +34,8 @@ class SecurityConfig(
                     .requestMatchers("/api/v1/auth/register").permitAll()
                     .requestMatchers("/api/v1/auth/login").permitAll()
                     .requestMatchers("/api/v1/auth/refresh").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/v1/membership-plans").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/v1/membership-plans/*").permitAll()
                     .anyRequest().authenticated()
             }
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)

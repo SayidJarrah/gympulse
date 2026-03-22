@@ -166,7 +166,7 @@ UPDATE, DELETE, or DDL. For schema changes use Flyway migrations via `./gradlew`
 |---------|---|---|--|------|-------|--------|------|
 | Project scaffold & Docker | — | — | — | — | ✅ | ✅ | — |
 | Auth (register/login/JWT) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Membership plans | ✅ | ✅ | 🔄 | ❌ | ❌ | ❌ | ❌ |
+| Membership plans | ✅ | ✅ | 🔄 | ✅ | ✅ | ✅ | ✅ |
 | User membership purchase | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Class schedule | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Class booking & cancellation | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
