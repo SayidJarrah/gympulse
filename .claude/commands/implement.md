@@ -54,8 +54,58 @@ Implement every item in the '→ frontend-dev' task list:
 Run the /review command scoped to all files created in Steps 1 and 2.
 Fix any issues before finishing.
 
+## Step 4 — GitHub PR
+
+Use the GitHub MCP to create a pull request:
+
+1. Check current git status and stage all files created or modified in Steps 1–3:
+   ```bash
+   git checkout -b feature/$ARGUMENTS
+   git add <all new/modified files>
+   git commit -m "feat($ARGUMENTS): implement feature
+
+   Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
+   git push -u origin feature/$ARGUMENTS
+   ```
+
+2. Create a draft PR using the GitHub MCP (`mcp__github__create_pull_request`) with:
+   - **title:** `feat($ARGUMENTS): <one-line description from SDD>`
+   - **head:** `feature/$ARGUMENTS`
+   - **base:** `main`
+   - **draft:** true
+   - **body:** structured summary (see template below)
+
+PR body template:
+```
+## Summary
+- Brief bullet points of what was built (backend endpoints, frontend pages/components)
+
+## Files changed
+### Backend
+- List of Kotlin/SQL files created
+
+### Frontend
+- List of TypeScript/TSX files created
+
+## Test coverage
+- Number of unit tests, what they cover
+
+## Quality gate
+- Issues found and fixed by /review, or "No issues found"
+
+## Acceptance criteria
+- ✅/❌ per PRD criterion
+
+## How to test
+1. Run `/run $ARGUMENTS` to start the stack
+2. Key flows to verify manually
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+```
+
 ## When done, report:
 - All files created (grouped by backend / frontend)
 - Test results summary
 - Any issues found and fixed by /review
 - Any PRD acceptance criteria that could not be implemented (flag as risk)
+- PR URL
