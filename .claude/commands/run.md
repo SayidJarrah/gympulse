@@ -30,9 +30,7 @@ docker-compose -f docker-compose.full.yml up -d
 ## Step 4 — Wait for services to be healthy
 Poll the backend health endpoint until it responds or 60 seconds pass:
 ````bash
-for i in $(seq 1 12); do
-  curl -sf http://localhost:8080/api/v1/health && break || sleep 5
-done
+for i in $(seq 1 12); do curl -sf http://localhost:8080/api/v1/health && break || sleep 5; done
 ````
 If still not healthy after 60s, run `docker-compose -f docker-compose.full.yml logs backend`
 and report the last 30 lines.

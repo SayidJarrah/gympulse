@@ -24,6 +24,7 @@ profile pages linked to their classes. Admins manage everything from a dashboard
 | Auth (register/login/JWT) | ✅ Done | JWT-based register, login, token refresh, and logout with role-based access |
 
 | Membership plans | 🔄 In progress | Admins create, edit, and deactivate membership plans; any visitor can list active plans |
+| User membership purchase | 🔄 In progress | Authenticated users activate a membership plan, creating a timed subscription record |
 
 <!-- business-analyst adds a row here when each PRD is written -->
 
@@ -60,3 +61,4 @@ profile pages linked to their classes. Admins manage everything from a dashboard
 ## What's Being Built Next
 <!-- business-analyst updates this when a new PRD is written -->
 - Membership plans — admin CRUD for plan catalogue; public read access for guests and members
+- User membership purchase — self-service plan activation for authenticated members; one active membership per user enforced
