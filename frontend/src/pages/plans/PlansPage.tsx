@@ -1,7 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Navbar } from '../../components/layout/Navbar'
 import { PlanCard, PlanCardSkeleton } from '../../components/plans/PlanCard'
+import { PurchaseConfirmModal } from '../../components/membership/PurchaseConfirmModal'
 import { usePlans } from '../../hooks/usePlans'
+import { useAuthStore } from '../../store/authStore'
+import { useMembershipStore } from '../../store/membershipStore'
+import type { MembershipPlan } from '../../types/membershipPlan'
 
 const PLANS_PER_PAGE = 9 // 3-column grid fills nicely with multiples of 3
 
@@ -11,6 +15,33 @@ export function PlansPage() {
     page,
     PLANS_PER_PAGE
   )
+
+  const { isAuthenticated } = useAuthStore()
+  const { activeMembership, membershipErrorCode, fetchMyMembership } = useMembershipStore()
+
+  // Track which plan's purchase modal is open
+  const [activatePlan, setActivatePlan] = useState<MembershipPlan | null>(null)
+
+  // Fetch membership status whenever auth state changes
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchMyMembership()
+    }
+  }, [isAuthenticated, fetchMyMembership])
+
+  // Show "Activate" button only when user is authenticated and has no active membership
+  const showActivateButtons =
+    isAuthenticated &&
+    activeMembership === null &&
+    membershipErrorCode === 'NO_ACTIVE_MEMBERSHIP'
+
+  const handleActivate = (plan: MembershipPlan) => {
+    setActivatePlan(plan)
+  }
+
+  const handlePurchaseModalCancel = () => {
+    setActivatePlan(null)
+  }
 
   return (
     <div className="min-h-screen bg-[#0F0F0F]">
@@ -80,7 +111,11 @@ export function PlansPage() {
             <>
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {plans.map((plan) => (
-                  <PlanCard key={plan.id} plan={plan} />
+                  <PlanCard
+                    key={plan.id}
+                    plan={plan}
+                    onActivate={showActivateButtons ? () => handleActivate(plan) : undefined}
+                  />
                 ))}
               </div>
 
@@ -117,6 +152,15 @@ export function PlansPage() {
           <div className="pb-16" />
         </div>
       </main>
+
+      {/* Purchase confirmation modal */}
+      {activatePlan && (
+        <PurchaseConfirmModal
+          isOpen={true}
+          plan={activatePlan}
+          onCancel={handlePurchaseModalCancel}
+        />
+      )}
     </div>
   )
 }

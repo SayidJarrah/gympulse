@@ -4,7 +4,10 @@ import { LoginPage } from './pages/auth/LoginPage'
 import { PlansPage } from './pages/plans/PlansPage'
 import { PlanDetailPage } from './pages/plans/PlanDetailPage'
 import { AdminPlansPage } from './pages/admin/AdminPlansPage'
+import { AdminMembershipsPage } from './pages/admin/AdminMembershipsPage'
+import { MyMembershipPage } from './pages/membership/MyMembershipPage'
 import { AdminRoute } from './components/layout/AdminRoute'
+import { AuthRoute } from './components/layout/AuthRoute'
 
 function App() {
   return (
@@ -18,12 +21,30 @@ function App() {
         <Route path="/plans" element={<PlansPage />} />
         <Route path="/plans/:id" element={<PlanDetailPage />} />
 
+        {/* Authenticated user routes */}
+        <Route
+          path="/membership"
+          element={
+            <AuthRoute>
+              <MyMembershipPage />
+            </AuthRoute>
+          }
+        />
+
         {/* Admin routes — guarded; non-admins are redirected to /plans */}
         <Route
           path="/admin/plans"
           element={
             <AdminRoute>
               <AdminPlansPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/memberships"
+          element={
+            <AdminRoute>
+              <AdminMembershipsPage />
             </AdminRoute>
           }
         />
