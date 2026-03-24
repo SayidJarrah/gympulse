@@ -55,17 +55,25 @@ Use the e2e-tester agent with this instruction:
 "Read the PRD at docs/prd/$ARGUMENTS.md (acceptance criteria) and the SDD at
 docs/sdd/$ARGUMENTS.md (API contract + error codes).
 Write frontend/e2e/$ARGUMENTS.spec.ts covering every acceptance criterion.
-The stack must already be running. After writing the spec, run:
-  cd frontend && npm run test:e2e -- --grep '$ARGUMENTS'
-Fix any failures before finishing.
-When all specs pass, update the E2E column in CLAUDE.md to ✅ for $ARGUMENTS."
+Do NOT run the suite yet — /verify will do that after the PR is created.
+When the spec file is written, update the E2E column in CLAUDE.md to ✅ for $ARGUMENTS."
 
 ## Step 3 — Quality gate
 
 Run the /review command scoped to all files created in Steps 1, 2, and 2.5.
-Fix any issues before finishing.
+Fix any issues before continuing.
 
-## Step 4 — GitHub PR
+## Step 4 — Verify
+
+Run /verify $ARGUMENTS
+
+If any E2E tests fail and the e2e-tester reports an app bug, invoke the
+appropriate agent (frontend-dev or backend-dev) to fix it, then re-run
+/verify $ARGUMENTS until all tests pass.
+
+Do not create the PR until /verify passes cleanly.
+
+## Step 5 — GitHub PR
 
 Use the GitHub MCP to create a pull request:
 
@@ -112,7 +120,7 @@ PR body template:
 - ✅/❌ per PRD criterion
 
 ## How to test
-1. Run `/run $ARGUMENTS` to start the stack
+1. Run `/run $ARGUMENTS` to start the stack, then `/verify $ARGUMENTS`
 2. Key flows to verify manually
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
