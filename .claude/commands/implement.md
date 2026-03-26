@@ -67,11 +67,27 @@ Fix any issues before continuing.
 
 Run /verify $ARGUMENTS
 
-If any E2E tests fail and the e2e-tester reports an app bug, invoke the
-appropriate agent (frontend-dev or backend-dev) to fix it, then re-run
-/verify $ARGUMENTS until all tests pass.
+If any E2E tests fail and the e2e-tester reports an app bug, follow this
+structured fix loop — **do not invoke frontend-dev or backend-dev directly
+with an open-ended "fix it" instruction**:
 
-Do not create the PR until /verify passes cleanly.
+### Fix Loop (max 3 iterations)
+
+**Iteration start:**
+1. Confirm the e2e-tester has written a bug brief to `docs/bugs/`. If not,
+   invoke e2e-tester to produce one before proceeding.
+2. Read the bug brief. Check "Estimated scope" — if scope is >3 files,
+   stop and escalate to solution-architect before any fix attempt.
+3. Run `/debug fix $ARGUMENTS {bug-brief-filename}` to apply the fix.
+   The fixing agent (frontend-dev or backend-dev) will operate in Bug Fix Mode
+   and is constrained to the files listed in the brief.
+4. Re-run /verify $ARGUMENTS.
+5. If tests pass → continue to Step 5.
+   If tests still fail → go back to step 1 of the next iteration.
+
+**After 3 failed iterations:** Stop. Do not continue to Step 5.
+Report to the user with the last bug brief path and the iteration history.
+Tell the user: "Three fix attempts failed. Manual review required before proceeding."
 
 ## Step 5 — GitHub PR
 

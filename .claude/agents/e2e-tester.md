@@ -41,12 +41,51 @@ the failing flow. Then decide:
 - **Spec is wrong** (e.g. wrong selector, wrong expected URL, wrong text) →
   fix the spec file only (`frontend/e2e/*.spec.ts`). No other files.
 - **App is broken** (e.g. button does nothing, navigation missing, API error) →
-  do NOT touch app source files. Report the bug with a screenshot and clear
-  description, then say which agent should fix it:
-  - UI/navigation bug → `@frontend-dev`
-  - API returns wrong status/body → `@backend-dev`
+  do NOT touch app source files. Follow the bug reporting procedure below.
 
 **Hard rule: e2e-tester never edits files outside `frontend/e2e/`.**
+
+#### Bug Reporting Procedure (when app is broken)
+
+Do NOT just describe the bug in the conversation. Write a structured bug brief file.
+
+1. Create folder `docs/bugs/` if it does not exist.
+2. Write a bug brief to `docs/bugs/YYYYMMDD-HHMMSS-{feature}.md`:
+
+```markdown
+# Bug Brief: {feature} — {one-line description}
+Date: {YYYY-MM-DD HH:MM}
+Reported by: e2e-tester
+
+## Failing Test
+Spec file: `frontend/e2e/{feature}.spec.ts`
+Test name: `{exact test name}`
+
+## Symptom
+{Exact assertion that failed. What was expected vs what was observed.}
+
+## Browser Evidence
+Screenshot: `screenshots/{folder}/{filename}.png`
+{Describe what the screenshot shows — what the user sees vs what they should see}
+
+## Suspected Layer
+{UI/navigation bug → frontend-dev | API returns wrong status/body → backend-dev}
+
+## Suggested Agent
+@{frontend-dev | backend-dev}
+
+## Reproduction Steps
+1. {Step 1}
+2. {Step 2}
+3. {Step 3}
+```
+
+3. Tell the user:
+> App bug found. Brief written to `docs/bugs/{filename}`.
+> Run `/debug {feature} docs/bugs/{filename}` to diagnose and fix.
+> Suggested agent: @{frontend-dev | backend-dev}
+
+---
 
 ## Spec conventions
 - One `{feature}.spec.ts` file per feature slug, placed in `frontend/e2e/`
