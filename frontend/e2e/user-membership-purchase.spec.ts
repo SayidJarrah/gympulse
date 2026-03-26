@@ -108,13 +108,14 @@ test('user can purchase a membership from the plans page (happy path)', async ({
   await expect(page.getByRole('heading', { name: planName })).toBeVisible();
 
   // Status badge reads "Active" (MembershipStatusBadge for ACTIVE)
-  await expect(page.getByText('Active')).toBeVisible();
+  await expect(page.getByLabel('Status: Active')).toBeVisible();
 
-  // Bookings progress bar starts at 0 (aria-valuenow="0")
+  // Bookings progress bar starts at 0 (aria-valuenow="0").
+  // The fill element has zero width when bookings=0, so we check the attribute
+  // without requiring visibility (a zero-width bar is correct initial state).
   const progressBar = page.getByRole('progressbar', {
     name: 'Bookings used this month',
   });
-  await expect(progressBar).toBeVisible();
   await expect(progressBar).toHaveAttribute('aria-valuenow', '0');
 });
 
@@ -151,7 +152,7 @@ test('active membership details are displayed on /membership page', async ({ pag
   await expect(page.getByText('Bookings this month')).toBeVisible();
 
   // Status badge (ACTIVE → "Active")
-  await expect(page.getByText('Active')).toBeVisible();
+  await expect(page.getByLabel('Status: Active')).toBeVisible();
 
   // Cancel membership button is present
   await expect(
@@ -412,8 +413,9 @@ test('admin memberships status filter updates the table', async ({ page }) => {
   // Table is still visible after filter change
   await expect(page.getByRole('table')).toBeVisible();
 
-  // Any visible badge in the table must be "Active" (or table is empty)
-  const cancelledBadges = page.getByText('Cancelled');
+  // Any visible badge in the table must be "Active" (or table is empty).
+  // Scoped to the table to avoid matching the "Cancelled" option in the status dropdown.
+  const cancelledBadges = page.getByRole('table').getByLabel('Status: Cancelled');
   await expect(cancelledBadges).toHaveCount(0);
 });
 
@@ -454,8 +456,16 @@ test('admin can cancel an active membership from /admin/memberships', async ({ p
   await page.selectOption('#status-filter', 'ACTIVE');
   await expect(page.getByRole('table')).toBeVisible();
 
-  // Find a row containing planName and click its "Cancel" button
-  const row = page.getByRole('row').filter({ hasText: planName }).first();
+  // Wait for the table data to load (rows with planName must be present)
+  const rowsWithPlan = page.getByRole('row').filter({ hasText: planName });
+  await expect(rowsWithPlan.first()).toBeVisible();
+
+  // Count rows with planName before cancellation so we can verify one disappears after cancel
+  const rowCountBefore = await rowsWithPlan.count();
+  expect(rowCountBefore).toBeGreaterThan(0);
+
+  // Find the first row containing planName and click its "Cancel" button
+  const row = rowsWithPlan.first();
   await expect(row).toBeVisible();
 
   const cancelBtn = row.getByRole('button', { name: 'Cancel' });
@@ -478,13 +488,9 @@ test('admin can cancel an active membership from /admin/memberships', async ({ p
     page.getByRole('dialog', { name: 'Cancel this membership?' })
   ).not.toBeVisible();
 
-  // If filtering by ACTIVE, the row should disappear (the cancelled membership is no longer ACTIVE)
-  // — either the row is gone, or the remaining plan name row now shows "Cancelled" badge.
-  // We verify the "Cancel" button for that plan is gone (i.e. no longer ACTIVE).
-  const remainingRow = page.getByRole('row').filter({ hasText: planName }).first();
-  // The Cancel action button must not exist (row was removed from the ACTIVE-filtered view
-  // or the row no longer has an ACTIVE cancel button)
-  await expect(remainingRow.getByRole('button', { name: 'Cancel' })).toHaveCount(0);
+  // With ACTIVE filter active, the cancelled row is removed from the table.
+  // The count of rows with planName must have decreased by exactly one.
+  await expect(rowsWithPlan).toHaveCount(rowCountBefore - 1);
 });
 
 // ---------------------------------------------------------------------------
@@ -631,7 +637,7 @@ test('user can purchase a new membership after cancelling the previous one', asy
   await expect(page.getByRole('dialog')).toBeVisible();
   await page.getByRole('button', { name: 'Confirm' }).click();
   await expect(page).toHaveURL('/membership');
-  await expect(page.getByText('Active')).toBeVisible();
+  await expect(page.getByLabel('Status: Active')).toBeVisible();
 });
 
 // ---------------------------------------------------------------------------
