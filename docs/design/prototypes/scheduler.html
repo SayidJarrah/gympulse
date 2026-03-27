@@ -225,6 +225,92 @@ tailwind.config = {
   </div>
 </div>
 
+<!-- ─────────────────────────────────────────── SCREEN: ROOMS -->
+<div id="screen-rooms" class="screen flex-col min-h-screen">
+  <div class="px-8 pt-8 pb-2">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="text-3xl font-bold text-white">Rooms</h1>
+        <p class="text-sm text-gray-400 mt-1">4 rooms</p>
+      </div>
+      <button onclick="openModal('roomModal')" class="flex items-center gap-2 bg-green-500 hover:bg-green-400 text-black font-semibold px-4 py-2 rounded-lg text-sm transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Add Room
+      </button>
+    </div>
+    <div class="flex items-center gap-4 mb-4">
+      <div class="relative max-w-xs w-full">
+        <svg class="absolute left-3 top-2.5 w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <input type="text" placeholder="Search by name" class="w-full pl-9 pr-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500">
+      </div>
+    </div>
+  </div>
+  <div class="px-8 flex-1">
+    <div class="rounded-xl border border-gray-800 overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-900 border-b border-gray-800">
+          <tr>
+            <th class="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Name ↑</th>
+            <th class="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Capacity</th>
+            <th class="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Description</th>
+            <th class="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-800">
+          <tr class="hover:bg-gray-900/50 transition-colors">
+            <td class="px-4 py-3 font-medium text-white">Main Hall</td>
+            <td class="px-4 py-3 text-gray-400">30</td>
+            <td class="px-4 py-3 text-gray-400 truncate max-w-xs">Largest open studio for strength and conditioning classes.</td>
+            <td class="px-4 py-3 text-right">
+              <button onclick="openModal('roomEditModal')" class="p-1.5 rounded text-gray-400 hover:text-white hover:bg-gray-800 transition-colors mr-1" title="Edit">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+              </button>
+              <button onclick="openModal('deleteRoomModal')" class="p-1.5 rounded text-red-400 hover:text-red-300 hover:bg-red-900/20 transition-colors" title="Delete">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              </button>
+            </td>
+          </tr>
+          <tr class="hover:bg-gray-900/50 transition-colors">
+            <td class="px-4 py-3 font-medium text-white">Recovery Room</td>
+            <td class="px-4 py-3 text-gray-400">8</td>
+            <td class="px-4 py-3 text-gray-400 truncate max-w-xs">Quiet stretch and mobility space with mats and blocks.</td>
+            <td class="px-4 py-3 text-right">
+              <button onclick="openModal('roomEditModal')" class="p-1.5 rounded text-gray-400 hover:text-white hover:bg-gray-800 transition-colors mr-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+              <button class="p-1.5 rounded text-red-400 hover:text-red-300 hover:bg-red-900/20 transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+            </td>
+          </tr>
+          <tr class="hover:bg-gray-900/50 transition-colors">
+            <td class="px-4 py-3 font-medium text-white">Spin Room</td>
+            <td class="px-4 py-3 text-gray-400">12</td>
+            <td class="px-4 py-3 text-gray-400 truncate max-w-xs">Dedicated cycling room with fixed bike layout and fans.</td>
+            <td class="px-4 py-3 text-right">
+              <button onclick="openModal('roomEditModal')" class="p-1.5 rounded text-gray-400 hover:text-white hover:bg-gray-800 transition-colors mr-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+              <button class="p-1.5 rounded text-red-400 hover:text-red-300 hover:bg-red-900/20 transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+            </td>
+          </tr>
+          <tr class="hover:bg-gray-900/50 transition-colors">
+            <td class="px-4 py-3 font-medium text-white">Studio A</td>
+            <td class="px-4 py-3 text-gray-400">20</td>
+            <td class="px-4 py-3 text-gray-400 truncate max-w-xs">General purpose studio used across cardio and mind-body classes.</td>
+            <td class="px-4 py-3 text-right">
+              <button onclick="openModal('roomEditModal')" class="p-1.5 rounded text-gray-400 hover:text-white hover:bg-gray-800 transition-colors mr-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+              <button class="p-1.5 rounded text-red-400 hover:text-red-300 hover:bg-red-900/20 transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="flex items-center justify-between pt-4 border-t border-gray-800 mt-4">
+      <span class="text-sm text-gray-400">Page 1 of 1</span>
+      <div class="flex items-center gap-1">
+        <button class="px-3 py-1.5 text-xs rounded-md text-gray-500 border border-gray-800 cursor-not-allowed">← Prev</button>
+        <button class="px-3 py-1.5 text-xs rounded-md bg-green-500/20 border border-green-500/50 text-green-400">1</button>
+        <button class="px-3 py-1.5 text-xs rounded-md text-gray-500 border border-gray-800 cursor-not-allowed">Next →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ─────────────────────────────────────────── SCREEN: CLASS TEMPLATES -->
 <div id="screen-templates" class="screen flex-col min-h-screen">
   <div class="px-8 pt-8 pb-4">
@@ -465,8 +551,17 @@ tailwind.config = {
     </div>
     <!-- Room -->
     <div>
-      <label class="block text-xs font-semibold text-gray-300 mb-1.5">Room / Location</label>
-      <input type="text" value="Studio A" placeholder="e.g. Studio A" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500">
+      <label class="block text-xs font-semibold text-gray-300 mb-1.5">Room</label>
+      <div class="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2.5">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <p class="text-sm text-white">Studio A</p>
+            <p class="text-xs text-gray-500">Capacity 20 · General purpose studio</p>
+          </div>
+          <svg class="w-4 h-4 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </div>
+      </div>
+      <button onclick="closeSlideOver();show('rooms')" class="mt-1 inline-flex items-center gap-1 text-xs text-green-400 hover:text-green-300 transition-colors">Manage rooms →</button>
       <!-- Room conflict warning (soft) -->
       <div class="mt-2 flex items-center gap-2 bg-orange-900/20 border border-orange-500/30 rounded-lg px-3 py-2">
         <svg class="w-4 h-4 text-orange-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
@@ -619,6 +714,97 @@ tailwind.config = {
   </div>
 </div>
 
+<!-- Add Room Modal -->
+<div id="roomModal" class="modal-bg" onclick="handleModalBgClick(event,'roomModal')">
+  <div class="bg-gray-900 rounded-2xl border border-gray-700 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between px-6 py-5 border-b border-gray-800">
+      <h3 class="text-lg font-semibold text-white">Add Room</h3>
+      <button onclick="closeModal('roomModal')" class="p-1.5 rounded text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+    </div>
+    <div class="flex flex-col gap-5 px-6 py-6">
+      <div>
+        <label class="block text-sm font-semibold text-gray-300 mb-1.5">Name <span class="text-red-400">*</span></label>
+        <input type="text" value="Main Hall" maxlength="100" class="w-full px-3 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-green-500">
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-gray-300 mb-1.5">Capacity</label>
+        <input type="number" value="30" min="1" class="w-full px-3 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-green-500">
+        <p class="text-xs text-gray-500 mt-1">Limits visible in room picker</p>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-gray-300 mb-1.5">Description</label>
+        <textarea rows="3" class="w-full px-3 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-green-500 resize-none">Largest open studio for strength and conditioning classes.</textarea>
+        <p class="text-xs text-gray-500 mt-1 text-right">49/500</p>
+      </div>
+    </div>
+    <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-800">
+      <button onclick="closeModal('roomModal')" class="px-4 py-2 text-sm rounded-lg border border-gray-700 text-gray-300 hover:text-white hover:border-gray-500 transition-colors">Cancel</button>
+      <button class="px-4 py-2 text-sm rounded-lg bg-green-500 hover:bg-green-400 text-black font-semibold transition-colors">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Room Modal -->
+<div id="roomEditModal" class="modal-bg" onclick="handleModalBgClick(event,'roomEditModal')">
+  <div class="bg-gray-900 rounded-2xl border border-gray-700 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between px-6 py-5 border-b border-gray-800">
+      <h3 class="text-lg font-semibold text-white">Edit Room</h3>
+      <button onclick="closeModal('roomEditModal')" class="p-1.5 rounded text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+    </div>
+    <div class="flex flex-col gap-5 px-6 py-6">
+      <div>
+        <label class="block text-sm font-semibold text-gray-300 mb-1.5">Name <span class="text-red-400">*</span></label>
+        <input type="text" value="Studio A" maxlength="100" class="w-full px-3 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-green-500">
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-gray-300 mb-1.5">Capacity</label>
+        <input type="number" value="20" min="1" class="w-full px-3 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-green-500">
+        <p class="text-xs text-gray-500 mt-1">Limits visible in room picker</p>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-gray-300 mb-1.5">Description</label>
+        <textarea rows="3" class="w-full px-3 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-green-500 resize-none">General purpose studio used across cardio and mind-body classes.</textarea>
+        <p class="text-xs text-gray-500 mt-1 text-right">60/500</p>
+      </div>
+    </div>
+    <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-800">
+      <button onclick="closeModal('roomEditModal')" class="px-4 py-2 text-sm rounded-lg border border-gray-700 text-gray-300 hover:text-white hover:border-gray-500 transition-colors">Cancel</button>
+      <button class="px-4 py-2 text-sm rounded-lg bg-green-500 hover:bg-green-400 text-black font-semibold transition-colors">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Room Modal -->
+<div id="deleteRoomModal" class="modal-bg" onclick="handleModalBgClick(event,'deleteRoomModal')">
+  <div class="bg-gray-900 rounded-2xl border border-gray-700 w-full max-w-sm mx-4" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-800">
+      <h3 class="text-base font-semibold text-white">Delete Room?</h3>
+      <button onclick="closeModal('deleteRoomModal')" class="p-1 rounded text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+    </div>
+    <div class="px-5 py-5">
+      <div class="flex items-start gap-2 rounded-md bg-orange-500/10 border border-orange-500/30 px-3 py-3 text-sm text-orange-400">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <p>This room is assigned to the following scheduled classes:</p>
+      </div>
+      <div class="bg-gray-800/60 rounded-lg border border-gray-700 max-h-40 overflow-y-auto divide-y divide-gray-700 mt-3">
+        <div class="flex items-center gap-2 px-3 py-2.5 text-sm text-gray-400">
+          <svg class="w-3.5 h-3.5 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          Power Pump — Tue 15 Apr · 10:00
+        </div>
+        <div class="flex items-center gap-2 px-3 py-2.5 text-sm text-gray-400">
+          <svg class="w-3.5 h-3.5 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          HIIT Bootcamp — Fri 18 Apr · 06:30
+        </div>
+      </div>
+      <p class="text-xs text-gray-500 mt-3">If you proceed, the room will be cleared from these instances.</p>
+    </div>
+    <div class="flex items-center justify-end gap-3 px-5 py-4 border-t border-gray-800">
+      <button onclick="closeModal('deleteRoomModal')" class="px-4 py-2 text-sm rounded-lg border border-gray-700 text-gray-300 hover:text-white hover:border-gray-500 transition-colors">Cancel</button>
+      <button onclick="closeModal('deleteRoomModal')" class="px-4 py-2 text-sm rounded-lg bg-red-600 hover:bg-red-500 text-white font-semibold transition-colors">Delete Anyway</button>
+    </div>
+  </div>
+</div>
+
 <!-- Add Class Template Modal -->
 <div id="templateModal" class="modal-bg" onclick="handleModalBgClick(event,'templateModal')">
   <div class="bg-gray-900 rounded-2xl border border-gray-700 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
@@ -667,8 +853,17 @@ tailwind.config = {
         </div>
       </div>
       <div>
-        <label class="block text-sm font-semibold text-gray-300 mb-1.5">Room / Location</label>
-        <input type="text" placeholder="e.g. Studio A" class="w-full px-3 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500">
+        <label class="block text-sm font-semibold text-gray-300 mb-1.5">Room</label>
+        <div class="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2.5">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <p class="text-sm text-white">Studio A</p>
+              <p class="text-xs text-gray-500">Capacity 20 · General purpose studio</p>
+            </div>
+            <svg class="w-4 h-4 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </div>
+        </div>
+        <button onclick="closeModal('templateModal');show('rooms')" class="mt-1 inline-flex items-center gap-1 text-xs text-green-400 hover:text-green-300 transition-colors">Manage rooms →</button>
       </div>
     </div>
     <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-800">
