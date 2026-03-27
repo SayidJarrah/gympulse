@@ -1082,3 +1082,241 @@ For 44px minimum: icon buttons use `p-2.5` with `h-5 w-5` icon (20 + 20 = 40px),
 - Status badges that convey meaning not shown in text use `aria-label`
 - Dynamic content updates use `aria-live="polite"` (errors, success messages)
 - The logo mark SVG carries `aria-hidden="true"` — the adjacent wordmark text provides the accessible label
+
+---
+
+### 6I. TagInput
+
+**Purpose:** Converts free-text entries into removable chip tags. Used for the Specialisations field on trainer profiles and any other multi-value free-text input.
+
+#### Visual Spec
+
+- Wrapper: `flex flex-col gap-1.5`
+- Tag container + input row: `flex flex-wrap gap-1.5 rounded-md border border-gray-700 bg-gray-900 px-3 py-2 min-h-[42px] cursor-text focus-within:ring-2 focus-within:ring-green-500 focus-within:border-transparent transition-colors duration-200`
+- Each tag chip: Neutral badge md with `XMarkIcon h-3 w-3` remove button (see 6D Badge/Chip)
+- Text input inside container: `flex-1 min-w-[120px] bg-transparent text-sm text-white placeholder:text-gray-500 outline-none`
+- Max-reached state: input replaced by `text-xs text-gray-500 italic self-center` — "Maximum reached"
+- Error state: container border changes to `border-red-500/60`; error text `text-xs text-red-400` below
+
+#### Interaction
+
+- Pressing Enter or typing a comma commits the current value as a new chip
+- Pressing Backspace with an empty input removes the last chip
+- When `max` prop is reached the text input is hidden
+
+#### Props
+
+`value: string[]`, `onChange: (tags: string[]) => void`, `max?: number` (default uncapped), `maxLength?: number`, `placeholder?: string`
+
+#### JSX Usage Example
+
+```jsx
+<div className="flex flex-col gap-1.5">
+  <label htmlFor="specialisations" className="text-sm font-medium text-gray-300">
+    Specialisations
+  </label>
+  <div className="flex flex-wrap gap-1.5 rounded-md border border-gray-700 bg-gray-900 px-3 py-2 min-h-[42px] cursor-text focus-within:ring-2 focus-within:ring-green-500 focus-within:border-transparent transition-colors duration-200">
+    {tags.map((tag) => (
+      <span key={tag} className="inline-flex items-center gap-1 rounded-full border border-gray-700 bg-gray-800 px-2.5 py-1 text-sm font-medium leading-tight text-gray-400">
+        {tag}
+        <button
+          type="button"
+          onClick={() => removeTag(tag)}
+          className="ml-0.5 rounded-full p-0.5 hover:bg-gray-700 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-green-500"
+          aria-label={`Remove ${tag}`}
+        >
+          <XMarkIcon className="h-3 w-3" />
+        </button>
+      </span>
+    ))}
+    {tags.length < max && (
+      <input
+        id="specialisations"
+        type="text"
+        placeholder="Add specialisation..."
+        className="flex-1 min-w-[120px] bg-transparent text-sm text-white placeholder:text-gray-500 outline-none"
+        onKeyDown={handleKeyDown}
+      />
+    )}
+    {tags.length >= max && (
+      <span className="text-xs text-gray-500 italic self-center">Maximum reached</span>
+    )}
+  </div>
+  <p className="text-xs text-gray-400">Press Enter or comma to add. Max {max} tags.</p>
+</div>
+```
+
+---
+
+### 6J. Slide-over Panel
+
+**Purpose:** A right-anchored overlay panel for focused editing tasks that does not fully block the underlying content (lighter overlay than a modal). Used for class instance editing in the Scheduler.
+
+#### Structure
+
+- Backdrop: `fixed inset-0 z-30 bg-black/30` — lighter than modal overlay (`bg-black/70`)
+- Panel: `fixed inset-y-0 right-0 z-30 flex flex-col bg-gray-900 border-l border-gray-800 shadow-xl shadow-black/50`
+- Standard width: `w-[400px]`; use `w-[520px]` for complex multi-section panels
+- Header: `flex items-center justify-between border-b border-gray-800 px-6 py-5 flex-shrink-0`
+- Body: `flex-1 overflow-y-auto px-6 py-6`
+- Footer: `flex items-center border-t border-gray-800 px-6 py-4 flex-shrink-0`
+
+#### Animation
+
+Entry: `transform translate-x-full` → `translate-x-0`, `transition-transform duration-300 ease-out`
+Exit: `translate-x-0` → `translate-x-full`, `transition-transform duration-200 ease-in`
+
+#### Accessibility
+
+- `role="dialog"`, `aria-modal="true"`, `aria-labelledby` pointing to panel title
+- Focus trap inside the panel when open
+- Escape key closes the panel
+- Close button: `XMarkIcon h-5 w-5` Ghost icon button in the header, `aria-label="Close panel"`
+
+#### JSX Usage Example
+
+```jsx
+{isOpen && (
+  <>
+    {/* Backdrop */}
+    <div
+      className="fixed inset-0 z-30 bg-black/30"
+      onClick={onClose}
+      aria-hidden="true"
+    />
+    {/* Panel */}
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="panel-title"
+      className="fixed inset-y-0 right-0 z-30 flex w-[400px] flex-col bg-gray-900 border-l border-gray-800 shadow-xl shadow-black/50 transition-transform duration-300 ease-out translate-x-0"
+    >
+      <div className="flex items-center justify-between border-b border-gray-800 px-6 py-5 flex-shrink-0">
+        <h2 id="panel-title" className="text-lg font-semibold text-white">Edit Class</h2>
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-md p-1 text-gray-500 hover:bg-gray-800 hover:text-gray-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+          aria-label="Close panel"
+        >
+          <XMarkIcon className="h-5 w-5" />
+        </button>
+      </div>
+      <div className="flex-1 overflow-y-auto px-6 py-6">
+        {/* Panel body */}
+      </div>
+      <div className="flex items-center border-t border-gray-800 px-6 py-4 flex-shrink-0">
+        {/* Footer actions */}
+      </div>
+    </div>
+  </>
+)}
+```
+
+---
+
+### 6L. RoomPicker
+
+**Purpose:** Searchable dropdown for selecting a managed room entity by ID. Used wherever a form needs to associate a room with a class template or class instance.
+
+#### Visual Spec
+
+- Wrapper: `flex flex-col gap-1.5`
+- Label: `text-sm font-medium text-gray-300`
+- Dropdown base classes: `w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:border-transparent`
+
+| State | Additional Classes |
+|-------|-------------------|
+| Default | `border-gray-700` |
+| Focused | `ring-2 ring-green-500 border-transparent` (via focus-visible: prefix) |
+| Loading | Replaced by skeleton: `animate-pulse rounded bg-gray-800 h-9 w-full` |
+| Error | `border-red-500/60 focus-visible:ring-red-500` |
+| Disabled / Empty | `opacity-60 cursor-not-allowed bg-gray-800` |
+
+- Each option: room name + capacity hint `"Studio A (cap. 25)"` when capacity set; `"Studio A"` when capacity is null
+- First option is always "No room" (value = empty string, maps to `roomId: null`)
+- Error message: `text-xs text-red-400` — "Failed to load rooms"
+- Empty state option text: "No rooms found — add one first" (`disabled`)
+- "Manage rooms" helper link below the dropdown: `text-xs text-green-400 hover:text-green-300 mt-1 inline-flex items-center gap-1` pointing to `/admin/rooms`
+
+#### Props
+
+`value: string | null` (roomId), `onChange: (roomId: string | null) => void`
+
+Data source: `GET /api/v1/rooms` fetched on mount.
+
+#### JSX Usage Example
+
+```jsx
+<div className="flex flex-col gap-1.5">
+  <label htmlFor="room-picker" className="text-sm font-medium text-gray-300">
+    Room
+  </label>
+  {isLoading ? (
+    <div className="animate-pulse rounded bg-gray-800 h-9 w-full" aria-busy="true" />
+  ) : (
+    <select
+      id="room-picker"
+      value={value ?? ''}
+      onChange={(e) => onChange(e.target.value || null)}
+      aria-invalid={hasError}
+      aria-describedby={hasError ? 'room-picker-error' : undefined}
+      className={`w-full rounded-md border bg-gray-900 px-3 py-2 text-sm text-white transition-colors duration-200 focus:outline-none focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-green-500 ${
+        hasError ? 'border-red-500/60 focus-visible:ring-red-500' : 'border-gray-700'
+      } ${rooms.length === 0 ? 'cursor-not-allowed opacity-60' : ''}`}
+      disabled={rooms.length === 0}
+    >
+      <option value="">No room</option>
+      {rooms.map((room) => (
+        <option key={room.id} value={room.id}>
+          {room.name}{room.capacity != null ? ` (cap. ${room.capacity})` : ''}
+        </option>
+      ))}
+      {rooms.length === 0 && (
+        <option disabled>No rooms found — add one first</option>
+      )}
+    </select>
+  )}
+  {hasError && (
+    <p id="room-picker-error" className="text-xs text-red-400">Failed to load rooms</p>
+  )}
+  <a
+    href="/admin/rooms"
+    className="inline-flex items-center gap-1 text-xs text-green-400 hover:text-green-300 mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:rounded-sm"
+  >
+    Manage rooms →
+  </a>
+</div>
+```
+
+---
+
+### 6K. Drag-and-drop Drop Target
+
+**Purpose:** Visual affordance for HTML5 drag-and-drop drop zones. Used in the Scheduler calendar time slots.
+
+#### States
+
+| State | Classes | Notes |
+|-------|---------|-------|
+| Default | (no additional styles) | Normal grid cell appearance |
+| Drag-over (valid) | `bg-green-500/10 border border-green-500/40 rounded-md` | Applied via `onDragOver` when `preventDefault()` is called |
+| Drag-over (invalid) | `bg-red-500/5 border border-red-500/30 rounded-md` | For out-of-range or disallowed drop targets |
+| Drag-over (occupied) | `bg-orange-500/10 border border-orange-500/30 rounded-md` | Slot already has a class instance (soft warning) |
+
+#### Implementation Pattern
+
+```jsx
+const [isDragOver, setIsDragOver] = useState(false);
+
+<div
+  className={`relative h-10 border-t border-l border-gray-800 transition-colors duration-100 ${
+    isDragOver ? 'bg-green-500/10 border border-green-500/40 rounded-md' : 'hover:bg-gray-800/40'
+  }`}
+  onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+  onDragLeave={() => setIsDragOver(false)}
+  onDrop={(e) => { e.preventDefault(); setIsDragOver(false); onDrop(e); }}
+>
+  {/* ClassInstanceCard rendered here when occupied */}
+</div>
+```

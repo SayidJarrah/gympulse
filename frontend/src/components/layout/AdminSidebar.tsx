@@ -5,6 +5,7 @@ import {
   ChevronRightIcon,
   ArrowRightOnRectangleIcon,
   RectangleStackIcon,
+  CreditCardIcon,
 } from '@heroicons/react/24/outline'
 import { useAuthStore } from '../../store/authStore'
 
@@ -16,6 +17,7 @@ interface SidebarLink {
 
 const sidebarLinks: SidebarLink[] = [
   { label: 'Plans', href: '/admin/plans', icon: RectangleStackIcon },
+  { label: 'Memberships', href: '/admin/memberships', icon: CreditCardIcon },
 ]
 
 export function AdminSidebar() {

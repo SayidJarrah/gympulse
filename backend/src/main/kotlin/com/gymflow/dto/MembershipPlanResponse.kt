@@ -9,6 +9,7 @@ data class MembershipPlanResponse(
     val description: String,
     val priceInCents: Int,
     val durationDays: Int,
+    val maxBookingsPerMonth: Int,
     val status: String,
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime
