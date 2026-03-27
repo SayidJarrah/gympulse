@@ -22,7 +22,7 @@ After writing the spec, run it to confirm it passes:
 cd frontend && npm run test:e2e -- --grep '{feature}'
 ```
 Fix any failures before finishing. When all specs pass, update the E2E column
-in CLAUDE.md to ✅ for that feature.
+in AGENTS.md to ✅ for that feature.
 
 ### 2. Regression runner (invoked by /run)
 Run the full suite and report results:

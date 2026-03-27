@@ -60,7 +60,7 @@ Ask all your questions in **one message before starting** — not one at a time 
 ## Updating Implementation Status
 After all endpoints for a feature are implemented and tests pass, update
 the Backend and Tests columns for this feature in the Implementation Status
-table in CLAUDE.md from ❌ to ✅.
+table in AGENTS.md from ❌ to ✅.
 
 ## Migration Naming
 `V{next_number}__{snake_case_description}.sql`

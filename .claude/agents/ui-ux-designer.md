@@ -80,4 +80,4 @@ Flag the gap — do not invent endpoints.
 
 ## Updating Implementation Status
 After saving the design spec, update the Design column for this feature
-in the Implementation Status table in CLAUDE.md to ✅.
+in the Implementation Status table in AGENTS.md to ✅.

@@ -99,6 +99,35 @@ These rules apply to every file, every agent, every session. No exceptions.
 - Error format: `{ "error": "message", "code": "ERROR_CODE" }`
 - Pagination: `?page=0&size=20&sort=createdAt,desc`
 
+## Domain Vocabulary & Business Rules
+
+### Core Terms
+- **Member** — a registered user with an active membership plan
+- **Guest** — a registered user without an active membership
+- **Membership** — a UserMembership record linking a user to a plan, with start/end dates
+- **Plan** — a MembershipPlan defining price, duration, and booking limits
+- **Class** — a scheduled GymClass with a trainer, time, duration, and capacity
+- **Spot** — one available booking slot in a class (capacity - confirmed bookings)
+- **Booking** — a confirmed or cancelled reservation of a spot in a class
+- **Check-in** — marking attendance for a booking on the day of the class
+
+### Key Business Rules
+- A user must have an ACTIVE membership (end_date > now) to book classes
+- A class is FULL when confirmed bookings >= capacity
+- Cancelling a booking immediately frees up one spot
+- A trainer can be linked to multiple classes but belongs to one user account
+- Admins can book classes on behalf of users (admin bypass membership check)
+
+### Status Values
+- Membership: `ACTIVE`, `EXPIRED`, `CANCELLED`
+- Booking: `CONFIRMED`, `CANCELLED`, `ATTENDED`
+- Class: `SCHEDULED`, `CANCELLED`, `COMPLETED`
+
+### Open Policy Questions (not yet implemented)
+- Cancellation window (minimum notice before class start)
+- Waitlist behaviour when a spot opens
+- Booking limits per membership plan per month
+
 ## Domain Model (Core Entities)
 - **User** — id, email, passwordHash, role (USER/ADMIN), createdAt
 - **MembershipPlan** — id, name, price, durationDays, maxBookingsPerMonth
@@ -125,25 +154,6 @@ JWT_EXPIRY_MS=3600000
 - Design system (colors, typography, components): `docs/design/system.md`
 - Changelog: `CHANGELOG.md`
 - Interactive API reference: http://localhost:8080/api/docs (Swagger, auto-generated)
-
-## Available MCP Servers
-Config file: `.mcp.json` at project root. Credentials are in shell environment
-variables, never in committed files.
-
-| MCP | Name in config | Scoped to | Use it for |
-|-----|---------------|-----------|------------|
-| PostgreSQL | `postgres` | `db-architect` agent | Querying the live DB, verifying migrations, running EXPLAIN ANALYZE, checking indexes |
-| GitHub | `github` | Any agent / `/implement` command | Creating PRs, reading issues, checking branch state |
-| Playwright | `playwright` | `e2e-tester` agent | Browser-based testing of the running frontend |
-
-**Agents: prefer MCP tools over bash equivalents when both are available.**
-- Use the Postgres MCP instead of `psql` bash commands for any DB query
-- Use the GitHub MCP instead of `gh` CLI commands for PR and issue operations
-- Use the Playwright MCP (via e2e-tester) instead of curl for frontend verification
-
-The Postgres MCP connects with a **read-only user** — it cannot run INSERT,
-UPDATE, DELETE, or DDL. For schema changes use Flyway migrations via `./gradlew`.
-
 
 ## Implementation Status
 
@@ -181,10 +191,10 @@ UPDATE, DELETE, or DDL. For schema changes use Flyway migrations via `./gradlew`
 
 
 
-**Reading this table:** Before implementing anything, Codex checks this table.
-If Backend = ❌ but PRD = ✅ and SDD = ✅, Codex knows documents exist and reads
-them before starting. If PRD = ❌, Codex knows to run business-analyst first.
-A row with all ✅ means Codex will NOT re-implement — it will only modify on request.
+**Reading this table:** Before implementing anything, check this table.
+If Backend = ❌ but PRD = ✅ and SDD = ✅, documents exist — read them before starting.
+If PRD = ❌, requirements must be written first.
+A row with all ✅ means do NOT re-implement — only modify on explicit request.
 
 **Adding new features:** When business-analyst writes a new PRD for a feature not
 in this table, add a new row with the feature name and set PRD = 🔄. Each agent

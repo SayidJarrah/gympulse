@@ -221,4 +221,4 @@ not confirmed.
 - Flag any PRD Open Questions that block design with a clear default assumption
 - SQL in Section 1 must be production-ready (proper types, indexes, constraints)
 - **After writing the SDD:** update the SDD column for this feature in the
-  Implementation Status table in CLAUDE.md from ❌ to ✅.
+  Implementation Status table in AGENTS.md from ❌ to ✅.

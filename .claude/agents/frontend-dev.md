@@ -58,4 +58,4 @@ Ask all your questions in **one message before starting** — not one at a time 
 ## Updating Implementation Status
 After all pages and components for a feature are built and working, update
 the Frontend column for this feature in the Implementation Status table in
-CLAUDE.md from ❌ to ✅.
+AGENTS.md from ❌ to ✅.
