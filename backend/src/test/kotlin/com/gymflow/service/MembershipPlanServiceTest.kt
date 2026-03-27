@@ -3,6 +3,7 @@ package com.gymflow.service
 import com.gymflow.domain.MembershipPlan
 import com.gymflow.dto.MembershipPlanRequest
 import com.gymflow.repository.MembershipPlanRepository
+import com.gymflow.repository.UserMembershipRepository
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -21,7 +22,8 @@ import java.util.UUID
 class MembershipPlanServiceTest {
 
     private val membershipPlanRepository: MembershipPlanRepository = mockk()
-    private val service = MembershipPlanService(membershipPlanRepository)
+    private val userMembershipRepository: UserMembershipRepository = mockk()
+    private val service = MembershipPlanService(membershipPlanRepository, userMembershipRepository)
 
     // -----------------------------------------------------------------------
     // getActivePlans
@@ -163,12 +165,25 @@ class MembershipPlanServiceTest {
         val request = buildRequest(priceInCents = 3999)
 
         every { membershipPlanRepository.findById(plan.id) } returns Optional.of(plan)
+        every { userMembershipRepository.countActiveByPlanId(plan.id) } returns 0L
         every { membershipPlanRepository.save(plan) } returns plan
 
-        // Stub returns 0 active subscribers, so price change is allowed
         val result = service.updatePlan(plan.id, request)
 
         assertEquals(3999, result.priceInCents)
+    }
+
+    @Test
+    fun `updatePlan - price change with active subscribers - throws PlanHasActiveSubscribersException`() {
+        val plan = buildPlan(priceInCents = 2999)
+        val request = buildRequest(priceInCents = 3999)
+
+        every { membershipPlanRepository.findById(plan.id) } returns Optional.of(plan)
+        every { userMembershipRepository.countActiveByPlanId(plan.id) } returns 3L
+
+        assertThrows<PlanHasActiveSubscribersException> {
+            service.updatePlan(plan.id, request)
+        }
     }
 
     @Test
@@ -322,6 +337,7 @@ class MembershipPlanServiceTest {
         description: String = "Unlimited gym access, weekdays only.",
         priceInCents: Int = 2999,
         durationDays: Int = 30,
+        maxBookingsPerMonth: Int = 10,
         status: String = "ACTIVE"
     ) = MembershipPlan(
         id = id,
@@ -329,6 +345,7 @@ class MembershipPlanServiceTest {
         description = description,
         priceInCents = priceInCents,
         durationDays = durationDays,
+        maxBookingsPerMonth = maxBookingsPerMonth,
         status = status,
         createdAt = OffsetDateTime.now(),
         updatedAt = OffsetDateTime.now()

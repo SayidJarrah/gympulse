@@ -2,10 +2,16 @@ package com.gymflow.controller
 
 import com.gymflow.service.EmailAlreadyExistsException
 import com.gymflow.service.InvalidCredentialsException
+import com.gymflow.service.InvalidMembershipStatusFilterException
 import com.gymflow.service.InvalidStatusFilterException
+import com.gymflow.service.MembershipAlreadyActiveException
+import com.gymflow.service.MembershipNotActiveException
+import com.gymflow.service.MembershipNotFoundException
+import com.gymflow.service.NoActiveMembershipException
 import com.gymflow.service.PlanAlreadyActiveException
 import com.gymflow.service.PlanAlreadyInactiveException
 import com.gymflow.service.PlanHasActiveSubscribersException
+import com.gymflow.service.PlanNotAvailableException
 import com.gymflow.service.PlanNotFoundException
 import com.gymflow.service.RefreshTokenExpiredException
 import com.gymflow.service.RefreshTokenInvalidException
@@ -42,6 +48,7 @@ class GlobalExceptionHandler {
             "durationDays" -> "Duration must be greater than zero" to "INVALID_DURATION"
             "name" -> "Name must not be blank" to "INVALID_NAME"
             "description" -> "Description must not be blank" to "INVALID_DESCRIPTION"
+            "planId" -> "A valid plan must be selected" to "INVALID_PLAN_ID"
             else -> {
                 val msg = ex.bindingResult.fieldErrors
                     .joinToString("; ") { "${it.field}: ${it.defaultMessage}" }
@@ -129,6 +136,50 @@ class GlobalExceptionHandler {
                     code = "PLAN_EDIT_CONFLICT"
                 )
             )
+    }
+
+    // --- User membership exceptions ---
+
+    @ExceptionHandler(MembershipAlreadyActiveException::class)
+    fun handleMembershipAlreadyActive(ex: MembershipAlreadyActiveException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(ErrorResponse(error = "You already have an active membership", code = "MEMBERSHIP_ALREADY_ACTIVE"))
+    }
+
+    @ExceptionHandler(NoActiveMembershipException::class)
+    fun handleNoActiveMembership(ex: NoActiveMembershipException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(ErrorResponse(error = "No active membership found", code = "NO_ACTIVE_MEMBERSHIP"))
+    }
+
+    @ExceptionHandler(MembershipNotFoundException::class)
+    fun handleMembershipNotFound(ex: MembershipNotFoundException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(ErrorResponse(error = "Membership not found", code = "MEMBERSHIP_NOT_FOUND"))
+    }
+
+    @ExceptionHandler(MembershipNotActiveException::class)
+    fun handleMembershipNotActive(ex: MembershipNotActiveException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(ErrorResponse(error = "This membership is already cancelled or expired", code = "MEMBERSHIP_NOT_ACTIVE"))
+    }
+
+    @ExceptionHandler(PlanNotAvailableException::class)
+    fun handlePlanNotAvailable(ex: PlanNotAvailableException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.UNPROCESSABLE_ENTITY)
+            .body(ErrorResponse(error = "This plan is not available for purchase", code = "PLAN_NOT_AVAILABLE"))
+    }
+
+    @ExceptionHandler(InvalidMembershipStatusFilterException::class)
+    fun handleInvalidMembershipStatusFilter(ex: InvalidMembershipStatusFilterException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ErrorResponse(error = "Invalid status filter. Use ACTIVE, CANCELLED, or EXPIRED", code = "INVALID_STATUS_FILTER"))
     }
 
     // AccessDeniedException must be handled explicitly here because @RestControllerAdvice

@@ -35,47 +35,14 @@ for i in $(seq 1 12); do curl -sf http://localhost:8080/api/v1/health && break |
 If still not healthy after 60s, run `docker-compose -f docker-compose.full.yml logs backend`
 and report the last 30 lines.
 
-## Step 5 — Smoke tests
-Run these regardless of whether $ARGUMENTS was provided:
-````bash
-# Health check
-curl -s http://localhost:8080/api/v1/health
+## Step 5 — Report
 
-# Frontend loads
-curl -sf http://localhost:3000 -o /dev/null -w "%{http_code}"
-````
+If the stack reached a healthy state in Step 4:
+"Stack is running. Open http://localhost:3000 to review manually.
+Run /verify $ARGUMENTS to run smoke tests and the E2E suite."
 
-If $ARGUMENTS names a specific feature, also run the relevant curl checks
-from the SDD at docs/sdd/$ARGUMENTS.md (the example requests in the API
-contract section). Use a test user if auth is required.
-
-
-## Step 5b — Regression suite (if stack is healthy)
-
-Run the full E2E test suite:
-```bash
-cd frontend && npm run test:e2e
-```
-
-If all specs pass: report ✅ N tests passed across M spec files.
-
-If any spec fails:
-- Report which spec file and test name failed
-- Invoke e2e-tester agent in debug mode:
-  "Spec {name} failed in frontend/e2e/{feature}.spec.ts. The stack is running.
-   Use Playwright MCP to diagnose what the browser shows for this flow.
-   Fix the spec if it is wrong, or report the bug if the app is broken."
-
-## Step 6 — Report
-
-Print a summary:
-- ✅ / ❌ Backend healthy (http://localhost:8080)
-- ✅ / ❌ Frontend serving (http://localhost:3000)
-- ✅ / ❌ Each smoke test result
-
-If all green: "Stack is running. Open http://localhost:3000 to review manually."
-
-If anything failed, classify the failure and say exactly what to run next:
+If the stack did not reach a healthy state, classify the failure and say what
+to run next:
 
 **Gradle build failed** (Step 1 error):
 "Build error — code issue. Invoke:

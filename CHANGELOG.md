@@ -4,6 +4,7 @@
 <!-- business-analyst moves items here when PRD is written -->
 - Membership plans: PRD written — admin create/edit/deactivate; public read access for guests and members
 - User membership purchase: PRD written — self-service plan activation, one-active-membership enforcement, user and admin cancel endpoints
+- Scheduler (admin): PRD written — trainer profile management, class template library with predefined seeds, drag-and-drop weekly calendar, trainer assignment with double-booking prevention, CSV/iCal import and export
 
 ## Completed
 <!-- /implement moves items here with date when feature ships -->

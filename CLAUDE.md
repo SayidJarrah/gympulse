@@ -171,10 +171,10 @@ UPDATE, DELETE, or DDL. For schema changes use Flyway migrations via `./gradlew`
 | Project scaffold & Docker | — | — | — | ✅ | ✅ | — | — |
 | Auth (register/login/JWT) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Membership plans | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| User membership purchase | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Class schedule | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| User membership purchase | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Class schedule | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Class booking & cancellation | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Trainer profiles | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Trainer profiles | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Attendance check-in | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Admin dashboard | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Notifications | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |

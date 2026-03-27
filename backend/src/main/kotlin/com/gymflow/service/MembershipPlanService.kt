@@ -4,6 +4,7 @@ import com.gymflow.domain.MembershipPlan
 import com.gymflow.dto.MembershipPlanRequest
 import com.gymflow.dto.MembershipPlanResponse
 import com.gymflow.repository.MembershipPlanRepository
+import com.gymflow.repository.UserMembershipRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
@@ -13,7 +14,8 @@ import java.util.UUID
 @Service
 @Transactional
 class MembershipPlanService(
-    private val membershipPlanRepository: MembershipPlanRepository
+    private val membershipPlanRepository: MembershipPlanRepository,
+    private val userMembershipRepository: UserMembershipRepository
 ) {
 
     @Transactional(readOnly = true)
@@ -51,8 +53,6 @@ class MembershipPlanService(
 
         val newPrice = request.priceInCents!!
         if (newPrice != plan.priceInCents) {
-            // TODO: replace stub with real UserMembershipRepository.countActiveByPlanId(id)
-            // once the "User membership purchase" feature is implemented.
             val activeSubscriberCount = countActiveSubscribers(id)
             if (activeSubscriberCount > 0) {
                 throw PlanHasActiveSubscribersException(
@@ -108,13 +108,8 @@ class MembershipPlanService(
 
     // --- Private helpers ---
 
-    /**
-     * Stub that returns 0 until the "User membership purchase" feature creates
-     * the user_memberships table and its repository.
-     * TODO: replace with UserMembershipRepository.countActiveByPlanId(id) once available.
-     */
-    @Suppress("UNUSED_PARAMETER")
-    private fun countActiveSubscribers(planId: UUID): Long = 0L
+    private fun countActiveSubscribers(planId: UUID): Long =
+        userMembershipRepository.countActiveByPlanId(planId)
 
     private fun MembershipPlan.toResponse() = MembershipPlanResponse(
         id = id,
@@ -122,6 +117,7 @@ class MembershipPlanService(
         description = description,
         priceInCents = priceInCents,
         durationDays = durationDays,
+        maxBookingsPerMonth = maxBookingsPerMonth,
         status = status,
         createdAt = createdAt,
         updatedAt = updatedAt

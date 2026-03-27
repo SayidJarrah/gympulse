@@ -55,17 +55,41 @@ Use the e2e-tester agent with this instruction:
 "Read the PRD at docs/prd/$ARGUMENTS.md (acceptance criteria) and the SDD at
 docs/sdd/$ARGUMENTS.md (API contract + error codes).
 Write frontend/e2e/$ARGUMENTS.spec.ts covering every acceptance criterion.
-The stack must already be running. After writing the spec, run:
-  cd frontend && npm run test:e2e -- --grep '$ARGUMENTS'
-Fix any failures before finishing.
-When all specs pass, update the E2E column in CLAUDE.md to ✅ for $ARGUMENTS."
+Do NOT run the suite yet — /verify will do that after the PR is created.
+When the spec file is written, update the E2E column in CLAUDE.md to ✅ for $ARGUMENTS."
 
 ## Step 3 — Quality gate
 
 Run the /review command scoped to all files created in Steps 1, 2, and 2.5.
-Fix any issues before finishing.
+Fix any issues before continuing.
 
-## Step 4 — GitHub PR
+## Step 4 — Verify
+
+Run /verify $ARGUMENTS
+
+If any E2E tests fail and the e2e-tester reports an app bug, follow this
+structured fix loop — **do not invoke frontend-dev or backend-dev directly
+with an open-ended "fix it" instruction**:
+
+### Fix Loop (max 3 iterations)
+
+**Iteration start:**
+1. Confirm the e2e-tester has written a bug brief to `docs/bugs/`. If not,
+   invoke e2e-tester to produce one before proceeding.
+2. Read the bug brief. Check "Estimated scope" — if scope is >3 files,
+   stop and escalate to solution-architect before any fix attempt.
+3. Run `/debug fix $ARGUMENTS {bug-brief-filename}` to apply the fix.
+   The fixing agent (frontend-dev or backend-dev) will operate in Bug Fix Mode
+   and is constrained to the files listed in the brief.
+4. Re-run /verify $ARGUMENTS.
+5. If tests pass → continue to Step 5.
+   If tests still fail → go back to step 1 of the next iteration.
+
+**After 3 failed iterations:** Stop. Do not continue to Step 5.
+Report to the user with the last bug brief path and the iteration history.
+Tell the user: "Three fix attempts failed. Manual review required before proceeding."
+
+## Step 5 — GitHub PR
 
 Use the GitHub MCP to create a pull request:
 
@@ -112,7 +136,7 @@ PR body template:
 - ✅/❌ per PRD criterion
 
 ## How to test
-1. Run `/run $ARGUMENTS` to start the stack
+1. Run `/run $ARGUMENTS` to start the stack, then `/verify $ARGUMENTS`
 2. Key flows to verify manually
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)

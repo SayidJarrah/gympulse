@@ -26,6 +26,8 @@ profile pages linked to their classes. Admins manage everything from a dashboard
 | Membership plans | 🔄 In progress | Admins create, edit, and deactivate membership plans; any visitor can list active plans |
 | User membership purchase | 🔄 In progress | Authenticated users activate a membership plan, creating a timed subscription record |
 
+| Scheduler (admin) | 🔄 In progress | Admin-only workspace to manage trainer profiles, define class templates, compose a weekly drag-and-drop schedule, and import/export the programme |
+
 <!-- business-analyst adds a row here when each PRD is written -->
 
 ## Current API Surface
@@ -62,3 +64,4 @@ profile pages linked to their classes. Admins manage everything from a dashboard
 <!-- business-analyst updates this when a new PRD is written -->
 - Membership plans — admin CRUD for plan catalogue; public read access for guests and members
 - User membership purchase — self-service plan activation for authenticated members; one active membership per user enforced
+- Scheduler (admin) — trainer profiles, class template library, drag-and-drop weekly calendar, trainer assignment, CSV/iCal import and export

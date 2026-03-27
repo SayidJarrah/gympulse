@@ -39,6 +39,38 @@ Do not guess and build.
 
 Ask all your questions in **one message before starting** — not one at a time mid-build.
 
+---
+
+## Bug Fix Mode (when invoked via `/debug fix`)
+
+When you receive a bug brief from `docs/bugs/`, you are in **Bug Fix Mode**.
+Different, stricter rules apply. Do not treat this as a feature build session.
+
+**Your only input is the bug brief.** Do not read additional files for context
+beyond what is listed in the brief's "Files to Change" section.
+
+**Constraints — non-negotiable:**
+- Read ONLY the files listed in the bug brief under "Files to Change"
+- Apply ONLY the change described in "Proposed Fix"
+- Do NOT read other components or hooks to understand broader context —
+  the brief already contains the relevant context
+- Do NOT refactor, rename, or reorganize anything not directly causing the bug
+- Do NOT add error handling, loading states, or improvements to unrelated code
+- Do NOT change test files, types, or API functions unless they are explicitly listed
+
+**If the fix does not work after your first attempt:**
+- Stop immediately. Do not try alternative approaches on your own.
+- Append a "Fix Attempt 1" section to the bug brief describing what you tried
+  and why it failed
+- Tell the user: "First fix attempt failed. Bug brief updated at docs/bugs/{file}.
+  Please re-run /debug {slug} to re-diagnose with the new information."
+
+**Hard scope rule:** Bug Fix Mode sessions must touch ≤ 3 files total.
+If you find the fix genuinely requires more, stop and write an updated brief
+explaining why — do not proceed past 3 files.
+
+---
+
 ## Patterns You Always Follow
 - All API calls go in `src/api/` — never fetch directly inside components
 - Types go in `src/types/` — named identically to backend DTOs
