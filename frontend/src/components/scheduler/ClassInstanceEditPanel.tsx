@@ -136,8 +136,14 @@ export function ClassInstanceEditPanel({
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-semibold text-gray-300">Start Time</label>
+          <label
+            htmlFor="class-start-time"
+            className="mb-1 block text-sm font-semibold text-gray-300"
+          >
+            Start Time
+          </label>
           <select
+            id="class-start-time"
             value={selectedTime}
             onChange={(event) => setSelectedTime(event.target.value)}
             className="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white"
@@ -150,8 +156,14 @@ export function ClassInstanceEditPanel({
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="mb-1 block text-sm font-semibold text-gray-300">Duration (min)</label>
+            <label
+              htmlFor="class-duration"
+              className="mb-1 block text-sm font-semibold text-gray-300"
+            >
+              Duration (min)
+            </label>
             <input
+              id="class-duration"
               type="number"
               min={15}
               max={240}
@@ -161,8 +173,14 @@ export function ClassInstanceEditPanel({
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-semibold text-gray-300">Capacity</label>
+            <label
+              htmlFor="class-capacity"
+              className="mb-1 block text-sm font-semibold text-gray-300"
+            >
+              Capacity
+            </label>
             <input
+              id="class-capacity"
               type="number"
               min={1}
               max={500}
@@ -183,10 +201,21 @@ export function ClassInstanceEditPanel({
         )}
 
         <div>
-          <label className="mb-1 block text-sm font-semibold text-gray-300">Assign Trainers</label>
-          <div className={`min-h-[36px] rounded-md border bg-gray-900 p-2 ${
+          <label
+            id="assign-trainers-label"
+            className="mb-1 block text-sm font-semibold text-gray-300"
+          >
+            Assign Trainers
+          </label>
+          <div
+            id="assign-trainers"
+            role="listbox"
+            aria-labelledby="assign-trainers-label"
+            tabIndex={0}
+            className={`min-h-[36px] rounded-md border bg-gray-900 p-2 ${
             trainerError ? 'border-red-500/60' : 'border-gray-700'
-          }`}>
+          }`}
+          >
             {selectedTrainerIds.length === 0 && (
               <div className="text-xs text-gray-500">No trainers assigned</div>
             )}

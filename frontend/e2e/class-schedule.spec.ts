@@ -1017,16 +1017,7 @@ test.describe('Import', () => {
 
   test('AC 43 — importing a CSV file larger than 2 MB shows an error', async ({ page }) => {
     /**
-     * NOTE: The app currently does NOT perform client-side file-size validation.
-     * Uploading a >2 MB file sends the request to the backend which returns a
-     * non-specific failure, and the ImportModal shows "Import failed." rather
-     * than the specific "The file exceeds the 2 MB size limit." message.
-     *
-     * Bug filed: docs/bugs/20260327-233624-import-file-size.md
-     * Suggested fix: add client-side size check before upload.
-     *
-     * This test asserts the CURRENT behaviour (generic error appears) so the
-     * suite continues to run. Update the assertion once the bug is fixed.
+     * NOTE: Client-side size validation should block uploads over 2 MB.
      */
     await page.setViewportSize({ width: 1280, height: 900 });
     await adminGoto(page, '/admin/scheduler');
@@ -1048,10 +1039,9 @@ test.describe('Import', () => {
 
     await page.getByRole('button', { name: 'Upload' }).click();
 
-    // App currently shows generic "Import failed." — assert that an error state is shown.
-    // TODO: once bug is fixed, change to: page.getByText('The file exceeds the 2 MB size limit.')
+    // App should show the specific size error.
     await expect(
-      page.getByText('Import failed.')
+      page.getByText('The file exceeds the 2 MB size limit.')
     ).toBeVisible({ timeout: 10_000 });
   });
 

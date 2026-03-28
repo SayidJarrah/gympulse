@@ -17,8 +17,8 @@ test('admin login redirects away from login page', async ({ page }) => {
   await page.fill('#email', ADMIN_EMAIL);
   await page.fill('#password', ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'Sign in' }).click();
-  // LoginPage navigates to /classes on success
-  await expect(page).toHaveURL('/classes');
+  // Admins land on the admin plans page after login
+  await expect(page).toHaveURL('/admin/plans');
 });
 
 test('login with wrong password shows error banner and stays on login', async ({ page }) => {

@@ -32,7 +32,7 @@ async function loginAsUser(page: Page, email: string, password: string) {
   await page.fill('#email', email);
   await page.fill('#password', password);
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await expect(page).toHaveURL('/classes');
+  await expect(page).toHaveURL('/plans');
 }
 
 // ---------------------------------------------------------------------------
@@ -44,7 +44,7 @@ async function loginAsAdmin(page: Page) {
   await page.fill('#email', ADMIN_EMAIL);
   await page.fill('#password', ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await expect(page).toHaveURL('/classes');
+  await expect(page).toHaveURL('/admin/plans');
 }
 
 // ---------------------------------------------------------------------------

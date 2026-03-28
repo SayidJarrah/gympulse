@@ -82,7 +82,7 @@ export function AdminClassTemplatesPage() {
         search: search || undefined,
         category: category || undefined,
         page,
-        size: 18,
+        size: 200,
       })
       setTemplates(data.content)
       setTotalElements(data.totalElements)

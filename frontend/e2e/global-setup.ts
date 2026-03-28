@@ -30,6 +30,18 @@ interface ClassTemplateResponse {
 
 interface ClassInstanceResponse {
   id: string;
+  name: string;
+  scheduledAt: string;
+  room: RoomSummaryResponse | null;
+  trainers: TrainerSummaryResponse[];
+}
+
+interface TrainerSummaryResponse {
+  id: string;
+}
+
+interface RoomSummaryResponse {
+  id: string;
 }
 
 async function apiRequest<T>(
@@ -57,6 +69,10 @@ async function apiRequest<T>(
   }
 
   return response.json() as Promise<T>
+}
+
+async function deleteInstance(token: string, id: string): Promise<void> {
+  await apiRequest<void>('DELETE', `${API_BASE}/admin/class-instances/${id}`, token)
 }
 
 async function login(): Promise<string> {
@@ -96,6 +112,15 @@ async function getTrainers(token: string, search: string): Promise<TrainerRespon
   return data.content
 }
 
+async function getWeekSchedule(token: string, week: string): Promise<ClassInstanceResponse[]> {
+  const data = await apiRequest<{ instances: ClassInstanceResponse[] }>(
+    'GET',
+    `${API_BASE}/admin/class-instances?week=${encodeURIComponent(week)}`,
+    token
+  )
+  return data.instances
+}
+
 function getIsoWeekStartUtc(date: Date): Date {
   const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()))
   const day = d.getUTCDay()
@@ -111,6 +136,17 @@ function buildScheduledAt(weekStart: Date, dayIndex: number, time: string): stri
   d.setUTCDate(weekStart.getUTCDate() + dayIndex)
   d.setUTCHours(hour, minute, 0, 0)
   return d.toISOString()
+}
+
+const MS_IN_DAY = 24 * 60 * 60 * 1000
+
+function formatWeekString(date: Date): string {
+  const temp = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()))
+  temp.setUTCDate(temp.getUTCDate() + 4 - (temp.getUTCDay() || 7))
+  const yearStart = new Date(Date.UTC(temp.getUTCFullYear(), 0, 1))
+  const weekNo = Math.ceil(((temp.getTime() - yearStart.getTime()) / MS_IN_DAY + 1) / 7)
+  const year = temp.getUTCFullYear()
+  return `${year}-W${String(weekNo).padStart(2, '0')}`
 }
 
 async function createTrainer(token: string): Promise<TrainerResponse> {
@@ -192,6 +228,8 @@ async function globalSetup() {
   const seedRoom = await createRoom(token, 'SeedRoom-E2E', 10)
 
   const weekStart = getIsoWeekStartUtc(new Date())
+  const weekString = formatWeekString(weekStart)
+  const existingInstances = await getWeekSchedule(token, weekString)
 
   const instances: string[] = []
 
@@ -259,6 +297,41 @@ async function globalSetup() {
       roomId: seedRoom.id,
     },
   ]
+
+  const deleteTargets = new Set<string>()
+
+  for (const payload of instancePayloads) {
+    const scheduledAt = buildScheduledAt(weekStart, payload.dayIndex, payload.time)
+    for (const instance of existingInstances) {
+      if (instance.scheduledAt !== scheduledAt) {
+        continue
+      }
+      if (payload.trainerIds.length > 0) {
+        const hasTrainer = instance.trainers.some((trainer) =>
+          payload.trainerIds.includes(trainer.id)
+        )
+        if (hasTrainer) {
+          deleteTargets.add(instance.id)
+          continue
+        }
+      }
+      if (payload.roomId && instance.room?.id === payload.roomId) {
+        deleteTargets.add(instance.id)
+        continue
+      }
+      if (instance.name === payload.template.name) {
+        deleteTargets.add(instance.id)
+      }
+    }
+  }
+
+  for (const instanceId of deleteTargets) {
+    try {
+      await deleteInstance(token, instanceId)
+    } catch (error) {
+      console.warn(`Failed to delete existing instance ${instanceId}`, error)
+    }
+  }
 
   for (const payload of instancePayloads) {
     const scheduledAt = buildScheduledAt(weekStart, payload.dayIndex, payload.time)

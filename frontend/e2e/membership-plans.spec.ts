@@ -9,7 +9,7 @@ async function loginAsAdmin(page: Page) {
   await page.fill('#password', ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'Sign in' }).click();
   // Wait until navigation away from /login completes
-  await expect(page).toHaveURL('/classes');
+  await expect(page).toHaveURL('/admin/plans');
 }
 
 test('/plans page loads and shows at least one plan card', async ({ page }) => {

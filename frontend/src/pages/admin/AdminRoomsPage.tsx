@@ -72,7 +72,7 @@ export function AdminRoomsPage() {
     setIsLoading(true)
     setError(null)
     try {
-      const data = await getRooms({ search: search || undefined, page, size: 20 })
+      const data = await getRooms({ search: search || undefined, page, size: 200 })
       setRooms(data.content)
       setTotalElements(data.totalElements)
       setTotalPages(data.totalPages)
