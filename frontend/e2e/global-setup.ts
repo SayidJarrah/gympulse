@@ -4,6 +4,7 @@ const API_BASE = process.env.E2E_API_BASE ?? 'http://localhost:8080/api/v1'
 const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL ?? 'admin@gymflow.local'
 const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD ?? 'Admin@1234'
 const SEED_FILE = '/tmp/gymflow-e2e-seed.json'
+const INSTANCE_SWEEP_WEEKS = 4
 
 interface LoginResponse {
   accessToken: string;
@@ -17,6 +18,11 @@ interface TrainerResponse {
 }
 
 interface RoomResponse {
+  id: string;
+  name: string;
+}
+
+interface MembershipPlanResponse {
   id: string;
   name: string;
 }
@@ -43,6 +49,34 @@ interface TrainerSummaryResponse {
 interface RoomSummaryResponse {
   id: string;
 }
+
+interface MembershipPlanSeed {
+  name: string;
+  description: string;
+  priceInCents: number;
+  durationDays: number;
+}
+
+interface E2eCleanupResponse {
+  deletedUsers: number;
+  deletedMemberships: number;
+  deletedPlans: number;
+}
+
+const REQUIRED_MEMBERSHIP_PLANS: MembershipPlanSeed[] = [
+  {
+    name: 'E2E Seed Starter Monthly',
+    description: 'Entry membership for automated test coverage.',
+    priceInCents: 3900,
+    durationDays: 30,
+  },
+  {
+    name: 'E2E Seed Unlimited Monthly',
+    description: 'Higher-tier membership for purchase and admin flows.',
+    priceInCents: 5900,
+    durationDays: 30,
+  },
+]
 
 async function apiRequest<T>(
   method: string,
@@ -89,6 +123,15 @@ async function getTemplates(token: string): Promise<ClassTemplateResponse[]> {
   const data = await apiRequest<{ content: ClassTemplateResponse[] }>(
     'GET',
     `${API_BASE}/admin/class-templates?page=0&size=500`,
+    token
+  )
+  return data.content
+}
+
+async function getMembershipPlans(token: string): Promise<MembershipPlanResponse[]> {
+  const data = await apiRequest<{ content: MembershipPlanResponse[] }>(
+    'GET',
+    `${API_BASE}/admin/membership-plans?page=0&size=500`,
     token
   )
   return data.content
@@ -192,6 +235,36 @@ async function createRoom(token: string, name: string, capacity?: number): Promi
   }
 }
 
+async function createMembershipPlan(
+  token: string,
+  plan: MembershipPlanSeed
+): Promise<MembershipPlanResponse> {
+  try {
+    return await apiRequest<MembershipPlanResponse>('POST', `${API_BASE}/membership-plans`, token, plan)
+  } catch (error) {
+    const existingPlans = await getMembershipPlans(token)
+    const existingPlan = existingPlans.find((existing) => existing.name === plan.name)
+    if (existingPlan) return existingPlan
+    throw error
+  }
+}
+
+async function cleanupExistingE2eData(token: string): Promise<void> {
+  try {
+    await apiRequest<E2eCleanupResponse>(
+      'POST',
+      `${API_BASE}/test-support/e2e/cleanup`,
+      token,
+      {
+        emailPrefixes: ['e2e-member-', 'e2e-register-'],
+        planPrefixes: ['E2E Seed ', 'E2E Plan '],
+      }
+    )
+  } catch (error) {
+    console.warn('E2E pre-run cleanup skipped', error)
+  }
+}
+
 async function createInstance(
   token: string,
   payload: {
@@ -207,8 +280,38 @@ async function createInstance(
   return apiRequest<ClassInstanceResponse>('POST', `${API_BASE}/admin/class-instances`, token, payload)
 }
 
+async function sweepNearbyInstances(token: string): Promise<void> {
+  const deletedInstances = new Set<string>()
+  const weekStart = getIsoWeekStartUtc(new Date())
+
+  for (let offset = -INSTANCE_SWEEP_WEEKS; offset <= INSTANCE_SWEEP_WEEKS; offset++) {
+    const d = new Date(weekStart)
+    d.setUTCDate(d.getUTCDate() + offset * 7)
+    const weekString = formatWeekString(d)
+    const instances = await getWeekSchedule(token, weekString)
+    for (const instance of instances) {
+      if (deletedInstances.has(instance.id)) {
+        continue
+      }
+      await deleteInstance(token, instance.id)
+      deletedInstances.add(instance.id)
+    }
+  }
+}
+
 async function globalSetup() {
   const token = await login()
+  await cleanupExistingE2eData(token)
+
+  const membershipPlans = await getMembershipPlans(token)
+  const planByName = new Map(membershipPlans.map((plan) => [plan.name, plan]))
+
+  for (const requiredPlan of REQUIRED_MEMBERSHIP_PLANS) {
+    if (!planByName.has(requiredPlan.name)) {
+      const createdPlan = await createMembershipPlan(token, requiredPlan)
+      planByName.set(createdPlan.name, createdPlan)
+    }
+  }
 
   const templates = await getTemplates(token)
   const templateByName = new Map(templates.map((t) => [t.name, t]))
@@ -248,10 +351,9 @@ async function globalSetup() {
   const seedTrainer = await createTrainer(token)
   const seedRoom = await createRoom(token, 'SeedRoom-E2E', 10)
 
-  const weekStart = getIsoWeekStartUtc(new Date())
-  const weekString = formatWeekString(weekStart)
-  const existingInstances = await getWeekSchedule(token, weekString)
+  await sweepNearbyInstances(token)
 
+  const weekStart = getIsoWeekStartUtc(new Date())
   const instances: string[] = []
 
   const hiit = templateByName.get('HIIT Bootcamp')!
@@ -318,41 +420,6 @@ async function globalSetup() {
       roomId: seedRoom.id,
     },
   ]
-
-  const deleteTargets = new Set<string>()
-
-  for (const payload of instancePayloads) {
-    const scheduledAt = buildScheduledAt(weekStart, payload.dayIndex, payload.time)
-    for (const instance of existingInstances) {
-      if (instance.scheduledAt !== scheduledAt) {
-        continue
-      }
-      if (payload.trainerIds.length > 0) {
-        const hasTrainer = instance.trainers.some((trainer) =>
-          payload.trainerIds.includes(trainer.id)
-        )
-        if (hasTrainer) {
-          deleteTargets.add(instance.id)
-          continue
-        }
-      }
-      if (payload.roomId && instance.room?.id === payload.roomId) {
-        deleteTargets.add(instance.id)
-        continue
-      }
-      if (instance.name === payload.template.name) {
-        deleteTargets.add(instance.id)
-      }
-    }
-  }
-
-  for (const instanceId of deleteTargets) {
-    try {
-      await deleteInstance(token, instanceId)
-    } catch (error) {
-      console.warn(`Failed to delete existing instance ${instanceId}`, error)
-    }
-  }
 
   for (const payload of instancePayloads) {
     const scheduledAt = buildScheduledAt(weekStart, payload.dayIndex, payload.time)

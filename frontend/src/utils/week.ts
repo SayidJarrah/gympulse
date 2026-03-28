@@ -1,4 +1,6 @@
+const MS_IN_MINUTE = 60 * 1000
 const MS_IN_DAY = 24 * 60 * 60 * 1000
+const SLOT_INTERVAL_MINUTES = 30
 
 export function getWeekStart(week: string): Date {
   const [yearPart, weekPart] = week.split('-W')
@@ -65,4 +67,17 @@ export function formatUtcTime(dateIso: string): string {
     hour12: false,
     timeZone: 'UTC',
   }).format(date)
+}
+
+export function getWeekSlotTime(
+  weekStart: Date,
+  dayIndex: number,
+  slotIndex: number,
+  startHour = 0
+): Date {
+  return new Date(
+    weekStart.getTime()
+      + dayIndex * MS_IN_DAY
+      + (startHour * 60 + slotIndex * SLOT_INTERVAL_MINUTES) * MS_IN_MINUTE
+  )
 }

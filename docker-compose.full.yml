@@ -27,6 +27,7 @@ services:
       DB_PASSWORD: secret
       JWT_SECRET: replace-with-a-strong-secret-key!
       JWT_EXPIRY_MS: 86400000
+      GYMFLOW_TEST_SUPPORT_ENABLED: "true"
     depends_on:
       postgres:
         condition: service_healthy

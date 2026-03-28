@@ -22,6 +22,7 @@ interface SchedulerStore {
   fetchTemplates: () => Promise<void>;
   fetchTrainers: () => Promise<void>;
   addInstance: (instance: ClassInstanceResponse) => void;
+  replaceInstance: (previousId: string, instance: ClassInstanceResponse) => void;
   updateInstance: (instance: ClassInstanceResponse) => void;
   removeInstance: (id: string) => void;
 }
@@ -76,6 +77,18 @@ export const useSchedulerStore = create<SchedulerStore>((set) => ({
 
   addInstance: (instance) =>
     set((state) => ({ instances: [...state.instances, instance] })),
+
+  replaceInstance: (previousId, instance) =>
+    set((state) => {
+      const index = state.instances.findIndex((item) => item.id === previousId)
+      if (index === -1) {
+        return { instances: [...state.instances, instance] }
+      }
+
+      const instances = [...state.instances]
+      instances[index] = instance
+      return { instances }
+    }),
 
   updateInstance: (instance) =>
     set((state) => ({

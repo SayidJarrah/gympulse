@@ -16,6 +16,11 @@ interface IdRecord {
   id: string;
 }
 
+interface E2eCleanupResponse {
+  deletedUsers: number;
+  deletedMemberships: number;
+}
+
 async function login(): Promise<string> {
   const response = await fetch(`${API_BASE}/auth/login`, {
     method: 'POST',
@@ -46,6 +51,26 @@ async function apiGetAll<T>(url: string, token: string): Promise<T[]> {
   if (!response.ok) return []
   const data = (await response.json()) as { content?: T[]; instances?: T[] }
   return data.content ?? data.instances ?? []
+}
+
+async function apiPost<T>(url: string, token: string, body: unknown): Promise<T | null> {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  })
+
+  if (!response.ok) {
+    if (response.status === 404) return null
+    const text = await response.text()
+    console.warn(`POST ${url} → ${response.status} ${text}`)
+    return null
+  }
+
+  return response.json() as Promise<T>
 }
 
 function getIsoWeekStartUtc(date: Date): Date {
@@ -159,6 +184,16 @@ async function globalTeardown() {
       }
     }
   }
+
+  // ── 5. Cleanup test-created user and plan data ────────────────────────────
+  await apiPost<E2eCleanupResponse>(
+    `${API_BASE}/test-support/e2e/cleanup`,
+    token,
+    {
+      emailPrefixes: ['e2e-member-', 'e2e-register-'],
+      planPrefixes: ['E2E Seed ', 'E2E Plan '],
+    }
+  )
 
   unlinkSync(SEED_FILE)
 }

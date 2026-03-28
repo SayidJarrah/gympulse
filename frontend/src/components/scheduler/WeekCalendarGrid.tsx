@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { ClassInstanceResponse } from '../../types/scheduler'
 import { ClassInstanceCard } from './ClassInstanceCard'
-import { formatUtcTime } from '../../utils/week'
+import { formatUtcTime, getWeekSlotTime } from '../../utils/week'
 
 const START_HOUR = 6
 const END_HOUR = 22
@@ -45,11 +45,7 @@ export function WeekCalendarGrid({
     const instanceId = dataTransfer.getData('instanceId')
     if (!templateId && !instanceId) return
 
-    const scheduledAt = new Date(
-      weekStart.getTime()
-        + dayIndex * 24 * 60 * 60 * 1000
-        + slotIndex * 30 * 60 * 1000
-    ).toISOString()
+    const scheduledAt = getWeekSlotTime(weekStart, dayIndex, slotIndex, START_HOUR).toISOString()
 
     if (templateId) {
       onDropTemplate(templateId, scheduledAt)
@@ -103,9 +99,7 @@ export function WeekCalendarGrid({
       <div className="relative flex-1 overflow-y-auto">
         <div className="grid grid-cols-[60px_repeat(7,1fr)]">
           {slots.map((slotIndex) => {
-            const time = new Date(
-              weekStart.getTime() + slotIndex * 30 * 60 * 1000 + START_HOUR * 60 * 60 * 1000
-            )
+            const time = getWeekSlotTime(weekStart, 0, slotIndex, START_HOUR)
             const timeLabel = slotIndex % 2 === 0 ? formatUtcTime(time.toISOString()) : ''
 
             return (

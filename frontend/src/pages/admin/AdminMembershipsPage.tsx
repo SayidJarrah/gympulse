@@ -316,7 +316,7 @@ export function AdminMembershipsPage() {
         </div>
 
         {/* Pagination */}
-        {!adminMembershipsLoading && totalElements > 0 && (
+        {!adminMembershipsLoading && totalPages > 1 && (
           <div className="mt-4 flex items-center justify-between">
             <p className="text-sm text-gray-400">
               Showing{' '}

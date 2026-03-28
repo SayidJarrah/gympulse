@@ -37,6 +37,7 @@ export function AdminSchedulerPage() {
     fetchTemplates,
     fetchTrainers,
     addInstance,
+    replaceInstance,
     updateInstance,
     removeInstance,
   } = useSchedulerStore()
@@ -93,7 +94,7 @@ export function AdminSchedulerPage() {
         roomId: template.room?.id ?? null,
         trainerIds: [],
       })
-      updateInstance(created)
+      replaceInstance(tempId, created)
     } catch (err) {
       removeInstance(tempId)
       setActionError('Failed to create class instance.')
