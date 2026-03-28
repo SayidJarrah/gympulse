@@ -81,11 +81,18 @@ Run `npm run test:e2e:report` after a suite run to open the interactive HTML rep
 When asked to "verify", "test", "run tests", or "check if X works", follow these steps.
 **Never fix app code or spec files during verification — produce reports only.**
 
+### Network constraint
+Codex and other sandboxed environments cannot make TCP connections to host ports
+(`localhost:3000`, `localhost:8080`). **Always run E2E tests through Docker** so
+Playwright reaches the services over the internal Docker network (`frontend:80`,
+`backend:8080`). Never run `npm run test:e2e` directly.
+
 ### Prerequisites
 ```bash
-curl -sf http://localhost:8080/api/v1/health
+docker-compose -f docker-compose.full.yml ps
 ```
-If not healthy, stop: "Stack is not running. Start the stack first."
+All three services (`postgres`, `backend`, `frontend`) must be running.
+If not: "Stack is not running. Start it first with the Docker Rebuild Workflow."
 
 ### Step 1 — Smoke tests
 ```bash
@@ -95,17 +102,21 @@ curl -sf http://localhost:3000 -o /dev/null -w "%{http_code}\n"
 
 ### Step 2 — E2E suite
 ```bash
-cd frontend && npm run test:e2e 2>&1
+docker-compose -f docker-compose.full.yml run --rm playwright
 ```
-The `list` reporter prints each test inline:
+This runs `npm ci && npm run test:e2e` inside the `playwright` container.
+The container shares the Docker network with `backend` and `frontend`, so all
+API and browser calls resolve correctly.
+
+The `list` reporter streams to stdout:
 - `✓ Feature › Test name (Xms)` — passed
 - `✗ Feature › Test name` + error block — failed
 - Skipped tests appear as `○`
 
-After the run, Playwright saves artefacts for failed tests under `frontend/test-results/`.
-Each failed test gets a directory like:
+Playwright saves artefacts for failed tests to `frontend/test-results/` on the host
+(via the `./frontend:/work` volume mount). Each failed test gets a directory like:
 `test-results/e2e-{spec-file}-{test-title}-chromium/`
-containing `test-failed-1.png` (screenshot) and `trace.zip` (full browser trace with network + console).
+containing `test-failed-1.png` (screenshot) and `trace.zip` (network + console trace).
 
 ### Step 3 — On failure: write an observation report
 

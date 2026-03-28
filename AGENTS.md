@@ -69,10 +69,14 @@ cd backend && ./gradlew test
 # Run frontend tests
 cd frontend && npm test
 
-# Run E2E tests (requires full stack running on ports 3000 and 8080)
-cd frontend && npm run test:e2e
+# Run E2E tests — always via Docker (sandboxed environments can't reach localhost ports)
+docker-compose -f docker-compose.full.yml run --rm playwright
 # Full verification workflow (smoke tests + E2E + observation reports on failure)
 # → see frontend/AGENTS.md ## Verification Workflow
+
+# View E2E report after a run (host browser)
+# Open frontend/playwright-report/index.html directly in browser
+# Or: docker-compose -f docker-compose.full.yml run --rm playwright "npx playwright show-report"
 
 # Apply DB migrations (auto on startup)
 ./gradlew flywayMigrate
@@ -132,7 +136,8 @@ with `docker ps` and ask the user before stopping it.
 for i in $(seq 1 12); do curl -sf http://localhost:8080/api/v1/health && echo " OK" && break || (echo " not ready, waiting..."; sleep 5); done
 ```
 
-If healthy: "Stack is running. Open http://localhost:3000 to review manually."
+If healthy: "Stack is running. Open http://localhost:3000 to review manually.
+To run E2E tests: docker-compose -f docker-compose.full.yml run --rm playwright"
 
 If not healthy after 60 s, check logs:
 ```bash

@@ -38,5 +38,21 @@ services:
     depends_on:
       - backend
 
+  playwright:
+    image: mcr.microsoft.com/playwright:v1.58.2-jammy
+    working_dir: /work
+    shm_size: "1gb"
+    environment:
+      E2E_API_BASE: http://backend:8080/api/v1
+      E2E_BASE_URL: http://frontend:80
+    volumes:
+      - ./frontend:/work
+      - playwright_node_modules:/work/node_modules
+    depends_on:
+      - backend
+      - frontend
+    entrypoint: ["/bin/sh", "-lc", "npm ci && npm run test:e2e"]
+
 volumes:
   postgres_data:
+  playwright_node_modules:

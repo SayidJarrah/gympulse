@@ -33,9 +33,17 @@ auth is required.
 
 ## Step 2 — E2E regression suite
 
+E2E tests run inside Docker so Playwright can reach the backend and frontend over
+the internal Docker network. Do NOT run `npm run test:e2e` directly — it cannot
+reach `localhost:8080` from a sandboxed environment.
+
 ```bash
-cd frontend && npm run test:e2e
+docker-compose -f docker-compose.full.yml run --rm playwright
 ```
+
+This streams the Playwright `list` reporter output to stdout.
+Test artefacts (screenshots, traces) land in `frontend/test-results/` on the host
+via the volume mount.
 
 If all specs pass: report ✅ N tests passed across M spec files.
 

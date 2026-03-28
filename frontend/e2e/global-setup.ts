@@ -88,7 +88,7 @@ async function login(): Promise<string> {
 async function getTemplates(token: string): Promise<ClassTemplateResponse[]> {
   const data = await apiRequest<{ content: ClassTemplateResponse[] }>(
     'GET',
-    `${API_BASE}/admin/class-templates?page=0&size=200`,
+    `${API_BASE}/admin/class-templates?page=0&size=500`,
     token
   )
   return data.content
@@ -97,7 +97,7 @@ async function getTemplates(token: string): Promise<ClassTemplateResponse[]> {
 async function getRooms(token: string): Promise<RoomResponse[]> {
   const data = await apiRequest<{ content: RoomResponse[] }>(
     'GET',
-    `${API_BASE}/rooms?page=0&size=200`,
+    `${API_BASE}/rooms?page=0&size=500`,
     token
   )
   return data.content
@@ -106,7 +106,16 @@ async function getRooms(token: string): Promise<RoomResponse[]> {
 async function getTrainers(token: string, search: string): Promise<TrainerResponse[]> {
   const data = await apiRequest<{ content: TrainerResponse[] }>(
     'GET',
-    `${API_BASE}/admin/trainers?page=0&size=200&search=${encodeURIComponent(search)}`,
+    `${API_BASE}/admin/trainers?page=0&size=500&search=${encodeURIComponent(search)}`,
+    token
+  )
+  return data.content
+}
+
+async function getAllTrainers(token: string): Promise<TrainerResponse[]> {
+  const data = await apiRequest<{ content: TrainerResponse[] }>(
+    'GET',
+    `${API_BASE}/admin/trainers?page=0&size=500`,
     token
   )
   return data.content
@@ -221,8 +230,20 @@ async function globalSetup() {
   const rooms = await getRooms(token)
   const roomByName = new Map(rooms.map((r) => [r.name, r]))
 
+  // ── Snapshot baseline (all IDs that exist before test data is created) ──
+  const allTrainers = await getAllTrainers(token)
+  const baseline = {
+    trainerIds: allTrainers.map((t) => t.id),
+    roomIds: rooms.map((r) => r.id),
+    templateIds: templates.map((t) => t.id),
+  }
+
   const studioA = roomByName.get('Studio A') ?? await createRoom(token, 'Studio A', 30)
   const studioB = roomByName.get('Studio B') ?? await createRoom(token, 'Studio B', 20)
+
+  // Studio A and Studio B are part of the baseline if they existed, or just-created — add them
+  if (!baseline.roomIds.includes(studioA.id)) baseline.roomIds.push(studioA.id)
+  if (!baseline.roomIds.includes(studioB.id)) baseline.roomIds.push(studioB.id)
 
   const seedTrainer = await createTrainer(token)
   const seedRoom = await createRoom(token, 'SeedRoom-E2E', 10)
@@ -351,6 +372,7 @@ async function globalSetup() {
     trainerId: seedTrainer.id,
     roomId: seedRoom.id,
     instanceIds: instances,
+    baseline,
   }
 
   writeFileSync(SEED_FILE, JSON.stringify(seedData, null, 2))
