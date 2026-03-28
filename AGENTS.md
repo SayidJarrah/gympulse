@@ -82,6 +82,71 @@ cd frontend && npm run test:e2e
 npm run build
 ````
 
+## Docker Rebuild Workflow
+
+When asked to "rebuild", "restart the stack", "run in Docker", or "apply my changes",
+follow these steps. Use this after any code change that needs to be tested in Docker.
+
+### Pre-flight
+```bash
+docker info                                    # confirm Docker is running
+ls docker-compose.full.yml                     # confirm compose file exists
+```
+If Docker is not running: stop — "Start Docker Desktop first."
+If `docker-compose.full.yml` is missing: stop — "docker-compose.full.yml not found. Ask @devops to create it."
+
+### Decide what to rebuild
+
+| What changed | Steps to run |
+|---|---|
+| Backend only (`.kt`, `.sql`, `.gradle`) | Steps 1 + 3 + 4 |
+| Frontend only (`.tsx`, `.ts`, `.css`, `.html`) | Steps 2 + 3 + 4 |
+| Both, or unsure | Steps 1 + 2 + 3 + 4 |
+
+### Step 1 — Build backend image
+```bash
+cd backend && ./gradlew bootJar
+docker build -t gymflow-backend:local .
+cd ..
+```
+If `bootJar` fails with a **compilation error** in code you just wrote: fix the code, then retry.
+If it fails for any other reason (dependency missing, Gradle daemon crash): stop and report the full error.
+
+### Step 2 — Build frontend image
+```bash
+docker build -t gymflow-frontend:local ./frontend
+```
+If it fails with a **TypeScript or build error** in code you just wrote: fix the code, then retry.
+If it fails for any other reason: stop and report the full error.
+
+### Step 3 — Restart the stack
+```bash
+docker-compose -f docker-compose.full.yml down --remove-orphans
+docker-compose -f docker-compose.full.yml up -d
+```
+If `down` reports a port conflict (address already in use): identify the conflicting container
+with `docker ps` and ask the user before stopping it.
+
+### Step 4 — Wait for health (60 s max)
+```bash
+for i in $(seq 1 12); do curl -sf http://localhost:8080/api/v1/health && echo " OK" && break || (echo " not ready, waiting..."; sleep 5); done
+```
+
+If healthy: "Stack is running. Open http://localhost:3000 to review manually."
+
+If not healthy after 60 s, check logs:
+```bash
+docker-compose -f docker-compose.full.yml logs --tail=40 backend
+docker-compose -f docker-compose.full.yml logs --tail=40 frontend
+```
+
+Classify the failure:
+- **Spring exception** (Flyway error, bean creation, NullPointer) → code/config issue — paste the log and stop
+- **Connection refused / missing env var** → infrastructure issue — paste the log and stop
+- **Frontend nginx error** → infrastructure issue — paste the log and stop
+
+Do NOT attempt to fix infrastructure failures (docker-compose, Dockerfiles, env vars) — report them.
+
 ## Security Rules — Non-Negotiable
 These rules apply to every file, every agent, every session. No exceptions.
 
