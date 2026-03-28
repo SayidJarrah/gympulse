@@ -71,6 +71,8 @@ cd frontend && npm test
 
 # Run E2E tests (requires full stack running on ports 3000 and 8080)
 cd frontend && npm run test:e2e
+# Full verification workflow (smoke tests + E2E + observation reports on failure)
+# → see frontend/AGENTS.md ## Verification Workflow
 
 # Apply DB migrations (auto on startup)
 ./gradlew flywayMigrate

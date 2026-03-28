@@ -76,6 +76,90 @@ Specs live in `e2e/` (one `{feature}.spec.ts` per feature slug).
 Run: `npm run test:e2e`
 Run `npm run test:e2e:report` after a suite run to open the interactive HTML report.
 
+## Verification Workflow
+
+When asked to "verify", "test", "run tests", or "check if X works", follow these steps.
+**Never fix app code or spec files during verification — produce reports only.**
+
+### Prerequisites
+```bash
+curl -sf http://localhost:8080/api/v1/health
+```
+If not healthy, stop: "Stack is not running. Start the stack first."
+
+### Step 1 — Smoke tests
+```bash
+curl -s http://localhost:8080/api/v1/health
+curl -sf http://localhost:3000 -o /dev/null -w "%{http_code}\n"
+```
+
+### Step 2 — E2E suite
+```bash
+cd frontend && npm run test:e2e 2>&1
+```
+The `list` reporter prints each test inline:
+- `✓ Feature › Test name (Xms)` — passed
+- `✗ Feature › Test name` + error block — failed
+- Skipped tests appear as `○`
+
+After the run, Playwright saves artefacts for failed tests under `frontend/test-results/`.
+Each failed test gets a directory like:
+`test-results/e2e-{spec-file}-{test-title}-chromium/`
+containing `test-failed-1.png` (screenshot) and `trace.zip` (full browser trace with network + console).
+
+### Step 3 — On failure: write an observation report
+
+For **each** failing test, create `docs/bugs/` if it does not exist, then write:
+`docs/bugs/YYYYMMDD-HHMMSS-{feature}.md`
+
+```markdown
+# Observation Report: {feature} — {one-line description}
+Date: {YYYY-MM-DD HH:MM}
+Reported by: codex
+
+## Failing Test
+Spec file: `frontend/e2e/{feature}.spec.ts`
+Test name: `{exact test name from terminal output}`
+
+## Assertion That Failed
+{Paste the exact Playwright error block from terminal output — expected vs received}
+
+## Test Artefacts
+Screenshot: `frontend/test-results/{dir}/test-failed-1.png`
+Trace (network + console): `frontend/test-results/{dir}/trace.zip`
+Open trace: npx playwright show-trace frontend/test-results/{dir}/trace.zip
+
+## Steps Being Executed When Failure Occurred
+{Based on the spec file — list the steps up to the failing assertion}
+
+## Suspicion (observation only — developer to confirm)
+{Optional: "Button with role X was not found. Selector may be outdated, or the feature may not be rendered."}
+
+## Suggested Agent
+@{frontend-dev | backend-dev}
+
+---
+*Root cause: run `/debug {feature} docs/bugs/{this-filename}`*
+*Spec fix (if needed): fill ## Spec Fix Required below, then run `/fix-spec docs/bugs/{this-filename}`*
+
+## Spec Fix Required
+*(Filled by developer after root cause analysis — leave blank until then)*
+Spec file:
+Test name:
+Change needed:
+```
+
+### Step 4 — Report summary
+
+```
+✅ / ❌ Backend healthy (http://localhost:8080)
+✅ / ❌ Frontend serving (http://localhost:3000)
+✅ / ❌ E2E suite — N passed / M failed
+
+Failures:
+- {test name} → docs/bugs/{filename}  (next: /debug {slug} docs/bugs/{filename})
+```
+
 ## Bug Report Workflow
 
 E2E failures are reported as **observation reports** in `docs/bugs/`.
