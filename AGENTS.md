@@ -182,9 +182,11 @@ JWT_EXPIRY_MS=3600000
 | Auth (register/login/JWT) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Membership plans | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | User membership purchase | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| User access flow | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| User profile | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Class schedule | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Class booking & cancellation | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Trainer profiles | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Class booking & cancellation | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Attendance check-in | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Admin dashboard | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Notifications | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |

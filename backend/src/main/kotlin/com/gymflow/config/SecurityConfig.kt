@@ -36,6 +36,7 @@ class SecurityConfig(
                     .requestMatchers("/api/v1/auth/refresh").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/membership-plans").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/membership-plans/*").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/v1/trainers/*/photo").permitAll()
                     .anyRequest().authenticated()
             }
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)

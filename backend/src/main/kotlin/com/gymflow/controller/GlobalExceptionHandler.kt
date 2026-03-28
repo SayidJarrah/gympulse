@@ -1,13 +1,27 @@
 package com.gymflow.controller
 
+import com.gymflow.dto.RoomHasInstancesResponse
+import com.gymflow.dto.TemplateHasInstancesResponse
+import com.gymflow.dto.TrainerHasAssignmentsResponse
+import com.gymflow.service.ClassInstanceNotFoundException
+import com.gymflow.service.ClassTemplateHasInstancesException
+import com.gymflow.service.ClassTemplateNameConflictException
+import com.gymflow.service.ClassTemplateNotFoundException
 import com.gymflow.service.EmailAlreadyExistsException
+import com.gymflow.service.ImportFileTooLargeException
+import com.gymflow.service.ImportFormatInvalidException
 import com.gymflow.service.InvalidCredentialsException
+import com.gymflow.service.InvalidExportFormatException
 import com.gymflow.service.InvalidMembershipStatusFilterException
+import com.gymflow.service.InvalidSlotException
 import com.gymflow.service.InvalidStatusFilterException
+import com.gymflow.service.InvalidWeekFormatException
 import com.gymflow.service.MembershipAlreadyActiveException
 import com.gymflow.service.MembershipNotActiveException
 import com.gymflow.service.MembershipNotFoundException
 import com.gymflow.service.NoActiveMembershipException
+import com.gymflow.service.PhotoNotFoundException
+import com.gymflow.service.PhotoTooLargeException
 import com.gymflow.service.PlanAlreadyActiveException
 import com.gymflow.service.PlanAlreadyInactiveException
 import com.gymflow.service.PlanHasActiveSubscribersException
@@ -15,6 +29,14 @@ import com.gymflow.service.PlanNotAvailableException
 import com.gymflow.service.PlanNotFoundException
 import com.gymflow.service.RefreshTokenExpiredException
 import com.gymflow.service.RefreshTokenInvalidException
+import com.gymflow.service.RoomHasInstancesException
+import com.gymflow.service.RoomNameConflictException
+import com.gymflow.service.RoomNotFoundException
+import com.gymflow.service.TrainerEmailConflictException
+import com.gymflow.service.TrainerHasAssignmentsException
+import com.gymflow.service.TrainerNotFoundException
+import com.gymflow.service.TrainerScheduleConflictException
+import com.gymflow.service.InvalidPhotoFormatException
 import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -190,6 +212,161 @@ class GlobalExceptionHandler {
         return ResponseEntity
             .status(HttpStatus.FORBIDDEN)
             .body(ErrorResponse(error = "Access denied", code = "ACCESS_DENIED"))
+    }
+
+    // --- Trainer / Room / Scheduler exceptions ---
+
+    @ExceptionHandler(TrainerEmailConflictException::class)
+    fun handleTrainerEmailConflict(ex: TrainerEmailConflictException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(ErrorResponse(error = ex.message ?: "Trainer email conflict", code = "TRAINER_EMAIL_CONFLICT"))
+    }
+
+    @ExceptionHandler(TrainerNotFoundException::class)
+    fun handleTrainerNotFound(ex: TrainerNotFoundException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(ErrorResponse(error = ex.message ?: "Trainer not found", code = "TRAINER_NOT_FOUND"))
+    }
+
+    @ExceptionHandler(TrainerHasAssignmentsException::class)
+    fun handleTrainerHasAssignments(ex: TrainerHasAssignmentsException): ResponseEntity<TrainerHasAssignmentsResponse> {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(
+                TrainerHasAssignmentsResponse(
+                    error = "Trainer is assigned to scheduled classes",
+                    code = "TRAINER_HAS_ASSIGNMENTS",
+                    affectedInstances = ex.affected
+                )
+            )
+    }
+
+    @ExceptionHandler(TrainerScheduleConflictException::class)
+    fun handleTrainerScheduleConflict(ex: TrainerScheduleConflictException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(ErrorResponse(error = ex.message ?: "Trainer schedule conflict", code = "TRAINER_SCHEDULE_CONFLICT"))
+    }
+
+    @ExceptionHandler(InvalidPhotoFormatException::class)
+    fun handleInvalidPhotoFormat(ex: InvalidPhotoFormatException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+            .body(ErrorResponse(error = ex.message ?: "Invalid photo format", code = "INVALID_PHOTO_FORMAT"))
+    }
+
+    @ExceptionHandler(PhotoTooLargeException::class)
+    fun handlePhotoTooLarge(ex: PhotoTooLargeException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.PAYLOAD_TOO_LARGE)
+            .body(ErrorResponse(error = ex.message ?: "Photo too large", code = "PHOTO_TOO_LARGE"))
+    }
+
+    @ExceptionHandler(PhotoNotFoundException::class)
+    fun handlePhotoNotFound(ex: PhotoNotFoundException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(ErrorResponse(error = ex.message ?: "Photo not found", code = "PHOTO_NOT_FOUND"))
+    }
+
+    @ExceptionHandler(RoomNotFoundException::class)
+    fun handleRoomNotFound(ex: RoomNotFoundException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(ErrorResponse(error = ex.message ?: "Room not found", code = "ROOM_NOT_FOUND"))
+    }
+
+    @ExceptionHandler(RoomNameConflictException::class)
+    fun handleRoomNameConflict(ex: RoomNameConflictException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(ErrorResponse(error = ex.message ?: "Room name conflict", code = "ROOM_NAME_CONFLICT"))
+    }
+
+    @ExceptionHandler(RoomHasInstancesException::class)
+    fun handleRoomHasInstances(ex: RoomHasInstancesException): ResponseEntity<RoomHasInstancesResponse> {
+        return ResponseEntity
+            .status(HttpStatus.OK)
+            .body(
+                RoomHasInstancesResponse(
+                    error = "Room is assigned to scheduled class instances",
+                    code = "ROOM_HAS_INSTANCES",
+                    affectedInstances = ex.affected
+                )
+            )
+    }
+
+    @ExceptionHandler(ClassTemplateNotFoundException::class)
+    fun handleClassTemplateNotFound(ex: ClassTemplateNotFoundException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(ErrorResponse(error = ex.message ?: "Class template not found", code = "CLASS_TEMPLATE_NOT_FOUND"))
+    }
+
+    @ExceptionHandler(ClassTemplateNameConflictException::class)
+    fun handleClassTemplateNameConflict(ex: ClassTemplateNameConflictException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(ErrorResponse(error = ex.message ?: "Class template name conflict", code = "CLASS_TEMPLATE_NAME_CONFLICT"))
+    }
+
+    @ExceptionHandler(ClassTemplateHasInstancesException::class)
+    fun handleClassTemplateHasInstances(
+        ex: ClassTemplateHasInstancesException
+    ): ResponseEntity<TemplateHasInstancesResponse> {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(
+                TemplateHasInstancesResponse(
+                    error = "Class template has scheduled instances",
+                    code = "CLASS_TEMPLATE_HAS_INSTANCES",
+                    affectedInstances = ex.affected
+                )
+            )
+    }
+
+    @ExceptionHandler(ClassInstanceNotFoundException::class)
+    fun handleClassInstanceNotFound(ex: ClassInstanceNotFoundException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(ErrorResponse(error = ex.message ?: "Class instance not found", code = "CLASS_INSTANCE_NOT_FOUND"))
+    }
+
+    @ExceptionHandler(InvalidSlotException::class)
+    fun handleInvalidSlot(ex: InvalidSlotException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.UNPROCESSABLE_ENTITY)
+            .body(ErrorResponse(error = ex.message ?: "Invalid scheduled time", code = "VALIDATION_ERROR"))
+    }
+
+    @ExceptionHandler(InvalidWeekFormatException::class)
+    fun handleInvalidWeekFormat(ex: InvalidWeekFormatException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.UNPROCESSABLE_ENTITY)
+            .body(ErrorResponse(error = ex.message ?: "Invalid week format", code = "VALIDATION_ERROR"))
+    }
+
+    @ExceptionHandler(InvalidExportFormatException::class)
+    fun handleInvalidExportFormat(ex: InvalidExportFormatException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.UNPROCESSABLE_ENTITY)
+            .body(ErrorResponse(error = ex.message ?: "Invalid export format", code = "VALIDATION_ERROR"))
+    }
+
+    @ExceptionHandler(ImportFormatInvalidException::class)
+    fun handleImportFormatInvalid(ex: ImportFormatInvalidException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ErrorResponse(error = ex.message ?: "Import format invalid", code = "IMPORT_FORMAT_INVALID"))
+    }
+
+    @ExceptionHandler(ImportFileTooLargeException::class)
+    fun handleImportFileTooLarge(ex: ImportFileTooLargeException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.PAYLOAD_TOO_LARGE)
+            .body(ErrorResponse(error = ex.message ?: "Import file too large", code = "IMPORT_FILE_TOO_LARGE"))
     }
 
     @ExceptionHandler(Exception::class)

@@ -20,7 +20,7 @@ the codebase:
 
 Layers affected: **DB**, **Backend**, **Frontend**.
 
-The existing `GymClass` entity described in `CLAUDE.md` does not yet exist in the codebase
+The existing `GymClass` entity described in `AGENTS.md` does not yet exist in the codebase
 (no migration, no Kotlin file found). This SDD introduces its equivalent as two separate
 entities (`ClassTemplate` + `ClassInstance`) instead of one monolithic `GymClass`, which is
 the correct design for this feature. The `Trainer` entity likewise does not yet exist and is
@@ -215,7 +215,7 @@ CREATE INDEX idx_cit_trainer_id ON class_instance_trainers (trainer_id);
 
 ### Modified Tables
 
-No existing tables are modified. The `GymClass` entity mentioned in `CLAUDE.md` was never
+No existing tables are modified. The `GymClass` entity mentioned in `AGENTS.md` was never
 migrated, so there is no legacy table or column to alter.
 
 ### Flyway Migration Files
@@ -1351,10 +1351,10 @@ photo endpoint so the storage backend can be swapped without a client-side chang
 Use `org.mnode.ical4j:ical4j` (version 3.x). Verify the license is acceptable (LGPL 2.1).
 If not acceptable, `biweekly` (Apache 2.0) is an alternative with a similar API.
 
-### GymClass entity in CLAUDE.md
-CLAUDE.md lists `GymClass` in the Domain Model with a single `trainerId` FK. That entity
+### GymClass entity in AGENTS.md
+AGENTS.md lists `GymClass` in the Domain Model with a single `trainerId` FK. That entity
 has never been implemented (no migration, no Kotlin file). This SDD supersedes that
-description. The domain model in CLAUDE.md should be updated by the backend-dev after
+description. The domain model in AGENTS.md should be updated by the backend-dev after
 implementation to reflect `ClassTemplate` + `ClassInstance` + `class_instance_trainers`
 as the actual schema.
 

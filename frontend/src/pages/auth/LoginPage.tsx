@@ -1,6 +1,7 @@
 import { useNavigate, Link } from 'react-router-dom'
 import { AuthForm } from '../../components/auth/AuthForm'
 import { useAuth } from '../../hooks/useAuth'
+import { useAuthStore } from '../../store/authStore'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -9,7 +10,8 @@ export function LoginPage() {
   const handleSubmit = async (email: string, password: string): Promise<void> => {
     try {
       await login(email, password)
-      navigate('/classes')
+      const role = useAuthStore.getState().user?.role
+      navigate(role === 'ADMIN' ? '/admin/plans' : '/plans')
     } catch {
       // Error is displayed via the error state in useAuth — no navigation on failure
     }

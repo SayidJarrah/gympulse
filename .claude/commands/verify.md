@@ -2,6 +2,15 @@ Verify the running GymFlow stack with smoke tests and the full E2E suite.
 
 Feature to scope (optional): $ARGUMENTS
 
+## Responsibility chain (read before doing anything)
+- **e2e-tester** — diagnoses failures; writes observation reports to `docs/bugs/`. Never fixes spec files during /verify.
+- **@frontend-dev / @backend-dev** — investigates root cause via `/debug`. Never invoked directly from /verify.
+- **Bug brief** (`docs/bugs/`) — the hand-off artefact. e2e-tester writes it; developer reads it.
+
+/verify never fixes anything. It produces reports. That is all.
+
+---
+
 **Assumes the stack is already running.** If you are not sure, check first:
 ```bash
 curl -sf http://localhost:8080/api/v1/health
@@ -32,19 +41,18 @@ If all specs pass: report ✅ N tests passed across M spec files.
 
 If any spec fails:
 - Report which spec file and test name failed
-- Invoke e2e-tester agent in debug mode with this exact instruction:
+- Invoke e2e-tester agent with this exact instruction:
   "Spec {name} failed in frontend/e2e/{feature}.spec.ts. The stack is running.
   Use Playwright MCP to diagnose what the browser shows for this flow.
-  IMPORTANT: You may only edit files inside frontend/e2e/.
-    - If the spec assertion is wrong → fix the spec.
-    - If the app is broken → follow the Bug Reporting Procedure: write a bug brief
-      to docs/bugs/YYYYMMDD-HHMMSS-{feature}.md with a screenshot and full description,
-      then report the brief path. Do not touch app source files."
+  Write an observation report to docs/bugs/YYYYMMDD-HHMMSS-{feature}.md with
+  screenshots, console errors, network logs, and a page snapshot.
+  Do NOT fix any files. Do NOT decide if it is a spec bug or an app bug.
+  Report the path of the observation report when done."
 
 After the e2e-tester responds:
-- If it fixed the spec → re-run the suite to confirm
-- If it wrote a bug brief → read the brief, confirm it exists at docs/bugs/,
-  and include its path in your Step 3 report
+- Read the observation report it wrote
+- Confirm it exists at docs/bugs/
+- Include its path in your Step 3 report
 
 ## Step 3 — Report
 
@@ -53,13 +61,14 @@ Print a summary:
 - ✅ / ❌ Frontend serving (http://localhost:3000)
 - ✅ / ❌ Each smoke test result
 - ✅ / ❌ E2E suite (N passed / M failed)
+- 📋 Observation report(s): `docs/bugs/{filename}` (one line per failure)
 
 If all green: "Stack is verified. Open http://localhost:3000 to review manually."
 
-If E2E failures remain after the debug step, for each unresolved failure report:
+If there are failures, for each one report:
 - Spec file and test name
-- Bug brief path: `docs/bugs/{filename}`
-- Suggested fix command: `/debug fix {slug} {filename}`
+- Observation report path: `docs/bugs/{filename}`
+- Next step: `/debug {slug} docs/bugs/{filename}`
 - Suggested agent: @frontend-dev or @backend-dev
 
-Do NOT invoke fixing agents directly from /verify. Hand off via bug brief only.
+Do NOT invoke fixing agents directly from /verify. Hand off via observation report only.

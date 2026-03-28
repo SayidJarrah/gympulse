@@ -74,6 +74,32 @@ Full spec: `docs/design/system.md`
 ## E2E Tests
 Specs live in `e2e/` (one `{feature}.spec.ts` per feature slug).
 Run: `npm run test:e2e`
+Run `npm run test:e2e:report` after a suite run to open the interactive HTML report.
+
+## Bug Report Workflow
+
+E2E failures are reported as **observation reports** in `docs/bugs/`.
+These are written by the e2e-tester and contain browser evidence (screenshots,
+console errors, network logs, page snapshot) — but no root cause analysis.
+
+When you receive a bug brief to investigate:
+
+1. **Assess first — app bug or spec issue?**
+   - Is the UI doing something wrong (missing element, broken navigation, wrong data)? → **App bug** — fix the app code.
+   - Is the spec asserting something the app never did and the SDD never required? → **Spec issue**.
+   - Does the app match the SDD but the spec expects something different? → **Spec issue**.
+   - Unsure? Check the SDD for this feature. App matches SDD → spec issue. App deviates → app bug.
+
+2. **If app bug:** fix the relevant component/hook/API function (≤ 3 files). Re-run the spec to confirm.
+
+3. **If spec issue:** do NOT change any app file. Fill in the `## Spec Fix Required` section
+   at the bottom of the bug brief:
+   ```
+   Spec file: frontend/e2e/{feature}.spec.ts
+   Test name: {exact test name}
+   Change needed: {what selector/assertion/value is wrong and what it should be}
+   ```
+   Then tell the user to run `/fix-spec docs/bugs/{filename}`.
 
 ## Updating Implementation Status
 After all pages/components are built and working, update the **Frontend** column

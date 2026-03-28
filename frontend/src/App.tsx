@@ -5,6 +5,10 @@ import { PlansPage } from './pages/plans/PlansPage'
 import { PlanDetailPage } from './pages/plans/PlanDetailPage'
 import { AdminPlansPage } from './pages/admin/AdminPlansPage'
 import { AdminMembershipsPage } from './pages/admin/AdminMembershipsPage'
+import { AdminTrainersPage } from './pages/admin/AdminTrainersPage'
+import { AdminRoomsPage } from './pages/admin/AdminRoomsPage'
+import { AdminClassTemplatesPage } from './pages/admin/AdminClassTemplatesPage'
+import { AdminSchedulerPage } from './pages/admin/AdminSchedulerPage'
 import { MyMembershipPage } from './pages/membership/MyMembershipPage'
 import { AdminRoute } from './components/layout/AdminRoute'
 import { AuthRoute } from './components/layout/AuthRoute'
@@ -45,6 +49,38 @@ function App() {
           element={
             <AdminRoute>
               <AdminMembershipsPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/trainers"
+          element={
+            <AdminRoute>
+              <AdminTrainersPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/class-templates"
+          element={
+            <AdminRoute>
+              <AdminClassTemplatesPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/rooms"
+          element={
+            <AdminRoute>
+              <AdminRoomsPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/scheduler"
+          element={
+            <AdminRoute>
+              <AdminSchedulerPage />
             </AdminRoute>
           }
         />

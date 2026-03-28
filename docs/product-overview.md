@@ -28,6 +28,9 @@ profile pages linked to their classes. Admins manage everything from a dashboard
 
 | Scheduler (admin) | 🔄 In progress | Admin-only workspace to manage trainer profiles, define class templates, compose a weekly drag-and-drop schedule, and import/export the programme |
 
+| User access flow | 🔄 In progress | Membership gate on login, portal navigation shell, disabled nav items for non-members, and membership status widget |
+| User profile | 🔄 In progress | Member view and edit of personal profile fields (name, phone, date of birth, fitness goals); email is read-only |
+
 <!-- business-analyst adds a row here when each PRD is written -->
 
 ## Current API Surface
@@ -65,3 +68,5 @@ profile pages linked to their classes. Admins manage everything from a dashboard
 - Membership plans — admin CRUD for plan catalogue; public read access for guests and members
 - User membership purchase — self-service plan activation for authenticated members; one active membership per user enforced
 - Scheduler (admin) — trainer profiles, class template library, drag-and-drop weekly calendar, trainer assignment, CSV/iCal import and export
+- User access flow — membership gate on login, portal navigation shell with persistent nav, disabled items for non-members, and membership status widget
+- User profile — member view and edit of personal details (name, phone, date of birth, fitness goals); email read-only; membership status display

@@ -1,0 +1,116 @@
+package com.gymflow.repository
+
+import com.gymflow.domain.ClassInstance
+import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Query
+import org.springframework.data.jpa.repository.Modifying
+import org.springframework.data.repository.query.Param
+import java.time.OffsetDateTime
+import java.util.UUID
+
+interface ClassInstanceRepository : JpaRepository<ClassInstance, UUID> {
+    @Query(
+        """
+        SELECT DISTINCT ci FROM ClassInstance ci
+        LEFT JOIN FETCH ci.trainers t
+        LEFT JOIN FETCH ci.room r
+        LEFT JOIN FETCH ci.template tpl
+        WHERE ci.deletedAt IS NULL
+          AND ci.scheduledAt >= :start
+          AND ci.scheduledAt < :end
+        """
+    )
+    fun findWithDetailsBetween(
+        @Param("start") start: OffsetDateTime,
+        @Param("end") end: OffsetDateTime
+    ): List<ClassInstance>
+
+    @Query(
+        """
+        SELECT DISTINCT ci FROM ClassInstance ci
+        LEFT JOIN FETCH ci.trainers t
+        LEFT JOIN FETCH ci.room r
+        LEFT JOIN FETCH ci.template tpl
+        WHERE ci.id = :id
+        """
+    )
+    fun findWithDetailsById(@Param("id") id: UUID): ClassInstance?
+
+    @Query(
+        value = """
+        SELECT ci.* FROM class_instances ci
+        JOIN class_instance_trainers cit ON cit.class_instance_id = ci.id
+        WHERE cit.trainer_id = :trainerId
+          AND ci.deleted_at IS NULL
+          AND ci.scheduled_at < :endTime
+          AND (ci.scheduled_at + ci.duration_min * INTERVAL '1 minute') > :startTime
+        """,
+        nativeQuery = true
+    )
+    fun findTrainerOverlaps(
+        @Param("trainerId") trainerId: UUID,
+        @Param("startTime") startTime: OffsetDateTime,
+        @Param("endTime") endTime: OffsetDateTime
+    ): List<ClassInstance>
+
+    @Query(
+        value = """
+        SELECT ci.* FROM class_instances ci
+        JOIN class_instance_trainers cit ON cit.class_instance_id = ci.id
+        WHERE cit.trainer_id = :trainerId
+          AND ci.deleted_at IS NULL
+          AND ci.id <> :excludeId
+          AND ci.scheduled_at < :endTime
+          AND (ci.scheduled_at + ci.duration_min * INTERVAL '1 minute') > :startTime
+        """,
+        nativeQuery = true
+    )
+    fun findTrainerOverlapsExcluding(
+        @Param("trainerId") trainerId: UUID,
+        @Param("excludeId") excludeId: UUID,
+        @Param("startTime") startTime: OffsetDateTime,
+        @Param("endTime") endTime: OffsetDateTime
+    ): List<ClassInstance>
+
+    @Query(
+        value = """
+        SELECT COUNT(*) FROM class_instances ci
+        WHERE ci.deleted_at IS NULL
+          AND ci.room_id = :roomId
+          AND ci.scheduled_at < :endTime
+          AND (ci.scheduled_at + ci.duration_min * INTERVAL '1 minute') > :startTime
+          AND (:excludeId IS NULL OR ci.id <> :excludeId)
+        """,
+        nativeQuery = true
+    )
+    fun countRoomOverlaps(
+        @Param("roomId") roomId: UUID,
+        @Param("startTime") startTime: OffsetDateTime,
+        @Param("endTime") endTime: OffsetDateTime,
+        @Param("excludeId") excludeId: UUID?
+    ): Long
+
+    fun findByRoomIdAndDeletedAtIsNull(roomId: UUID): List<ClassInstance>
+
+    fun findByTemplateIdAndDeletedAtIsNull(templateId: UUID): List<ClassInstance>
+
+    fun existsByScheduledAtAndName(scheduledAt: OffsetDateTime, name: String): Boolean
+
+    @Query(
+        """
+        SELECT DISTINCT ci FROM ClassInstance ci
+        JOIN ci.trainers t
+        WHERE t.id = :trainerId
+          AND ci.deletedAt IS NULL
+        """
+    )
+    fun findByTrainerId(@Param("trainerId") trainerId: UUID): List<ClassInstance>
+
+    @Modifying
+    @Query("UPDATE ClassInstance ci SET ci.room = null WHERE ci.room.id = :roomId")
+    fun clearRoomAssignments(@Param("roomId") roomId: UUID)
+
+    @Modifying
+    @Query("UPDATE ClassInstance ci SET ci.template = null WHERE ci.template.id = :templateId")
+    fun clearTemplateAssignments(@Param("templateId") templateId: UUID)
+}

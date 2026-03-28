@@ -6,6 +6,10 @@ import {
   ArrowRightOnRectangleIcon,
   RectangleStackIcon,
   CreditCardIcon,
+  UserGroupIcon,
+  RectangleGroupIcon,
+  BuildingOfficeIcon,
+  CalendarDaysIcon,
 } from '@heroicons/react/24/outline'
 import { useAuthStore } from '../../store/authStore'
 
@@ -18,6 +22,10 @@ interface SidebarLink {
 const sidebarLinks: SidebarLink[] = [
   { label: 'Plans', href: '/admin/plans', icon: RectangleStackIcon },
   { label: 'Memberships', href: '/admin/memberships', icon: CreditCardIcon },
+  { label: 'Trainers', href: '/admin/trainers', icon: UserGroupIcon },
+  { label: 'Class Templates', href: '/admin/class-templates', icon: RectangleGroupIcon },
+  { label: 'Rooms', href: '/admin/rooms', icon: BuildingOfficeIcon },
+  { label: 'Scheduler', href: '/admin/scheduler', icon: CalendarDaysIcon },
 ]
 
 export function AdminSidebar() {
