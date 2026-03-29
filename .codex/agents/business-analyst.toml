@@ -1,6 +1,6 @@
 # .codex/agents/business-analyst.toml
 
-name = "business_analyst"
+name = "business-analyst"
 description = "Decomposes a high-level feature idea into a structured Product Requirements Document (PRD). Use first when a new feature is requested, before design or coding. Outputs a PRD that solution-architect uses as input."
 model = "gpt-5.4"
 model_reasoning_effort = "high"

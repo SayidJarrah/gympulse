@@ -63,7 +63,7 @@ It combines:
 
 ### Auth
 
-#### `AUTH-01` Register happy path
+#### `AUTH-01` Register happy path ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -75,7 +75,7 @@ It combines:
 - Registration succeeds
 - User is redirected to `/login`
 
-#### `AUTH-02` Register duplicate email
+#### `AUTH-02` Register duplicate email ✅
 
 - Priority: `P0`
 - Status: `Missing`
@@ -87,7 +87,7 @@ It combines:
 - User remains on `/register`
 - Duplicate-account error is shown
 
-#### `AUTH-03` Register validation matrix
+#### `AUTH-03` Register validation matrix ✅
 
 - Priority: `P1`
 - Status: `Missing`
@@ -100,7 +100,7 @@ It combines:
 - Validation errors render correctly
 - No successful redirect occurs
 
-#### `AUTH-04` Login happy path for regular user
+#### `AUTH-04` Login happy path for regular user ✅
 
 - Priority: `P0`
 - Status: `Missing`
@@ -113,7 +113,7 @@ It combines:
 - User is redirected to `/plans`
 - Authenticated navbar state is visible
 
-#### `AUTH-05` Login happy path for admin
+#### `AUTH-05` Login happy path for admin ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -125,7 +125,7 @@ It combines:
 - Login succeeds
 - User is redirected to `/admin/plans`
 
-#### `AUTH-06` Login invalid credentials
+#### `AUTH-06` Login invalid credentials ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -137,7 +137,7 @@ It combines:
 - User remains on `/login`
 - Generic invalid-credentials message is shown
 
-#### `AUTH-07` Login unknown email uses same generic error
+#### `AUTH-07` Login unknown email uses same generic error ✅
 
 - Priority: `P1`
 - Status: `Missing`
@@ -149,7 +149,7 @@ It combines:
 - User remains on `/login`
 - Same generic invalid-credentials message is shown
 
-#### `AUTH-08` Public navbar logout
+#### `AUTH-08` Public navbar logout ✅
 
 - Priority: `P0`
 - Status: `Missing`
@@ -162,7 +162,7 @@ It combines:
 - User is redirected to `/login`
 - Guest navbar state is visible
 
-#### `AUTH-09` Admin sidebar logout
+#### `AUTH-09` Admin sidebar logout ✅
 
 - Priority: `P0`
 - Status: `Missing`
@@ -175,7 +175,7 @@ It combines:
 - Session is cleared
 - User is redirected away from admin area
 
-#### `AUTH-10` Authenticated user route guard
+#### `AUTH-10` Authenticated user route guard ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -185,7 +185,7 @@ It combines:
 - Expected:
 - Redirect to `/login`
 
-#### `AUTH-11` Admin route guard for unauthenticated guest
+#### `AUTH-11` Admin route guard for unauthenticated guest ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -195,7 +195,7 @@ It combines:
 - Expected:
 - Redirect to `/plans`
 
-#### `AUTH-12` Admin route guard for authenticated non-admin
+#### `AUTH-12` Admin route guard for authenticated non-admin ✅
 
 - Priority: `P0`
 - Status: `Missing`
@@ -205,7 +205,7 @@ It combines:
 - Expected:
 - Redirect to `/plans`
 
-#### `AUTH-13` Silent refresh success
+#### `AUTH-13` Silent refresh success ✅
 
 - Priority: `P0`
 - Status: `Missing`
@@ -217,7 +217,7 @@ It combines:
 - Original request completes
 - User stays in-app without redirect to `/login`
 
-#### `AUTH-14` Silent refresh failure
+#### `AUTH-14` Silent refresh failure ✅
 
 - Priority: `P0`
 - Status: `Missing`

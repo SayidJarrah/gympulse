@@ -1,6 +1,6 @@
 # .codex/agents/solution-architect.toml
 
-name = "solution_architect"
+name = "solution-architect"
 description = "Converts a PRD into a precise Solution Design Document (SDD) that backend and frontend agents can implement directly. Use after the PRD exists and before coding starts. Also use for larger bug-fix escalations where a design flaw or multi-file change is likely."
 model = "gpt-5.4"
 model_reasoning_effort = "high"

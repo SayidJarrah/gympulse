@@ -221,6 +221,7 @@ JWT_EXPIRY_MS=3600000
 - Per-feature requirements: `docs/prd/{feature-slug}.md`
 - Per-feature technical design: `docs/sdd/{feature-slug}.md`
 - Per-feature UI/UX design spec: `docs/design/{feature-slug}.md`
+- Per-feature HTML prototype: `docs/design/prototypes/{feature-slug}.html`
 - Design system (colors, typography, components): `docs/design/system.md`
 - Changelog: `CHANGELOG.md`
 - Interactive API reference: http://localhost:8080/api/docs (Swagger, auto-generated)
@@ -234,7 +235,7 @@ JWT_EXPIRY_MS=3600000
   WHO UPDATES EACH COLUMN:
   - PRD column   → business-analyst agent updates when PRD is written
   - SDD column   → solution-architect agent updates when SDD is written
-  - Design col   → ui-ux-designer agent updates when design spec is written
+  - Design col   → ui-ux-designer agent updates when design spec + HTML prototype are written
   - Backend col  → backend-dev agent updates when endpoints + migrations are implemented
   - Frontend col → frontend-dev agent updates when pages/components are built
   - Tests col    → backend-dev / frontend-dev update when unit tests pass
@@ -244,6 +245,7 @@ JWT_EXPIRY_MS=3600000
   - PRDs → docs/prd/{feature-slug}.md
   - SDDs → docs/sdd/{feature-slug}.md
   - Designs  → docs/design/{feature-slug}.md
+  - Prototypes → docs/design/prototypes/{feature-slug}.html
 -->
 
 | Feature | PRD | SDD | Design | Backend | Frontend | Tests | E2E |
@@ -253,7 +255,7 @@ JWT_EXPIRY_MS=3600000
 | Membership plans | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | User membership purchase | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | User access flow | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| User profile management | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| User profile management | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Class schedule | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Trainer profiles | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Class booking & cancellation | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |

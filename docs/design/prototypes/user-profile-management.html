@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GymFlow - User Profile Management Prototype</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background-color: #0F0F0F; font-family: 'Inter', system-ui, sans-serif; }
+    [data-screen] { display: none; }
+    [data-screen].active { display: block; }
+    .state-btn.active { border-color: rgba(34,197,94,.4); background: rgba(34,197,94,.1); color: #4ADE80; }
+    .chip-input { min-height: 44px; }
+    .animate-pulse-custom { animation: pulse 2s cubic-bezier(0.4,0,0.6,1) infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.45} }
+  </style>
+</head>
+<body class="min-h-screen text-white">
+
+<nav class="sticky top-0 z-30 border-b border-gray-800 bg-gray-900/80 backdrop-blur-md">
+  <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center gap-2.5">
+      <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-6 w-6" aria-hidden="true">
+          <path d="M13 2L4.5 13.5H11L9 22L19.5 9.5H13.5L16 2Z" fill="white" />
+        </svg>
+      </div>
+      <span class="text-lg font-bold text-white">GymFlow</span>
+    </div>
+
+    <div class="hidden items-center gap-6 sm:flex">
+      <a href="#" class="pb-0.5 text-sm font-medium text-gray-400 transition-colors duration-200 hover:text-white">Dashboard</a>
+      <a href="#" class="pb-0.5 text-sm font-medium text-gray-400 transition-colors duration-200 hover:text-white">Classes</a>
+      <a href="#" class="pb-0.5 text-sm font-medium text-gray-400 transition-colors duration-200 hover:text-white">Memberships</a>
+      <a href="#" class="pb-0.5 text-sm font-medium text-gray-400 transition-colors duration-200 hover:text-white">Trainers</a>
+      <a href="#" class="border-b-2 border-green-500 pb-0.5 text-sm font-medium text-green-400">Profile</a>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <button type="button" class="rounded-full p-2 text-gray-400 hover:bg-gray-800 hover:text-white" aria-label="Notifications">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="h-5 w-5">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14.857 17.082a23.848 23.848 0 0 1-5.714 0M18 8.25a6 6 0 1 0-12 0c0 2.755-.433 4.074-1 5.25-.424.88.21 1.875 1.172 1.875h11.656c.962 0 1.596-.995 1.172-1.875-.567-1.176-1-2.495-1-5.25Z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 18.75a2.25 2.25 0 0 0 4.5 0" />
+        </svg>
+      </button>
+      <button type="button" class="flex h-9 w-9 items-center justify-center rounded-full bg-gray-800 text-sm font-semibold text-white ring-2 ring-green-500/50">
+        AB
+      </button>
+    </div>
+  </div>
+  <div class="border-t border-gray-800 bg-gray-900">
+    <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-2 px-4 py-2 sm:px-6 lg:px-8">
+      <span class="mr-2 text-xs font-semibold uppercase tracking-wider text-gray-500">View state</span>
+      <button data-state-button="profile-populated" onclick="showScreen('profile-populated')" class="state-btn rounded-md border border-gray-700 bg-gray-800 px-2.5 py-1 text-xs font-medium text-gray-300 transition-colors hover:bg-gray-700">Populated</button>
+      <button data-state-button="profile-empty" onclick="showScreen('profile-empty')" class="state-btn rounded-md border border-gray-700 bg-gray-800 px-2.5 py-1 text-xs font-medium text-gray-300 transition-colors hover:bg-gray-700">First-time user</button>
+      <button data-state-button="profile-saving" onclick="showScreen('profile-saving')" class="state-btn rounded-md border border-gray-700 bg-gray-800 px-2.5 py-1 text-xs font-medium text-gray-300 transition-colors hover:bg-gray-700">Saving</button>
+      <button data-state-button="profile-validation" onclick="showScreen('profile-validation')" class="state-btn rounded-md border border-gray-700 bg-gray-800 px-2.5 py-1 text-xs font-medium text-gray-300 transition-colors hover:bg-gray-700">Validation error</button>
+      <button data-state-button="profile-load-error" onclick="showScreen('profile-load-error')" class="state-btn rounded-md border border-gray-700 bg-gray-800 px-2.5 py-1 text-xs font-medium text-gray-300 transition-colors hover:bg-gray-700">Load error</button>
+      <button data-state-button="profile-access-denied" onclick="showScreen('profile-access-denied')" class="state-btn rounded-md border border-gray-700 bg-gray-800 px-2.5 py-1 text-xs font-medium text-gray-300 transition-colors hover:bg-gray-700">Access denied</button>
+    </div>
+  </div>
+</nav>
+
+<div id="profile-populated" data-screen class="active">
+  <main class="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+    <div class="flex flex-col gap-2">
+      <h1 class="text-3xl font-bold leading-tight text-white">Your Profile</h1>
+      <p class="max-w-2xl text-base leading-normal text-gray-400">
+        Manage the personal details tied to your GymFlow account.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[320px_minmax(0,1fr)] lg:items-start">
+      <aside class="rounded-xl border border-gray-800 bg-gray-900 p-6 shadow-md shadow-black/50">
+        <div class="flex items-center gap-4">
+          <div class="flex h-16 w-16 items-center justify-center rounded-full bg-green-500/10 text-xl font-bold text-green-400 ring-1 ring-green-500/30">AB</div>
+          <div class="min-w-0">
+            <h2 class="text-lg font-semibold leading-tight text-white">Alicja Bator</h2>
+            <p class="mt-1 break-all text-sm text-gray-400">alicia.bator@example.com</p>
+          </div>
+        </div>
+
+        <div class="mt-6 rounded-lg border border-gray-800 bg-[#0F0F0F] p-4">
+          <p class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Account email</p>
+          <p class="mt-2 break-all text-sm text-white">alicia.bator@example.com</p>
+          <p class="mt-2 text-xs text-gray-400">Email is your login identity and cannot be changed here.</p>
+        </div>
+
+        <p class="mt-6 text-sm text-gray-400">Keep these details accurate so GymFlow can personalize future experiences.</p>
+        <p class="mt-3 text-xs text-gray-500">Last updated 29 Mar 2026, 14:45</p>
+      </aside>
+
+      <section class="rounded-xl border border-gray-800 bg-gray-900 shadow-md shadow-black/50">
+        <div class="border-b border-gray-800 px-6 py-5">
+          <h2 class="text-xl font-semibold leading-tight text-white">Personal details</h2>
+          <p class="mt-1 text-sm text-gray-400">Update your contact details, birth date, and fitness preferences.</p>
+        </div>
+
+        <div class="px-6 py-6">
+          <form class="flex flex-col gap-6" aria-label="User profile form">
+            <div role="status" aria-live="polite" class="rounded-md border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-400">
+              Profile updated.
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label for="email-populated" class="text-sm font-medium text-gray-300">Email address</label>
+              <input id="email-populated" type="email" value="alicia.bator@example.com" readonly aria-readonly="true" class="w-full rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-300" />
+              <p class="text-sm text-gray-400">Email changes are handled in account management, not on this page.</p>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div class="flex flex-col gap-1.5">
+                <label for="first-name-populated" class="text-sm font-medium text-gray-300">First name</label>
+                <input id="first-name-populated" type="text" value="Alicja" class="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none" />
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label for="last-name-populated" class="text-sm font-medium text-gray-300">Last name</label>
+                <input id="last-name-populated" type="text" value="Bator" class="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none" />
+              </div>
+            </div>
+
+            <p class="-mt-2 text-sm text-gray-400">Names are optional, but when provided they must be 1 to 50 characters.</p>
+
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div class="flex flex-col gap-1.5">
+                <label for="phone-populated" class="text-sm font-medium text-gray-300">Phone number</label>
+                <input id="phone-populated" type="text" value="+48 501 234 567" inputmode="tel" autocomplete="tel" class="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none" />
+                <p class="text-sm text-gray-400">Use international format starting with +.</p>
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label for="dob-populated" class="text-sm font-medium text-gray-300">Date of birth</label>
+                <input id="dob-populated" type="date" value="1994-08-12" class="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:outline-none" />
+                <p class="text-sm text-gray-400">Date cannot be in the future.</p>
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label for="goals-populated" class="text-sm font-medium text-gray-300">Fitness goals</label>
+              <div id="goals-populated" class="chip-input flex flex-wrap gap-1.5 rounded-md border border-gray-700 bg-gray-900 px-3 py-2">
+                <span class="inline-flex items-center gap-1 rounded-full border border-gray-700 bg-gray-800 px-2.5 py-1 text-sm font-medium leading-tight text-gray-300">
+                  Build strength
+                  <button type="button" class="rounded-full p-1 text-gray-400 hover:bg-gray-700 hover:text-white" aria-label="Remove Build strength">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-3 w-3"><path fill-rule="evenodd" d="M4.22 4.22a.75.75 0 0 1 1.06 0L10 8.94l4.72-4.72a.75.75 0 1 1 1.06 1.06L11.06 10l4.72 4.72a.75.75 0 1 1-1.06 1.06L10 11.06l-4.72 4.72a.75.75 0 1 1-1.06-1.06L8.94 10 4.22 5.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" /></svg>
+                  </button>
+                </span>
+                <span class="inline-flex items-center gap-1 rounded-full border border-gray-700 bg-gray-800 px-2.5 py-1 text-sm font-medium leading-tight text-gray-300">
+                  Improve mobility
+                  <button type="button" class="rounded-full p-1 text-gray-400 hover:bg-gray-700 hover:text-white" aria-label="Remove Improve mobility">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-3 w-3"><path fill-rule="evenodd" d="M4.22 4.22a.75.75 0 0 1 1.06 0L10 8.94l4.72-4.72a.75.75 0 1 1 1.06 1.06L11.06 10l4.72 4.72a.75.75 0 1 1-1.06 1.06L10 11.06l-4.72 4.72a.75.75 0 1 1-1.06-1.06L8.94 10 4.22 5.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" /></svg>
+                  </button>
+                </span>
+                <input type="text" value="" placeholder="Add a goal and press Enter" class="min-w-[180px] flex-1 bg-transparent text-sm text-white placeholder:text-gray-500 outline-none" />
+              </div>
+              <p class="text-sm text-gray-400">Up to 5 goals. Press Enter or comma to add each one.</p>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label for="preferences-populated" class="text-sm font-medium text-gray-300">Preferred class types</label>
+              <div id="preferences-populated" class="chip-input flex flex-wrap gap-1.5 rounded-md border border-gray-700 bg-gray-900 px-3 py-2">
+                <span class="inline-flex items-center gap-1 rounded-full border border-gray-700 bg-gray-800 px-2.5 py-1 text-sm font-medium leading-tight text-gray-300">
+                  Yoga
+                  <button type="button" class="rounded-full p-1 text-gray-400 hover:bg-gray-700 hover:text-white" aria-label="Remove Yoga">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-3 w-3"><path fill-rule="evenodd" d="M4.22 4.22a.75.75 0 0 1 1.06 0L10 8.94l4.72-4.72a.75.75 0 1 1 1.06 1.06L11.06 10l4.72 4.72a.75.75 0 1 1-1.06 1.06L10 11.06l-4.72 4.72a.75.75 0 1 1-1.06-1.06L8.94 10 4.22 5.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" /></svg>
+                  </button>
+                </span>
+                <span class="inline-flex items-center gap-1 rounded-full border border-gray-700 bg-gray-800 px-2.5 py-1 text-sm font-medium leading-tight text-gray-300">
+                  HIIT
+                  <button type="button" class="rounded-full p-1 text-gray-400 hover:bg-gray-700 hover:text-white" aria-label="Remove HIIT">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-3 w-3"><path fill-rule="evenodd" d="M4.22 4.22a.75.75 0 0 1 1.06 0L10 8.94l4.72-4.72a.75.75 0 1 1 1.06 1.06L11.06 10l4.72 4.72a.75.75 0 1 1-1.06 1.06L10 11.06l-4.72 4.72a.75.75 0 1 1-1.06-1.06L8.94 10 4.22 5.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" /></svg>
+                  </button>
+                </span>
+                <input type="text" value="" placeholder="Add a class type and press Enter" class="min-w-[180px] flex-1 bg-transparent text-sm text-white placeholder:text-gray-500 outline-none" />
+              </div>
+              <p class="text-sm text-gray-400">Up to 5 preferences. Press Enter or comma to add each one.</p>
+            </div>
+          </form>
+        </div>
+
+        <div class="flex items-center justify-end border-t border-gray-800 px-6 py-4">
+          <button type="button" class="w-full rounded-md bg-green-500 px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:bg-green-600 hover:shadow-lg hover:shadow-green-500/25 md:w-auto">Save changes</button>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<div id="profile-empty" data-screen>
+  <main class="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+    <div class="flex flex-col gap-2">
+      <h1 class="text-3xl font-bold leading-tight text-white">Your Profile</h1>
+      <p class="max-w-2xl text-base leading-normal text-gray-400">Manage the personal details tied to your GymFlow account.</p>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[320px_minmax(0,1fr)] lg:items-start">
+      <aside class="rounded-xl border border-gray-800 bg-gray-900 p-6 shadow-md shadow-black/50">
+        <div class="flex items-center gap-4">
+          <div class="flex h-16 w-16 items-center justify-center rounded-full bg-green-500/10 text-xl font-bold text-green-400 ring-1 ring-green-500/30">GF</div>
+          <div>
+            <h2 class="text-lg font-semibold leading-tight text-white">Profile not completed yet</h2>
+            <p class="mt-1 text-sm text-gray-400">new.member@example.com</p>
+          </div>
+        </div>
+        <div class="mt-6 rounded-lg border border-gray-800 bg-[#0F0F0F] p-4">
+          <p class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Account email</p>
+          <p class="mt-2 text-sm text-white">new.member@example.com</p>
+          <p class="mt-2 text-xs text-gray-400">Email is your login identity and cannot be changed here.</p>
+        </div>
+        <p class="mt-6 text-sm text-gray-400">Complete your profile to keep your account details current.</p>
+        <p class="mt-3 text-xs text-gray-500">Last updated 29 Mar 2026, 09:00</p>
+      </aside>
+
+      <section class="rounded-xl border border-gray-800 bg-gray-900 shadow-md shadow-black/50">
+        <div class="border-b border-gray-800 px-6 py-5">
+          <h2 class="text-xl font-semibold leading-tight text-white">Personal details</h2>
+          <p class="mt-1 text-sm text-gray-400">Update your contact details, birth date, and fitness preferences.</p>
+        </div>
+        <div class="px-6 py-6">
+          <form class="flex flex-col gap-6">
+            <div class="flex flex-col gap-1.5">
+              <label for="email-empty" class="text-sm font-medium text-gray-300">Email address</label>
+              <input id="email-empty" type="email" value="new.member@example.com" readonly class="w-full rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-300" />
+              <p class="text-sm text-gray-400">Email changes are handled in account management, not on this page.</p>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div class="flex flex-col gap-1.5">
+                <label for="first-name-empty" class="text-sm font-medium text-gray-300">First name</label>
+                <input id="first-name-empty" type="text" placeholder="Enter your first name" class="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder:text-gray-500" />
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label for="last-name-empty" class="text-sm font-medium text-gray-300">Last name</label>
+                <input id="last-name-empty" type="text" placeholder="Enter your last name" class="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder:text-gray-500" />
+              </div>
+            </div>
+
+            <p class="-mt-2 text-sm text-gray-400">Names are optional, but when provided they must be 1 to 50 characters.</p>
+
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div class="flex flex-col gap-1.5">
+                <label for="phone-empty" class="text-sm font-medium text-gray-300">Phone number</label>
+                <input id="phone-empty" type="text" placeholder="+48 123 123 123" class="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder:text-gray-500" />
+                <p class="text-sm text-gray-400">Use international format starting with +.</p>
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label for="dob-empty" class="text-sm font-medium text-gray-300">Date of birth</label>
+                <input id="dob-empty" type="date" class="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white" />
+                <p class="text-sm text-gray-400">Date cannot be in the future.</p>
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label for="goals-empty" class="text-sm font-medium text-gray-300">Fitness goals</label>
+              <div id="goals-empty" class="chip-input flex flex-wrap gap-1.5 rounded-md border border-gray-700 bg-gray-900 px-3 py-2">
+                <input type="text" placeholder="Add a goal and press Enter" class="min-w-[180px] flex-1 bg-transparent text-sm text-white placeholder:text-gray-500 outline-none" />
+              </div>
+              <p class="text-sm text-gray-400">Up to 5 goals. Press Enter or comma to add each one.</p>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label for="preferences-empty" class="text-sm font-medium text-gray-300">Preferred class types</label>
+              <div id="preferences-empty" class="chip-input flex flex-wrap gap-1.5 rounded-md border border-gray-700 bg-gray-900 px-3 py-2">
+                <input type="text" placeholder="Add a class type and press Enter" class="min-w-[180px] flex-1 bg-transparent text-sm text-white placeholder:text-gray-500 outline-none" />
+              </div>
+              <p class="text-sm text-gray-400">Up to 5 preferences. Press Enter or comma to add each one.</p>
+            </div>
+          </form>
+        </div>
+
+        <div class="flex items-center justify-end border-t border-gray-800 px-6 py-4">
+          <button type="button" class="w-full rounded-md bg-green-500 px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:bg-green-600 hover:shadow-lg hover:shadow-green-500/25 md:w-auto">Save changes</button>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<div id="profile-saving" data-screen>
+  <main class="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+    <div class="flex flex-col gap-2">
+      <h1 class="text-3xl font-bold leading-tight text-white">Your Profile</h1>
+      <p class="max-w-2xl text-base leading-normal text-gray-400">Manage the personal details tied to your GymFlow account.</p>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[320px_minmax(0,1fr)] lg:items-start">
+      <aside class="rounded-xl border border-gray-800 bg-gray-900 p-6 shadow-md shadow-black/50">
+        <div class="flex items-center gap-4">
+          <div class="flex h-16 w-16 items-center justify-center rounded-full bg-green-500/10 text-xl font-bold text-green-400 ring-1 ring-green-500/30">AB</div>
+          <div>
+            <h2 class="text-lg font-semibold leading-tight text-white">Alicja Bator</h2>
+            <p class="mt-1 text-sm text-gray-400">alicia.bator@example.com</p>
+          </div>
+        </div>
+        <div class="mt-6 rounded-lg border border-gray-800 bg-[#0F0F0F] p-4">
+          <p class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Account email</p>
+          <p class="mt-2 text-sm text-white">alicia.bator@example.com</p>
+          <p class="mt-2 text-xs text-gray-400">Email is your login identity and cannot be changed here.</p>
+        </div>
+        <p class="mt-6 text-sm text-gray-400">Keep these details accurate so GymFlow can personalize future experiences.</p>
+        <p class="mt-3 text-xs text-gray-500">Saving changes...</p>
+      </aside>
+
+      <section class="rounded-xl border border-gray-800 bg-gray-900 shadow-md shadow-black/50">
+        <div class="border-b border-gray-800 px-6 py-5">
+          <h2 class="text-xl font-semibold leading-tight text-white">Personal details</h2>
+          <p class="mt-1 text-sm text-gray-400">Update your contact details, birth date, and fitness preferences.</p>
+        </div>
+        <div class="px-6 py-6">
+          <form class="flex flex-col gap-6" aria-busy="true">
+            <div class="rounded-md border border-blue-500/30 bg-blue-500/10 px-4 py-3 text-sm text-blue-400">
+              Saving your changes. Inputs stay visible so context is not lost.
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-medium text-gray-300">First name</label>
+                <input type="text" value="Alicja" disabled class="w-full cursor-not-allowed rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-500 opacity-70" />
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-medium text-gray-300">Last name</label>
+                <input type="text" value="Bator" disabled class="w-full cursor-not-allowed rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-500 opacity-70" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-medium text-gray-300">Phone number</label>
+                <input type="text" value="+48 501 234 567" disabled class="w-full cursor-not-allowed rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-500 opacity-70" />
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-medium text-gray-300">Date of birth</label>
+                <input type="date" value="1994-08-12" disabled class="w-full cursor-not-allowed rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-500 opacity-70" />
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="flex items-center justify-end border-t border-gray-800 px-6 py-4">
+          <button type="button" disabled class="inline-flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-md bg-green-500/40 px-4 py-2 text-sm font-semibold text-white md:w-auto">
+            <svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            Saving...
+          </button>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<div id="profile-validation" data-screen>
+  <main class="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+    <div class="flex flex-col gap-2">
+      <h1 class="text-3xl font-bold leading-tight text-white">Your Profile</h1>
+      <p class="max-w-2xl text-base leading-normal text-gray-400">Manage the personal details tied to your GymFlow account.</p>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[320px_minmax(0,1fr)] lg:items-start">
+      <aside class="rounded-xl border border-gray-800 bg-gray-900 p-6 shadow-md shadow-black/50">
+        <div class="flex items-center gap-4">
+          <div class="flex h-16 w-16 items-center justify-center rounded-full bg-green-500/10 text-xl font-bold text-green-400 ring-1 ring-green-500/30">AB</div>
+          <div>
+            <h2 class="text-lg font-semibold leading-tight text-white">Alicja Bator</h2>
+            <p class="mt-1 text-sm text-gray-400">alicia.bator@example.com</p>
+          </div>
+        </div>
+        <div class="mt-6 rounded-lg border border-gray-800 bg-[#0F0F0F] p-4">
+          <p class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Account email</p>
+          <p class="mt-2 text-sm text-white">alicia.bator@example.com</p>
+          <p class="mt-2 text-xs text-gray-400">Email is your login identity and cannot be changed here.</p>
+        </div>
+        <p class="mt-6 text-sm text-gray-400">Fix the highlighted fields and try saving again.</p>
+        <p class="mt-3 text-xs text-gray-500">Validation errors map directly to backend error codes.</p>
+      </aside>
+
+      <section class="rounded-xl border border-gray-800 bg-gray-900 shadow-md shadow-black/50">
+        <div class="border-b border-gray-800 px-6 py-5">
+          <h2 class="text-xl font-semibold leading-tight text-white">Personal details</h2>
+          <p class="mt-1 text-sm text-gray-400">Update your contact details, birth date, and fitness preferences.</p>
+        </div>
+        <div class="px-6 py-6">
+          <form class="flex flex-col gap-6">
+            <div role="alert" class="rounded-md border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+              We could not save your profile. Fix the highlighted fields and try again.
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div class="flex flex-col gap-1.5">
+                <label for="phone-invalid" class="text-sm font-medium text-gray-300">Phone number</label>
+                <input id="phone-invalid" type="text" value="12345" aria-invalid="true" aria-describedby="phone-invalid-error" class="w-full rounded-md border border-red-500/60 bg-gray-900 px-3 py-2 text-sm text-white focus:outline-none" />
+                <p id="phone-invalid-error" class="text-xs text-red-400">Enter a valid international phone number.</p>
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label for="dob-invalid" class="text-sm font-medium text-gray-300">Date of birth</label>
+                <input id="dob-invalid" type="date" value="2032-04-12" aria-invalid="true" aria-describedby="dob-invalid-error" class="w-full rounded-md border border-red-500/60 bg-gray-900 px-3 py-2 text-sm text-white focus:outline-none" />
+                <p id="dob-invalid-error" class="text-xs text-red-400">Enter a valid date of birth that is not in the future.</p>
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label for="goals-invalid" class="text-sm font-medium text-gray-300">Fitness goals</label>
+              <div id="goals-invalid" class="chip-input flex flex-wrap gap-1.5 rounded-md border border-red-500/60 bg-gray-900 px-3 py-2">
+                <span class="inline-flex items-center gap-1 rounded-full border border-gray-700 bg-gray-800 px-2.5 py-1 text-sm font-medium leading-tight text-gray-300">Build strength</span>
+                <span class="inline-flex items-center gap-1 rounded-full border border-gray-700 bg-gray-800 px-2.5 py-1 text-sm font-medium leading-tight text-gray-300">Improve mobility</span>
+                <span class="inline-flex items-center gap-1 rounded-full border border-gray-700 bg-gray-800 px-2.5 py-1 text-sm font-medium leading-tight text-gray-300">Run longer</span>
+                <span class="inline-flex items-center gap-1 rounded-full border border-gray-700 bg-gray-800 px-2.5 py-1 text-sm font-medium leading-tight text-gray-300">Recover faster</span>
+                <span class="inline-flex items-center gap-1 rounded-full border border-gray-700 bg-gray-800 px-2.5 py-1 text-sm font-medium leading-tight text-gray-300">Sleep better</span>
+                <span class="self-center text-xs italic text-gray-500">Maximum reached</span>
+              </div>
+              <p class="text-xs text-red-400">Fitness goals must contain up to 5 items, each 1 to 50 characters long.</p>
+            </div>
+          </form>
+        </div>
+        <div class="flex items-center justify-end border-t border-gray-800 px-6 py-4">
+          <button type="button" class="w-full rounded-md bg-green-500 px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:bg-green-600 hover:shadow-lg hover:shadow-green-500/25 md:w-auto">Save changes</button>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<div id="profile-load-error" data-screen>
+  <main class="mx-auto flex min-h-[calc(100vh-8rem)] max-w-6xl items-center justify-center px-4 py-8 sm:px-6 lg:px-8">
+    <div class="mx-auto flex max-w-md flex-col items-center gap-4 rounded-xl border border-gray-800 bg-gray-900 px-6 py-10 text-center shadow-md shadow-black/50">
+      <div class="flex h-14 w-14 items-center justify-center rounded-full bg-red-500/10">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="h-7 w-7 text-red-400" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 6h.008v.008H12V18Z" />
+        </svg>
+      </div>
+      <h2 class="text-xl font-semibold text-white">Failed to load your profile</h2>
+      <p class="text-sm text-gray-400">Please try again. If the problem continues, contact support.</p>
+      <button type="button" class="inline-flex items-center justify-center rounded-md border border-green-500 bg-transparent px-4 py-2 text-sm font-medium text-green-400 transition-all duration-200 hover:bg-green-500/10 hover:text-green-300">Try again</button>
+    </div>
+  </main>
+</div>
+
+<div id="profile-access-denied" data-screen>
+  <main class="mx-auto flex min-h-[calc(100vh-8rem)] max-w-6xl items-center justify-center px-4 py-8 sm:px-6 lg:px-8">
+    <div class="mx-auto flex max-w-md flex-col items-center gap-4 rounded-xl border border-gray-800 bg-gray-900 px-6 py-10 text-center shadow-md shadow-black/50">
+      <div class="flex h-14 w-14 items-center justify-center rounded-full bg-orange-500/10">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="h-7 w-7 text-orange-400" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 0h10.5a.75.75 0 0 1 .75.75v7.5a.75.75 0 0 1-.75.75H6.75a.75.75 0 0 1-.75-.75v-7.5a.75.75 0 0 1 .75-.75Z" />
+        </svg>
+      </div>
+      <h2 class="text-xl font-semibold text-white">Access denied</h2>
+      <p class="text-sm text-gray-400">You do not have permission to view this profile.</p>
+      <a href="#" class="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-gray-400 transition-all duration-200 hover:bg-gray-800 hover:text-white">Back to classes</a>
+    </div>
+  </main>
+</div>
+
+<script>
+  function showScreen(id) {
+    document.querySelectorAll('[data-screen]').forEach((screen) => {
+      screen.classList.toggle('active', screen.id === id);
+    });
+
+    document.querySelectorAll('[data-state-button]').forEach((button) => {
+      button.classList.toggle('active', button.getAttribute('data-state-button') === id);
+    });
+  }
+
+  showScreen('profile-populated');
+</script>
+
+</body>
+</html>
