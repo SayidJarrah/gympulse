@@ -1,4 +1,4 @@
-version: "3.9"
+name: gympulse
 
 services:
   postgres:
@@ -19,11 +19,13 @@ services:
       retries: 5
 
   backend:
-    image: gymflow-backend:local
+    build:
+      context: ./backend
+    image: gymflow-backend:e2e
     ports:
       - "8080:8080"
     environment:
-      DB_URL: jdbc:postgresql://postgres:5432/gymflow
+      DB_URL: jdbc:postgresql://postgres:5432/gymflow_e2e
       DB_USER: gymflow
       DB_PASSWORD: secret
       JWT_SECRET: replace-with-a-strong-secret-key!
@@ -34,11 +36,19 @@ services:
         condition: service_healthy
 
   frontend:
-    image: gymflow-frontend:local
+    build:
+      context: ./frontend
+    image: gymflow-frontend:e2e
     ports:
       - "3000:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
 
   playwright:
     image: mcr.microsoft.com/playwright:v1.58.2-jammy
@@ -51,8 +61,10 @@ services:
       - ./frontend:/work
       - playwright_node_modules:/work/node_modules
     depends_on:
-      - backend
-      - frontend
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
     entrypoint: ["/bin/sh", "-lc", "npm ci && npm run test:e2e"]
 
 volumes:

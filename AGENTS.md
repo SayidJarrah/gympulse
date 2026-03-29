@@ -70,13 +70,13 @@ cd backend && ./gradlew test
 cd frontend && npm test
 
 # Run E2E tests — always via Docker (sandboxed environments can't reach localhost ports)
-docker-compose -f docker-compose.full.yml run --rm playwright
+docker-compose -f docker-compose.e2e.yml run --rm playwright
 # Full verification workflow (smoke tests + E2E + observation reports on failure)
 # → see frontend/AGENTS.md ## Verification Workflow
 
 # View E2E report after a run (host browser)
 # Open frontend/playwright-report/index.html directly in browser
-# Or: docker-compose -f docker-compose.full.yml run --rm playwright "npx playwright show-report"
+# Or: docker-compose -f docker-compose.e2e.yml run --rm playwright "npx playwright show-report"
 
 # Apply DB migrations (auto on startup)
 ./gradlew flywayMigrate
@@ -94,10 +94,10 @@ follow these steps. Use this after any code change that needs to be tested in Do
 ### Pre-flight
 ```bash
 docker info                                    # confirm Docker is running
-ls docker-compose.full.yml                     # confirm compose file exists
+ls docker-compose.e2e.yml                      # confirm compose file exists
 ```
 If Docker is not running: stop — "Start Docker Desktop first."
-If `docker-compose.full.yml` is missing: stop — "docker-compose.full.yml not found. Ask @devops to create it."
+If `docker-compose.e2e.yml` is missing: stop — "docker-compose.e2e.yml not found. Ask @devops to create it."
 
 ### Decide what to rebuild
 
@@ -109,24 +109,22 @@ If `docker-compose.full.yml` is missing: stop — "docker-compose.full.yml not f
 
 ### Step 1 — Build backend image
 ```bash
-cd backend && ./gradlew bootJar
-docker build -t gymflow-backend:local .
-cd ..
+docker-compose -f docker-compose.e2e.yml build backend
 ```
-If `bootJar` fails with a **compilation error** in code you just wrote: fix the code, then retry.
+If the backend build fails with a **compilation error** in code you just wrote: fix the code, then retry.
 If it fails for any other reason (dependency missing, Gradle daemon crash): stop and report the full error.
 
 ### Step 2 — Build frontend image
 ```bash
-docker build -t gymflow-frontend:local ./frontend
+docker-compose -f docker-compose.e2e.yml build frontend
 ```
 If it fails with a **TypeScript or build error** in code you just wrote: fix the code, then retry.
 If it fails for any other reason: stop and report the full error.
 
 ### Step 3 — Restart the stack
 ```bash
-docker-compose -f docker-compose.full.yml down --remove-orphans
-docker-compose -f docker-compose.full.yml up -d
+docker-compose -f docker-compose.e2e.yml down --remove-orphans
+docker-compose -f docker-compose.e2e.yml up -d
 ```
 If `down` reports a port conflict (address already in use): identify the conflicting container
 with `docker ps` and ask the user before stopping it.
@@ -137,12 +135,12 @@ for i in $(seq 1 12); do curl -sf http://localhost:8080/api/v1/health && echo " 
 ```
 
 If healthy: "Stack is running. Open http://localhost:3000 to review manually.
-To run E2E tests: docker-compose -f docker-compose.full.yml run --rm playwright"
+To run E2E tests: docker-compose -f docker-compose.e2e.yml run --rm playwright"
 
 If not healthy after 60 s, check logs:
 ```bash
-docker-compose -f docker-compose.full.yml logs --tail=40 backend
-docker-compose -f docker-compose.full.yml logs --tail=40 frontend
+docker-compose -f docker-compose.e2e.yml logs --tail=40 backend
+docker-compose -f docker-compose.e2e.yml logs --tail=40 frontend
 ```
 
 Classify the failure:
@@ -255,7 +253,7 @@ JWT_EXPIRY_MS=3600000
 | Membership plans | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | User membership purchase | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | User access flow | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| User profile | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| User profile management | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Class schedule | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Trainer profiles | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Class booking & cancellation | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |

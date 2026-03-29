@@ -89,7 +89,7 @@ Playwright reaches the services over the internal Docker network (`frontend:80`,
 
 ### Prerequisites
 ```bash
-docker-compose -f docker-compose.full.yml ps
+docker-compose -f docker-compose.e2e.yml ps
 ```
 All three services (`postgres`, `backend`, `frontend`) must be running.
 If not: "Stack is not running. Start it first with the Docker Rebuild Workflow."
@@ -102,11 +102,13 @@ curl -sf http://localhost:3000 -o /dev/null -w "%{http_code}\n"
 
 ### Step 2 — E2E suite
 ```bash
-docker-compose -f docker-compose.full.yml run --rm playwright
+docker-compose -f docker-compose.e2e.yml run --rm playwright
 ```
 This runs `npm ci && npm run test:e2e` inside the `playwright` container.
 The container shares the Docker network with `backend` and `frontend`, so all
 API and browser calls resolve correctly.
+The shared `postgres` container hosts both `gymflow` and `gymflow_e2e`; E2E
+always targets `gymflow_e2e`.
 
 The `list` reporter streams to stdout:
 - `✓ Feature › Test name (Xms)` — passed

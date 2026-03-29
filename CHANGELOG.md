@@ -2,6 +2,7 @@
 
 ## In Progress
 <!-- business-analyst moves items here when PRD is written -->
+- Docker: share one Postgres container across dev and E2E, with `gymflow` and `gymflow_e2e` databases
 - Membership plans: PRD written — admin create/edit/deactivate; public read access for guests and members
 - User membership purchase: PRD written — self-service plan activation, one-active-membership enforcement, user and admin cancel endpoints
 - Scheduler (admin): PRD written — trainer profile management, class template library with predefined seeds, drag-and-drop weekly calendar, trainer assignment with double-booking prevention, CSV/iCal import and export
