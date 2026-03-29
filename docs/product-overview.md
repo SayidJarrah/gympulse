@@ -1,7 +1,7 @@
 # GymFlow — Product Overview
 
 > Living document. Updated automatically after each feature completes.
-> Last updated: 2026-03-21
+> Last updated: 2026-03-29
 
 ## What This App Does
 GymFlow is a gym membership and class booking platform. Members can purchase
@@ -21,6 +21,7 @@ profile pages linked to their classes. Admins manage everything from a dashboard
 | Feature | Status | Description |
 |---------|--------|-------------|
 | Project scaffold | ✅ Done | Monorepo, Spring Boot skeleton, React skeleton, Docker Compose (dev + full-stack) |
+| Public landing page | 🔄 In progress | Public homepage that introduces the gym, surfaces plans, classes, and trainers, and routes guests and signed-in users into the right next step |
 | Auth (register/login/JWT) | ✅ Done | JWT-based register, login, token refresh, and logout with role-based access |
 
 | Membership plans | 🔄 In progress | Admins create, edit, and deactivate membership plans; any visitor can list active plans |
@@ -65,6 +66,7 @@ profile pages linked to their classes. Admins manage everything from a dashboard
 
 ## What's Being Built Next
 <!-- business-analyst updates this when a new PRD is written -->
+- Public landing page — public homepage with hero, plan discovery, class and trainer previews, and auth-aware CTAs
 - Membership plans — admin CRUD for plan catalogue; public read access for guests and members
 - User membership purchase — self-service plan activation for authenticated members; one active membership per user enforced
 - Scheduler (admin) — trainer profiles, class template library, drag-and-drop weekly calendar, trainer assignment, CSV/iCal import and export

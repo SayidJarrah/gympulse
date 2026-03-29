@@ -26,10 +26,306 @@
  * to the browser layer.
  */
 
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type APIRequestContext, type Locator, type Page } from '@playwright/test';
 
+const API_BASE = process.env.E2E_API_BASE ?? 'http://localhost:8080/api/v1';
 const ADMIN_EMAIL = 'admin@gymflow.local';
 const ADMIN_PASSWORD = 'Admin@1234';
+const USER_PASSWORD = 'Member@1234';
+const ONE_BY_ONE_PNG =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9sotM7sAAAAASUVORK5CYII=';
+
+interface LoginResponse {
+  accessToken: string;
+}
+
+interface TrainerResponse {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  hasPhoto?: boolean;
+}
+
+interface RoomSummaryResponse {
+  id: string;
+  name: string;
+}
+
+interface RoomResponse {
+  id: string;
+  name: string;
+  capacity: number | null;
+}
+
+interface ClassTemplateResponse {
+  id: string;
+  name: string;
+  defaultDurationMin: number;
+  defaultCapacity: number;
+  room: RoomSummaryResponse | null;
+}
+
+interface TrainerSummaryResponse {
+  id: string;
+  firstName: string;
+  lastName: string;
+}
+
+interface ClassInstanceResponse {
+  id: string;
+  templateId: string | null;
+  name: string;
+  scheduledAt: string;
+  durationMin: number;
+  capacity: number;
+  room: RoomSummaryResponse | null;
+  trainers: TrainerSummaryResponse[];
+}
+
+interface PaginatedResponse<T> {
+  content: T[];
+}
+
+interface WeekScheduleResponse {
+  instances: ClassInstanceResponse[];
+}
+
+const MS_IN_DAY = 24 * 60 * 60 * 1000;
+
+function uniqueValue(prefix: string): string {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function uniqueEmail(prefix: string): string {
+  return `${uniqueValue(prefix)}@example.com`;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function formatWeekString(date: Date): string {
+  const temp = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  temp.setUTCDate(temp.getUTCDate() + 4 - (temp.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(temp.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil(((temp.getTime() - yearStart.getTime()) / MS_IN_DAY + 1) / 7);
+  return `${temp.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+}
+
+function getWeekStart(week: string): Date {
+  const [yearPart, weekPart] = week.split('-W');
+  const year = Number(yearPart);
+  const weekNumber = Number(weekPart);
+  const simple = new Date(Date.UTC(year, 0, 1 + (weekNumber - 1) * 7));
+  const dayOfWeek = simple.getUTCDay() || 7;
+  if (dayOfWeek > 1) {
+    simple.setUTCDate(simple.getUTCDate() - (dayOfWeek - 1));
+  } else {
+    simple.setUTCDate(simple.getUTCDate() + (1 - dayOfWeek));
+  }
+  simple.setUTCHours(0, 0, 0, 0);
+  return simple;
+}
+
+function addWeeks(week: string, delta: number): string {
+  const start = getWeekStart(week);
+  const next = new Date(start.getTime() + delta * 7 * MS_IN_DAY);
+  return formatWeekString(next);
+}
+
+function futureWeek(offset: number): string {
+  const monday = getWeekStart(formatWeekString(new Date()));
+  monday.setUTCDate(monday.getUTCDate() + offset * 7);
+  return formatWeekString(monday);
+}
+
+function buildScheduledAt(week: string, dayIndex: number, time: string): string {
+  const [hour, minute] = time.split(':').map(Number);
+  const date = getWeekStart(week);
+  date.setUTCDate(date.getUTCDate() + dayIndex);
+  date.setUTCHours(hour, minute, 0, 0);
+  return date.toISOString();
+}
+
+function buildDateInWeek(week: string, dayIndex: number): string {
+  return buildScheduledAt(week, dayIndex, '06:00').slice(0, 10);
+}
+
+function gridCell(page: Page, dayIndex: number, slotIndex: number) {
+  return page.getByRole('gridcell').nth(slotIndex * 7 + dayIndex);
+}
+
+function schedulerCard(page: Page, name: string) {
+  return page.getByRole('button', { name: new RegExp(`^${escapeRegExp(name)},`) });
+}
+
+async function dispatchDragAndDrop(page: Page, source: Locator, target: Locator): Promise<void> {
+  const dataTransfer = await page.evaluateHandle(() => new DataTransfer());
+  await source.scrollIntoViewIfNeeded();
+  await target.scrollIntoViewIfNeeded();
+  await source.dispatchEvent('dragstart', { dataTransfer });
+  await target.dispatchEvent('dragenter', { dataTransfer });
+  await target.dispatchEvent('dragover', { dataTransfer });
+  await target.dispatchEvent('drop', { dataTransfer });
+  await source.dispatchEvent('dragend', { dataTransfer });
+}
+
+async function apiGet<T>(request: APIRequestContext, path: string, token: string): Promise<T> {
+  const response = await request.get(`${API_BASE}${path}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  expect(response.ok(), await response.text()).toBeTruthy();
+  return response.json() as Promise<T>;
+}
+
+async function apiPost<T>(
+  request: APIRequestContext,
+  path: string,
+  token: string,
+  data: unknown
+): Promise<T> {
+  const response = await request.post(`${API_BASE}${path}`, {
+    headers: { Authorization: `Bearer ${token}` },
+    data,
+  });
+  expect(response.ok(), await response.text()).toBeTruthy();
+  return response.json() as Promise<T>;
+}
+
+async function loginViaApi(
+  request: APIRequestContext,
+  email = ADMIN_EMAIL,
+  password = ADMIN_PASSWORD
+): Promise<LoginResponse> {
+  const response = await request.post(`${API_BASE}/auth/login`, {
+    data: { email, password },
+  });
+  expect(response.ok(), await response.text()).toBeTruthy();
+  return response.json() as Promise<LoginResponse>;
+}
+
+async function getAdminToken(request: APIRequestContext): Promise<string> {
+  const login = await loginViaApi(request);
+  return login.accessToken;
+}
+
+async function createTrainerViaApi(
+  request: APIRequestContext,
+  token: string,
+  overrides: Partial<Pick<TrainerResponse, 'firstName' | 'lastName' | 'email'>> = {}
+): Promise<TrainerResponse> {
+  return apiPost<TrainerResponse>(request, '/admin/trainers', token, {
+    firstName: overrides.firstName ?? 'E2E',
+    lastName: overrides.lastName ?? uniqueValue('Trainer'),
+    email: overrides.email ?? uniqueEmail('trainer'),
+  });
+}
+
+async function createRoomViaApi(
+  request: APIRequestContext,
+  token: string,
+  name = uniqueValue('Room'),
+  capacity = 20
+): Promise<RoomResponse> {
+  return apiPost<RoomResponse>(request, '/rooms', token, {
+    name,
+    capacity,
+  });
+}
+
+async function createTemplateViaApi(
+  request: APIRequestContext,
+  token: string,
+  overrides: {
+    name?: string;
+    defaultDurationMin?: number;
+    defaultCapacity?: number;
+    roomId?: string | null;
+  } = {}
+): Promise<ClassTemplateResponse> {
+  return apiPost<ClassTemplateResponse>(request, '/admin/class-templates', token, {
+    name: overrides.name ?? uniqueValue('Template'),
+    category: 'Strength',
+    difficulty: 'Intermediate',
+    defaultDurationMin: overrides.defaultDurationMin ?? 60,
+    defaultCapacity: overrides.defaultCapacity ?? 20,
+    roomId: overrides.roomId ?? null,
+  });
+}
+
+async function createInstanceViaApi(
+  request: APIRequestContext,
+  token: string,
+  payload: {
+    templateId?: string | null;
+    name: string;
+    scheduledAt: string;
+    durationMin: number;
+    capacity: number;
+    roomId?: string | null;
+    trainerIds?: string[];
+  }
+): Promise<ClassInstanceResponse> {
+  return apiPost<ClassInstanceResponse>(request, '/admin/class-instances', token, {
+    templateId: payload.templateId ?? null,
+    name: payload.name,
+    scheduledAt: payload.scheduledAt,
+    durationMin: payload.durationMin,
+    capacity: payload.capacity,
+    roomId: payload.roomId ?? null,
+    trainerIds: payload.trainerIds ?? [],
+  });
+}
+
+async function getWeekScheduleViaApi(
+  request: APIRequestContext,
+  token: string,
+  week: string
+): Promise<WeekScheduleResponse> {
+  return apiGet<WeekScheduleResponse>(
+    request,
+    `/admin/class-instances?week=${encodeURIComponent(week)}`,
+    token
+  );
+}
+
+async function getTemplateByName(
+  request: APIRequestContext,
+  token: string,
+  name: string
+): Promise<ClassTemplateResponse> {
+  const response = await apiGet<PaginatedResponse<ClassTemplateResponse>>(
+    request,
+    `/admin/class-templates?page=0&size=200&search=${encodeURIComponent(name)}`,
+    token
+  );
+  const template = response.content.find((item) => item.name === name);
+  expect(template, `Expected class template "${name}" to exist`).toBeTruthy();
+  return template!;
+}
+
+async function getTrainerByEmail(
+  request: APIRequestContext,
+  token: string,
+  email: string
+): Promise<TrainerResponse> {
+  const response = await apiGet<PaginatedResponse<TrainerResponse>>(
+    request,
+    `/admin/trainers?page=0&size=200&search=${encodeURIComponent(email)}`,
+    token
+  );
+  const trainer = response.content.find((item) => item.email === email);
+  expect(trainer, `Expected trainer "${email}" to exist`).toBeTruthy();
+  return trainer!;
+}
+
+async function registerMemberViaApi(request: APIRequestContext, email: string): Promise<void> {
+  const response = await request.post(`${API_BASE}/auth/register`, {
+    data: { email, password: USER_PASSWORD },
+  });
+  expect(response.ok(), await response.text()).toBeTruthy();
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -318,6 +614,115 @@ test.describe('Trainer Profile Management', () => {
 
     // Upload button is disabled before a file is selected
     await expect(page.getByRole('button', { name: 'Upload Photo' })).toBeDisabled();
+  });
+
+  test('SCH-09 — trainer photo upload succeeds and the photo is rendered after reload', async ({ page }) => {
+    await adminGoto(page, '/admin/trainers');
+
+    const suffix = uniqueValue('photo-success');
+    const firstName = `Photo${suffix}`;
+    const lastName = `Success${suffix}`;
+    const email = `${suffix}@example.com`;
+
+    await page.getByRole('button', { name: 'Add Trainer' }).click();
+    const tf = trainerField(page);
+    await tf.firstName.fill(firstName);
+    await tf.lastName.fill(lastName);
+    await tf.email.fill(email);
+    await page.getByRole('button', { name: 'Save Trainer' }).click();
+    await expect(page.getByRole('dialog')).not.toBeVisible();
+
+    await page.getByPlaceholder('Search by name or email').fill(email);
+    await page.waitForTimeout(400);
+    await page.getByRole('button', { name: `Edit ${firstName} ${lastName}` }).click();
+
+    await page.locator('#trainer-photo').setInputFiles({
+      name: 'trainer-photo.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from(ONE_BY_ONE_PNG, 'base64'),
+    });
+
+    await expect(page.getByAltText('Preview')).toBeVisible();
+    await page.getByRole('button', { name: 'Upload Photo' }).click();
+    await expect(page.getByRole('button', { name: 'Upload Photo' })).toBeDisabled();
+    await page.reload();
+    await page.getByPlaceholder('Search by name or email').fill(email);
+    await page.waitForTimeout(400);
+
+    await expect(page.getByAltText(`${firstName} ${lastName}`)).toBeVisible();
+  });
+
+  test('SCH-10 — trainer photo upload rejects unsupported file formats', async ({ page }) => {
+    await adminGoto(page, '/admin/trainers');
+
+    const suffix = uniqueValue('photo-invalid');
+    const firstName = `Photo${suffix}`;
+    const lastName = `Invalid${suffix}`;
+    const email = `${suffix}@example.com`;
+
+    await page.getByRole('button', { name: 'Add Trainer' }).click();
+    const tf = trainerField(page);
+    await tf.firstName.fill(firstName);
+    await tf.lastName.fill(lastName);
+    await tf.email.fill(email);
+    await page.getByRole('button', { name: 'Save Trainer' }).click();
+    await expect(page.getByRole('dialog')).not.toBeVisible();
+
+    await page.getByPlaceholder('Search by name or email').fill(email);
+    await page.waitForTimeout(400);
+    await page.getByRole('button', { name: `Edit ${firstName} ${lastName}` }).click();
+
+    await page.locator('#trainer-photo').setInputFiles({
+      name: 'trainer-photo.txt',
+      mimeType: 'text/plain',
+      buffer: Buffer.from('not-an-image', 'utf-8'),
+    });
+
+    await page.getByRole('button', { name: 'Upload Photo' }).click();
+    await expect(page.getByText('File must be JPEG, PNG or WEBP')).toBeVisible();
+  });
+
+  test('SCH-11 — trainer photo upload rejects files larger than 5 MB', async ({ page }) => {
+    await page.route('**/api/v1/admin/trainers/*/photo', async (route) => {
+      await route.fulfill({
+        status: 413,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          error: 'Photo exceeds 5 MB limit',
+          code: 'PHOTO_TOO_LARGE',
+        }),
+      });
+    });
+
+    await adminGoto(page, '/admin/trainers');
+
+    const suffix = uniqueValue('photo-large');
+    const firstName = `Photo${suffix}`;
+    const lastName = `Large${suffix}`;
+    const email = `${suffix}@example.com`;
+
+    await page.getByRole('button', { name: 'Add Trainer' }).click();
+    const tf = trainerField(page);
+    await tf.firstName.fill(firstName);
+    await tf.lastName.fill(lastName);
+    await tf.email.fill(email);
+    await page.getByRole('button', { name: 'Save Trainer' }).click();
+    await expect(page.getByRole('dialog')).not.toBeVisible();
+
+    await page.getByPlaceholder('Search by name or email').fill(email);
+    await page.waitForTimeout(400);
+    await page.getByRole('button', { name: `Edit ${firstName} ${lastName}` }).click();
+
+    await page.locator('#trainer-photo').setInputFiles({
+      name: 'trainer-photo.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from(ONE_BY_ONE_PNG, 'base64'),
+    });
+
+    await page.getByRole('button', { name: 'Upload Photo' }).click();
+    await expect(
+      page.locator('[role="dialog"]').getByText('File exceeds the 5 MB limit')
+    ).toBeVisible({ timeout: 10_000 });
   });
 
 });
@@ -958,6 +1363,295 @@ test.describe('Schedule (Calendar) Management', () => {
     }
   });
 
+  test('SCH-27 — dragging a template to the grid creates a persisted instance', async ({ page, request }) => {
+    const token = await getAdminToken(request);
+    const week = futureWeek(8);
+    const templateName = uniqueValue('Scheduler Drag Template');
+
+    await createTemplateViaApi(request, token, {
+      name: templateName,
+      defaultDurationMin: 45,
+      defaultCapacity: 18,
+    });
+
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await adminGoto(page, `/admin/scheduler?week=${week}`);
+
+    await page.getByPlaceholder('Search').fill(templateName);
+    const paletteItem = page.locator('aside [draggable="true"]').filter({ hasText: templateName }).first();
+    const targetCell = gridCell(page, 4, 20);
+    await targetCell.scrollIntoViewIfNeeded();
+
+    await dispatchDragAndDrop(page, paletteItem, targetCell);
+    await expect(schedulerCard(page, templateName)).toContainText('16:00');
+    await expect(schedulerCard(page, templateName)).toContainText('45 min');
+
+    await page.reload();
+    await expect(schedulerCard(page, templateName)).toContainText('16:00');
+  });
+
+  test('SCH-28 — a new dragged instance inherits the template defaults', async ({ page, request }) => {
+    const token = await getAdminToken(request);
+    const week = futureWeek(9);
+    const room = await createRoomViaApi(request, token, uniqueValue('Scheduler Default Room'), 26);
+    const templateName = uniqueValue('Scheduler Default Template');
+
+    await createTemplateViaApi(request, token, {
+      name: templateName,
+      defaultDurationMin: 75,
+      defaultCapacity: 26,
+      roomId: room.id,
+    });
+
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await adminGoto(page, `/admin/scheduler?week=${week}`);
+
+    await page.getByPlaceholder('Search').fill(templateName);
+    const paletteItem = page.locator('aside [draggable="true"]').filter({ hasText: templateName }).first();
+    const targetCell = gridCell(page, 2, 16);
+    await targetCell.scrollIntoViewIfNeeded();
+
+    await dispatchDragAndDrop(page, paletteItem, targetCell);
+
+    const card = schedulerCard(page, templateName);
+    await expect(card).toBeVisible();
+    await card.click({ force: true });
+
+    await expect(page.getByRole('heading', { name: 'Edit Class' })).toBeVisible();
+    await expect(page.getByLabel('Start Time')).toHaveValue('14:00');
+    await expect(page.getByLabel('Duration (min)')).toHaveValue('75');
+    await expect(page.getByLabel('Capacity')).toHaveValue('26');
+    await expect(page.getByLabel('Room')).toContainText(room.name);
+  });
+
+  test('SCH-29 — dragging an existing instance persists the new slot after reload', async ({ page, request }) => {
+    const token = await getAdminToken(request);
+    const week = futureWeek(10);
+    const template = await getTemplateByName(request, token, 'HIIT Bootcamp');
+    const instanceName = uniqueValue('Scheduler Move Instance');
+
+    await createInstanceViaApi(request, token, {
+      templateId: template.id,
+      name: instanceName,
+      scheduledAt: buildScheduledAt(week, 0, '13:00'),
+      durationMin: 60,
+      capacity: 14,
+    });
+
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await adminGoto(page, `/admin/scheduler?week=${week}`);
+
+    const card = schedulerCard(page, instanceName);
+    await expect(card).toContainText('13:00');
+
+    const targetCell = gridCell(page, 0, 17);
+    await targetCell.scrollIntoViewIfNeeded();
+    await dispatchDragAndDrop(page, card, targetCell);
+
+    await expect(card).toContainText('14:30');
+    await page.reload();
+    await expect(schedulerCard(page, instanceName)).toContainText('14:30');
+  });
+
+  test('SCH-32 — saving the edit panel updates the card and persists after reload', async ({ page, request }) => {
+    const token = await getAdminToken(request);
+    const week = futureWeek(11);
+    const room = await createRoomViaApi(request, token, uniqueValue('Scheduler Save Room'), 28);
+    const trainer = await createTrainerViaApi(request, token, {
+      firstName: 'Saved',
+      lastName: uniqueValue('Trainer'),
+      email: uniqueEmail('scheduler-save'),
+    });
+    const template = await getTemplateByName(request, token, 'HIIT Bootcamp');
+    const instanceName = uniqueValue('Scheduler Save Instance');
+
+    await createInstanceViaApi(request, token, {
+      templateId: template.id,
+      name: instanceName,
+      scheduledAt: buildScheduledAt(week, 1, '09:00'),
+      durationMin: 60,
+      capacity: 12,
+      trainerIds: [],
+      roomId: null,
+    });
+
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await adminGoto(page, `/admin/scheduler?week=${week}`);
+
+    await schedulerCard(page, instanceName).click();
+    await expect(page.getByRole('heading', { name: 'Edit Class' })).toBeVisible();
+
+    await page.getByLabel('Start Time').selectOption('10:30');
+    await page.getByLabel('Duration (min)').fill('90');
+    await page.getByLabel('Capacity').fill('16');
+    await page.getByLabel('Room').click();
+    await page
+      .locator('div.absolute.z-20')
+      .getByRole('button', { name: new RegExp(escapeRegExp(room.name)) })
+      .click();
+    await page.getByRole('button', { name: `${trainer.firstName} ${trainer.lastName}` }).click();
+    await page.getByRole('button', { name: 'Save Changes' }).click();
+
+    const card = schedulerCard(page, instanceName);
+    await expect(card).toContainText('10:30');
+    await expect(card).toContainText('90 min');
+    await expect(card).toContainText('16 spots');
+    await expect(card).not.toContainText('Unassigned');
+
+    await page.reload();
+    const schedule = await getWeekScheduleViaApi(request, token, week);
+    const savedInstance = schedule.instances.find((instance) => instance.name === instanceName);
+    expect(savedInstance?.room?.name).toBe(room.name);
+    expect(savedInstance?.trainers.some((item) => item.id === trainer.id)).toBeTruthy();
+
+    await schedulerCard(page, instanceName).click({ force: true });
+    await expect(page.getByLabel('Start Time')).toHaveValue('10:30');
+    await expect(page.getByLabel('Duration (min)')).toHaveValue('90');
+    await expect(page.getByLabel('Capacity')).toHaveValue('16');
+    await expect(schedulerCard(page, instanceName)).not.toContainText('Unassigned');
+  });
+
+  test('SCH-35 — scheduler week deep-link survives a full page reload', async ({ page }) => {
+    const week = futureWeek(12);
+
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await adminGoto(page, `/admin/scheduler?week=${week}`);
+
+    await expect(page).toHaveURL(new RegExp(`week=${escapeRegExp(week)}`));
+    await page.reload();
+    await expect(page).toHaveURL(new RegExp(`week=${escapeRegExp(week)}`));
+    await expect(page.getByRole('columnheader', { name: /Mon/ }).first()).toBeVisible();
+  });
+
+  test('SCH-37 — copy week duplicates source-week instances into the next week', async ({ page, request }) => {
+    const token = await getAdminToken(request);
+    const sourceWeek = futureWeek(13);
+    const targetWeek = addWeeks(sourceWeek, 1);
+    const template = await getTemplateByName(request, token, 'HIIT Bootcamp');
+    const instanceName = uniqueValue('Scheduler Copy Happy');
+
+    await createInstanceViaApi(request, token, {
+      templateId: template.id,
+      name: instanceName,
+      scheduledAt: buildScheduledAt(sourceWeek, 1, '09:00'),
+      durationMin: 60,
+      capacity: 20,
+    });
+
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await adminGoto(page, `/admin/scheduler?week=${sourceWeek}`);
+
+    await page.getByRole('button', { name: 'Copy Week' }).click();
+    await page.getByRole('button', { name: 'Copy Week' }).nth(1).click();
+
+    await expect(page.getByRole('heading', { name: 'Copy complete' })).toBeVisible();
+
+    await page.goto(`/admin/scheduler?week=${targetWeek}`);
+    await expect(schedulerCard(page, instanceName)).toBeVisible();
+  });
+
+  test('SCH-38 — copy week skips matching target-week instances instead of overwriting them', async ({ page, request }) => {
+    const token = await getAdminToken(request);
+    const sourceWeek = futureWeek(24);
+    const targetWeek = addWeeks(sourceWeek, 1);
+    const template = await getTemplateByName(request, token, 'Yoga Flow');
+    const instanceName = uniqueValue('Scheduler Copy Skip');
+    const sourceScheduledAt = buildScheduledAt(sourceWeek, 2, '11:00');
+
+    await createInstanceViaApi(request, token, {
+      templateId: template.id,
+      name: instanceName,
+      scheduledAt: sourceScheduledAt,
+      durationMin: 60,
+      capacity: 18,
+    });
+    await createInstanceViaApi(request, token, {
+      templateId: template.id,
+      name: instanceName,
+      scheduledAt: buildScheduledAt(targetWeek, 2, '11:00'),
+      durationMin: 60,
+      capacity: 18,
+    });
+
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await adminGoto(page, `/admin/scheduler?week=${sourceWeek}`);
+
+    await page.getByRole('button', { name: 'Copy Week' }).click();
+    await page.getByRole('button', { name: 'Copy Week' }).nth(1).click();
+
+    await expect(page.getByRole('heading', { name: 'Copy complete' })).toBeVisible();
+
+    await page.goto(`/admin/scheduler?week=${targetWeek}`);
+    await expect(schedulerCard(page, instanceName)).toHaveCount(1);
+  });
+
+  test('SCH-41 — invalid capacity and duration are rejected during the save flow', async ({ page, request }) => {
+    const token = await getAdminToken(request);
+    const week = futureWeek(15);
+    const template = await getTemplateByName(request, token, 'Spin Cycle');
+    const instanceName = uniqueValue('Scheduler Invalid Save');
+
+    await createInstanceViaApi(request, token, {
+      templateId: template.id,
+      name: instanceName,
+      scheduledAt: buildScheduledAt(week, 0, '12:00'),
+      durationMin: 60,
+      capacity: 14,
+    });
+
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await adminGoto(page, `/admin/scheduler?week=${week}`);
+
+    await schedulerCard(page, instanceName).click({ force: true });
+    await page.getByLabel('Capacity').fill('0');
+    await page.getByRole('button', { name: 'Save Changes' }).click();
+    await expect(page.getByText(/capacity: Capacity must be between 1 and 500/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Edit Class' })).toBeVisible();
+
+    await page.getByLabel('Capacity').fill('14');
+    await page.getByLabel('Duration (min)').fill('10');
+    await page.getByRole('button', { name: 'Save Changes' }).click();
+    await expect(page.getByText(/durationMin: Duration must be between 15 and 240 minutes/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Edit Class' })).toBeVisible();
+  });
+
+  test('SCH-45 — room picker shows an empty state and manage-rooms link when no rooms are available', async ({ page, request }) => {
+    const token = await getAdminToken(request);
+    const week = futureWeek(16);
+    const template = await getTemplateByName(request, token, 'HIIT Bootcamp');
+    const instanceName = uniqueValue('Scheduler No Rooms');
+
+    await createInstanceViaApi(request, token, {
+      templateId: template.id,
+      name: instanceName,
+      scheduledAt: buildScheduledAt(week, 4, '10:00'),
+      durationMin: 60,
+      capacity: 12,
+    });
+
+    await page.route('**/api/v1/rooms?*', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          content: [],
+          totalElements: 0,
+          totalPages: 0,
+          number: 0,
+          size: 200,
+        }),
+      });
+    });
+
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await adminGoto(page, `/admin/scheduler?week=${week}`);
+
+    await schedulerCard(page, instanceName).click({ force: true });
+    await expect(page.locator('#room-picker')).toContainText('No rooms found — add one first');
+    await expect(page.locator('#room-picker')).toBeDisabled();
+    await expect(page.getByRole('link', { name: 'Manage rooms →' })).toBeVisible();
+  });
+
 });
 
 // ---------------------------------------------------------------------------
@@ -970,7 +1664,7 @@ test.describe('Import', () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await adminGoto(page, '/admin/scheduler');
 
-    await page.getByRole('button', { name: 'Import' }).click();
+    await page.getByRole('button', { name: 'Import', exact: true }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Import Schedule from CSV' })).toBeVisible();
 
@@ -991,7 +1685,7 @@ test.describe('Import', () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await adminGoto(page, '/admin/scheduler');
 
-    await page.getByRole('button', { name: 'Import' }).click();
+    await page.getByRole('button', { name: 'Import', exact: true }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
 
     // Create a temporary CSV file with wrong headers
@@ -1022,7 +1716,7 @@ test.describe('Import', () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await adminGoto(page, '/admin/scheduler');
 
-    await page.getByRole('button', { name: 'Import' }).click();
+    await page.getByRole('button', { name: 'Import', exact: true }).first().click();
     await expect(page.getByRole('dialog')).toBeVisible();
 
     // Use a pre-created >2 MB file (created by the test runner helper below)
@@ -1093,6 +1787,86 @@ test.describe('Import', () => {
     expect(hasResult).toBeGreaterThan(0);
   });
 
+  test('SCH-50 — importing an unknown trainer email rejects the row with TRAINER_NOT_FOUND', async ({ page }) => {
+    const week = futureWeek(17);
+    const csvContent = [
+      'class_name,date,start_time,duration_minutes,capacity,trainer_email,room',
+      `HIIT Bootcamp,${buildDateInWeek(week, 1)},09:00,60,20,missing-${Date.now()}@example.com,Studio A`,
+    ].join('\n');
+
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await adminGoto(page, `/admin/scheduler?week=${week}`);
+
+    await page.getByRole('button', { name: 'Import' }).click();
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.setInputFiles({
+      name: 'unknown-trainer.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from(csvContent),
+    });
+    await page.getByRole('button', { name: 'Upload' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Import Complete' })).toBeVisible();
+    await expect(page.getByText('1 rows rejected')).toBeVisible();
+    await expect(page.getByText('TRAINER_NOT_FOUND')).toBeVisible();
+  });
+
+  test('SCH-51 — importing an unknown room name rejects the row with ROOM_NOT_FOUND', async ({ page }) => {
+    const week = futureWeek(18);
+    const csvContent = [
+      'class_name,date,start_time,duration_minutes,capacity,room',
+      `Yoga Flow,${buildDateInWeek(week, 2)},10:00,60,18,Missing Room ${Date.now()}`,
+    ].join('\n');
+
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await adminGoto(page, `/admin/scheduler?week=${week}`);
+
+    await page.getByRole('button', { name: 'Import' }).click();
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.setInputFiles({
+      name: 'unknown-room.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from(csvContent),
+    });
+    await page.getByRole('button', { name: 'Upload' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Import Complete' })).toBeVisible();
+    await expect(page.getByText('1 rows rejected')).toBeVisible();
+    await expect(page.getByText('ROOM_NOT_FOUND')).toBeVisible();
+  });
+
+  test('SCH-52 — importing an unknown class name creates a standalone scheduled instance', async ({ page, request }) => {
+    const token = await getAdminToken(request);
+    const week = futureWeek(19);
+    const className = uniqueValue('Standalone Import');
+    const csvContent = [
+      'class_name,date,start_time,duration_minutes,capacity',
+      `${className},${buildDateInWeek(week, 3)},11:00,45,12`,
+    ].join('\n');
+
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await adminGoto(page, `/admin/scheduler?week=${week}`);
+
+    await page.getByRole('button', { name: 'Import', exact: true }).first().click();
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.setInputFiles({
+      name: 'standalone-class.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from(csvContent),
+    });
+    await page.getByRole('button', { name: 'Upload' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Import Complete' })).toBeVisible();
+    await expect(page.getByText('1 rows imported successfully')).toBeVisible();
+
+    const schedule = await getWeekScheduleViaApi(request, token, week);
+    const importedInstance = schedule.instances.find((instance) => instance.name === className);
+    expect(importedInstance?.templateId ?? null).toBeNull();
+
+    await page.goto(`/admin/scheduler?week=${week}`);
+    await expect(schedulerCard(page, className)).toBeVisible();
+  });
+
   test('AC 43 — Cancel button closes the Import modal', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await adminGoto(page, '/admin/scheduler');
@@ -1117,7 +1891,7 @@ test.describe('Export', () => {
     await adminGoto(page, '/admin/scheduler');
 
     // The ExportMenu renders a toggle button labeled "Export"
-    await page.getByRole('button', { name: 'Export' }).click();
+    await page.getByRole('button', { name: 'Export', exact: true }).click();
 
     // The dropdown menu should appear with both export options
     await expect(page.getByRole('menuitem', { name: 'Export as CSV' })).toBeVisible();
@@ -1131,7 +1905,7 @@ test.describe('Export', () => {
     // Listen for the download event
     const downloadPromise = page.waitForEvent('download', { timeout: 5_000 }).catch(() => null);
 
-    await page.getByRole('button', { name: 'Export' }).click();
+    await page.getByRole('button', { name: 'Export', exact: true }).click();
     await page.getByRole('menuitem', { name: 'Export as CSV' }).click();
 
     const download = await downloadPromise;
@@ -1149,7 +1923,7 @@ test.describe('Export', () => {
 
     const downloadPromise = page.waitForEvent('download', { timeout: 5_000 }).catch(() => null);
 
-    await page.getByRole('button', { name: 'Export' }).click();
+    await page.getByRole('button', { name: 'Export', exact: true }).click();
     await page.getByRole('menuitem', { name: 'Export as iCal' }).click();
 
     const download = await downloadPromise;
@@ -1170,7 +1944,7 @@ test.describe('Export', () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await adminGoto(page, '/admin/scheduler');
 
-    await page.getByRole('button', { name: 'Export' }).click();
+    await page.getByRole('button', { name: 'Export', exact: true }).click();
     await expect(page.getByRole('menu')).toBeVisible();
 
     // Arm a download listener before clicking so the download promise resolves
@@ -1184,6 +1958,90 @@ test.describe('Export', () => {
 
     // Menu element must be removed from the DOM after selection
     await expect(page.getByRole('menu')).not.toBeVisible();
+  });
+
+  test('SCH-56 — exported CSV contains the expected columns and row values', async ({ page, request }) => {
+    const token = await getAdminToken(request);
+    const week = futureWeek(20);
+    const trainer = await createTrainerViaApi(request, token, {
+      firstName: 'Export',
+      lastName: uniqueValue('CsvTrainer'),
+      email: uniqueEmail('export-csv'),
+    });
+    const room = await createRoomViaApi(request, token, uniqueValue('Export CSV Room'), 30);
+    const template = await getTemplateByName(request, token, 'HIIT Bootcamp');
+    const instanceName = uniqueValue('Export CSV Class');
+
+    await createInstanceViaApi(request, token, {
+      templateId: template.id,
+      name: instanceName,
+      scheduledAt: buildScheduledAt(week, 2, '15:00'),
+      durationMin: 90,
+      capacity: 24,
+      roomId: room.id,
+      trainerIds: [trainer.id],
+    });
+
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await adminGoto(page, `/admin/scheduler?week=${week}`);
+
+    const downloadPromise = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Export', exact: true }).first().click();
+    await page.getByRole('menuitem', { name: 'Export as CSV' }).click();
+
+    const download = await downloadPromise;
+    const { mkdtempSync, readFileSync } = await import('fs');
+    const { tmpdir } = await import('os');
+    const { join } = await import('path');
+    const dir = mkdtempSync(join(tmpdir(), 'gymflow-export-csv-'));
+    const filePath = join(dir, await download.suggestedFilename());
+    await download.saveAs(filePath);
+
+    const csv = readFileSync(filePath, 'utf-8');
+    expect(csv).toContain('class_name,date,start_time,duration_minutes,capacity,trainer_email,room');
+    expect(csv).toContain(instanceName);
+    expect(csv).toContain(',15:00,90,24,');
+    expect(csv).toContain(trainer.email);
+    expect(csv).toContain(room.name);
+  });
+
+  test('SCH-58 — exported iCal contains VEVENT timing and summary details', async ({ page, request }) => {
+    const token = await getAdminToken(request);
+    const week = futureWeek(21);
+    const room = await createRoomViaApi(request, token, uniqueValue('Export ICS Room'), 18);
+    const template = await getTemplateByName(request, token, 'Yoga Flow');
+    const instanceName = uniqueValue('Export ICS Class');
+
+    await createInstanceViaApi(request, token, {
+      templateId: template.id,
+      name: instanceName,
+      scheduledAt: buildScheduledAt(week, 4, '18:00'),
+      durationMin: 60,
+      capacity: 18,
+      roomId: room.id,
+    });
+
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await adminGoto(page, `/admin/scheduler?week=${week}`);
+
+    const downloadPromise = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Export', exact: true }).first().click();
+    await page.getByRole('menuitem', { name: 'Export as iCal' }).click();
+
+    const download = await downloadPromise;
+    const { mkdtempSync, readFileSync } = await import('fs');
+    const { tmpdir } = await import('os');
+    const { join } = await import('path');
+    const dir = mkdtempSync(join(tmpdir(), 'gymflow-export-ics-'));
+    const filePath = join(dir, await download.suggestedFilename());
+    await download.saveAs(filePath);
+
+    const ical = readFileSync(filePath, 'utf-8');
+    expect(ical).toContain('BEGIN:VEVENT');
+    expect(ical).toContain(`SUMMARY:${instanceName}`);
+    expect(ical).toContain('DTSTART:');
+    expect(ical).toContain('DTEND:');
+    expect(ical).toContain(`LOCATION:${room.name}`);
   });
 
 });
@@ -1219,6 +2077,22 @@ test.describe('Access Control', () => {
     await adminGoto(page, '/admin/scheduler');
     await expect(page.getByRole('button', { name: 'Next week' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Previous week' })).toBeVisible();
+  });
+
+  test('SCH-61 — authenticated non-admin users are redirected away from all scheduler admin routes', async ({ page, request }) => {
+    const email = uniqueEmail('scheduler-member');
+
+    await registerMemberViaApi(request, email);
+    await page.goto('/login');
+    await page.fill('#email', email);
+    await page.fill('#password', USER_PASSWORD);
+    await page.getByRole('button', { name: 'Sign in' }).click();
+    await expect(page).toHaveURL('/plans');
+
+    for (const route of ['/admin/scheduler', '/admin/trainers', '/admin/rooms', '/admin/class-templates']) {
+      await page.goto(route);
+      await expect(page).toHaveURL('/plans');
+    }
   });
 
   test('scheduler page shows desktop-only message on narrow viewports', async ({ page }) => {

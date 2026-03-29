@@ -10,6 +10,7 @@ import { AdminRoomsPage } from './pages/admin/AdminRoomsPage'
 import { AdminClassTemplatesPage } from './pages/admin/AdminClassTemplatesPage'
 import { AdminSchedulerPage } from './pages/admin/AdminSchedulerPage'
 import { MyMembershipPage } from './pages/membership/MyMembershipPage'
+import { UserProfilePage } from './pages/profile/UserProfilePage'
 import { AdminRoute } from './components/layout/AdminRoute'
 import { AuthRoute } from './components/layout/AuthRoute'
 
@@ -31,6 +32,14 @@ function App() {
           element={
             <AuthRoute>
               <MyMembershipPage />
+            </AuthRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <AuthRoute>
+              <UserProfilePage />
             </AuthRoute>
           }
         />

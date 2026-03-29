@@ -1,33 +1,80 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type APIRequestContext, type Page } from '@playwright/test';
 
-// ---------------------------------------------------------------------------
-// Shared credentials
-// ---------------------------------------------------------------------------
-
+const API_BASE = process.env.E2E_API_BASE ?? 'http://localhost:8080/api/v1';
 const ADMIN_EMAIL = 'admin@gymflow.local';
 const ADMIN_PASSWORD = 'Admin@1234';
+const USER_PASSWORD = 'Member@1234';
 
-// ---------------------------------------------------------------------------
-// Helper: register a fresh user and return their credentials
-// ---------------------------------------------------------------------------
-
-async function registerUser(page: Page): Promise<{ email: string; password: string }> {
-  const email = `e2e-member-${Date.now()}@example.com`;
-  const password = 'Member@1234';
-  await page.goto('/register');
-  await page.fill('#email', email);
-  await page.fill('#password', password);
-  await page.getByRole('button', { name: 'Create account' }).click();
-  // Register redirects to /login on success
-  await expect(page).toHaveURL('/login');
-  return { email, password };
+interface LoginResponse {
+  accessToken: string;
+  refreshToken: string;
 }
 
-// ---------------------------------------------------------------------------
-// Helper: log in as a regular user
-// ---------------------------------------------------------------------------
+interface JwtPayload {
+  sub: string;
+  role: 'USER' | 'ADMIN';
+}
 
-async function loginAsUser(page: Page, email: string, password: string) {
+interface MembershipPlanSummary {
+  id: string;
+  name: string;
+}
+
+interface UserMembership {
+  id: string;
+  userId: string;
+  planId: string;
+  planName: string;
+  status: 'ACTIVE' | 'CANCELLED' | 'EXPIRED';
+  startDate: string;
+  endDate: string;
+  bookingsUsedThisMonth: number;
+  maxBookingsPerMonth: number;
+}
+
+interface PaginatedResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+}
+
+function uniqueEmail(prefix: string): string {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`;
+}
+
+function decodeJwtPayload(token: string): JwtPayload {
+  const [, payload] = token.split('.');
+  return JSON.parse(Buffer.from(payload, 'base64url').toString('utf-8')) as JwtPayload;
+}
+
+async function registerViaApi(
+  request: APIRequestContext,
+  email: string,
+  password = USER_PASSWORD
+): Promise<void> {
+  const response = await request.post(`${API_BASE}/auth/register`, {
+    data: { email, password },
+  });
+
+  expect(response.ok()).toBeTruthy();
+}
+
+async function loginViaApi(
+  request: APIRequestContext,
+  email: string,
+  password: string
+): Promise<LoginResponse> {
+  const response = await request.post(`${API_BASE}/auth/login`, {
+    data: { email, password },
+  });
+
+  expect(response.ok()).toBeTruthy();
+  return response.json() as Promise<LoginResponse>;
+}
+
+async function loginViaUi(page: Page, email: string, password: string): Promise<void> {
   await page.goto('/login');
   await page.fill('#email', email);
   await page.fill('#password', password);
@@ -35,11 +82,7 @@ async function loginAsUser(page: Page, email: string, password: string) {
   await expect(page).toHaveURL('/plans');
 }
 
-// ---------------------------------------------------------------------------
-// Helper: log in as admin
-// ---------------------------------------------------------------------------
-
-async function loginAsAdmin(page: Page) {
+async function loginAsAdminUi(page: Page): Promise<void> {
   await page.goto('/login');
   await page.fill('#email', ADMIN_EMAIL);
   await page.fill('#password', ADMIN_PASSWORD);
@@ -47,657 +90,559 @@ async function loginAsAdmin(page: Page) {
   await expect(page).toHaveURL('/admin/plans');
 }
 
-// ---------------------------------------------------------------------------
-// Helper: pick the first ACTIVE plan from /plans and return its name
-// ---------------------------------------------------------------------------
+async function createUserSession(
+  request: APIRequestContext,
+  prefix = 'e2e-member'
+): Promise<{ email: string; password: string; accessToken: string; refreshToken: string; userId: string }> {
+  const email = uniqueEmail(prefix);
+  await registerViaApi(request, email, USER_PASSWORD);
+  const session = await loginViaApi(request, email, USER_PASSWORD);
+  const payload = decodeJwtPayload(session.accessToken);
 
-async function getFirstActivePlanName(page: Page): Promise<string> {
-  await page.goto('/plans');
-  const firstCard = page.getByRole('link', { name: /^View details for / }).first();
-  await firstCard.waitFor({ state: 'visible' });
-  const ariaLabel = await firstCard.getAttribute('aria-label');
-  return ariaLabel?.replace('View details for ', '') ?? '';
+  return {
+    email,
+    password: USER_PASSWORD,
+    accessToken: session.accessToken,
+    refreshToken: session.refreshToken,
+    userId: payload.sub,
+  };
 }
 
-// ---------------------------------------------------------------------------
-// AC 1 / AC 17 — Happy path: purchase a membership
-// A logged-in user with no active membership visits /plans, clicks "Activate"
-// on the first plan, confirms the purchase modal, and is redirected to
-// /membership where the plan name is visible and status shows "Active".
-// bookingsUsedThisMonth counter starts at 0.
-// ---------------------------------------------------------------------------
+async function getFirstActivePlan(request: APIRequestContext): Promise<MembershipPlanSummary> {
+  const response = await request.get(`${API_BASE}/membership-plans?page=0&size=20`);
+  expect(response.ok()).toBeTruthy();
 
-test('user can purchase a membership from the plans page (happy path)', async ({ page }) => {
-  const { email, password } = await registerUser(page);
-  await loginAsUser(page, email, password);
+  const data = await response.json() as PaginatedResponse<MembershipPlanSummary>;
+  expect(data.content.length).toBeGreaterThan(0);
+  return data.content[0];
+}
 
-  await page.goto('/plans');
-
-  // Wait for plan cards to render
-  await expect(
-    page.getByRole('link', { name: /^View details for / }).first()
-  ).toBeVisible();
-
-  // When the user has no active membership the "Activate" buttons must be visible
-  const activateBtn = page.getByRole('button', { name: 'Activate' }).first();
-  await expect(activateBtn).toBeVisible();
-
-  // Capture plan name from the first card heading before clicking
-  const firstPlanHeading = page
-    .locator('.group')
-    .first()
-    .locator('h3');
-  const planName = await firstPlanHeading.innerText();
-
-  await activateBtn.click();
-
-  // PurchaseConfirmModal opens
-  await expect(page.getByRole('dialog')).toBeVisible();
-  await expect(
-    page.getByRole('heading', { name: 'Activate plan?' })
-  ).toBeVisible();
-
-  // Confirm the purchase
-  await page.getByRole('button', { name: 'Confirm' }).click();
-
-  // After successful purchase, page navigates to /membership
-  await expect(page).toHaveURL('/membership');
-  await expect(page.getByRole('heading', { name: 'My Membership' })).toBeVisible();
-
-  // Plan name appears in the membership card
-  await expect(page.getByRole('heading', { name: planName })).toBeVisible();
-
-  // Status badge reads "Active" (MembershipStatusBadge for ACTIVE)
-  await expect(page.getByLabel('Status: Active')).toBeVisible();
-
-  // Bookings progress bar starts at 0 (aria-valuenow="0").
-  // The fill element has zero width when bookings=0, so we check the attribute
-  // without requiring visibility (a zero-width bar is correct initial state).
-  const progressBar = page.getByRole('progressbar', {
-    name: 'Bookings used this month',
+async function purchaseMembershipViaApi(
+  request: APIRequestContext,
+  accessToken: string,
+  planId: string
+): Promise<UserMembership> {
+  const response = await request.post(`${API_BASE}/memberships`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    data: { planId },
   });
-  await expect(progressBar).toHaveAttribute('aria-valuenow', '0');
-});
 
-// ---------------------------------------------------------------------------
-// AC 8 / AC 2 — Viewing active membership on /membership
-// After purchasing a membership, the /membership page shows all required
-// fields: plan name, start date, end date, status, bookings used / max.
-// ---------------------------------------------------------------------------
+  expect(response.ok()).toBeTruthy();
+  return response.json() as Promise<UserMembership>;
+}
 
-test('active membership details are displayed on /membership page', async ({ page }) => {
-  const { email, password } = await registerUser(page);
-  await loginAsUser(page, email, password);
+async function cancelMembershipViaApi(
+  request: APIRequestContext,
+  accessToken: string
+): Promise<UserMembership> {
+  const response = await request.delete(`${API_BASE}/memberships/me`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
 
-  // Purchase a membership
+  expect(response.ok()).toBeTruthy();
+  return response.json() as Promise<UserMembership>;
+}
+
+async function deactivatePlanViaApi(
+  request: APIRequestContext,
+  adminAccessToken: string,
+  planId: string
+): Promise<void> {
+  const response = await request.patch(`${API_BASE}/membership-plans/${planId}/deactivate`, {
+    headers: { Authorization: `Bearer ${adminAccessToken}` },
+  });
+
+  expect(response.ok()).toBeTruthy();
+}
+
+async function activatePlanViaApi(
+  request: APIRequestContext,
+  adminAccessToken: string,
+  planId: string
+): Promise<void> {
+  const response = await request.patch(`${API_BASE}/membership-plans/${planId}/activate`, {
+    headers: { Authorization: `Bearer ${adminAccessToken}` },
+  });
+
+  expect(response.ok()).toBeTruthy();
+}
+
+async function fetchAdminMembershipsViaApi(
+  request: APIRequestContext,
+  adminAccessToken: string,
+  params: { status?: 'ACTIVE' | 'CANCELLED' | 'EXPIRED'; userId?: string; page?: number; size?: number } = {}
+): Promise<PaginatedResponse<UserMembership>> {
+  const searchParams = new URLSearchParams();
+
+  if (params.status) {
+    searchParams.set('status', params.status);
+  }
+  if (params.userId) {
+    searchParams.set('userId', params.userId);
+  }
+  searchParams.set('page', String(params.page ?? 0));
+  searchParams.set('size', String(params.size ?? 20));
+  searchParams.set('sort', 'createdAt,desc');
+
+  const response = await request.get(`${API_BASE}/admin/memberships?${searchParams.toString()}`, {
+    headers: { Authorization: `Bearer ${adminAccessToken}` },
+  });
+
+  expect(response.ok()).toBeTruthy();
+  return response.json() as Promise<PaginatedResponse<UserMembership>>;
+}
+
+async function adminCancelMembershipViaApi(
+  request: APIRequestContext,
+  adminAccessToken: string,
+  membershipId: string
+): Promise<UserMembership> {
+  const response = await request.delete(`${API_BASE}/admin/memberships/${membershipId}`, {
+    headers: { Authorization: `Bearer ${adminAccessToken}` },
+  });
+
+  expect(response.ok()).toBeTruthy();
+  return response.json() as Promise<UserMembership>;
+}
+
+async function createActiveMembership(
+  request: APIRequestContext,
+  prefix = 'e2e-member'
+): Promise<{
+  email: string;
+  password: string;
+  userId: string;
+  accessToken: string;
+  plan: MembershipPlanSummary;
+  membership: UserMembership;
+}> {
+  const user = await createUserSession(request, prefix);
+  const plan = await getFirstActivePlan(request);
+  const membership = await purchaseMembershipViaApi(request, user.accessToken, plan.id);
+
+  return {
+    email: user.email,
+    password: user.password,
+    userId: user.userId,
+    accessToken: user.accessToken,
+    plan,
+    membership,
+  };
+}
+
+async function createMembershipHistory(
+  request: APIRequestContext
+): Promise<{
+  email: string;
+  password: string;
+  userId: string;
+  accessToken: string;
+  plan: MembershipPlanSummary;
+  cancelledMembership: UserMembership;
+  activeMembership: UserMembership;
+}> {
+  const user = await createUserSession(request, 'e2e-member');
+  const plan = await getFirstActivePlan(request);
+  const firstMembership = await purchaseMembershipViaApi(request, user.accessToken, plan.id);
+  await cancelMembershipViaApi(request, user.accessToken);
+  const secondMembership = await purchaseMembershipViaApi(request, user.accessToken, plan.id);
+
+  return {
+    email: user.email,
+    password: user.password,
+    userId: user.userId,
+    accessToken: user.accessToken,
+    plan,
+    cancelledMembership: { ...firstMembership, status: 'CANCELLED' },
+    activeMembership: secondMembership,
+  };
+}
+
+async function openFirstPurchaseModal(page: Page): Promise<{ planId: string; planName: string }> {
   await page.goto('/plans');
-  await expect(
-    page.getByRole('button', { name: 'Activate' }).first()
-  ).toBeVisible();
+  const firstCard = page.getByRole('link', { name: /^View details for / }).first();
+  await expect(firstCard).toBeVisible();
+
+  const ariaLabel = await firstCard.getAttribute('aria-label');
+  const href = await firstCard.getAttribute('href');
+
+  expect(ariaLabel).toBeTruthy();
+  expect(href).toBeTruthy();
+
+  await expect(page.getByRole('button', { name: 'Activate' }).first()).toBeVisible();
   await page.getByRole('button', { name: 'Activate' }).first().click();
-  await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Activate plan?' })).toBeVisible();
+
+  return {
+    planId: href!.split('/').pop()!,
+    planName: ariaLabel!.replace('View details for ', ''),
+  };
+}
+
+async function purchaseFirstPlanViaUi(page: Page): Promise<{ planId: string; planName: string }> {
+  const selectedPlan = await openFirstPurchaseModal(page);
   await page.getByRole('button', { name: 'Confirm' }).click();
   await expect(page).toHaveURL('/membership');
+  return selectedPlan;
+}
 
-  // Page heading is present
-  await expect(page.getByRole('heading', { name: 'My Membership' })).toBeVisible();
-
-  // Start date label
-  await expect(page.getByText('Start date')).toBeVisible();
-
-  // End date label
-  await expect(page.getByText('End date')).toBeVisible();
-
-  // "Bookings this month" section exists
-  await expect(page.getByText('Bookings this month')).toBeVisible();
-
-  // Status badge (ACTIVE → "Active")
-  await expect(page.getByLabel('Status: Active')).toBeVisible();
-
-  // Cancel membership button is present
-  await expect(
-    page.getByRole('button', { name: 'Cancel membership' })
-  ).toBeVisible();
-});
-
-// ---------------------------------------------------------------------------
-// AC 10 / AC 19 — Cancelling a membership
-// User cancels their active membership via the cancel modal.
-// The /membership page then shows the "No active membership" empty state.
-// The record is NOT deleted (tested implicitly: admin can still see it as CANCELLED).
-// ---------------------------------------------------------------------------
-
-test('user can cancel their active membership', async ({ page }) => {
-  const { email, password } = await registerUser(page);
-  await loginAsUser(page, email, password);
-
-  // Purchase a membership first
-  await page.goto('/plans');
-  await expect(
-    page.getByRole('button', { name: 'Activate' }).first()
-  ).toBeVisible();
-  await page.getByRole('button', { name: 'Activate' }).first().click();
-  await expect(page.getByRole('dialog')).toBeVisible();
-  await page.getByRole('button', { name: 'Confirm' }).click();
-  await expect(page).toHaveURL('/membership');
-
-  // Now cancel it
-  await page.getByRole('button', { name: 'Cancel membership' }).click();
-
-  // CancelMembershipModal opens
-  await expect(
-    page.getByRole('dialog', { name: 'Cancel membership?' })
-  ).toBeVisible();
-  await expect(page.getByText('You will immediately lose access to class bookings')).toBeVisible();
-
-  // Confirm cancellation inside the modal
-  // The modal has two buttons: "Keep membership" (dismiss) and "Cancel membership" (confirm)
-  // There are now two "Cancel membership" buttons on the page; the one inside the dialog
-  // is the destructive confirmation button.
-  const dialog = page.getByRole('dialog', { name: 'Cancel membership?' });
-  await dialog.getByRole('button', { name: 'Cancel membership' }).click();
-
-  // After cancellation, the page refreshes and shows the empty state
+async function expectNoActiveMembership(page: Page): Promise<void> {
   await expect(page.getByText('No active membership')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Browse plans' })).toBeVisible();
-});
+}
 
-// ---------------------------------------------------------------------------
-// AC 4 — Error: purchasing when already holding an active membership
-// After purchasing, if the user somehow triggers a second purchase attempt
-// (e.g. by navigating back to /plans), the "Activate" buttons must not be
-// shown because showActivateButtons requires activeMembership === null.
-// This verifies the UI guard that prevents double-purchase.
-// ---------------------------------------------------------------------------
+async function waitForAdminMembershipsRequest(page: Page): Promise<void> {
+  await page.waitForResponse((response) =>
+    response.url().includes('/api/v1/admin/memberships') &&
+    response.request().method() === 'GET'
+  );
+}
 
-test('Activate buttons are hidden when user already has an active membership', async ({ page }) => {
-  const { email, password } = await registerUser(page);
-  await loginAsUser(page, email, password);
+async function setAdminUserIdFilter(page: Page, userId: string): Promise<void> {
+  const responsePromise = waitForAdminMembershipsRequest(page);
+  await page.fill('#user-id-filter', userId);
+  await responsePromise;
+}
 
-  // Purchase a membership
-  await page.goto('/plans');
-  await expect(
-    page.getByRole('button', { name: 'Activate' }).first()
-  ).toBeVisible();
-  await page.getByRole('button', { name: 'Activate' }).first().click();
-  await expect(page.getByRole('dialog')).toBeVisible();
-  await page.getByRole('button', { name: 'Confirm' }).click();
-  await expect(page).toHaveURL('/membership');
+async function setAdminStatusFilter(
+  page: Page,
+  status: '' | 'ACTIVE' | 'CANCELLED' | 'EXPIRED'
+): Promise<void> {
+  const responsePromise = waitForAdminMembershipsRequest(page);
+  await page.selectOption('#status-filter', status);
+  await responsePromise;
+}
 
-  // Navigate back to /plans
-  await page.goto('/plans');
+test.describe('User Membership Purchase', () => {
+  test('MEM-01 purchases a membership from the plans page', async ({ page, request }) => {
+    const user = await createUserSession(request);
+    await loginViaUi(page, user.email, user.password);
 
-  // Activate buttons should NOT be present because the user has an active membership
-  await expect(
-    page.getByRole('link', { name: /^View details for / }).first()
-  ).toBeVisible();
+    const selectedPlan = await purchaseFirstPlanViaUi(page);
 
-  // "Get Started" (unauthenticated CTA) or simply no Activate button
-  await expect(page.getByRole('button', { name: 'Activate' })).toHaveCount(0);
-});
+    await expect(page.getByRole('heading', { name: 'My Membership' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: selectedPlan.planName })).toBeVisible();
+    await expect(page.getByLabel('Status: Active')).toBeVisible();
+  });
 
-// ---------------------------------------------------------------------------
-// AC 6 / PLAN_NOT_AVAILABLE — Error: trying to activate an INACTIVE plan
-// This scenario is tested by directly calling the backend API via fetch while
-// a fresh user is logged in, using the Playwright request context, so the
-// UI still renders the error message from the modal's error alert.
-// We simulate it via the PurchaseConfirmModal error path: the modal shows
-// the "PLAN_NOT_AVAILABLE" user message when the API returns 422.
-// Since we cannot guarantee an INACTIVE plan exists in the test DB, we test
-// this by verifying the MEMBERSHIP_ALREADY_ACTIVE error path in the modal
-// (which we CAN reliably trigger) to confirm the error alert rendering works.
-// The PLAN_NOT_AVAILABLE message itself is covered by the API contract test below.
-// ---------------------------------------------------------------------------
+  test('MEM-02 dismisses the purchase modal with the Cancel button without creating a membership', async ({ page, request }) => {
+    const user = await createUserSession(request);
+    await loginViaUi(page, user.email, user.password);
 
-test('purchase modal shows error when plan is no longer available (PLAN_NOT_AVAILABLE message)', async ({ page }) => {
-  // This test uses the Playwright request API to verify the error message
-  // mapping renders correctly in the modal error alert.
-  // We trigger it by intercepting the POST /api/v1/memberships response.
+    await openFirstPurchaseModal(page);
+    await page.getByRole('dialog', { name: 'Activate plan?' }).getByRole('button', { name: 'Cancel' }).click();
 
-  const { email, password } = await registerUser(page);
-  await loginAsUser(page, email, password);
+    await expect(page.getByRole('dialog', { name: 'Activate plan?' })).not.toBeVisible();
+    await expect(page).toHaveURL('/plans');
 
-  // Intercept the purchase call and return 422 PLAN_NOT_AVAILABLE
-  await page.route('**/api/v1/memberships', (route) => {
-    if (route.request().method() === 'POST') {
-      route.fulfill({
-        status: 422,
-        contentType: 'application/json',
-        body: JSON.stringify({ error: 'Plan is inactive', code: 'PLAN_NOT_AVAILABLE' }),
-      });
-    } else {
-      route.continue();
+    await page.goto('/membership');
+    await expectNoActiveMembership(page);
+  });
+
+  test('MEM-03 dismisses the purchase modal via overlay click and Escape without creating a membership', async ({ page, request }) => {
+    const user = await createUserSession(request);
+    await loginViaUi(page, user.email, user.password);
+
+    await openFirstPurchaseModal(page);
+    await page.getByRole('dialog', { name: 'Activate plan?' }).click({ position: { x: 8, y: 8 } });
+    await expect(page.getByRole('dialog', { name: 'Activate plan?' })).not.toBeVisible();
+
+    await openFirstPurchaseModal(page);
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog', { name: 'Activate plan?' })).not.toBeVisible();
+
+    await page.goto('/membership');
+    await expectNoActiveMembership(page);
+  });
+
+  test('MEM-04 shows Activate CTAs only for an authenticated user without an active membership', async ({ page, request }) => {
+    await page.goto('/plans');
+    await expect(page.getByRole('button', { name: 'Activate' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Get Started' }).first()).toBeVisible();
+
+    const user = await createUserSession(request);
+    await loginViaUi(page, user.email, user.password);
+
+    await expect(page.getByRole('button', { name: 'Activate' }).first()).toBeVisible();
+
+    await purchaseFirstPlanViaUi(page);
+    await page.goto('/plans');
+
+    await expect(page.getByRole('button', { name: 'Activate' })).toHaveCount(0);
+  });
+
+  test('MEM-05 renders active membership details on /membership', async ({ page, request }) => {
+    const membershipData = await createActiveMembership(request);
+    await loginViaUi(page, membershipData.email, membershipData.password);
+
+    await page.goto('/membership');
+
+    await expect(page.getByRole('heading', { name: 'My Membership' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: membershipData.plan.name })).toBeVisible();
+    await expect(page.getByLabel('Status: Active')).toBeVisible();
+    await expect(page.getByText('Start date')).toBeVisible();
+    await expect(page.getByText('End date')).toBeVisible();
+    await expect(page.getByText('Bookings this month')).toBeVisible();
+    await expect(page.getByRole('progressbar', { name: 'Bookings used this month' })).toHaveAttribute('aria-valuenow', '0');
+  });
+
+  test('MEM-06 shows the empty-state card when the user has no active membership', async ({ page, request }) => {
+    const user = await createUserSession(request);
+    await loginViaUi(page, user.email, user.password);
+
+    await page.goto('/membership');
+    await expectNoActiveMembership(page);
+  });
+
+  test('MEM-07 navigates from the empty-state CTA back to /plans', async ({ page, request }) => {
+    const user = await createUserSession(request);
+    await loginViaUi(page, user.email, user.password);
+
+    await page.goto('/membership');
+    await page.getByRole('link', { name: 'Browse plans' }).click();
+
+    await expect(page).toHaveURL('/plans');
+    await expect(page.getByRole('heading', { name: 'Membership Plans' })).toBeVisible();
+  });
+
+  test('MEM-08 shows the membership fetch error state and recovers on Retry', async ({ page, request }) => {
+    const user = await createUserSession(request);
+    await loginViaUi(page, user.email, user.password);
+
+    let failedOnce = false;
+    await page.route('**/api/v1/memberships/me', async (route) => {
+      if (!failedOnce) {
+        failedOnce = true;
+        await route.fulfill({
+          status: 500,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Internal Server Error', code: 'INTERNAL_ERROR' }),
+        });
+        return;
+      }
+
+      await route.continue();
+    });
+
+    await page.goto('/membership');
+    await expect(page.getByText('Something went wrong')).toBeVisible();
+    await expect(page.getByText('Unable to load your membership. Please try again.')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Retry' }).click();
+    await expectNoActiveMembership(page);
+  });
+
+  test('MEM-09 cancels an active membership and shows the empty state afterwards', async ({ page, request }) => {
+    const membershipData = await createActiveMembership(request);
+    await loginViaUi(page, membershipData.email, membershipData.password);
+
+    await page.goto('/membership');
+    await page.getByRole('button', { name: 'Cancel membership' }).click();
+    await page.getByRole('dialog', { name: 'Cancel membership?' }).getByRole('button', { name: 'Cancel membership' }).click();
+
+    await expectNoActiveMembership(page);
+  });
+
+  test('MEM-10 dismisses the cancel modal without cancelling the membership', async ({ page, request }) => {
+    const membershipData = await createActiveMembership(request);
+    await loginViaUi(page, membershipData.email, membershipData.password);
+
+    await page.goto('/membership');
+    await page.getByRole('button', { name: 'Cancel membership' }).click();
+    await page.getByRole('button', { name: 'Keep membership' }).click();
+
+    await expect(page.getByRole('dialog', { name: 'Cancel membership?' })).not.toBeVisible();
+    await expect(page.getByRole('button', { name: 'Cancel membership' })).toBeVisible();
+    await expect(page.getByLabel('Status: Active')).toBeVisible();
+  });
+
+  test('MEM-11 allows a user to purchase another membership after cancelling the previous one', async ({ page, request }) => {
+    const user = await createUserSession(request);
+    await loginViaUi(page, user.email, user.password);
+
+    const firstSelection = await purchaseFirstPlanViaUi(page);
+    await page.getByRole('button', { name: 'Cancel membership' }).click();
+    await page.getByRole('dialog', { name: 'Cancel membership?' }).getByRole('button', { name: 'Cancel membership' }).click();
+
+    await expectNoActiveMembership(page);
+
+    await purchaseFirstPlanViaUi(page);
+    await expect(page.getByRole('heading', { name: firstSelection.planName })).toBeVisible();
+    await expect(page.getByLabel('Status: Active')).toBeVisible();
+  });
+
+  test('MEM-12 blocks purchase when the plan becomes inactive before confirmation', async ({ page, request }) => {
+    const user = await createUserSession(request);
+    const adminSession = await loginViaApi(request, ADMIN_EMAIL, ADMIN_PASSWORD);
+    await loginViaUi(page, user.email, user.password);
+
+    const selectedPlan = await openFirstPurchaseModal(page);
+
+    try {
+      await deactivatePlanViaApi(request, adminSession.accessToken, selectedPlan.planId);
+      await page.getByRole('button', { name: 'Confirm' }).click();
+
+      await expect(page.getByRole('alert')).toContainText('This plan is no longer available for purchase.');
+      await expect(page.getByRole('dialog', { name: 'Activate plan?' })).toBeVisible();
+      await page.goto('/membership');
+      await expectNoActiveMembership(page);
+    } finally {
+      await activatePlanViaApi(request, adminSession.accessToken, selectedPlan.planId);
     }
   });
 
-  await page.goto('/plans');
-  await expect(
-    page.getByRole('button', { name: 'Activate' }).first()
-  ).toBeVisible();
-  await page.getByRole('button', { name: 'Activate' }).first().click();
+  test('MEM-13 blocks a duplicate purchase when the user gains an active membership before confirmation', async ({ page, request }) => {
+    const user = await createUserSession(request);
+    await loginViaUi(page, user.email, user.password);
 
-  await expect(page.getByRole('dialog')).toBeVisible();
-  await page.getByRole('button', { name: 'Confirm' }).click();
+    const selectedPlan = await openFirstPurchaseModal(page);
+    await purchaseMembershipViaApi(request, user.accessToken, selectedPlan.planId);
 
-  // Error alert must appear inside the modal with the mapped user message
-  await expect(page.getByRole('alert')).toContainText(
-    'This plan is no longer available for purchase.'
-  );
+    await page.getByRole('button', { name: 'Confirm' }).click();
 
-  // Must still be on the same page (modal did not close)
-  await expect(page.getByRole('dialog')).toBeVisible();
-});
+    await expect(page.getByRole('alert')).toContainText(
+      'You already have an active membership. Please cancel it before activating a new one.'
+    );
+    await expect(page.getByRole('dialog', { name: 'Activate plan?' })).toBeVisible();
 
-// ---------------------------------------------------------------------------
-// AC 4 / MEMBERSHIP_ALREADY_ACTIVE error in modal
-// If the backend returns 409 MEMBERSHIP_ALREADY_ACTIVE, the modal displays
-// the correct user-facing message without closing.
-// ---------------------------------------------------------------------------
-
-test('purchase modal shows error when user already has an active membership (MEMBERSHIP_ALREADY_ACTIVE)', async ({ page }) => {
-  const { email, password } = await registerUser(page);
-  await loginAsUser(page, email, password);
-
-  // Intercept purchase and return 409 MEMBERSHIP_ALREADY_ACTIVE
-  await page.route('**/api/v1/memberships', (route) => {
-    if (route.request().method() === 'POST') {
-      route.fulfill({
-        status: 409,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          error: 'User already has an active membership',
-          code: 'MEMBERSHIP_ALREADY_ACTIVE',
-        }),
-      });
-    } else {
-      route.continue();
-    }
+    await page.goto('/membership');
+    await expect(page.getByRole('heading', { name: selectedPlan.planName })).toBeVisible();
+    await expect(page.getByLabel('Status: Active')).toBeVisible();
   });
 
-  await page.goto('/plans');
-  await expect(
-    page.getByRole('button', { name: 'Activate' }).first()
-  ).toBeVisible();
-  await page.getByRole('button', { name: 'Activate' }).first().click();
-
-  await expect(page.getByRole('dialog')).toBeVisible();
-  await page.getByRole('button', { name: 'Confirm' }).click();
-
-  await expect(page.getByRole('alert')).toContainText(
-    'You already have an active membership. Please cancel it before activating a new one.'
-  );
-  await expect(page.getByRole('dialog')).toBeVisible();
-});
-
-// ---------------------------------------------------------------------------
-// AC 3 / AC (AuthRoute) — Accessing /membership without being logged in
-// An unauthenticated visitor must be redirected to /login (AuthRoute guard).
-// ---------------------------------------------------------------------------
-
-test('unauthenticated visit to /membership redirects to /login', async ({ page }) => {
-  await page.goto('/membership');
-  await expect(page).toHaveURL('/login');
-});
-
-// ---------------------------------------------------------------------------
-// AC 9 — /membership shows "No active membership" when user has none
-// A freshly registered user with no membership sees the empty state.
-// ---------------------------------------------------------------------------
-
-test('/membership shows empty state when user has no active membership', async ({ page }) => {
-  const { email, password } = await registerUser(page);
-  await loginAsUser(page, email, password);
-
-  await page.goto('/membership');
-
-  await expect(page.getByText('No active membership')).toBeVisible();
-  await expect(
-    page.getByText('You do not have an active membership')
-  ).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Browse plans' })).toBeVisible();
-});
-
-// ---------------------------------------------------------------------------
-// AC 12 / AC 13 — Admin: viewing all memberships at /admin/memberships
-// Admin can access the page, sees the Memberships heading, a table, and
-// at least one membership row (seeded data or the one created by prior tests).
-// A non-admin (regular user) is redirected to /plans.
-// ---------------------------------------------------------------------------
-
-test('admin can access /admin/memberships and sees memberships table', async ({ page }) => {
-  await loginAsAdmin(page);
-  await page.goto('/admin/memberships');
-
-  await expect(
-    page.getByRole('heading', { name: 'Memberships' })
-  ).toBeVisible();
-  await expect(page.getByRole('table')).toBeVisible();
-
-  // Column headers
-  await expect(page.getByRole('columnheader', { name: 'Plan' })).toBeVisible();
-  await expect(page.getByRole('columnheader', { name: 'Status' })).toBeVisible();
-  await expect(page.getByRole('columnheader', { name: 'Actions' })).toBeVisible();
-});
-
-test('non-admin user visiting /admin/memberships is redirected to /plans', async ({ page }) => {
-  const { email, password } = await registerUser(page);
-  await loginAsUser(page, email, password);
-
-  await page.goto('/admin/memberships');
-  await expect(page).toHaveURL('/plans');
-});
-
-test('unauthenticated visit to /admin/memberships is redirected to /plans', async ({ page }) => {
-  await page.goto('/admin/memberships');
-  await expect(page).toHaveURL('/plans');
-});
-
-// ---------------------------------------------------------------------------
-// AC 12 — Admin memberships page supports status filter
-// Filtering by "Active" hides CANCELLED rows; table responds to the dropdown.
-// ---------------------------------------------------------------------------
-
-test('admin memberships status filter updates the table', async ({ page }) => {
-  await loginAsAdmin(page);
-  await page.goto('/admin/memberships');
-
-  // Table must render
-  await expect(page.getByRole('table')).toBeVisible();
-
-  // Change the status filter to ACTIVE
-  await page.selectOption('#status-filter', 'ACTIVE');
-
-  // The filter select must now show "Active"
-  await expect(page.locator('#status-filter')).toHaveValue('ACTIVE');
-
-  // Table is still visible after filter change
-  await expect(page.getByRole('table')).toBeVisible();
-
-  // Any visible badge in the table must be "Active" (or table is empty).
-  // Scoped to the table to avoid matching the "Cancelled" option in the status dropdown.
-  const cancelledBadges = page.getByRole('table').getByLabel('Status: Cancelled');
-  await expect(cancelledBadges).toHaveCount(0);
-});
-
-// ---------------------------------------------------------------------------
-// AC 14 — Admin: cancelling a user's membership
-// Admin clicks "Cancel" on an ACTIVE membership row, confirms in the modal,
-// and the row's status badge changes to "Cancelled".
-// Prerequisites: we first create a fresh user membership, then log in as admin.
-// ---------------------------------------------------------------------------
-
-test('admin can cancel an active membership from /admin/memberships', async ({ page, context }) => {
-  // Step 1: Create a new user with an active membership using a second browser page
-  const userPage = await context.newPage();
-  const { email, password } = await registerUser(userPage);
-  await loginAsUser(userPage, email, password);
-
-  // Purchase a membership on the user page
-  await userPage.goto('/plans');
-  await expect(
-    userPage.getByRole('button', { name: 'Activate' }).first()
-  ).toBeVisible();
-  const firstPlanHeading = userPage
-    .locator('.group')
-    .first()
-    .locator('h3');
-  const planName = await firstPlanHeading.innerText();
-  await userPage.getByRole('button', { name: 'Activate' }).first().click();
-  await expect(userPage.getByRole('dialog')).toBeVisible();
-  await userPage.getByRole('button', { name: 'Confirm' }).click();
-  await expect(userPage).toHaveURL('/membership');
-  await userPage.close();
-
-  // Step 2: Log in as admin and find the newly created ACTIVE membership
-  await loginAsAdmin(page);
-  await page.goto('/admin/memberships');
-
-  // Filter to ACTIVE only to simplify finding our newly created membership
-  await page.selectOption('#status-filter', 'ACTIVE');
-  await expect(page.getByRole('table')).toBeVisible();
-
-  // Wait for the table data to load (rows with planName must be present)
-  const rowsWithPlan = page.getByRole('row').filter({ hasText: planName });
-  await expect(rowsWithPlan.first()).toBeVisible();
-
-  // Count rows with planName before cancellation so we can verify one disappears after cancel
-  const rowCountBefore = await rowsWithPlan.count();
-  expect(rowCountBefore).toBeGreaterThan(0);
-
-  // Find the first row containing planName and click its "Cancel" button
-  const row = rowsWithPlan.first();
-  await expect(row).toBeVisible();
-
-  const cancelBtn = row.getByRole('button', { name: 'Cancel' });
-  await expect(cancelBtn).toBeVisible();
-  await cancelBtn.click();
-
-  // AdminCancelMembershipModal opens
-  await expect(
-    page.getByRole('dialog', { name: 'Cancel this membership?' })
-  ).toBeVisible();
-  await expect(
-    page.getByText('The user will lose access immediately. This action cannot be undone.')
-  ).toBeVisible();
-
-  // Confirm cancellation
-  await page.getByRole('button', { name: 'Confirm cancel' }).click();
-
-  // Modal closes
-  await expect(
-    page.getByRole('dialog', { name: 'Cancel this membership?' })
-  ).not.toBeVisible();
-
-  // With ACTIVE filter active, the cancelled row is removed from the table.
-  // The count of rows with planName must have decreased by exactly one.
-  await expect(rowsWithPlan).toHaveCount(rowCountBefore - 1);
-});
-
-// ---------------------------------------------------------------------------
-// AC 14 / AC 15 — Admin cancel modal error: membership already cancelled
-// Intercept admin cancel call and return 409 MEMBERSHIP_NOT_ACTIVE.
-// The modal must stay open and show the correct error message.
-// ---------------------------------------------------------------------------
-
-test('admin cancel modal shows error when membership is already cancelled (MEMBERSHIP_NOT_ACTIVE)', async ({ page }) => {
-  await loginAsAdmin(page);
-  await page.goto('/admin/memberships');
-
-  // Show all memberships (no filter)
-  await expect(page.getByRole('table')).toBeVisible();
-
-  // We need at least one ACTIVE row to click "Cancel". If none exists, check
-  // if there is any Cancel button at all; skip gracefully otherwise.
-  const firstCancelBtn = page.getByRole('button', { name: 'Cancel' }).first();
-  const cancelBtnCount = await page.getByRole('button', { name: 'Cancel' }).count();
-  if (cancelBtnCount === 0) {
-    // No ACTIVE memberships — this scenario is not applicable; skip.
-    return;
-  }
-
-  // Intercept the admin cancel DELETE and return 409 MEMBERSHIP_NOT_ACTIVE
-  await page.route('**/api/v1/admin/memberships/**', (route) => {
-    if (route.request().method() === 'DELETE') {
-      route.fulfill({
-        status: 409,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          error: 'Membership is not active',
-          code: 'MEMBERSHIP_NOT_ACTIVE',
-        }),
-      });
-    } else {
-      route.continue();
-    }
+  test('MEM-14 redirects an unauthenticated visitor from /membership to /login', async ({ page }) => {
+    await page.goto('/membership');
+    await expect(page).toHaveURL('/login');
   });
 
-  await firstCancelBtn.click();
+  test('MEM-15 loads the admin memberships page for an admin user', async ({ page }) => {
+    await loginAsAdminUi(page);
+    await page.goto('/admin/memberships');
 
-  await expect(
-    page.getByRole('dialog', { name: 'Cancel this membership?' })
-  ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Memberships' })).toBeVisible();
+    await expect(page.getByRole('table')).toBeVisible();
+  });
 
-  await page.getByRole('button', { name: 'Confirm cancel' }).click();
+  test('MEM-16 redirects a non-admin user away from /admin/memberships', async ({ page, request }) => {
+    const user = await createUserSession(request);
+    await loginViaUi(page, user.email, user.password);
 
-  await expect(page.getByRole('alert')).toContainText(
-    'This membership is already cancelled or expired.'
-  );
+    await page.goto('/admin/memberships');
+    await expect(page).toHaveURL('/plans');
+  });
 
-  // Modal must remain open
-  await expect(
-    page.getByRole('dialog', { name: 'Cancel this membership?' })
-  ).toBeVisible();
-});
+  test('MEM-17 redirects a guest away from /admin/memberships', async ({ page }) => {
+    await page.goto('/admin/memberships');
+    await expect(page).toHaveURL('/plans');
+  });
 
-// ---------------------------------------------------------------------------
-// AC 21 — Admin memberships page supports pagination
-// When there is more than one page of memberships, Previous/Next controls
-// appear. We verify the controls exist and are correctly enabled/disabled.
-// ---------------------------------------------------------------------------
+  test('MEM-18 filters the admin memberships table by status', async ({ page, request }) => {
+    const history = await createMembershipHistory(request);
+    await loginAsAdminUi(page);
 
-test('admin memberships pagination controls are rendered when multiple pages exist', async ({ page }) => {
-  await loginAsAdmin(page);
-  await page.goto('/admin/memberships');
+    await page.goto('/admin/memberships');
+    await setAdminUserIdFilter(page, history.userId);
 
-  await expect(page.getByRole('table')).toBeVisible();
+    await expect(page.getByText('2 total')).toBeVisible();
 
-  // If there is more than one page, pagination is shown
-  const nextBtn = page.getByRole('button', { name: 'Next' });
-  const prevBtn = page.getByRole('button', { name: 'Previous' });
+    await setAdminStatusFilter(page, 'ACTIVE');
+    await expect(page.getByText('1 total')).toBeVisible();
+    await expect(page.getByLabel('Status: Active')).toHaveCount(1);
+    await expect(page.getByLabel('Status: Cancelled')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Cancel' })).toHaveCount(1);
 
-  const nextExists = await nextBtn.count();
-  if (nextExists > 0) {
-    // On the first page, Previous must be disabled
-    await expect(prevBtn).toBeDisabled();
-    // Next must be enabled
-    await expect(nextBtn).toBeEnabled();
-  }
-  // If there is only one page, pagination controls are not rendered — that is
-  // also valid behaviour; the test passes without assertion.
-});
+    await setAdminStatusFilter(page, 'CANCELLED');
+    await expect(page.getByText('1 total')).toBeVisible();
+    await expect(page.getByLabel('Status: Cancelled')).toHaveCount(1);
+    await expect(page.getByLabel('Status: Active')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Cancel' })).toHaveCount(0);
+  });
 
-// ---------------------------------------------------------------------------
-// AC 12 — Admin memberships User ID filter narrows the result set
-// ---------------------------------------------------------------------------
+  test('MEM-19 narrows the admin memberships table to a matching user ID', async ({ page, request }) => {
+    const history = await createMembershipHistory(request);
+    const adminSession = await loginViaApi(request, ADMIN_EMAIL, ADMIN_PASSWORD);
+    const expected = await fetchAdminMembershipsViaApi(request, adminSession.accessToken, {
+      userId: history.userId,
+      size: 20,
+    });
 
-test('admin memberships user ID filter narrows the table results', async ({ page }) => {
-  await loginAsAdmin(page);
-  await page.goto('/admin/memberships');
+    await loginAsAdminUi(page);
+    await page.goto('/admin/memberships');
+    await setAdminUserIdFilter(page, history.userId);
 
-  await expect(page.getByRole('table')).toBeVisible();
+    await expect(page.getByText(`${expected.totalElements} total`)).toBeVisible();
+    await expect(page.locator('tbody tr').filter({ hasText: history.plan.name })).toHaveCount(expected.totalElements);
+  });
 
-  // Enter a nonsensical UUID — table should show "No memberships found"
-  const fakeUUID = '00000000-0000-0000-0000-000000000000';
-  await page.fill('#user-id-filter', fakeUUID);
+  test('MEM-20 shows the empty state when the admin user ID filter has no matches', async ({ page }) => {
+    await loginAsAdminUi(page);
+    await page.goto('/admin/memberships');
 
-  // Debounce is 300 ms; wait for it to fire
-  await page.waitForTimeout(400);
+    await setAdminUserIdFilter(page, '00000000-0000-0000-0000-000000000000');
+    await expect(page.getByText('No memberships found')).toBeVisible();
+  });
 
-  await expect(page.getByText('No memberships found')).toBeVisible();
-});
+  test('MEM-21 paginates the admin memberships table when more than 20 records exist', async ({ page, request }) => {
+    const adminSession = await loginViaApi(request, ADMIN_EMAIL, ADMIN_PASSWORD);
+    const plan = await getFirstActivePlan(request);
 
-// ---------------------------------------------------------------------------
-// Re-purchase after cancellation — AC (PRD Open Question 2)
-// After cancelling a membership the "Activate" buttons re-appear on /plans
-// and the user can purchase again.
-// ---------------------------------------------------------------------------
+    for (let index = 0; index < 21; index += 1) {
+      const user = await createUserSession(request, 'e2e-member-page');
+      await purchaseMembershipViaApi(request, user.accessToken, plan.id);
+    }
 
-test('user can purchase a new membership after cancelling the previous one', async ({ page }) => {
-  const { email, password } = await registerUser(page);
-  await loginAsUser(page, email, password);
+    const firstPage = await fetchAdminMembershipsViaApi(request, adminSession.accessToken, { size: 20 });
+    expect(firstPage.totalPages).toBeGreaterThan(1);
 
-  // Purchase
-  await page.goto('/plans');
-  await expect(
-    page.getByRole('button', { name: 'Activate' }).first()
-  ).toBeVisible();
-  await page.getByRole('button', { name: 'Activate' }).first().click();
-  await expect(page.getByRole('dialog')).toBeVisible();
-  await page.getByRole('button', { name: 'Confirm' }).click();
-  await expect(page).toHaveURL('/membership');
+    await loginAsAdminUi(page);
+    await page.goto('/admin/memberships');
 
-  // Cancel
-  await page.getByRole('button', { name: 'Cancel membership' }).click();
-  const dialog = page.getByRole('dialog', { name: 'Cancel membership?' });
-  await expect(dialog).toBeVisible();
-  await dialog.getByRole('button', { name: 'Cancel membership' }).click();
-  await expect(page.getByText('No active membership')).toBeVisible();
+    await expect(page.getByText(`Page 1 of ${firstPage.totalPages}`)).toBeVisible();
 
-  // Navigate to /plans — Activate buttons should be visible again
-  await page.goto('/plans');
-  await expect(
-    page.getByRole('link', { name: /^View details for / }).first()
-  ).toBeVisible();
-  await expect(
-    page.getByRole('button', { name: 'Activate' }).first()
-  ).toBeVisible();
+    const firstRowUserId = await page.locator('tbody tr').first().locator('td').first().innerText();
+    const responsePromise = waitForAdminMembershipsRequest(page);
+    await page.getByRole('button', { name: 'Next' }).click();
+    await responsePromise;
 
-  // Purchase again
-  await page.getByRole('button', { name: 'Activate' }).first().click();
-  await expect(page.getByRole('dialog')).toBeVisible();
-  await page.getByRole('button', { name: 'Confirm' }).click();
-  await expect(page).toHaveURL('/membership');
-  await expect(page.getByLabel('Status: Active')).toBeVisible();
-});
+    await expect(page.getByText(`Page 2 of ${firstPage.totalPages}`)).toBeVisible();
+    await expect(page.locator('tbody tr').first().locator('td').first()).not.toHaveText(firstRowUserId);
+    await expect(page.getByRole('button', { name: 'Previous' })).toBeEnabled();
+  });
 
-// ---------------------------------------------------------------------------
-// PurchaseConfirmModal — closing modal with "Cancel" button keeps state
-// Clicking "Cancel" in the purchase modal dismisses it without navigating.
-// ---------------------------------------------------------------------------
+  test('MEM-22 lets an admin cancel an active membership', async ({ page, request }) => {
+    const membershipData = await createActiveMembership(request);
+    await loginAsAdminUi(page);
 
-test('purchase confirm modal can be dismissed without purchasing', async ({ page }) => {
-  const { email, password } = await registerUser(page);
-  await loginAsUser(page, email, password);
+    await page.goto('/admin/memberships');
+    await setAdminUserIdFilter(page, membershipData.userId);
+    await setAdminStatusFilter(page, 'ACTIVE');
 
-  await page.goto('/plans');
-  await expect(
-    page.getByRole('button', { name: 'Activate' }).first()
-  ).toBeVisible();
-  await page.getByRole('button', { name: 'Activate' }).first().click();
+    await expect(page.getByLabel('Status: Active')).toHaveCount(1);
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await page.getByRole('dialog', { name: 'Cancel this membership?' }).getByRole('button', { name: 'Confirm cancel' }).click();
 
-  await expect(page.getByRole('dialog')).toBeVisible();
+    await expect(page.getByRole('dialog', { name: 'Cancel this membership?' })).not.toBeVisible();
+    await expect(page.getByText('No memberships found')).toBeVisible();
+  });
 
-  // Click the "Cancel" button inside the modal (not the confirm)
-  await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click();
+  test('MEM-23 shows MEMBERSHIP_NOT_ACTIVE when an admin tries to cancel a membership that was already cancelled elsewhere', async ({ page, request }) => {
+    const membershipData = await createActiveMembership(request);
+    const adminSession = await loginViaApi(request, ADMIN_EMAIL, ADMIN_PASSWORD);
+    await loginAsAdminUi(page);
 
-  // Modal closes
-  await expect(page.getByRole('dialog')).not.toBeVisible();
+    await page.goto('/admin/memberships');
+    await setAdminUserIdFilter(page, membershipData.userId);
+    await setAdminStatusFilter(page, 'ACTIVE');
+    await expect(page.getByText('1 total')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Cancel' })).toHaveCount(1);
 
-  // URL stays on /plans
-  await expect(page).toHaveURL('/plans');
-});
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await expect(page.getByRole('dialog', { name: 'Cancel this membership?' })).toBeVisible();
 
-// ---------------------------------------------------------------------------
-// CancelMembershipModal — "Keep membership" button dismisses without cancelling
-// ---------------------------------------------------------------------------
+    await adminCancelMembershipViaApi(request, adminSession.accessToken, membershipData.membership.id);
+    await page.getByRole('button', { name: 'Confirm cancel' }).click();
 
-test('cancel membership modal can be dismissed with Keep membership button', async ({ page }) => {
-  const { email, password } = await registerUser(page);
-  await loginAsUser(page, email, password);
-
-  // Purchase first
-  await page.goto('/plans');
-  await page.getByRole('button', { name: 'Activate' }).first().click();
-  await expect(page.getByRole('dialog')).toBeVisible();
-  await page.getByRole('button', { name: 'Confirm' }).click();
-  await expect(page).toHaveURL('/membership');
-
-  // Open cancel modal
-  await page.getByRole('button', { name: 'Cancel membership' }).click();
-  await expect(
-    page.getByRole('dialog', { name: 'Cancel membership?' })
-  ).toBeVisible();
-
-  // Dismiss with "Keep membership"
-  await page.getByRole('button', { name: 'Keep membership' }).click();
-
-  // Modal closes
-  await expect(
-    page.getByRole('dialog', { name: 'Cancel membership?' })
-  ).not.toBeVisible();
-
-  // Membership is still active (Cancel membership button still visible)
-  await expect(
-    page.getByRole('button', { name: 'Cancel membership' })
-  ).toBeVisible();
+    await expect(page.getByRole('alert')).toContainText('This membership is already cancelled or expired.');
+    await expect(page.getByRole('dialog', { name: 'Cancel this membership?' })).toBeVisible();
+  });
 });

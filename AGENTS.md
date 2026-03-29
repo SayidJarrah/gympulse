@@ -251,6 +251,7 @@ JWT_EXPIRY_MS=3600000
 | Feature | PRD | SDD | Design | Backend | Frontend | Tests | E2E |
 |---------|-----|-----|--------|---------|----------|-------|-----|
 | Project scaffold & Docker | — | — | — | ✅ | ✅ | — | — |
+| Public landing page | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Auth (register/login/JWT) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Membership plans | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | User membership purchase | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |

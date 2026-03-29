@@ -12,7 +12,13 @@ import com.gymflow.service.ImportFileTooLargeException
 import com.gymflow.service.ImportFormatInvalidException
 import com.gymflow.service.InvalidCredentialsException
 import com.gymflow.service.InvalidExportFormatException
+import com.gymflow.service.InvalidDateOfBirthException
+import com.gymflow.service.InvalidFirstNameException
 import com.gymflow.service.InvalidMembershipStatusFilterException
+import com.gymflow.service.InvalidFitnessGoalsException
+import com.gymflow.service.InvalidLastNameException
+import com.gymflow.service.InvalidPhoneException
+import com.gymflow.service.InvalidPreferredClassTypesException
 import com.gymflow.service.InvalidSlotException
 import com.gymflow.service.InvalidStatusFilterException
 import com.gymflow.service.InvalidWeekFormatException
@@ -29,6 +35,7 @@ import com.gymflow.service.PlanNotAvailableException
 import com.gymflow.service.PlanNotFoundException
 import com.gymflow.service.RefreshTokenExpiredException
 import com.gymflow.service.RefreshTokenInvalidException
+import com.gymflow.service.ReadOnlyFieldException
 import com.gymflow.service.RoomHasInstancesException
 import com.gymflow.service.RoomNameConflictException
 import com.gymflow.service.RoomNotFoundException
@@ -202,6 +209,65 @@ class GlobalExceptionHandler {
         return ResponseEntity
             .status(HttpStatus.BAD_REQUEST)
             .body(ErrorResponse(error = "Invalid status filter. Use ACTIVE, CANCELLED, or EXPIRED", code = "INVALID_STATUS_FILTER"))
+    }
+
+    @ExceptionHandler(ReadOnlyFieldException::class)
+    fun handleReadOnlyField(ex: ReadOnlyFieldException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ErrorResponse(error = "Email and account ownership fields cannot be changed here.", code = "READ_ONLY_FIELD"))
+    }
+
+    @ExceptionHandler(InvalidFirstNameException::class)
+    fun handleInvalidFirstName(ex: InvalidFirstNameException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ErrorResponse(error = "First name must be between 1 and 50 characters.", code = "INVALID_FIRST_NAME"))
+    }
+
+    @ExceptionHandler(InvalidLastNameException::class)
+    fun handleInvalidLastName(ex: InvalidLastNameException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ErrorResponse(error = "Last name must be between 1 and 50 characters.", code = "INVALID_LAST_NAME"))
+    }
+
+    @ExceptionHandler(InvalidPhoneException::class)
+    fun handleInvalidPhone(ex: InvalidPhoneException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ErrorResponse(error = "Enter a valid international phone number.", code = "INVALID_PHONE"))
+    }
+
+    @ExceptionHandler(InvalidDateOfBirthException::class)
+    fun handleInvalidDateOfBirth(ex: InvalidDateOfBirthException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ErrorResponse(error = "Enter a valid date of birth that is not in the future.", code = "INVALID_DATE_OF_BIRTH"))
+    }
+
+    @ExceptionHandler(InvalidFitnessGoalsException::class)
+    fun handleInvalidFitnessGoals(ex: InvalidFitnessGoalsException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(
+                ErrorResponse(
+                    error = "Fitness goals must contain up to 5 items, each 1 to 50 characters long.",
+                    code = "INVALID_FITNESS_GOALS"
+                )
+            )
+    }
+
+    @ExceptionHandler(InvalidPreferredClassTypesException::class)
+    fun handleInvalidPreferredClassTypes(ex: InvalidPreferredClassTypesException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(
+                ErrorResponse(
+                    error = "Preferred class types must contain up to 5 items, each 1 to 50 characters long.",
+                    code = "INVALID_PREFERRED_CLASS_TYPES"
+                )
+            )
     }
 
     // AccessDeniedException must be handled explicitly here because @RestControllerAdvice
