@@ -56,7 +56,7 @@ export function AuthForm({ mode, onSubmit, isLoading, error }: AuthFormProps) {
     <form
       onSubmit={handleSubmit(handleFormSubmit)}
       noValidate
-      aria-label={isRegister ? 'Create account' : 'Sign in'}
+      aria-label={isRegister ? 'Register form' : 'Login form'}
       className="flex flex-col gap-5"
     >
       {/* Email field */}

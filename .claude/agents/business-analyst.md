@@ -98,7 +98,7 @@ Do not ask about things that are clearly implied or covered by the domain glossa
 - Keep Out of Scope explicit — this prevents agents from over-building
 - Do NOT describe implementation details — that is the architect's job
 - **After writing the PRD:** update the PRD column for this feature in the
-  Implementation Status table in CLAUDE.md from ❌ to ✅. If the feature row
+  Implementation Status table in AGENTS.md from ❌ to ✅. If the feature row
   doesn't exist yet, add it with all other columns set to ❌.
 
 ## Maintaining Product Docs

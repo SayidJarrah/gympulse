@@ -47,6 +47,20 @@ Ask all your questions in **one message before starting** — not one at a time 
 When you receive a bug brief from `docs/bugs/`, you are in **Bug Fix Mode**.
 Different, stricter rules apply. Do not treat this as a feature build session.
 
+### Step 1 — Assess: app bug or spec issue?
+
+Read the observation report (console errors, network requests, API status codes).
+Compare what the spec asserted against what the API actually returned.
+
+Ask yourself:
+- Does the API return the wrong status code or wrong response body? → **Backend bug** — continue to Step 2.
+- Is the spec asserting a response format that differs from the SDD contract? → **Spec issue** — go to Step 3.
+- Does the endpoint not exist (404) but the SDD says it should? → **Backend bug**.
+- Does the endpoint exist and respond correctly per the SDD, but the spec expects something different? → **Spec issue** — go to Step 3.
+- Unsure? Read the SDD API contract for this endpoint. If implementation matches the SDD → spec issue. If not → backend bug.
+
+### Step 2 — Fix the backend bug
+
 **Your only input is the bug brief.** Do not read additional files for context
 beyond what is listed in the brief's "Files to Change" section.
 
@@ -71,6 +85,24 @@ beyond what is listed in the brief's "Files to Change" section.
 If you find the fix genuinely requires more, stop and write an updated brief
 explaining why — do not proceed past 3 files.
 
+### Step 3 — Handle a spec issue
+
+Do NOT touch any app source file.
+
+Fill in the `## Spec Fix Required` section at the bottom of the bug brief:
+
+```markdown
+## Spec Fix Required
+Spec file: `frontend/e2e/{feature}.spec.ts`
+Test name: `{exact failing test name}`
+Change needed: {describe exactly which assertion/expected value is wrong and what it should be, quoting the SDD contract}
+```
+
+Then tell the user:
+> Spec issue identified — the API behaviour is correct per the SDD.
+> `## Spec Fix Required` filled in `docs/bugs/{filename}`.
+> Run `/fix-spec docs/bugs/{filename}` to update the spec.
+
 ---
 
 ## Patterns You Always Follow
@@ -93,7 +125,7 @@ explaining why — do not proceed past 3 files.
 ## Updating Implementation Status
 After all endpoints for a feature are implemented and tests pass, update
 the Backend and Tests columns for this feature in the Implementation Status
-table in CLAUDE.md from ❌ to ✅.
+table in AGENTS.md from ❌ to ✅.
 
 ## Migration Naming
 `V{next_number}__{snake_case_description}.sql`

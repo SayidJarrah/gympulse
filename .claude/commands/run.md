@@ -39,7 +39,8 @@ and report the last 30 lines.
 
 If the stack reached a healthy state in Step 4:
 "Stack is running. Open http://localhost:3000 to review manually.
-Run /verify $ARGUMENTS to run smoke tests and the E2E suite."
+Run /verify $ARGUMENTS to run smoke tests and the E2E suite.
+E2E tests run inside Docker: docker-compose -f docker-compose.full.yml run --rm playwright"
 
 If the stack did not reach a healthy state, classify the failure and say what
 to run next:

@@ -1,5 +1,6 @@
 ---
 name: solution-architect
+model: sonnet
 description: >
   Use this agent to convert a PRD into a Software Design Document (SDD)
   that implementing agents (backend-dev, frontend-dev) can follow directly,
@@ -227,7 +228,7 @@ not confirmed.
 - Flag any PRD Open Questions that block design with a clear default assumption
 - SQL in Section 1 must be production-ready (proper types, indexes, constraints)
 - **After writing the SDD:** update the SDD column for this feature in the
-  Implementation Status table in CLAUDE.md from ❌ to ✅.
+  Implementation Status table in AGENTS.md from ❌ to ✅.
 
 ---
 

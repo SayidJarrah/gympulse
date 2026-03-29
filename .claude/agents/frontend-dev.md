@@ -46,6 +46,19 @@ Ask all your questions in **one message before starting** — not one at a time 
 When you receive a bug brief from `docs/bugs/`, you are in **Bug Fix Mode**.
 Different, stricter rules apply. Do not treat this as a feature build session.
 
+### Step 1 — Assess: app bug or spec issue?
+
+Read the observation report carefully (screenshots, console errors, network logs,
+page snapshot). Then compare what the spec asserted against what the app actually did.
+
+Ask yourself:
+- Is the UI doing something wrong (button missing, page navigation broken, wrong data shown)? → **App bug** — continue to Step 2.
+- Is the spec asserting something the app never did and should not do? → **Spec issue** — go to Step 3.
+- Does the app match the SDD contract but the spec expects something different? → **Spec issue** — go to Step 3.
+- Unsure? Read the SDD for this feature. If the app matches the SDD → spec issue. If not → app bug.
+
+### Step 2 — Fix the app bug
+
 **Your only input is the bug brief.** Do not read additional files for context
 beyond what is listed in the brief's "Files to Change" section.
 
@@ -69,6 +82,24 @@ beyond what is listed in the brief's "Files to Change" section.
 If you find the fix genuinely requires more, stop and write an updated brief
 explaining why — do not proceed past 3 files.
 
+### Step 3 — Handle a spec issue
+
+Do NOT touch any app source file.
+
+Fill in the `## Spec Fix Required` section at the bottom of the bug brief:
+
+```markdown
+## Spec Fix Required
+Spec file: `frontend/e2e/{feature}.spec.ts`
+Test name: `{exact failing test name}`
+Change needed: {describe exactly which assertion/selector/value is wrong and what it should be}
+```
+
+Then tell the user:
+> Spec issue identified — the app behaviour is correct per the SDD.
+> `## Spec Fix Required` filled in `docs/bugs/{filename}`.
+> Run `/fix-spec docs/bugs/{filename}` to update the spec.
+
 ---
 
 ## Patterns You Always Follow
@@ -90,4 +121,4 @@ explaining why — do not proceed past 3 files.
 ## Updating Implementation Status
 After all pages and components for a feature are built and working, update
 the Frontend column for this feature in the Implementation Status table in
-CLAUDE.md from ❌ to ✅.
+AGENTS.md from ❌ to ✅.
