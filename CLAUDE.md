@@ -10,7 +10,7 @@ variables, never in committed files.
 
 | MCP | Name in config | Scoped to | Use it for |
 |-----|---------------|-----------|------------|
-| PostgreSQL | `postgres` | `db-architect` agent | Querying the live DB, verifying migrations, running EXPLAIN ANALYZE, checking indexes |
+| PostgreSQL | `postgres` | `solution-architect` agent | Querying the live DB, verifying migrations, running EXPLAIN ANALYZE, checking indexes |
 | GitHub | `github` | Any agent / `/implement` command | Creating PRs, reading issues, checking branch state |
 | Playwright | `playwright` | `e2e-tester` agent | Browser-based testing of the running frontend |
 
@@ -27,12 +27,10 @@ UPDATE, DELETE, or DDL. For schema changes use Flyway migrations via `./gradlew`
 | Skill | Stage | Agent | Output |
 |-------|-------|-------|--------|
 | `/write-prd` | 1 — Requirements | business-analyst | `docs/prd/{slug}.md` |
-| `/write-sdd` | 2 — Technical Design | solution-architect + db-architect | `docs/sdd/{slug}.md` |
+| `/write-sdd` | 2 — Technical Design | solution-architect | `docs/sdd/{slug}.md` |
 | `/write-design` | 2.5 — UI/UX Design | ui-ux-designer | `docs/design/{slug}.md` + prototype |
 | `/implement` | 3 — Implementation | backend-dev + frontend-dev + e2e-tester | working feature |
 | `/run` | — | devops | stack health check |
-| `/review` | — | — | code quality report |
-| `/debug` | — | — | bug investigation |
 
 **Pipeline rule:** If PRD = ❌ for a feature, run `/write-prd` first.
 If SDD = ❌ but PRD = ✅, run `/write-sdd`. If Design = ❌ but SDD = ✅, run `/write-design`.

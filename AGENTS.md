@@ -35,7 +35,8 @@ gymflow/
 │   │   └── types/        # TypeScript types matching backend DTOs
 │   ├── e2e/          # Playwright E2E specs (one file per feature)
 │   └── vite.config.ts
-└── docker-compose.yml
+├── docker-compose.review.yml
+└── docker-compose.e2e.yml
 ````
 
 ## Coding Conventions
@@ -58,8 +59,11 @@ gymflow/
 
 ## Common Commands
 ````bash
-# Start everything locally
-docker-compose up -d        # starts postgres
+# Start everything locally (full stack in Docker)
+/run
+
+# Or start only postgres for local backend/frontend dev
+docker-compose -f docker-compose.review.yml up -d postgres
 cd backend && ./gradlew bootRun
 cd frontend && npm run dev
 

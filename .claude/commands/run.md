@@ -1,72 +1,41 @@
-Build and run the full GymFlow stack in Docker, then verify the feature works.
+Build images and start the GymFlow stack using docker-compose.review.yml.
 
-Feature to verify (optional): $ARGUMENTS
+## Step 1 — Free ports 8080 and 3000
 
-## Pre-flight checks
-1. Confirm Docker is running: `docker info`
-2. Confirm docker-compose.full.yml exists — if not, tell the user to run
-   `@devops Write docker-compose.full.yml and Dockerfiles for backend and frontend`
-   and stop here.
+```bash
+# Stop any containers already occupying ports 8080 or 3000
+for port in 8080 3000; do
+  cid=$(docker ps --filter "publish=$port" -q)
+  [ -n "$cid" ] && docker stop $cid
+done
+```
 
-## Step 1 — Build backend image
-````bash
-cd backend && ./gradlew bootJar
-docker build -t gymflow-backend:local ./backend
-````
-If the build fails, report the error and stop. Do not continue to frontend.
+## Step 2 — Build images
 
-## Step 2 — Build frontend image
-````bash
-docker build -t gymflow-frontend:local ./frontend
-````
-If the build fails, report the error and stop.
+```bash
+docker-compose -f docker-compose.review.yml build
+```
 
-## Step 3 — Start full stack
-````bash
-docker-compose -f docker-compose.full.yml down --remove-orphans
-docker-compose -f docker-compose.full.yml up -d
-````
+If the build fails with a compilation or TypeScript error: report it and stop.
 
-## Step 4 — Wait for services to be healthy
-Poll the backend health endpoint until it responds or 60 seconds pass:
-````bash
-for i in $(seq 1 12); do curl -sf http://localhost:8080/api/v1/health && break || sleep 5; done
-````
-If still not healthy after 60s, run `docker-compose -f docker-compose.full.yml logs backend`
-and report the last 30 lines.
+## Step 3 — Start the stack
 
-## Step 5 — Report
+```bash
+docker-compose -f docker-compose.review.yml down --remove-orphans
+docker-compose -f docker-compose.review.yml up -d
+```
 
-If the stack reached a healthy state in Step 4:
-"Stack is running. Open http://localhost:3000 to review manually.
-Run /verify $ARGUMENTS to run smoke tests and the E2E suite.
-E2E tests run inside Docker: docker-compose -f docker-compose.full.yml run --rm playwright"
+## Step 4 — Wait for health (60 s max)
 
-If the stack did not reach a healthy state, classify the failure and say what
-to run next:
+```bash
+for i in $(seq 1 12); do curl -sf http://localhost:8080/api/v1/health && echo " OK" && break || (echo " not ready..."; sleep 5); done
+```
 
-**Gradle build failed** (Step 1 error):
-"Build error — code issue. Invoke:
-@backend-dev The bootJar build failed: [paste error]. Read docs/sdd/{feature}.md and fix."
+If healthy: "Stack is running. Open http://localhost:3000."
 
-**Frontend npm build failed** (Step 2 error):
-"Build error — code issue. Invoke:
-@frontend-dev The npm build failed: [paste error]. Fix it."
-
-**Container built but won't stay healthy** — check logs first:
-`docker-compose -f docker-compose.full.yml logs backend`
-
-If the log shows a Spring exception (Flyway error, bean creation, NullPointer):
-"App startup error — code issue. Invoke:
-@backend-dev Spring Boot crashed on startup: [paste log]. Fix the issue."
-
-If the log shows connection refused, missing env var, or port conflict:
-"Infrastructure error — container config. Invoke:
-@devops Backend container failing: [paste log]. Check docker-compose.full.yml."
-
-**Frontend container unhealthy**:
-`docker-compose -f docker-compose.full.yml logs frontend`
-Nginx config issue → @devops. Build artefact missing → @frontend-dev.
-
-Always paste the actual error into the agent message.
-Agents cannot see what was printed here — they only know what you give them.
+If not healthy after 60 s, show logs:
+```bash
+docker-compose -f docker-compose.review.yml logs --tail=40 backend
+docker-compose -f docker-compose.review.yml logs --tail=40 frontend
+```
+Report the error and stop. Do not attempt to fix infrastructure issues.
