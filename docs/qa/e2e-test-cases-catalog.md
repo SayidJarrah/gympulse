@@ -19,28 +19,33 @@ It combines:
 - `docs/sdd/auth.md`
 - `docs/sdd/membership-plans.md`
 - `docs/sdd/user-membership-purchase.md`
+- `docs/sdd/user-profile-management.md`
 - `docs/sdd/scheduler.md`
 - `docs/prd/auth.md`
 - `docs/prd/membership-plans.md`
 - `docs/prd/user-membership-purchase.md`
+- `docs/prd/user-profile-management.md`
 - `docs/prd/scheduler.md`
 - `docs/design/auth.md`
 - `docs/design/membership-plans.md`
 - `docs/design/user-membership-purchase.md`
+- `docs/design/user-profile-management.md`
 - `docs/design/scheduler.md`
 - `frontend/e2e/auth.spec.ts`
 - `frontend/e2e/membership-plans.spec.ts`
 - `frontend/e2e/user-membership-purchase.spec.ts`
+- `frontend/e2e/user-profile-management.spec.ts`
 - `frontend/e2e/class-schedule.spec.ts`
 
 ## Current Suite Snapshot
 
-- Current Playwright suite size: `79` tests
+- Current Playwright suite size: `128` tests
 - Feature split:
-- `auth`: `4`
-- `membership plans`: `5`
-- `user membership purchase`: `19`
-- `scheduler`: `51`
+- `auth`: `14`
+- `membership plans`: `18`
+- `user membership purchase`: `23`
+- `user profile management`: `4`
+- `scheduler`: `69`
 
 ## Status Legend
 
@@ -685,6 +690,62 @@ It combines:
 - Attempt admin cancel
 - Expected:
 - `MEMBERSHIP_NOT_ACTIVE` message is shown
+
+### User Profile Management
+
+#### `PROFILE-01` First-time user opens profile from authenticated navbar ✅
+
+- Priority: `P0`
+- Status: `Covered`
+- Preconditions: logged-in `USER` with no saved profile row
+- Steps:
+- Open `/plans`
+- Click `Profile` in the authenticated navbar
+- Expected:
+- Browser navigates to `/profile`
+- Read-only email field shows the account email
+- Editable fields render empty and ready for input
+
+#### `PROFILE-02` User saves profile details and sees persisted normalized values ✅
+
+- Priority: `P0`
+- Status: `Covered`
+- Preconditions: logged-in `USER` with no saved profile row
+- Steps:
+- Open `/profile`
+- Enter valid name, phone, date of birth, fitness goals, and preferred class types
+- Click `Save profile`
+- Refresh the page
+- Expected:
+- Save succeeds with a success banner
+- Phone is normalized by the backend
+- Saved values remain visible after reload
+
+#### `PROFILE-03` Client-side validation blocks invalid phone submission ✅
+
+- Priority: `P1`
+- Status: `Covered`
+- Preconditions: logged-in `USER`
+- Steps:
+- Open `/profile`
+- Enter an invalid phone value
+- Click `Save profile`
+- Expected:
+- Inline phone validation error is shown
+- No successful save state appears
+- No profile update request is sent
+
+#### `PROFILE-04` Admin account receives profile access-denied state ✅
+
+- Priority: `P1`
+- Status: `Covered`
+- Preconditions: logged-in `ADMIN`
+- Steps:
+- Open `/profile`
+- Expected:
+- Page does not render editable profile data
+- Permission error message is shown
+- Retry control remains available in the error state
 
 ### Scheduler
 
@@ -1386,7 +1447,7 @@ It combines:
 
 ## Assumptions And Gaps
 
-- This catalog only covers features that have both implementation surface and active docs: `auth`, `membership plans`, `user membership purchase`, and `scheduler`.
-- It intentionally excludes not-yet-implemented features such as user profile, user access flow, class booking, attendance, notifications, and admin dashboard.
+- This catalog covers features that have both implementation surface and active docs: `auth`, `membership plans`, `user membership purchase`, `user profile management`, and `scheduler`.
+- It intentionally excludes not-yet-implemented features such as user access flow, class booking, attendance, notifications, and admin dashboard.
 - A few currently `Partial` scenarios are technically present in Playwright, but they are not strong enough to trust as regression protection.
 - Concurrency and token-rotation rules are still better validated at integration or API-test level in addition to browser E2E.
