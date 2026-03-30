@@ -1,9 +1,10 @@
-Build images and start the GymFlow stack using docker-compose.review.yml.
+# Prompt: run
+
+Build images and start the GymFlow stack.
 
 ## Step 1 — Free ports 8080 and 3000
 
 ```bash
-# Stop any containers already occupying ports 8080 or 3000
 for port in 8080 3000; do
   cid=$(docker ps --filter "publish=$port" -q)
   [ -n "$cid" ] && docker stop $cid

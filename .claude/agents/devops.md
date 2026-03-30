@@ -19,8 +19,8 @@ gymflow/
 │   └── Dockerfile          # Multi-stage: Gradle build → JRE runtime
 ├── frontend/
 │   └── Dockerfile          # Multi-stage: Node build → Nginx serve
-├── docker-compose.yml      # Local dev: PostgreSQL only (fast startup)
-└── docker-compose.full.yml # Full stack: postgres + backend + frontend
+├── docker-compose.review.yml # Full stack: postgres + backend + frontend (used by /run)
+└── docker-compose.e2e.yml    # Full stack + Playwright (used by /verify)
 ````
 
 ## Dockerfile Conventions
@@ -42,7 +42,7 @@ Multi-stage build — node stage builds the static files, nginx serves them:
 
 ## Environment Variable Conventions
 - Backend container reads from environment, never from mounted `.env` files
-- All secrets injected via `docker-compose.full.yml` `environment:` section
+- All secrets injected via compose file `environment:` sections (review.yml / e2e.yml)
 - Use the same variable names as `.env.example` so local dev and containers match
 - Never hardcode values in Dockerfiles — use `ARG` for build-time, `ENV` for runtime
 

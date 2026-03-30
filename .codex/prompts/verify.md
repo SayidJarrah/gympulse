@@ -1,4 +1,6 @@
-Run the full E2E suite against the running stack using the latest code.
+# Prompt: verify
+
+Run the full E2E suite against the running stack.
 
 ```bash
 docker-compose -f docker-compose.e2e.yml run --rm playwright

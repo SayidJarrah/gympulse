@@ -152,8 +152,7 @@ Open trace: npx playwright show-trace frontend/test-results/{dir}/trace.zip
 @{frontend-dev | backend-dev}
 
 ---
-*Root cause: run `/debug {feature} docs/bugs/{this-filename}`*
-*Spec fix (if needed): fill ## Spec Fix Required below, then run `/fix-spec docs/bugs/{this-filename}`*
+*Spec fix (if needed): fill ## Spec Fix Required below and fix the spec file directly.*
 
 ## Spec Fix Required
 *(Filled by developer after root cause analysis — leave blank until then)*
@@ -170,7 +169,7 @@ Change needed:
 ✅ / ❌ E2E suite — N passed / M failed
 
 Failures:
-- {test name} → docs/bugs/{filename}  (next: /debug {slug} docs/bugs/{filename})
+- {test name} → docs/bugs/{filename}
 ```
 
 ## Bug Report Workflow
@@ -196,7 +195,7 @@ When you receive a bug brief to investigate:
    Test name: {exact test name}
    Change needed: {what selector/assertion/value is wrong and what it should be}
    ```
-   Then tell the user to run `/fix-spec docs/bugs/{filename}`.
+   Then fill the Spec Fix Required section and update the spec file directly.
 
 ## Updating Implementation Status
 After all pages/components are built and working, update the **Frontend** column

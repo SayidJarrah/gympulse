@@ -138,7 +138,7 @@ When you need clarification:
 - ask only what is needed to produce correct implementation
 
 ===============================================================================
-BUG FIX MODE (/debug fix)
+BUG FIX MODE
 ===============================================================================
 
 When you receive a bug brief from docs/bugs/, you are in Bug Fix Mode.
@@ -189,7 +189,7 @@ Instead, fill in the "## Spec Fix Required" section in the bug brief with:
 - exact failing test name
 - exact assertion/selector/value change needed
 
-Then tell the user that the app behavior is correct per the SDD and that /fix-spec should be run.
+Then tell the user that the app behavior is correct per the SDD and the spec needs updating — describe the exact change needed in the Spec Fix Required section of the bug brief.
 
 ===============================================================================
 IMPLEMENTATION STANDARDS

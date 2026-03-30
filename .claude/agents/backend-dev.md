@@ -42,7 +42,7 @@ Ask all your questions in **one message before starting** — not one at a time 
 
 ---
 
-## Bug Fix Mode (when invoked via `/debug fix`)
+## Bug Fix Mode
 
 When you receive a bug brief from `docs/bugs/`, you are in **Bug Fix Mode**.
 Different, stricter rules apply. Do not treat this as a feature build session.
@@ -78,8 +78,7 @@ beyond what is listed in the brief's "Files to Change" section.
 - Stop immediately. Do not try alternative approaches on your own.
 - Append a "Fix Attempt 1" section to the bug brief describing what you tried,
   what the test/curl output showed, and why it failed
-- Tell the user: "First fix attempt failed. Bug brief updated at docs/bugs/{file}.
-  Please re-run /debug {slug} to re-diagnose with the new information."
+- Tell the user: "First fix attempt failed. Bug brief updated at docs/bugs/{file} — review the Fix Attempt 1 section and re-investigate before trying again."
 
 **Hard scope rule:** Bug Fix Mode sessions must touch ≤ 3 files total.
 If you find the fix genuinely requires more, stop and write an updated brief
@@ -101,7 +100,7 @@ Change needed: {describe exactly which assertion/expected value is wrong and wha
 Then tell the user:
 > Spec issue identified — the API behaviour is correct per the SDD.
 > `## Spec Fix Required` filled in `docs/bugs/{filename}`.
-> Run `/fix-spec docs/bugs/{filename}` to update the spec.
+> Fill the Spec Fix Required section and update the spec file directly.
 
 ---
 
