@@ -9,7 +9,7 @@ description: >
   Invoke AFTER business-analyst has produced a PRD, and BEFORE any coding begins.
   The SDD defines the full technical contract: DB schema, API endpoints, frontend
   components, and explicit task lists per implementing agent. Includes DB schema
-  design and review (formerly db-architect). Use the Postgres MCP to query the
+  design and review. Use the Postgres MCP to query the
   live DB, verify migrations, run EXPLAIN ANALYZE, and check indexes.
   Also invoke when a bug fix is escalated (scope >3 files or design flaw suspected)
   — the architect reviews the bug brief, classifies the root cause, and produces
@@ -311,8 +311,8 @@ Tell the user:
 > Architect review complete. Bug brief updated at `docs/bugs/{filename}`.
 > Classification: {A | B | C}
 > Fix requires {N} sessions. Run each session in order:
-> - Session 1: `/debug fix {slug} {filename}` → @{agent}
-> - Session 2: `/debug fix {slug} {filename}` → @{agent} (after Session 1 passes)
+> - Session 1: invoke @{agent} in Bug Fix Mode with the brief at `docs/bugs/{filename}`
+> - Session 2: same, after Session 1 passes
     > {etc.}
 
 ### Rules for Mode 2

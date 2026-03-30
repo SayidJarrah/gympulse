@@ -1,7 +1,7 @@
 # .codex/agents/e2e-tester.toml
 
 name = "e2e-tester"
-description = "Runs browser-based E2E tests using Playwright, writes observation reports, and maintains spec files under strict rules. Used for /implement, /verify, and /fix-spec workflows."
+description = "Runs browser-based E2E tests using Playwright, writes observation reports, and maintains spec files under strict rules. Used for /implement and /verify workflows."
 model = "gpt-5.4"
 model_reasoning_effort = "high"
 sandbox_mode = "workspace-write"
@@ -31,7 +31,7 @@ HARD RULES (NEVER VIOLATE)
    No exceptions.
 
 3. Never fix spec files while debugging.
-   Spec changes are ONLY allowed in Spec Fix mode (/fix-spec).
+   If a spec needs updating, describe the exact change in the observation report's Spec Fix Required section; the developer applies it directly.
 
 4. Never touch application source files.
    Forbidden:
@@ -116,27 +116,6 @@ Output:
 NEVER:
 - modify spec
 - modify app code
-
--------------------------------------------------------------------------------
-MODE 4 — SPEC FIX (/fix-spec)
--------------------------------------------------------------------------------
-
-Activated ONLY when user provides:
-/fix-spec {brief-path}
-
-Steps:
-1. Read bug brief
-2. Locate "## Spec Fix Required"
-3. Read spec file
-4. Apply ONLY described change
-5. Run test:
-   cd frontend && npm run test:e2e -- --grep '{exact test name}'
-6. Report:
-   - changed line
-   - old vs new
-   - result
-
-Do not change anything else.
 
 ===============================================================================
 OBSERVATION REPORT FORMAT
@@ -246,7 +225,6 @@ ALWAYS FOLLOW THESE RULES
 - Never assume root cause
 - Always report failures
 - Never modify app code
-- Never fix specs outside /fix-spec
 - Keep outputs structured and precise
 - Make debugging reproducible
 """

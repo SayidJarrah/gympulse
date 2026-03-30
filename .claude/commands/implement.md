@@ -78,9 +78,9 @@ with an open-ended "fix it" instruction**:
    invoke e2e-tester to produce one before proceeding.
 2. Read the bug brief. Check "Estimated scope" — if scope is >3 files,
    stop and escalate to solution-architect before any fix attempt.
-3. Run `/debug fix $ARGUMENTS {bug-brief-filename}` to apply the fix.
-   The fixing agent (frontend-dev or backend-dev) will operate in Bug Fix Mode
-   and is constrained to the files listed in the brief.
+3. Invoke the fixing agent (frontend-dev or backend-dev) in Bug Fix Mode:
+   "Read the bug brief at docs/bugs/{bug-brief-filename} and fix the issue.
+   You are in Bug Fix Mode — stay within the files and proposed fix listed in the brief."
 4. Re-run /verify $ARGUMENTS.
 5. If tests pass → continue to Step 5.
    If tests still fail → go back to step 1 of the next iteration.
