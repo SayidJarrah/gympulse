@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GymFlow - Group Classes Schedule Prototype</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background-color: #0F0F0F; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .state-btn.active { background: rgba(34, 197, 94, 0.14); border-color: rgba(34, 197, 94, 0.45); color: #86EFAC; }
+    .view-btn.active { background: #22C55E; color: #FFFFFF; }
+    .day-card.today { box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.5); }
+    .mesh {
+      background-image:
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.18), transparent 28%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.04), transparent 46%);
+    }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #111827; }
+    ::-webkit-scrollbar-thumb { background: #374151; border-radius: 9999px; }
+  </style>
+</head>
+<body class="min-h-screen bg-[#0F0F0F] text-white">
+  <nav class="sticky top-0 z-50 border-b border-gray-800 bg-gray-900/90 backdrop-blur-md">
+    <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center gap-2.5">
+        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-6 w-6" aria-hidden="true">
+            <path d="M13 2L4.5 13.5H11L9 22L19.5 9.5H13.5L16 2Z" fill="white"></path>
+          </svg>
+        </div>
+        <span class="text-lg font-bold text-white">GymFlow</span>
+      </div>
+
+      <div class="hidden items-center gap-6 sm:flex">
+        <a href="#" class="pb-0.5 text-sm font-medium text-gray-400 transition-colors duration-200 hover:text-white">Plans</a>
+        <a href="#" class="border-b-2 border-green-500 pb-0.5 text-sm font-medium text-green-400">Schedule</a>
+        <a href="#" class="pb-0.5 text-sm font-medium text-gray-400 transition-colors duration-200 hover:text-white">Profile</a>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button type="button" class="hidden sm:inline-flex items-center justify-center rounded-md border border-green-500 bg-transparent px-4 py-2 text-sm font-medium text-green-400 transition-all duration-200 hover:bg-green-500/10">
+          Log out
+        </button>
+        <div class="flex h-9 w-9 items-center justify-center rounded-full bg-gray-800 text-sm font-semibold text-white ring-2 ring-green-500/40">
+          MB
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <section id="toolbar-root" class="sticky top-16 z-40 border-b border-gray-800 bg-gray-900/95 backdrop-blur-xl"></section>
+
+  <main class="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+    <section class="mesh overflow-hidden rounded-[28px] border border-gray-800 bg-gray-900 p-6 shadow-xl shadow-black/40 sm:p-8">
+      <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-end">
+        <div class="max-w-3xl">
+          <div class="inline-flex items-center gap-2 rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-green-300">
+            Member-only live programme
+          </div>
+          <h1 class="mt-4 text-3xl font-bold leading-tight text-white sm:text-4xl">Group Classes</h1>
+          <p class="mt-3 max-w-2xl text-base leading-normal text-gray-400 sm:text-lg">
+            Browse the live programme included with your membership. The prototype keeps the schedule read-only and mirrors the SDD contract for Week, Day, and rolling List views.
+          </p>
+        </div>
+
+        <div class="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+          <div class="rounded-2xl border border-gray-800 bg-[#0F0F0F] px-4 py-4">
+            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">Source</p>
+            <p class="mt-2 text-sm font-semibold text-white">Admin Scheduler</p>
+            <p class="mt-1 text-sm text-gray-400">Single schedule of truth</p>
+          </div>
+          <div class="rounded-2xl border border-gray-800 bg-[#0F0F0F] px-4 py-4">
+            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">Access</p>
+            <p class="mt-2 text-sm font-semibold text-white">Active Membership</p>
+            <p class="mt-1 text-sm text-gray-400">Guests and Admins are blocked</p>
+          </div>
+          <div class="rounded-2xl border border-gray-800 bg-[#0F0F0F] px-4 py-4">
+            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">Detail modal</p>
+            <p class="mt-2 text-sm font-semibold text-white">Read-only class summary</p>
+            <p class="mt-1 text-sm text-gray-400">Includes a simulated refresh failure</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="content-root" class="flex flex-col gap-6"></section>
+  </main>
+
+  <div id="modal-root"></div>
+
+  <script>
+    const TODAY = '2026-03-30'
+    const TIME_ZONE = 'Europe/Warsaw'
+
+    const entries = [
+      { id: 'yoga-flow', name: 'Yoga Flow', localDate: '2026-03-30', localTime: '18:00', durationMin: 60, trainerNames: ['Jane Doe', 'Marta Kowalska'] },
+      { id: 'pilates-core', name: 'Pilates Core', localDate: '2026-03-31', localTime: '07:30', durationMin: 45, trainerNames: [] },
+      { id: 'box-fit', name: 'Box Fit', localDate: '2026-04-01', localTime: '19:15', durationMin: 50, trainerNames: ['Sanjay Patel'] },
+      { id: 'mobility-lab', name: 'Mobility Lab', localDate: '2026-04-02', localTime: '17:30', durationMin: 45, trainerNames: ['Alice Chen'] },
+      { id: 'strength-circuit', name: 'Strength Circuit', localDate: '2026-04-03', localTime: '18:30', durationMin: 55, trainerNames: ['Marcus Jackson'] },
+      { id: 'recovery-stretch', name: 'Recovery Stretch', localDate: '2026-04-04', localTime: '10:00', durationMin: 45, trainerNames: ['Jane Doe'] },
+      { id: 'sunday-reset', name: 'Sunday Reset', localDate: '2026-04-05', localTime: '09:00', durationMin: 40, trainerNames: [] },
+      { id: 'cycle-blast', name: 'Cycle Blast', localDate: '2026-04-06', localTime: '18:45', durationMin: 50, trainerNames: ['Laura Wong'] },
+      { id: 'barre-flow', name: 'Barre Flow', localDate: '2026-04-07', localTime: '17:00', durationMin: 45, trainerNames: ['Marta Kowalska'] },
+      { id: 'hiit-engine', name: 'HIIT Engine', localDate: '2026-04-09', localTime: '19:00', durationMin: 45, trainerNames: ['Alice Chen', 'Marcus Jackson'] },
+      { id: 'core-control', name: 'Core Control', localDate: '2026-04-10', localTime: '08:00', durationMin: 40, trainerNames: [] },
+      { id: 'breathwork', name: 'Breathwork', localDate: '2026-04-12', localTime: '11:30', durationMin: 35, trainerNames: ['Jane Doe'] },
+      { id: 'power-yoga', name: 'Power Yoga', localDate: '2026-04-13', localTime: '18:00', durationMin: 60, trainerNames: ['Marta Kowalska'] }
+    ]
+
+    const presets = {
+      memberWeek: { mode: 'member', view: 'week', anchorDate: '2026-03-30', forceEmpty: false },
+      memberDay: { mode: 'member', view: 'day', anchorDate: '2026-03-31', forceEmpty: false },
+      memberList: { mode: 'member', view: 'list', anchorDate: '2026-03-30', forceEmpty: false },
+      empty: { mode: 'member', view: 'week', anchorDate: '2026-04-20', forceEmpty: true },
+      membership: { mode: 'membership', view: 'week', anchorDate: TODAY, forceEmpty: false },
+      error: { mode: 'error', view: 'week', anchorDate: TODAY, forceEmpty: false },
+      invalid: { mode: 'invalid', view: 'week', anchorDate: TODAY, forceEmpty: false }
+    }
+
+    const state = {
+      preset: 'memberWeek',
+      mode: 'member',
+      view: 'week',
+      anchorDate: TODAY,
+      forceEmpty: false,
+      modalOpen: false,
+      modalEntryId: null,
+      modalVariant: 'success'
+    }
+
+    function parseDate(dateStr) {
+      return new Date(dateStr + 'T00:00:00')
+    }
+
+    function parseDateTime(dateStr, timeStr) {
+      return new Date(dateStr + 'T' + timeStr + ':00')
+    }
+
+    function toIsoDate(date) {
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      return year + '-' + month + '-' + day
+    }
+
+    function addDays(dateStr, days) {
+      const date = parseDate(dateStr)
+      date.setDate(date.getDate() + days)
+      return toIsoDate(date)
+    }
+
+    function startOfWeek(dateStr) {
+      const date = parseDate(dateStr)
+      const day = date.getDay()
+      const diff = day === 0 ? -6 : 1 - day
+      date.setDate(date.getDate() + diff)
+      return toIsoDate(date)
+    }
+
+    function formatDate(dateStr, options) {
+      return parseDate(dateStr).toLocaleDateString('en-GB', options)
+    }
+
+    function formatShortDate(dateStr) {
+      return formatDate(dateStr, { day: 'numeric', month: 'short' })
+    }
+
+    function formatDayLabel(dateStr) {
+      return formatDate(dateStr, { weekday: 'short' })
+    }
+
+    function formatLongDate(dateStr) {
+      return formatDate(dateStr, { weekday: 'long', day: 'numeric', month: 'long' })
+    }
+
+    function formatTime(timeStr) {
+      return timeStr
+    }
+
+    function endTime(dateStr, timeStr, durationMin) {
+      const date = parseDateTime(dateStr, timeStr)
+      date.setMinutes(date.getMinutes() + durationMin)
+      return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })
+    }
+
+    function trainerLabel(trainerNames) {
+      return trainerNames.length ? trainerNames.join(', ') : 'Trainer TBA'
+    }
+
+    function weekNumber(dateStr) {
+      const date = parseDate(dateStr)
+      const target = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
+      const dayNum = target.getUTCDay() || 7
+      target.setUTCDate(target.getUTCDate() + 4 - dayNum)
+      const yearStart = new Date(Date.UTC(target.getUTCFullYear(), 0, 1))
+      return Math.ceil((((target - yearStart) / 86400000) + 1) / 7)
+    }
+
+    function getRange(view, anchorDate) {
+      if (view === 'week') {
+        const start = startOfWeek(anchorDate)
+        return { start, end: addDays(start, 7), step: 7 }
+      }
+      if (view === 'day') {
+        return { start: anchorDate, end: addDays(anchorDate, 1), step: 1 }
+      }
+      return { start: anchorDate, end: addDays(anchorDate, 14), step: 14 }
+    }
+
+    function getVisibleEntries() {
+      if (state.forceEmpty || state.mode !== 'member') return []
+      const range = getRange(state.view, state.anchorDate)
+      return entries
+        .filter((entry) => entry.localDate >= range.start && entry.localDate < range.end)
+        .sort((a, b) => (a.localDate + a.localTime).localeCompare(b.localDate + b.localTime))
+    }
+
+    function getRangeLabel() {
+      const range = getRange(state.view, state.anchorDate)
+      if (state.view === 'day') return formatLongDate(state.anchorDate)
+      return formatDayLabel(range.start) + ' ' + formatShortDate(range.start) + ' - ' + formatDayLabel(addDays(range.end, -1)) + ' ' + formatShortDate(addDays(range.end, -1))
+    }
+
+    function getMetaLabel() {
+      if (state.view === 'list') return '14-day view'
+      return 'Week ' + weekNumber(state.anchorDate)
+    }
+
+    function setPreset(name) {
+      const preset = presets[name]
+      state.preset = name
+      state.mode = preset.mode
+      state.view = preset.view
+      state.anchorDate = preset.anchorDate
+      state.forceEmpty = preset.forceEmpty
+      state.modalOpen = false
+      state.modalEntryId = null
+      state.modalVariant = 'success'
+      render()
+    }
+
+    function setView(view) {
+      if (state.mode !== 'member') return
+      state.view = view
+      state.modalOpen = false
+      state.modalVariant = 'success'
+      render()
+    }
+
+    function shiftPeriod(direction) {
+      if (state.mode !== 'member') return
+      const step = getRange(state.view, state.anchorDate).step
+      state.anchorDate = addDays(state.anchorDate, step * direction)
+      state.preset = 'memberWeek'
+      state.forceEmpty = false
+      state.modalOpen = false
+      state.modalVariant = 'success'
+      render()
+    }
+
+    function goToday() {
+      if (state.mode !== 'member') return
+      state.anchorDate = TODAY
+      if (state.view === 'day') state.anchorDate = TODAY
+      state.preset = 'memberWeek'
+      state.forceEmpty = false
+      state.modalOpen = false
+      render()
+    }
+
+    function openEntryModal(id) {
+      state.modalOpen = true
+      state.modalEntryId = id
+      state.modalVariant = 'success'
+      render()
+    }
+
+    function closeModal() {
+      state.modalOpen = false
+      state.modalEntryId = null
+      state.modalVariant = 'success'
+      render()
+    }
+
+    function toggleModalVariant() {
+      state.modalVariant = state.modalVariant === 'success' ? 'error' : 'success'
+      render()
+    }
+
+    function renderToolbar() {
+      const toolbarRoot = document.getElementById('toolbar-root')
+      const demoButtons = [
+        { id: 'memberWeek', label: 'Week happy path' },
+        { id: 'memberDay', label: 'Day happy path' },
+        { id: 'memberList', label: 'List happy path' },
+        { id: 'empty', label: 'Empty period' },
+        { id: 'membership', label: 'Membership required' },
+        { id: 'error', label: 'Load error' },
+        { id: 'invalid', label: 'Invalid link' }
+      ]
+
+      const scheduleControls = state.mode === 'member'
+        ? `
+          <div class="flex flex-col gap-4 border-b border-gray-800 px-4 py-4 md:px-6 lg:flex-row lg:items-center lg:justify-between">
+            <div class="inline-flex w-full rounded-xl border border-gray-800 bg-[#0F0F0F] p-1 sm:w-auto">
+              ${['week', 'day', 'list'].map((view) => `
+                <button
+                  type="button"
+                  onclick="setView('${view}')"
+                  class="view-btn ${state.view === view ? 'active' : ''} min-h-11 flex-1 rounded-lg px-4 py-2 text-sm font-semibold text-gray-400 transition-colors hover:bg-gray-800 hover:text-white"
+                >
+                  ${view.charAt(0).toUpperCase() + view.slice(1)}
+                </button>
+              `).join('')}
+            </div>
+
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div class="rounded-xl border border-gray-800 bg-[#0F0F0F] px-4 py-3 text-left">
+                <p class="text-base font-semibold text-white">${getRangeLabel()}</p>
+                <p class="mt-1 text-xs uppercase tracking-[0.12em] text-gray-500">${getMetaLabel()} · ${TIME_ZONE}</p>
+              </div>
+              <div class="inline-flex flex-wrap items-center gap-2">
+                <button type="button" onclick="shiftPeriod(-1)" class="inline-flex min-h-11 items-center justify-center rounded-md border border-green-500 bg-transparent px-4 py-2 text-sm font-medium text-green-400 transition-all hover:bg-green-500/10">
+                  Previous
+                </button>
+                <button type="button" onclick="goToday()" class="inline-flex min-h-11 items-center justify-center rounded-md border border-gray-700 bg-[#0F0F0F] px-4 py-2 text-sm font-medium text-white transition-colors hover:border-gray-600 hover:bg-gray-800">
+                  Today
+                </button>
+                <button type="button" onclick="shiftPeriod(1)" class="inline-flex min-h-11 items-center justify-center rounded-md border border-green-500 bg-transparent px-4 py-2 text-sm font-medium text-green-400 transition-all hover:bg-green-500/10">
+                  Next
+                </button>
+              </div>
+            </div>
+          </div>
+        `
+        : `
+          <div class="border-b border-gray-800 px-4 py-4 md:px-6">
+            <div class="rounded-2xl border border-gray-800 bg-[#0F0F0F] px-4 py-4">
+              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">Schedule route state</p>
+              <p class="mt-2 text-sm font-semibold text-white">
+                ${state.mode === 'membership' ? 'Membership gate' : state.mode === 'error' ? 'Schedule unavailable' : 'Invalid schedule URL'}
+              </p>
+              <p class="mt-1 text-sm text-gray-400">
+                ${state.mode === 'membership'
+                  ? 'The route stays visible, but schedule payload is withheld until the member has an ACTIVE membership.'
+                  : state.mode === 'error'
+                  ? 'The design clears stale classes and shows a retry-only state.'
+                  : 'Invalid query parameters reset back to the current week.'}
+              </p>
+            </div>
+          </div>
+        `
+
+      toolbarRoot.innerHTML = `
+        <div class="mx-auto max-w-7xl overflow-hidden rounded-b-3xl border-x border-b border-gray-800 bg-gray-900/95 shadow-lg shadow-black/40 backdrop-blur-xl">
+          ${scheduleControls}
+          <div class="flex flex-col gap-3 px-4 py-4 md:px-6">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">Prototype state-switcher</p>
+              <p class="text-xs text-gray-400">Use these buttons to simulate the key happy paths and blocking states.</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              ${demoButtons.map((button) => `
+                <button
+                  type="button"
+                  onclick="setPreset('${button.id}')"
+                  class="state-btn ${state.preset === button.id ? 'active' : ''} rounded-full border border-gray-700 bg-[#0F0F0F] px-3 py-1.5 text-xs font-medium text-gray-300 transition-colors hover:border-gray-600 hover:bg-gray-800 hover:text-white"
+                >
+                  ${button.label}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `
+    }
+
+    function renderEntryCard(entry, showDate) {
+      return `
+        <button
+          type="button"
+          onclick="openEntryModal('${entry.id}')"
+          class="group flex w-full flex-col items-start gap-3 rounded-xl border border-gray-800 bg-[#0F0F0F] p-4 text-left transition-colors duration-200 hover:border-green-500/40 hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+          aria-label="${entry.name}, ${formatTime(entry.localTime)} to ${endTime(entry.localDate, entry.localTime, entry.durationMin)}, ${trainerLabel(entry.trainerNames)}"
+        >
+          <div class="flex flex-wrap items-center gap-2 text-sm font-semibold text-green-400">
+            ${showDate ? `<span>${formatDayLabel(entry.localDate)} ${formatShortDate(entry.localDate)}</span><span class="text-gray-600">•</span>` : ''}
+            <span>${formatTime(entry.localTime)} - ${endTime(entry.localDate, entry.localTime, entry.durationMin)}</span>
+          </div>
+          <div class="w-full">
+            <p class="text-lg font-semibold leading-tight text-white">${entry.name}</p>
+            <p class="mt-2 text-sm text-gray-400">${trainerLabel(entry.trainerNames)}</p>
+          </div>
+          <div class="inline-flex items-center gap-2 rounded-full border border-gray-800 bg-gray-900 px-3 py-1 text-xs font-medium text-gray-300">
+            ${entry.durationMin} min
+          </div>
+        </button>
+      `
+    }
+
+    function renderWeekView(visibleEntries) {
+      const range = getRange('week', state.anchorDate)
+      const days = Array.from({ length: 7 }, (_, index) => addDays(range.start, index))
+
+      const mobile = `
+        <div class="grid gap-4 lg:hidden">
+          ${days.map((day) => {
+            const dayEntries = visibleEntries.filter((entry) => entry.localDate === day)
+            return `
+              <section class="day-card ${day === TODAY ? 'today' : ''} overflow-hidden rounded-2xl border border-gray-800 bg-gray-900">
+                <div class="border-b border-gray-800 px-4 py-4">
+                  <p class="text-xs font-semibold uppercase tracking-[0.16em] ${day === TODAY ? 'text-green-300' : 'text-gray-500'}">${day === TODAY ? 'Today' : formatDayLabel(day)}</p>
+                  <h2 class="mt-1 text-lg font-semibold text-white">${formatShortDate(day)}</h2>
+                </div>
+                <div class="flex flex-col gap-3 p-4">
+                  ${dayEntries.length ? dayEntries.map((entry) => renderEntryCard(entry, false)).join('') : '<p class="rounded-xl border border-dashed border-gray-800 bg-[#0F0F0F] px-4 py-6 text-sm text-gray-400">No classes</p>'}
+                </div>
+              </section>
+            `
+          }).join('')}
+        </div>
+      `
+
+      const desktop = `
+        <div class="hidden gap-4 lg:grid lg:grid-cols-7">
+          ${days.map((day) => {
+            const dayEntries = visibleEntries.filter((entry) => entry.localDate === day)
+            return `
+              <section class="day-card ${day === TODAY ? 'today' : ''} flex min-h-[22rem] flex-col overflow-hidden rounded-2xl border border-gray-800 bg-gray-900">
+                <div class="border-b border-gray-800 px-4 py-4">
+                  <p class="text-xs font-semibold uppercase tracking-[0.16em] ${day === TODAY ? 'text-green-300' : 'text-gray-500'}">${day === TODAY ? 'Today' : formatDayLabel(day)}</p>
+                  <h2 class="mt-1 text-base font-semibold text-white">${formatShortDate(day)}</h2>
+                </div>
+                <div class="flex flex-1 flex-col gap-3 p-4">
+                  ${dayEntries.length ? dayEntries.map((entry) => renderEntryCard(entry, false)).join('') : '<div class="mt-auto rounded-xl border border-dashed border-gray-800 bg-[#0F0F0F] px-4 py-6 text-sm text-gray-400">No classes</div>'}
+                </div>
+              </section>
+            `
+          }).join('')}
+        </div>
+      `
+
+      return mobile + desktop
+    }
+
+    function renderDayView(visibleEntries) {
+      return `
+        <section class="overflow-hidden rounded-2xl border border-gray-800 bg-gray-900 shadow-md shadow-black/50">
+          <div class="border-b border-gray-800 px-6 py-5">
+            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">Day agenda</p>
+            <h2 class="mt-2 text-2xl font-semibold text-white">${formatLongDate(state.anchorDate)}</h2>
+          </div>
+          <div class="flex flex-col divide-y divide-gray-800">
+            ${visibleEntries.map((entry) => `
+              <div class="px-6 py-5">
+                ${renderEntryCard(entry, false)}
+              </div>
+            `).join('')}
+          </div>
+        </section>
+      `
+    }
+
+    function renderListView(visibleEntries) {
+      const groups = visibleEntries.reduce((acc, entry) => {
+        if (!acc[entry.localDate]) acc[entry.localDate] = []
+        acc[entry.localDate].push(entry)
+        return acc
+      }, {})
+
+      return `
+        <div class="grid gap-4">
+          ${Object.keys(groups).map((date) => `
+            <section class="overflow-hidden rounded-2xl border border-gray-800 bg-gray-900">
+              <div class="border-b border-gray-800 px-5 py-4">
+                <p class="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">Date group</p>
+                <h2 class="mt-1 text-lg font-semibold text-white">${formatDayLabel(date)} ${formatShortDate(date)}</h2>
+              </div>
+              <div class="divide-y divide-gray-800">
+                ${groups[date].map((entry) => `
+                  <div class="px-5 py-4">
+                    ${renderEntryCard(entry, false)}
+                  </div>
+                `).join('')}
+              </div>
+            </section>
+          `).join('')}
+        </div>
+      `
+    }
+
+    function renderMemberContent() {
+      const visibleEntries = getVisibleEntries()
+
+      if (!visibleEntries.length) {
+        return `
+          <section class="flex flex-col items-center gap-4 rounded-2xl border border-gray-800 bg-gray-900 px-6 py-16 text-center">
+            <div class="flex h-14 w-14 items-center justify-center rounded-full bg-[#0F0F0F] text-green-400">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="1.6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+              </svg>
+            </div>
+            <div>
+              <p class="text-xl font-semibold text-white">${state.view === 'list' ? 'No group classes in this 14-day window' : 'No group classes in this period'}</p>
+              <p class="mt-2 text-sm text-gray-400">Try another date range or jump back to today’s schedule.</p>
+            </div>
+            <button type="button" onclick="goToday()" class="inline-flex min-h-11 items-center justify-center rounded-md bg-green-500 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-green-600 hover:shadow-lg hover:shadow-green-500/25">
+              Go to today
+            </button>
+          </section>
+        `
+      }
+
+      const topRail = `
+        <section class="grid gap-4 md:grid-cols-3">
+          <div class="rounded-2xl border border-gray-800 bg-gray-900 px-5 py-4">
+            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">View</p>
+            <p class="mt-2 text-lg font-semibold text-white">${state.view.charAt(0).toUpperCase() + state.view.slice(1)}</p>
+            <p class="mt-1 text-sm text-gray-400">${getRangeLabel()}</p>
+          </div>
+          <div class="rounded-2xl border border-gray-800 bg-gray-900 px-5 py-4">
+            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">Visible classes</p>
+            <p class="mt-2 text-lg font-semibold text-white">${visibleEntries.length}</p>
+            <p class="mt-1 text-sm text-gray-400">Only scheduled group classes appear here</p>
+          </div>
+          <div class="rounded-2xl border border-gray-800 bg-gray-900 px-5 py-4">
+            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">Timezone</p>
+            <p class="mt-2 text-lg font-semibold text-white">${TIME_ZONE}</p>
+            <p class="mt-1 text-sm text-gray-400">Times shown in device-local context</p>
+          </div>
+        </section>
+      `
+
+      let body = ''
+      if (state.view === 'week') body = renderWeekView(visibleEntries)
+      if (state.view === 'day') body = renderDayView(visibleEntries)
+      if (state.view === 'list') body = renderListView(visibleEntries)
+
+      return topRail + body
+    }
+
+    function renderGateContent() {
+      if (state.mode === 'membership') {
+        return `
+          <section class="flex flex-col items-center gap-4 rounded-2xl border border-gray-800 bg-gray-900 px-6 py-16 text-center shadow-md shadow-black/50">
+            <div class="flex h-14 w-14 items-center justify-center rounded-full bg-[#0F0F0F] text-green-400">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="1.6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M7 3h10a2 2 0 012 2v14a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6"></path>
+              </svg>
+            </div>
+            <div class="max-w-xl">
+              <p class="text-xl font-semibold text-white">Membership required</p>
+              <p class="mt-2 text-sm leading-normal text-gray-400">Group classes are available to Members with an active membership. Renew or choose a plan to view the live programme.</p>
+            </div>
+            <button type="button" onclick="setPreset('memberWeek')" class="inline-flex min-h-11 items-center justify-center rounded-md bg-green-500 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-green-600 hover:shadow-lg hover:shadow-green-500/25">
+              Browse plans
+            </button>
+          </section>
+        `
+      }
+
+      if (state.mode === 'error') {
+        return `
+          <section class="flex flex-col items-center gap-4 rounded-2xl border border-red-500/30 bg-red-500/10 px-6 py-16 text-center">
+            <div class="flex h-14 w-14 items-center justify-center rounded-full bg-[#0F0F0F] text-red-400">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86l-7.5 13A1 1 0 003.66 18h16.68a1 1 0 00.87-1.5l-7.5-13a1 1 0 00-1.74 0z"></path>
+              </svg>
+            </div>
+            <div class="max-w-xl">
+              <p class="text-xl font-semibold text-white">Schedule unavailable</p>
+              <p class="mt-2 text-sm leading-normal text-gray-400">We couldn’t load the latest group classes. Previous schedule data is intentionally hidden so nothing stale appears current.</p>
+            </div>
+            <button type="button" onclick="setPreset('memberWeek')" class="inline-flex min-h-11 items-center justify-center rounded-md border border-green-500 bg-transparent px-6 py-3 text-sm font-semibold text-green-400 transition-all hover:bg-green-500/10">
+              Retry schedule
+            </button>
+          </section>
+        `
+      }
+
+      return `
+        <section class="flex flex-col items-center gap-4 rounded-2xl border border-orange-500/30 bg-orange-500/10 px-6 py-16 text-center">
+          <div class="flex h-14 w-14 items-center justify-center rounded-full bg-[#0F0F0F] text-orange-400">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+          <div class="max-w-xl">
+            <p class="text-xl font-semibold text-white">This schedule link is out of date</p>
+            <p class="mt-2 text-sm leading-normal text-gray-400">An invalid view, anchor date, or timezone would reset to the default current week before retrying.</p>
+          </div>
+          <button type="button" onclick="setPreset('memberWeek')" class="inline-flex min-h-11 items-center justify-center rounded-md bg-green-500 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-green-600 hover:shadow-lg hover:shadow-green-500/25">
+            Reset to current week
+          </button>
+        </section>
+      `
+    }
+
+    function renderModal() {
+      const modalRoot = document.getElementById('modal-root')
+
+      if (!state.modalOpen) {
+        modalRoot.innerHTML = ''
+        return
+      }
+
+      const selectedEntry = entries.find((entry) => entry.id === state.modalEntryId)
+
+      if (!selectedEntry) {
+        state.modalOpen = false
+        modalRoot.innerHTML = ''
+        return
+      }
+
+      const successBody = `
+        <div class="grid gap-4 md:grid-cols-2">
+          <div class="rounded-xl border border-gray-800 bg-[#0F0F0F] px-4 py-4">
+            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">Date</p>
+            <p class="mt-2 text-base font-semibold text-white">${formatLongDate(selectedEntry.localDate)}</p>
+          </div>
+          <div class="rounded-xl border border-gray-800 bg-[#0F0F0F] px-4 py-4">
+            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">Time</p>
+            <p class="mt-2 text-base font-semibold text-white">${formatTime(selectedEntry.localTime)} - ${endTime(selectedEntry.localDate, selectedEntry.localTime, selectedEntry.durationMin)}</p>
+          </div>
+          <div class="rounded-xl border border-gray-800 bg-[#0F0F0F] px-4 py-4">
+            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">Duration</p>
+            <p class="mt-2 text-base font-semibold text-white">${selectedEntry.durationMin} minutes</p>
+          </div>
+          <div class="rounded-xl border border-gray-800 bg-[#0F0F0F] px-4 py-4">
+            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">${selectedEntry.trainerNames.length > 1 ? 'Trainers' : 'Trainer'}</p>
+            <p class="mt-2 text-base font-semibold text-white">${trainerLabel(selectedEntry.trainerNames)}</p>
+          </div>
+        </div>
+        <div class="rounded-2xl border border-gray-800 bg-[#0F0F0F] px-4 py-4">
+          <p class="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">Read-only scope</p>
+          <p class="mt-2 text-sm leading-normal text-gray-400">This modal intentionally avoids booking, waitlist, spot counts, or trainer contact actions. It is a larger read-only summary powered by the schedule payload already on the page.</p>
+        </div>
+      `
+
+      const errorBody = `
+        <div class="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+          This class is no longer in the latest schedule. Close and continue browsing.
+        </div>
+        <div class="rounded-2xl border border-gray-800 bg-[#0F0F0F] px-4 py-4">
+          <p class="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">Failure simulation</p>
+          <p class="mt-2 text-sm leading-normal text-gray-400">Use this state to review the modal fallback when the selected class disappears after a refresh. The design keeps the modal open instead of silently closing it.</p>
+        </div>
+      `
+
+      modalRoot.innerHTML = `
+        <div class="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm" onclick="if (event.target === this) closeModal()">
+          <div role="dialog" aria-modal="true" aria-labelledby="class-modal-title" class="relative w-full max-w-lg overflow-hidden rounded-2xl border border-gray-800 bg-gray-900 shadow-xl shadow-black/60">
+            <div class="flex items-start justify-between gap-4 border-b border-gray-800 px-6 py-5">
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">Class summary modal</p>
+                <h2 id="class-modal-title" class="mt-1 text-2xl font-semibold text-white">${selectedEntry.name}</h2>
+              </div>
+              <button type="button" onclick="closeModal()" class="rounded-md p-1 text-gray-400 transition-colors hover:bg-gray-800 hover:text-white" aria-label="Close modal">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" class="h-5 w-5" fill="currentColor">
+                  <path fill-rule="evenodd" d="M4.22 4.22a.75.75 0 011.06 0L10 8.94l4.72-4.72a.75.75 0 111.06 1.06L11.06 10l4.72 4.72a.75.75 0 11-1.06 1.06L10 11.06l-4.72 4.72a.75.75 0 11-1.06-1.06L8.94 10 4.22 5.28a.75.75 0 010-1.06z" clip-rule="evenodd"></path>
+                </svg>
+              </button>
+            </div>
+            <div class="flex flex-col gap-4 px-6 py-6">
+              ${state.modalVariant === 'success' ? successBody : errorBody}
+            </div>
+            <div class="flex flex-col gap-3 border-t border-gray-800 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <button type="button" onclick="toggleModalVariant()" class="inline-flex min-h-11 items-center justify-center rounded-md border border-gray-700 bg-[#0F0F0F] px-4 py-2 text-sm font-medium text-white transition-colors hover:border-gray-600 hover:bg-gray-800">
+                ${state.modalVariant === 'success' ? 'Simulate refresh conflict' : 'Restore details'}
+              </button>
+              <button type="button" onclick="closeModal()" class="inline-flex min-h-11 items-center justify-center rounded-md bg-green-500 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-green-600 hover:shadow-lg hover:shadow-green-500/25">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      `
+    }
+
+    function render() {
+      renderToolbar()
+      const contentRoot = document.getElementById('content-root')
+      contentRoot.innerHTML = state.mode === 'member' ? renderMemberContent() : renderGateContent()
+      renderModal()
+    }
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && state.modalOpen) closeModal()
+    })
+
+    render()
+  </script>
+</body>
+</html>
