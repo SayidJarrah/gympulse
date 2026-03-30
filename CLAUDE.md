@@ -118,13 +118,6 @@ SendMessage to: "frontend", body: "Auth DTOs are finalised — see AuthResponse.
 > Exit code **2** from a hook sends the feedback back to the teammate and keeps
 > it working.  Exit code **0** lets the task complete.
 
-#### Limits to remember
-- **No session resumption** — `/resume` and `/rewind` won't restore in-process teammates.
-- **One team per session** — only the lead can spawn teammates; no nested teams.
-- **Token cost scales** — each teammate is a full Claude instance; keep teams ≤ 4.
-- Split-pane display requires tmux or iTerm2; in-process works everywhere.
-
----
 
 ### Agent Memory
 Persistent memory is stored in `.claude/memory/MEMORY.md` (auto-loaded each session).
