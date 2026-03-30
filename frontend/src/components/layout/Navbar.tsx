@@ -24,7 +24,7 @@ export function Navbar() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <NavLink
-          to="/plans"
+          to="/"
           className="flex items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:rounded-md"
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500">

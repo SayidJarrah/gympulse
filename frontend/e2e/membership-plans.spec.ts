@@ -36,6 +36,7 @@ function mockPlan(index: number, status: PlanStatus, namePrefix: string): Member
     description: `Mocked membership plan ${index}.`,
     priceInCents: 3000 + index,
     durationDays: 30 + index,
+    maxBookingsPerMonth: 8 + index,
     status,
     createdAt: '2026-03-29T09:00:00Z',
     updatedAt: '2026-03-29T09:00:00Z',
