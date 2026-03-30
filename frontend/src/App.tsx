@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { RegisterPage } from './pages/auth/RegisterPage'
 import { LoginPage } from './pages/auth/LoginPage'
 import { PlansPage } from './pages/plans/PlansPage'
@@ -10,8 +10,10 @@ import { AdminRoomsPage } from './pages/admin/AdminRoomsPage'
 import { AdminClassTemplatesPage } from './pages/admin/AdminClassTemplatesPage'
 import { AdminSchedulerPage } from './pages/admin/AdminSchedulerPage'
 import { MyMembershipPage } from './pages/membership/MyMembershipPage'
+import { UserProfilePage } from './pages/profile/UserProfilePage'
 import { AdminRoute } from './components/layout/AdminRoute'
 import { AuthRoute } from './components/layout/AuthRoute'
+import { LandingPage } from './pages/landing/LandingPage'
 
 function App() {
   return (
@@ -31,6 +33,14 @@ function App() {
           element={
             <AuthRoute>
               <MyMembershipPage />
+            </AuthRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <AuthRoute>
+              <UserProfilePage />
             </AuthRoute>
           }
         />
@@ -85,8 +95,7 @@ function App() {
           }
         />
 
-        {/* Redirect root to plans catalogue */}
-        <Route path="/" element={<Navigate to="/plans" replace />} />
+        <Route path="/" element={<LandingPage />} />
       </Routes>
     </BrowserRouter>
   )

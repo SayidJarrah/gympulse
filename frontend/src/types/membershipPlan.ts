@@ -6,6 +6,7 @@ export interface MembershipPlan {
   description: string;
   priceInCents: number;
   durationDays: number;
+  maxBookingsPerMonth: number;
   status: PlanStatus;
   createdAt: string; // ISO 8601
   updatedAt: string; // ISO 8601

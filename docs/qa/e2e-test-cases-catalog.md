@@ -19,28 +19,33 @@ It combines:
 - `docs/sdd/auth.md`
 - `docs/sdd/membership-plans.md`
 - `docs/sdd/user-membership-purchase.md`
+- `docs/sdd/user-profile-management.md`
 - `docs/sdd/scheduler.md`
 - `docs/prd/auth.md`
 - `docs/prd/membership-plans.md`
 - `docs/prd/user-membership-purchase.md`
+- `docs/prd/user-profile-management.md`
 - `docs/prd/scheduler.md`
 - `docs/design/auth.md`
 - `docs/design/membership-plans.md`
 - `docs/design/user-membership-purchase.md`
+- `docs/design/user-profile-management.md`
 - `docs/design/scheduler.md`
 - `frontend/e2e/auth.spec.ts`
 - `frontend/e2e/membership-plans.spec.ts`
 - `frontend/e2e/user-membership-purchase.spec.ts`
+- `frontend/e2e/user-profile-management.spec.ts`
 - `frontend/e2e/class-schedule.spec.ts`
 
 ## Current Suite Snapshot
 
-- Current Playwright suite size: `79` tests
+- Current Playwright suite size: `128` tests
 - Feature split:
-- `auth`: `4`
-- `membership plans`: `5`
-- `user membership purchase`: `19`
-- `scheduler`: `51`
+- `auth`: `14`
+- `membership plans`: `18`
+- `user membership purchase`: `23`
+- `user profile management`: `4`
+- `scheduler`: `69`
 
 ## Status Legend
 
@@ -230,7 +235,7 @@ It combines:
 
 ### Membership Plans
 
-#### `PLAN-01` Public plans catalog loads
+#### `PLAN-01` Public plans catalog loads ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -241,7 +246,7 @@ It combines:
 - Plan cards render
 - Active plans are visible
 
-#### `PLAN-02` Public plan detail navigation
+#### `PLAN-02` Public plan detail navigation ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -253,7 +258,7 @@ It combines:
 - Browser opens `/plans/:id`
 - Plan detail content renders
 
-#### `PLAN-03` Public plan detail content
+#### `PLAN-03` Public plan detail content ✅
 
 - Priority: `P1`
 - Status: `Missing`
@@ -263,7 +268,7 @@ It combines:
 - Expected:
 - Name, description, duration, price, and CTA render correctly
 
-#### `PLAN-04` Public plan detail not found
+#### `PLAN-04` Public plan detail not found ✅
 
 - Priority: `P0`
 - Status: `Missing`
@@ -274,7 +279,7 @@ It combines:
 - Not-found state renders
 - `Browse all plans` link is available
 
-#### `PLAN-05` Public direct access to inactive plan
+#### `PLAN-05` Public direct access to inactive plan ✅
 
 - Priority: `P0`
 - Status: `Missing`
@@ -284,7 +289,7 @@ It combines:
 - Expected:
 - Not-found state renders
 
-#### `PLAN-06` Public catalog empty state
+#### `PLAN-06` Public catalog empty state ✅
 
 - Priority: `P1`
 - Status: `Missing`
@@ -294,7 +299,7 @@ It combines:
 - Expected:
 - Empty-state message renders
 
-#### `PLAN-07` Public catalog pagination
+#### `PLAN-07` Public catalog pagination ✅
 
 - Priority: `P1`
 - Status: `Missing`
@@ -306,7 +311,7 @@ It combines:
 - Page number changes
 - Visible plan set changes
 
-#### `PLAN-08` Unauthenticated guest blocked from admin plans
+#### `PLAN-08` Unauthenticated guest blocked from admin plans ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -316,7 +321,7 @@ It combines:
 - Expected:
 - Redirect to `/plans`
 
-#### `PLAN-09` Admin can open plans management
+#### `PLAN-09` Admin can open plans management ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -326,7 +331,7 @@ It combines:
 - Expected:
 - Plans table renders
 
-#### `PLAN-10` Admin create plan happy path
+#### `PLAN-10` Admin create plan happy path ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -338,7 +343,7 @@ It combines:
 - Plan is created
 - New row appears in admin table
 
-#### `PLAN-11` Admin edit plan happy path
+#### `PLAN-11` Admin edit plan happy path ✅
 
 - Priority: `P0`
 - Status: `Missing`
@@ -350,7 +355,7 @@ It combines:
 - Expected:
 - Table row updates immediately
 
-#### `PLAN-12` Admin create and edit validation matrix
+#### `PLAN-12` Admin create and edit validation matrix ✅
 
 - Priority: `P0`
 - Status: `Missing`
@@ -364,7 +369,7 @@ It combines:
 - Modal stays open
 - Validation or mapped error messages are shown
 
-#### `PLAN-13` Admin deactivate plan
+#### `PLAN-13` Admin deactivate plan ✅
 
 - Priority: `P0`
 - Status: `Missing`
@@ -376,7 +381,7 @@ It combines:
 - Plan status becomes `INACTIVE`
 - Plan disappears from public `/plans`
 
-#### `PLAN-14` Admin reactivate plan
+#### `PLAN-14` Admin reactivate plan ✅
 
 - Priority: `P0`
 - Status: `Missing`
@@ -388,7 +393,7 @@ It combines:
 - Plan status becomes `ACTIVE`
 - Plan appears in public `/plans`
 
-#### `PLAN-15` Status action conflict handling
+#### `PLAN-15` Status action conflict handling ✅
 
 - Priority: `P1`
 - Status: `Missing`
@@ -399,7 +404,7 @@ It combines:
 - Conflict error is shown
 - Plan state remains unchanged
 
-#### `PLAN-16` Admin status tabs and URL sync
+#### `PLAN-16` Admin status tabs and URL sync ✅
 
 - Priority: `P1`
 - Status: `Missing`
@@ -410,7 +415,7 @@ It combines:
 - Table results match the tab
 - URL query param stays in sync
 
-#### `PLAN-17` Admin plans pagination
+#### `PLAN-17` Admin plans pagination ✅
 
 - Priority: `P1`
 - Status: `Missing`
@@ -422,7 +427,7 @@ It combines:
 - Visible rows change
 - Current page indicator updates
 
-#### `PLAN-18` Price change blocked when plan has active subscribers
+#### `PLAN-18` Price change blocked when plan has active subscribers ✅
 
 - Priority: `P0`
 - Status: `Missing`
@@ -436,7 +441,7 @@ It combines:
 
 ### User Membership Purchase
 
-#### `MEM-01` User purchases membership from plans page
+#### `MEM-01` User purchases membership from plans page ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -449,7 +454,7 @@ It combines:
 - Purchase succeeds
 - Browser navigates to `/membership`
 
-#### `MEM-02` Purchase modal cancel via button
+#### `MEM-02` Purchase modal cancel via button ✅
 
 - Priority: `P1`
 - Status: `Covered`
@@ -461,7 +466,7 @@ It combines:
 - Modal closes
 - No membership is created
 
-#### `MEM-03` Purchase modal dismiss via overlay or escape
+#### `MEM-03` Purchase modal dismiss via overlay or escape ✅
 
 - Priority: `P1`
 - Status: `Missing`
@@ -474,7 +479,7 @@ It combines:
 - Modal closes
 - No membership is created
 
-#### `MEM-04` Activate CTA visibility matrix
+#### `MEM-04` Activate CTA visibility matrix ✅
 
 - Priority: `P0`
 - Status: `Partial`
@@ -486,7 +491,7 @@ It combines:
 - Eligible user sees activate CTA
 - Active member sees no activate CTA
 
-#### `MEM-05` Active membership page renders details
+#### `MEM-05` Active membership page renders details ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -496,7 +501,7 @@ It combines:
 - Expected:
 - Plan name, status, dates, and usage render
 
-#### `MEM-06` Membership page empty state
+#### `MEM-06` Membership page empty state ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -506,7 +511,7 @@ It combines:
 - Expected:
 - Empty-state card renders
 
-#### `MEM-07` Empty-state CTA to plans
+#### `MEM-07` Empty-state CTA to plans ✅
 
 - Priority: `P1`
 - Status: `Missing`
@@ -517,7 +522,7 @@ It combines:
 - Expected:
 - Browser navigates to `/plans`
 
-#### `MEM-08` Membership page fetch failure and retry
+#### `MEM-08` Membership page fetch failure and retry ✅
 
 - Priority: `P1`
 - Status: `Missing`
@@ -530,7 +535,7 @@ It combines:
 - Generic error state renders on failure
 - Retry recovers when backend is available
 
-#### `MEM-09` User cancels active membership
+#### `MEM-09` User cancels active membership ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -542,7 +547,7 @@ It combines:
 - Membership becomes inactive
 - Empty state is shown after refresh
 
-#### `MEM-10` Cancel modal dismiss without cancelling
+#### `MEM-10` Cancel modal dismiss without cancelling ✅
 
 - Priority: `P1`
 - Status: `Covered`
@@ -553,7 +558,7 @@ It combines:
 - Expected:
 - Membership remains active
 
-#### `MEM-11` User repurchases after cancellation
+#### `MEM-11` User repurchases after cancellation ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -563,7 +568,7 @@ It combines:
 - Expected:
 - New membership is created successfully
 
-#### `MEM-12` Purchase blocked because plan is inactive
+#### `MEM-12` Purchase blocked because plan is inactive ✅
 
 - Priority: `P0`
 - Status: `Partial`
@@ -574,7 +579,7 @@ It combines:
 - Modal shows `PLAN_NOT_AVAILABLE` message
 - No membership is created
 
-#### `MEM-13` Purchase blocked because user already has active membership
+#### `MEM-13` Purchase blocked because user already has active membership ✅
 
 - Priority: `P0`
 - Status: `Partial`
@@ -584,7 +589,7 @@ It combines:
 - Expected:
 - Modal shows `MEMBERSHIP_ALREADY_ACTIVE` message
 
-#### `MEM-14` Authenticated user route guard for `/membership`
+#### `MEM-14` Authenticated user route guard for `/membership` ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -594,7 +599,7 @@ It combines:
 - Expected:
 - Redirect to `/login`
 
-#### `MEM-15` Admin memberships page loads
+#### `MEM-15` Admin memberships page loads ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -604,7 +609,7 @@ It combines:
 - Expected:
 - Memberships table renders
 
-#### `MEM-16` Non-admin blocked from admin memberships
+#### `MEM-16` Non-admin blocked from admin memberships ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -614,7 +619,7 @@ It combines:
 - Expected:
 - Redirect to `/plans`
 
-#### `MEM-17` Guest blocked from admin memberships
+#### `MEM-17` Guest blocked from admin memberships ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -624,7 +629,7 @@ It combines:
 - Expected:
 - Redirect to `/plans`
 
-#### `MEM-18` Admin status filter
+#### `MEM-18` Admin status filter ✅
 
 - Priority: `P1`
 - Status: `Partial`
@@ -634,7 +639,7 @@ It combines:
 - Expected:
 - Table rows match the chosen status
 
-#### `MEM-19` Admin user ID filter positive match
+#### `MEM-19` Admin user ID filter positive match ✅
 
 - Priority: `P1`
 - Status: `Missing`
@@ -644,7 +649,7 @@ It combines:
 - Expected:
 - Table narrows to that user’s memberships
 
-#### `MEM-20` Admin user ID filter no-result state
+#### `MEM-20` Admin user ID filter no-result state ✅
 
 - Priority: `P1`
 - Status: `Covered`
@@ -654,7 +659,7 @@ It combines:
 - Expected:
 - Empty state renders
 
-#### `MEM-21` Admin memberships pagination
+#### `MEM-21` Admin memberships pagination ✅
 
 - Priority: `P1`
 - Status: `Partial`
@@ -665,7 +670,7 @@ It combines:
 - Visible rows change
 - Count and page indicator update
 
-#### `MEM-22` Admin cancels active membership
+#### `MEM-22` Admin cancels active membership ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -676,7 +681,7 @@ It combines:
 - Expected:
 - Membership status becomes `CANCELLED`
 
-#### `MEM-23` Admin cancel blocked for non-active membership
+#### `MEM-23` Admin cancel blocked for non-active membership ✅
 
 - Priority: `P1`
 - Status: `Partial`
@@ -686,9 +691,65 @@ It combines:
 - Expected:
 - `MEMBERSHIP_NOT_ACTIVE` message is shown
 
+### User Profile Management
+
+#### `PROFILE-01` First-time user opens profile from authenticated navbar ✅
+
+- Priority: `P0`
+- Status: `Covered`
+- Preconditions: logged-in `USER` with no saved profile row
+- Steps:
+- Open `/plans`
+- Click `Profile` in the authenticated navbar
+- Expected:
+- Browser navigates to `/profile`
+- Read-only email field shows the account email
+- Editable fields render empty and ready for input
+
+#### `PROFILE-02` User saves profile details and sees persisted normalized values ✅
+
+- Priority: `P0`
+- Status: `Covered`
+- Preconditions: logged-in `USER` with no saved profile row
+- Steps:
+- Open `/profile`
+- Enter valid name, phone, date of birth, fitness goals, and preferred class types
+- Click `Save profile`
+- Refresh the page
+- Expected:
+- Save succeeds with a success banner
+- Phone is normalized by the backend
+- Saved values remain visible after reload
+
+#### `PROFILE-03` Client-side validation blocks invalid phone submission ✅
+
+- Priority: `P1`
+- Status: `Covered`
+- Preconditions: logged-in `USER`
+- Steps:
+- Open `/profile`
+- Enter an invalid phone value
+- Click `Save profile`
+- Expected:
+- Inline phone validation error is shown
+- No successful save state appears
+- No profile update request is sent
+
+#### `PROFILE-04` Admin account receives profile access-denied state ✅
+
+- Priority: `P1`
+- Status: `Covered`
+- Preconditions: logged-in `ADMIN`
+- Steps:
+- Open `/profile`
+- Expected:
+- Page does not render editable profile data
+- Permission error message is shown
+- Retry control remains available in the error state
+
 ### Scheduler
 
-#### `SCH-01` Trainer create happy path
+#### `SCH-01` Trainer create happy path ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -699,7 +760,7 @@ It combines:
 - Expected:
 - Trainer appears in list
 
-#### `SCH-02` Trainer edit happy path
+#### `SCH-02` Trainer edit happy path ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -710,7 +771,7 @@ It combines:
 - Expected:
 - Updated values render immediately
 
-#### `SCH-03` Trainer delete with no assigned classes
+#### `SCH-03` Trainer delete with no assigned classes ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -720,7 +781,7 @@ It combines:
 - Expected:
 - Trainer is removed from list
 
-#### `SCH-04` Trainer delete with assigned classes
+#### `SCH-04` Trainer delete with assigned classes ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -733,7 +794,7 @@ It combines:
 - Affected instances are listed in the modal
 - Trainer is removed and classes become unassigned
 
-#### `SCH-05` Trainer search and empty state
+#### `SCH-05` Trainer search and empty state ✅
 
 - Priority: `P1`
 - Status: `Covered`
@@ -745,7 +806,7 @@ It combines:
 - Matching rows are shown
 - Empty state renders for no matches
 
-#### `SCH-06` Trainer duplicate email validation
+#### `SCH-06` Trainer duplicate email validation ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -755,7 +816,7 @@ It combines:
 - Expected:
 - Conflict error is shown
 
-#### `SCH-07` Trainer required-field validation
+#### `SCH-07` Trainer required-field validation ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -766,7 +827,7 @@ It combines:
 - Validation error is shown
 - Modal stays open
 
-#### `SCH-08` Trainer photo upload UI presence
+#### `SCH-08` Trainer photo upload UI presence ✅
 
 - Priority: `P1`
 - Status: `Covered`
@@ -776,7 +837,7 @@ It combines:
 - Expected:
 - Photo upload section and accepted-format hint are visible
 
-#### `SCH-09` Trainer photo upload happy path
+#### `SCH-09` Trainer photo upload happy path ✅
 
 - Priority: `P0`
 - Status: `Missing`
@@ -787,7 +848,7 @@ It combines:
 - Upload succeeds
 - Trainer photo is subsequently retrievable and rendered
 
-#### `SCH-10` Trainer photo invalid format
+#### `SCH-10` Trainer photo invalid format ✅
 
 - Priority: `P0`
 - Status: `Missing`
@@ -797,7 +858,7 @@ It combines:
 - Expected:
 - `INVALID_PHOTO_FORMAT` message is shown
 
-#### `SCH-11` Trainer photo too large
+#### `SCH-11` Trainer photo too large ✅
 
 - Priority: `P0`
 - Status: `Missing`
@@ -807,7 +868,7 @@ It combines:
 - Expected:
 - `PHOTO_TOO_LARGE` message is shown
 
-#### `SCH-12` Room create happy path
+#### `SCH-12` Room create happy path ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -818,7 +879,7 @@ It combines:
 - Expected:
 - Room appears in list
 
-#### `SCH-13` Room search
+#### `SCH-13` Room search ✅
 
 - Priority: `P1`
 - Status: `Covered`
@@ -828,7 +889,7 @@ It combines:
 - Expected:
 - Matching rooms are shown
 
-#### `SCH-14` Room edit happy path
+#### `SCH-14` Room edit happy path ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -839,7 +900,7 @@ It combines:
 - Expected:
 - Updated values render immediately
 
-#### `SCH-15` Room delete with no assigned instances
+#### `SCH-15` Room delete with no assigned instances ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -849,7 +910,7 @@ It combines:
 - Expected:
 - Room disappears from list
 
-#### `SCH-16` Room delete with assigned instances
+#### `SCH-16` Room delete with assigned instances ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -862,7 +923,7 @@ It combines:
 - Affected instances are listed
 - Room is removed and instances lose room assignment
 
-#### `SCH-17` Room duplicate name validation
+#### `SCH-17` Room duplicate name validation ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -872,7 +933,7 @@ It combines:
 - Expected:
 - Conflict error is shown
 
-#### `SCH-18` Room required-field validation
+#### `SCH-18` Room required-field validation ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -882,7 +943,7 @@ It combines:
 - Expected:
 - Validation error is shown
 
-#### `SCH-19` Seeded class templates exist
+#### `SCH-19` Seeded class templates exist ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -892,7 +953,7 @@ It combines:
 - Expected:
 - Default templates are present
 
-#### `SCH-20` Class template create happy path
+#### `SCH-20` Class template create happy path ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -902,7 +963,7 @@ It combines:
 - Expected:
 - Template appears in library
 
-#### `SCH-21` Class template edit happy path
+#### `SCH-21` Class template edit happy path ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -913,7 +974,7 @@ It combines:
 - Expected:
 - Updated values render immediately
 
-#### `SCH-22` Class template delete with no instances
+#### `SCH-22` Class template delete with no instances ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -923,7 +984,7 @@ It combines:
 - Expected:
 - Template disappears from library
 
-#### `SCH-23` Class template delete with scheduled instances
+#### `SCH-23` Class template delete with scheduled instances ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -936,7 +997,7 @@ It combines:
 - Affected instances are listed
 - Instances remain scheduled as standalone entries
 
-#### `SCH-24` Class template search and category filter
+#### `SCH-24` Class template search and category filter ✅
 
 - Priority: `P1`
 - Status: `Covered`
@@ -947,7 +1008,7 @@ It combines:
 - Expected:
 - Results narrow correctly
 
-#### `SCH-25` Class template duplicate name validation
+#### `SCH-25` Class template duplicate name validation ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -957,7 +1018,7 @@ It combines:
 - Expected:
 - Conflict error is shown
 
-#### `SCH-26` Scheduler week grid renders
+#### `SCH-26` Scheduler week grid renders ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -967,7 +1028,7 @@ It combines:
 - Expected:
 - Seven-day calendar and week header render
 
-#### `SCH-27` Drag template to grid creates instance
+#### `SCH-27` Drag template to grid creates instance ✅
 
 - Priority: `P0`
 - Status: `Partial`
@@ -978,7 +1039,7 @@ It combines:
 - New instance is created in that slot
 - Persisted instance is visible after refresh or reload
 
-#### `SCH-28` New instance inherits template defaults
+#### `SCH-28` New instance inherits template defaults ✅
 
 - Priority: `P0`
 - Status: `Missing`
@@ -989,7 +1050,7 @@ It combines:
 - Expected:
 - New instance uses template defaults
 
-#### `SCH-29` Drag existing instance to new slot
+#### `SCH-29` Drag existing instance to new slot ✅
 
 - Priority: `P0`
 - Status: `Partial`
@@ -1000,7 +1061,7 @@ It combines:
 - Instance time or day changes
 - Persisted position remains after reload
 
-#### `SCH-30` Class card displays required fields
+#### `SCH-30` Class card displays required fields ✅
 
 - Priority: `P1`
 - Status: `Covered`
@@ -1010,7 +1071,7 @@ It combines:
 - Expected:
 - Name, start time, duration, trainer info, and capacity are shown
 
-#### `SCH-31` Edit panel opens from class card
+#### `SCH-31` Edit panel opens from class card ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -1020,7 +1081,7 @@ It combines:
 - Expected:
 - Edit panel opens with editable fields
 
-#### `SCH-32` Edit panel save happy path
+#### `SCH-32` Edit panel save happy path ✅
 
 - Priority: `P0`
 - Status: `Missing`
@@ -1032,7 +1093,7 @@ It combines:
 - Card updates immediately
 - Persisted changes remain after reload
 
-#### `SCH-33` Delete scheduled class instance
+#### `SCH-33` Delete scheduled class instance ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -1042,7 +1103,7 @@ It combines:
 - Expected:
 - Instance is removed from calendar
 
-#### `SCH-34` Previous and next week navigation
+#### `SCH-34` Previous and next week navigation ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -1053,7 +1114,7 @@ It combines:
 - Expected:
 - URL `?week=` changes correctly
 
-#### `SCH-35` Week deep-link survives reload
+#### `SCH-35` Week deep-link survives reload ✅
 
 - Priority: `P1`
 - Status: `Missing`
@@ -1064,7 +1125,7 @@ It combines:
 - Expected:
 - Same week remains selected
 
-#### `SCH-36` Copy Week modal opens with class count
+#### `SCH-36` Copy Week modal opens with class count ✅
 
 - Priority: `P1`
 - Status: `Covered`
@@ -1074,7 +1135,7 @@ It combines:
 - Expected:
 - Confirmation modal opens and shows class count
 
-#### `SCH-37` Copy Week happy path
+#### `SCH-37` Copy Week happy path ✅
 
 - Priority: `P0`
 - Status: `Missing`
@@ -1085,7 +1146,7 @@ It combines:
 - Expected:
 - Source-week instances are copied into the next week
 
-#### `SCH-38` Copy Week does not overwrite existing target instances
+#### `SCH-38` Copy Week does not overwrite existing target instances ✅
 
 - Priority: `P1`
 - Status: `Missing`
@@ -1097,7 +1158,7 @@ It combines:
 - Existing target instances remain untouched
 - New instances are added without overwrite
 
-#### `SCH-39` Capacity field bounds
+#### `SCH-39` Capacity field bounds ✅
 
 - Priority: `P1`
 - Status: `Covered`
@@ -1108,7 +1169,7 @@ It combines:
 - Expected:
 - UI enforces `1..500`
 
-#### `SCH-40` Duration field bounds
+#### `SCH-40` Duration field bounds ✅
 
 - Priority: `P1`
 - Status: `Covered`
@@ -1119,7 +1180,7 @@ It combines:
 - Expected:
 - UI enforces `15..240`
 
-#### `SCH-41` Server-side save validation on invalid capacity or duration
+#### `SCH-41` Server-side save validation on invalid capacity or duration ✅
 
 - Priority: `P0`
 - Status: `Missing`
@@ -1130,7 +1191,7 @@ It combines:
 - Error is shown
 - Edit panel remains open
 
-#### `SCH-42` Unassigned class visual indicator
+#### `SCH-42` Unassigned class visual indicator ✅
 
 - Priority: `P1`
 - Status: `Covered`
@@ -1140,7 +1201,7 @@ It combines:
 - Expected:
 - `Unassigned` indicator renders distinctly
 
-#### `SCH-43` Trainer schedule conflict on save
+#### `SCH-43` Trainer schedule conflict on save ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -1151,7 +1212,7 @@ It combines:
 - Expected:
 - `TRAINER_SCHEDULE_CONFLICT` message is shown
 
-#### `SCH-44` Room conflict warning indicator
+#### `SCH-44` Room conflict warning indicator ✅
 
 - Priority: `P1`
 - Status: `Covered`
@@ -1161,7 +1222,7 @@ It combines:
 - Expected:
 - Amber warning indicator is shown
 
-#### `SCH-45` Room picker empty state
+#### `SCH-45` Room picker empty state ✅
 
 - Priority: `P2`
 - Status: `Missing`
@@ -1173,7 +1234,7 @@ It combines:
 - `No rooms found` state is shown
 - Link to manage rooms is visible
 
-#### `SCH-46` Import modal opens and shows format requirements
+#### `SCH-46` Import modal opens and shows format requirements ✅
 
 - Priority: `P1`
 - Status: `Covered`
@@ -1183,7 +1244,7 @@ It combines:
 - Expected:
 - CSV requirements are visible
 
-#### `SCH-47` Import invalid headers rejects whole file
+#### `SCH-47` Import invalid headers rejects whole file ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -1194,7 +1255,7 @@ It combines:
 - `IMPORT_FORMAT_INVALID` message is shown
 - No rows are imported
 
-#### `SCH-48` Import file larger than 2 MB
+#### `SCH-48` Import file larger than 2 MB ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -1204,7 +1265,7 @@ It combines:
 - Expected:
 - Size error is shown
 
-#### `SCH-49` Import partial success
+#### `SCH-49` Import partial success ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -1215,7 +1276,7 @@ It combines:
 - Valid rows are imported
 - Rejected rows appear in error report
 
-#### `SCH-50` Import unknown trainer email
+#### `SCH-50` Import unknown trainer email ✅
 
 - Priority: `P0`
 - Status: `Missing`
@@ -1225,7 +1286,7 @@ It combines:
 - Expected:
 - Row is rejected with `TRAINER_NOT_FOUND`
 
-#### `SCH-51` Import unknown room name
+#### `SCH-51` Import unknown room name ✅
 
 - Priority: `P0`
 - Status: `Missing`
@@ -1235,7 +1296,7 @@ It combines:
 - Expected:
 - Row is rejected with `ROOM_NOT_FOUND`
 
-#### `SCH-52` Import unknown class name creates standalone instance
+#### `SCH-52` Import unknown class name creates standalone instance ✅
 
 - Priority: `P0`
 - Status: `Missing`
@@ -1245,7 +1306,7 @@ It combines:
 - Expected:
 - Standalone class instance is created successfully
 
-#### `SCH-53` Import modal cancel
+#### `SCH-53` Import modal cancel ✅
 
 - Priority: `P1`
 - Status: `Covered`
@@ -1255,7 +1316,7 @@ It combines:
 - Expected:
 - Modal closes
 
-#### `SCH-54` Export menu opens
+#### `SCH-54` Export menu opens ✅
 
 - Priority: `P1`
 - Status: `Covered`
@@ -1265,7 +1326,7 @@ It combines:
 - Expected:
 - `Export as CSV` and `Export as iCal` are visible
 
-#### `SCH-55` Export CSV download starts
+#### `SCH-55` Export CSV download starts ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -1275,7 +1336,7 @@ It combines:
 - Expected:
 - File download begins
 
-#### `SCH-56` Export CSV content
+#### `SCH-56` Export CSV content ✅
 
 - Priority: `P1`
 - Status: `Missing`
@@ -1286,7 +1347,7 @@ It combines:
 - Expected:
 - Required columns and expected row values are present
 
-#### `SCH-57` Export iCal download starts
+#### `SCH-57` Export iCal download starts ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -1296,7 +1357,7 @@ It combines:
 - Expected:
 - `.ics` file download begins
 
-#### `SCH-58` Export iCal content
+#### `SCH-58` Export iCal content ✅
 
 - Priority: `P1`
 - Status: `Missing`
@@ -1307,7 +1368,7 @@ It combines:
 - Expected:
 - `VEVENT`, `SUMMARY`, `DTSTART`, `DTEND`, and other expected fields are present
 
-#### `SCH-59` Export menu closes after selection
+#### `SCH-59` Export menu closes after selection ✅
 
 - Priority: `P1`
 - Status: `Covered`
@@ -1317,7 +1378,7 @@ It combines:
 - Expected:
 - Menu closes
 
-#### `SCH-60` Admin scheduler route guards for guest
+#### `SCH-60` Admin scheduler route guards for guest ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -1327,7 +1388,7 @@ It combines:
 - Expected:
 - Each route redirects to `/plans`
 
-#### `SCH-61` Admin scheduler route guards for authenticated non-admin
+#### `SCH-61` Admin scheduler route guards for authenticated non-admin ✅
 
 - Priority: `P0`
 - Status: `Missing`
@@ -1337,7 +1398,7 @@ It combines:
 - Expected:
 - Each route redirects to `/plans`
 
-#### `SCH-62` Admin can access scheduler
+#### `SCH-62` Admin can access scheduler ✅
 
 - Priority: `P0`
 - Status: `Covered`
@@ -1347,7 +1408,7 @@ It combines:
 - Expected:
 - Week navigator is visible
 
-#### `SCH-63` Mobile viewport warning
+#### `SCH-63` Mobile viewport warning ✅
 
 - Priority: `P2`
 - Status: `Covered`
@@ -1386,7 +1447,7 @@ It combines:
 
 ## Assumptions And Gaps
 
-- This catalog only covers features that have both implementation surface and active docs: `auth`, `membership plans`, `user membership purchase`, and `scheduler`.
-- It intentionally excludes not-yet-implemented features such as user profile, user access flow, class booking, attendance, notifications, and admin dashboard.
+- This catalog covers features that have both implementation surface and active docs: `auth`, `membership plans`, `user membership purchase`, `user profile management`, and `scheduler`.
+- It intentionally excludes not-yet-implemented features such as user access flow, class booking, attendance, notifications, and admin dashboard.
 - A few currently `Partial` scenarios are technically present in Playwright, but they are not strong enough to trust as regression protection.
 - Concurrency and token-rotation rules are still better validated at integration or API-test level in addition to browser E2E.

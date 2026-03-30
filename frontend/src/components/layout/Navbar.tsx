@@ -13,16 +13,18 @@ export function Navbar() {
     navigate('/login')
   }
 
-  const navLinks = [
-    { label: 'Plans', href: '/plans' },
-  ]
+  const navLinks = [{ label: 'Plans', href: '/plans' }]
+  const userNavLinks =
+    isAuthenticated && user?.role === 'USER'
+      ? [{ label: 'Profile', href: '/profile' }]
+      : []
 
   return (
     <header className="sticky top-0 z-40 bg-gray-900/80 backdrop-blur-md border-b border-gray-800">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <NavLink
-          to="/plans"
+          to="/"
           className="flex items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:rounded-md"
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500">
@@ -40,7 +42,7 @@ export function Navbar() {
 
         {/* Center nav — desktop */}
         <nav className="hidden items-center gap-6 sm:flex">
-          {navLinks.map(({ label, href }) => (
+          {[...navLinks, ...userNavLinks].map(({ label, href }) => (
             <NavLink
               key={href}
               to={href}
@@ -112,7 +114,7 @@ export function Navbar() {
       {mobileMenuOpen && (
         <div className="border-t border-gray-800 bg-gray-900 sm:hidden">
           <nav className="flex flex-col px-4 py-3 gap-1">
-            {navLinks.map(({ label, href }) => (
+            {[...navLinks, ...userNavLinks].map(({ label, href }) => (
               <NavLink
                 key={href}
                 to={href}
