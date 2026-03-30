@@ -1,15 +1,17 @@
-You are running Stage 3 of the GymFlow delivery pipeline: Implementation.
+# Prompt: implement {feature-slug}
 
-Feature slug: $ARGUMENTS
-SDD: docs/sdd/$ARGUMENTS.md
+Stage 3 of the GymFlow delivery pipeline: Implementation.
 
-Read docs/sdd/$ARGUMENTS.md fully before starting.
+Feature slug: {ARGUMENTS}
+SDD: docs/sdd/{ARGUMENTS}.md
+
+Read docs/sdd/{ARGUMENTS}.md fully before starting.
 Do not implement anything not listed in the SDD task lists.
 
-## Step 1 — Backend (backend-dev agent)
+## Step 1 — Backend (backend-developer agent)
 
-Use the backend-dev agent with this instruction:
-"Read the full SDD at docs/sdd/$ARGUMENTS.md.
+Use the backend-developer agent with this instruction:
+"Read the full SDD at docs/sdd/{ARGUMENTS}.md.
 Implement every item in the '→ backend-dev' task list, in this order:
 1. Flyway migration (Section 1)
 2. Kotlin entities and DTOs (Section 3)
@@ -17,18 +19,18 @@ Implement every item in the '→ backend-dev' task list, in this order:
 4. Service layer with business logic
 5. Controller with endpoints matching Section 2 exactly
 6. Unit tests for the service (happy path + all error cases from Section 2)
-Follow all conventions in AGENTS.md and the kotlin-conventions skill.
+Follow all conventions in AGENTS.md and kotlin-conventions.
 After completing, update the Backend and Tests columns in AGENTS.md to ✅."
 
 Confirm backend implementation is complete before continuing to Step 2.
 
-## Step 2 — Frontend (frontend-dev agent)
+## Step 2 — Frontend (frontend-developer agent)
 
-Check whether a design spec exists at docs/design/$ARGUMENTS.md.
+Check whether a design spec exists at docs/design/{ARGUMENTS}.md.
 
-Use the frontend-dev agent with this instruction:
-"Read the full SDD at docs/sdd/$ARGUMENTS.md.
-[If design spec exists:] Also read docs/design/$ARGUMENTS.md — implement every
+Use the frontend-developer agent with this instruction:
+"Read the full SDD at docs/sdd/{ARGUMENTS}.md.
+[If design spec exists:] Also read docs/design/{ARGUMENTS}.md — implement every
 screen and component exactly as specified. Follow the design system at docs/design/system.md.
 [If no design spec:] Follow docs/design/system.md if it exists, otherwise use
 patterns consistent with existing components.
@@ -40,7 +42,6 @@ Implement every item in the '→ frontend-dev' task list:
 5. Page components and sub-components (Section 4 / design spec)
 6. Route registration in App.tsx
 Handle every error code from Section 2 with a user-friendly message.
-Follow all conventions in CLAUDE.md and the react-conventions skill.
 After completing, update the Frontend column in AGENTS.md to ✅."
 
 Confirm frontend implementation is complete before continuing to Step 3.
@@ -48,18 +49,21 @@ Confirm frontend implementation is complete before continuing to Step 3.
 ## Step 3 — E2E spec (e2e-tester agent)
 
 Use the e2e-tester agent with this instruction:
-"Read docs/prd/$ARGUMENTS.md (acceptance criteria) and docs/sdd/$ARGUMENTS.md
+"Read docs/prd/{ARGUMENTS}.md (acceptance criteria) and docs/sdd/{ARGUMENTS}.md
 (API contract and error codes).
-Write frontend/e2e/$ARGUMENTS.spec.ts covering every acceptance criterion.
+Write frontend/e2e/{ARGUMENTS}.spec.ts covering every acceptance criterion.
 Do NOT run the suite yet — Step 4 will do that.
-After saving the spec, update the E2E column in AGENTS.md to ✅ for $ARGUMENTS."
+After saving the spec, update the E2E column in AGENTS.md to ✅ for {ARGUMENTS}."
 
 ## Step 4 — Verify
 
-Run /verify $ARGUMENTS
+Run the E2E suite:
+```bash
+docker-compose -f docker-compose.e2e.yml run --rm playwright
+```
 
 If E2E tests fail and the e2e-tester reports an app bug, follow this fix loop.
-Do not invoke frontend-dev or backend-dev with an open-ended "fix it" instruction.
+Do not invoke frontend-developer or backend-developer with an open-ended "fix it" instruction.
 
 ### Fix Loop (max 3 iterations)
 
@@ -67,49 +71,36 @@ Do not invoke frontend-dev or backend-dev with an open-ended "fix it" instructio
    e2e-tester to produce one first.
 2. Read the bug brief. If scope > 3 files, stop and escalate to solution-architect
    before any fix attempt.
-3. Invoke the fixing agent (frontend-dev or backend-dev) in Bug Fix Mode:
+3. Invoke the fixing agent (frontend-developer or backend-developer) in Bug Fix Mode:
    "Read the bug brief at docs/bugs/{bug-brief-filename} and fix the issue.
    You are in Bug Fix Mode — stay within the files and proposed fix listed in the brief."
-4. Re-run /verify $ARGUMENTS.
+4. Re-run the E2E suite.
 5. Tests pass → continue to Step 5. Tests still fail → next iteration.
 
 After 3 failed iterations: stop. Report to the user with the last bug brief path
 and iteration history. Do not continue to Step 5.
 
-## Step 5 — GitHub PR
+## Step 5 — PR
 
-Use the GitHub MCP (mcp__github__create_pull_request) to create a pull request.
+Create a pull request for the completed feature:
+- Branch: feature/{ARGUMENTS}
+- Title: feat({ARGUMENTS}): <one-line description from SDD>
+- Draft: true
 
-First stage and commit all files created or modified in Steps 1–3:
-```bash
-git checkout -b feature/$ARGUMENTS
-git add <all new/modified files>
-git commit -m "feat($ARGUMENTS): implement feature
-
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
-git push -u origin feature/$ARGUMENTS
-```
-
-Create a draft PR with:
-- title: `feat($ARGUMENTS): <one-line description from SDD>`
-- head: `feature/$ARGUMENTS`
-- base: `main`
-- draft: true
-- body:
-
+PR body:
 ```
 ## Summary
 - Brief bullet points of what was built
 
 ## Files changed
 ### Backend
-- List of Kotlin/SQL files created
+- List of Kotlin/SQL files
 
 ### Frontend
-- List of TypeScript/TSX files created
+- List of TypeScript/TSX files
 
 ### E2E
-- frontend/e2e/$ARGUMENTS.spec.ts — N tests covering acceptance criteria
+- frontend/e2e/{ARGUMENTS}.spec.ts — N tests
 
 ## Test coverage
 - Unit tests: N, covering X
@@ -119,10 +110,8 @@ Create a draft PR with:
 - ✅/❌ per PRD criterion
 
 ## How to test
-1. Run /run, then /verify $ARGUMENTS
+1. Start the stack, then run the E2E suite
 2. Key flows to verify manually
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
 ```
 
 ## When done, report:
