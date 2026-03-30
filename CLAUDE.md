@@ -58,44 +58,62 @@ the `Agent` tool (subagents) instead.
 
 #### GymFlow pipeline team patterns
 
+**Team: docs** — prepares all documentation for a feature before any code is written.
+Agents hand off sequentially via SendMessage; the lead only needs to name the feature.
+
 ```
-# /implement — backend + frontend in parallel
-Spawn an agent team:
-  • teammate "backend"  → agent type backend-dev,   owns backend/
-  • teammate "frontend" → agent type frontend-dev,   owns frontend/src/ frontend/e2e/
-Dependency: frontend teammate waits for backend to post API contract before
-starting API integration.  Use SendMessage to notify.
+Spawn an agent team for feature "{slug}":
+  • teammate "analyst"   → agent type business-analyst,   owns docs/prd/
+  • teammate "architect" → agent type solution-architect, owns docs/sdd/
+  • teammate "designer"  → agent type ui-ux-designer,     owns docs/design/
 
-# /write-sdd — design + schema review in parallel
-Spawn an agent team:
-  • teammate "architect" → agent type solution-architect, produces docs/sdd/{slug}.md
-  • teammate "dba"       → agent type db-architect,       reviews schema section only
-architect sends the schema block to dba via SendMessage; dba replies with review notes.
+Handoff chain:
+  analyst   finishes PRD  → SendMessage to "architect": "PRD ready at docs/prd/{slug}.md"
+  architect finishes SDD  → SendMessage to "designer":  "SDD ready at docs/sdd/{slug}.md"
+  designer  finishes spec → SendMessage to lead:         "Docs complete for {slug}"
+```
 
-# /verify — smoke + E2E in parallel (if stack is already up)
+**Team: implement** — backend and frontend build the feature in parallel once docs are done.
+
+```
+Spawn an agent team for feature "{slug}":
+  • teammate "backend"  → agent type backend-dev,  owns backend/
+  • teammate "frontend" → agent type frontend-dev, owns frontend/src/ frontend/e2e/
+
+Handoff:
+  backend posts API contract → SendMessage to "frontend": "API contract ready — see {Controller}.kt"
+  frontend starts integration only after receiving that message.
+```
+
+**Team: verify** — smoke tests and E2E run in parallel once the stack is up.
+
+```
 Spawn an agent team:
-  • teammate "smoke"  → curl health + key API endpoints
-  • teammate "e2e"    → agent type e2e-tester, runs Playwright suite
+  • teammate "smoke" → curl /api/v1/health + key endpoints
+  • teammate "e2e"   → agent type e2e-tester, runs full Playwright suite
+Both report results to lead independently.
 ```
 
 #### File ownership — never let two teammates edit the same file
 
 | Teammate | Owns |
 |----------|------|
+| business-analyst | `docs/prd/` |
+| solution-architect | `docs/sdd/` |
+| ui-ux-designer | `docs/design/` |
 | backend-dev | `backend/` |
 | frontend-dev | `frontend/src/`, `frontend/e2e/`, `frontend/public/` |
 | db-architect | reviews only — no writes outside `docs/` |
 | e2e-tester | `frontend/e2e/`, `docs/bugs/` |
-| solution-architect | `docs/sdd/`, `docs/prd/` |
 
 #### Communication pattern
 
 ```text
-# Lead → teammate
-"Ask the backend teammate to post the final DTO shapes so frontend can start."
+# Teammate → teammate (handoff)
+SendMessage to: "architect", body: "PRD ready at docs/prd/class-booking.md"
 
-# Teammate → teammate (in teammate's session)
-SendMessage to: "frontend", body: "Auth DTOs are finalised — see AuthResponse.kt"
+# Lead → teammate (steer mid-task)
+"Ask the backend teammate to post the final DTO shapes so frontend can start."
 ```
 
 #### Quality-gate hooks (add to `.claude/settings.json`)
