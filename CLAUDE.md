@@ -36,6 +36,22 @@ UPDATE, DELETE, or DDL. For schema changes use Flyway migrations via `./gradlew`
 If SDD = ❌ but PRD = ✅, run `/write-sdd`. If Design = ❌ but SDD = ✅, run `/write-design`.
 Only then run `/implement`.
 
+### Agent Teams (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`)
+
+Agent teams is enabled. Claude can dispatch multiple sub-agents in parallel using the Task tool.
+
+**When to parallelise:**
+- Multiple independent features: e.g., writing PRDs for two unrelated features simultaneously
+- Within `/implement` Step 4 (verify): e2e-tester and a fix-agent can overlap when the bug brief already exists
+- Any research/read-only tasks with no shared state (grepping, reading docs, DB queries via Postgres MCP)
+
+**Must stay sequential — do not parallelise:**
+- `/write-docs` stages: PRD → SDD → Design are strictly ordered (each consumes the previous output)
+- `/implement` Steps 1→2: frontend-dev depends on backend DTOs and endpoint contracts being finalised first
+- `/implement` Fix Loop: diagnose → fix → verify must complete one iteration before starting the next
+
+**Agent assignments are unchanged** — each agent still owns its domain (backend-dev, frontend-dev, e2e-tester, solution-architect, etc.). Parallelism is about running independent agents concurrently, not merging their responsibilities.
+
 ### Agent Memory
 Persistent memory is stored in `.claude/memory/MEMORY.md` (auto-loaded each session).
 Use it to record stable patterns, key decisions, and recurring fixes — not task state.
