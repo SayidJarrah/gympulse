@@ -1,22 +1,45 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
 import { useAuthStore } from '../../store/authStore'
+import { useMembershipStore } from '../../store/membershipStore'
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { isAuthenticated, user, clearAuth } = useAuthStore()
+  const {
+    activeMembership,
+    fetchMyMembership,
+    membershipErrorCode,
+    membershipLoading,
+  } = useMembershipStore()
   const navigate = useNavigate()
+  const shouldResolveMembership =
+    isAuthenticated &&
+    user?.role === 'USER' &&
+    activeMembership === null &&
+    membershipErrorCode === null &&
+    !membershipLoading
 
   const handleLogout = () => {
     clearAuth()
     navigate('/login')
   }
 
+  useEffect(() => {
+    if (shouldResolveMembership) {
+      void fetchMyMembership()
+    }
+  }, [fetchMyMembership, shouldResolveMembership])
+
   const navLinks = [{ label: 'Plans', href: '/plans' }]
   const userNavLinks =
     isAuthenticated && user?.role === 'USER'
-      ? [{ label: 'Profile', href: '/profile' }]
+      ? [
+          { label: 'Trainers', href: '/trainers' },
+          ...(activeMembership ? [{ label: 'My Favorites', href: '/trainers/favorites' }] : []),
+          { label: 'Profile', href: '/profile' },
+        ]
       : []
 
   return (

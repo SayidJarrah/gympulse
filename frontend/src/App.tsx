@@ -11,6 +11,9 @@ import { AdminClassTemplatesPage } from './pages/admin/AdminClassTemplatesPage'
 import { AdminSchedulerPage } from './pages/admin/AdminSchedulerPage'
 import { MyMembershipPage } from './pages/membership/MyMembershipPage'
 import { UserProfilePage } from './pages/profile/UserProfilePage'
+import { TrainerListPage } from './pages/trainers/TrainerListPage'
+import { TrainerFavoritesPage } from './pages/trainers/TrainerFavoritesPage'
+import { TrainerProfilePage } from './pages/trainers/TrainerProfilePage'
 import { AdminRoute } from './components/layout/AdminRoute'
 import { AuthRoute } from './components/layout/AuthRoute'
 import { LandingPage } from './pages/landing/LandingPage'
@@ -41,6 +44,30 @@ function App() {
           element={
             <AuthRoute>
               <UserProfilePage />
+            </AuthRoute>
+          }
+        />
+        <Route
+          path="/trainers"
+          element={
+            <AuthRoute>
+              <TrainerListPage />
+            </AuthRoute>
+          }
+        />
+        <Route
+          path="/trainers/favorites"
+          element={
+            <AuthRoute>
+              <TrainerFavoritesPage />
+            </AuthRoute>
+          }
+        />
+        <Route
+          path="/trainers/:id"
+          element={
+            <AuthRoute>
+              <TrainerProfilePage />
             </AuthRoute>
           }
         />

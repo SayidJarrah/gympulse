@@ -14,7 +14,7 @@ done
 ## Step 2 — Build images
 
 ```bash
-docker-compose -f docker-compose.review.yml build
+docker compose -f docker-compose.review.yml build
 ```
 
 If the build fails with a compilation or TypeScript error: report it and stop.
@@ -22,8 +22,8 @@ If the build fails with a compilation or TypeScript error: report it and stop.
 ## Step 3 — Start the stack
 
 ```bash
-docker-compose -f docker-compose.review.yml down --remove-orphans
-docker-compose -f docker-compose.review.yml up -d
+docker compose -f docker-compose.review.yml down --remove-orphans
+docker compose -f docker-compose.review.yml up -d
 ```
 
 ## Step 4 — Wait for health (60 s max)
@@ -36,7 +36,7 @@ If healthy: "Stack is running. Open http://localhost:3000."
 
 If not healthy after 60 s, show logs:
 ```bash
-docker-compose -f docker-compose.review.yml logs --tail=40 backend
-docker-compose -f docker-compose.review.yml logs --tail=40 frontend
+docker compose -f docker-compose.review.yml logs --tail=40 backend
+docker compose -f docker-compose.review.yml logs --tail=40 frontend
 ```
 Report the error and stop. Do not attempt to fix infrastructure issues.

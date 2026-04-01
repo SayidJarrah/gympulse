@@ -77,7 +77,6 @@ export function AdminMembershipsPage() {
     if (userIdDebounceRef.current) clearTimeout(userIdDebounceRef.current)
     userIdDebounceRef.current = setTimeout(() => {
       setDebouncedUserId(userIdFilter)
-      setPage(0)
     }, 300)
     return () => {
       if (userIdDebounceRef.current) clearTimeout(userIdDebounceRef.current)
@@ -101,6 +100,7 @@ export function AdminMembershipsPage() {
 
   const handleUserIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setUserIdFilter(e.target.value)
+    setPage(0)
   }
 
   const openCancelModal = (membership: UserMembership) => {

@@ -44,7 +44,9 @@ class TrainerService(
             email = email,
             phone = request.phone,
             bio = request.bio,
-            specialisations = request.specialisations ?: emptyList()
+            specialisations = request.specialisations ?: emptyList(),
+            experienceYears = request.experienceYears,
+            profilePhotoUrl = request.profilePhotoUrl
         )
 
         return trainerRepository.save(trainer).toResponse()
@@ -66,6 +68,8 @@ class TrainerService(
         trainer.phone = request.phone
         trainer.bio = request.bio
         trainer.specialisations = request.specialisations ?: emptyList()
+        trainer.experienceYears = request.experienceYears
+        trainer.profilePhotoUrl = request.profilePhotoUrl
 
         return trainerRepository.save(trainer).toResponse()
     }

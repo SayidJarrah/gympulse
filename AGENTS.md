@@ -263,7 +263,7 @@ JWT_EXPIRY_MS=3600000
 | User profile management | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Class schedule | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Group classes schedule view | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Trainer Discovery | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Trainer Discovery | ✅ | ✅ | ✅ | ✅ | ✅ | 🔄 | 🔄 |
 | Class booking & cancellation | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Attendance check-in | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Admin dashboard | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |

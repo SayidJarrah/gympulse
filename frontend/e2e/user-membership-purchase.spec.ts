@@ -298,6 +298,21 @@ async function waitForAdminMembershipsRequest(page: Page): Promise<void> {
   );
 }
 
+async function waitForAdminMembershipsPageRequest(page: Page, pageNumber: number): Promise<void> {
+  await page.waitForResponse((response) => {
+    if (!response.url().includes('/api/v1/admin/memberships')) {
+      return false;
+    }
+
+    if (response.request().method() !== 'GET') {
+      return false;
+    }
+
+    const url = new URL(response.url());
+    return url.searchParams.get('page') === String(pageNumber);
+  });
+}
+
 async function setAdminUserIdFilter(page: Page, userId: string): Promise<void> {
   const responsePromise = waitForAdminMembershipsRequest(page);
   await page.fill('#user-id-filter', userId);
@@ -600,7 +615,7 @@ test.describe('User Membership Purchase', () => {
     await expect(page.getByText(`Page 1 of ${firstPage.totalPages}`)).toBeVisible();
 
     const firstRowUserId = await page.locator('tbody tr').first().locator('td').first().innerText();
-    const responsePromise = waitForAdminMembershipsRequest(page);
+    const responsePromise = waitForAdminMembershipsPageRequest(page, 1);
     await page.getByRole('button', { name: 'Next' }).click();
     await responsePromise;
 

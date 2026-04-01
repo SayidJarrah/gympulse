@@ -24,5 +24,9 @@ data class TrainerRequest(
     val bio: String? = null,
 
     @field:Size(max = 10, message = "Maximum 10 specialisations")
-    val specialisations: List<@Size(max = 50, message = "Each tag must be 50 characters or fewer") String>? = null
+    val specialisations: List<@Size(max = 50, message = "Each tag must be 50 characters or fewer") String>? = null,
+
+    val experienceYears: Int? = null,
+
+    val profilePhotoUrl: String? = null
 )

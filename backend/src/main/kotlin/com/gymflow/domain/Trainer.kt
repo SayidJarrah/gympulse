@@ -48,5 +48,11 @@ data class Trainer(
     var updatedAt: OffsetDateTime = OffsetDateTime.now(),
 
     @Column(name = "deleted_at")
-    var deletedAt: OffsetDateTime? = null
+    var deletedAt: OffsetDateTime? = null,
+
+    @Column(name = "experience_years")
+    var experienceYears: Int? = null,
+
+    @Column(name = "profile_photo_url")
+    var profilePhotoUrl: String? = null
 )
