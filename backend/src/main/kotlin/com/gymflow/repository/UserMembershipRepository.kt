@@ -20,8 +20,16 @@ interface UserMembershipRepository : JpaRepository<UserMembership, UUID> {
 
     fun findAllByUserId(userId: UUID, pageable: Pageable): Page<UserMembership>
 
+    fun findAllByUserIdIn(userIds: Collection<UUID>, pageable: Pageable): Page<UserMembership>
+
     fun findAllByUserIdAndStatus(
         userId: UUID,
+        status: String,
+        pageable: Pageable
+    ): Page<UserMembership>
+
+    fun findAllByUserIdInAndStatus(
+        userIds: Collection<UUID>,
         status: String,
         pageable: Pageable
     ): Page<UserMembership>

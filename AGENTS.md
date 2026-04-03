@@ -62,6 +62,12 @@ gymflow/
 # Start everything locally (full stack in Docker)
 /run
 
+# Manual review stack (use this when asked to review manually)
+docker-compose -f docker-compose.review.yml up -d
+
+# E2E stack (use only when asked to run E2E tests)
+docker-compose -f docker-compose.e2e.yml up -d
+
 # Or start only postgres for local backend/frontend dev
 docker-compose -f docker-compose.review.yml up -d postgres
 cd backend && ./gradlew bootRun
@@ -94,6 +100,8 @@ npm run build
 
 When asked to "rebuild", "restart the stack", "run in Docker", or "apply my changes",
 follow these steps. Use this after any code change that needs to be tested in Docker.
+If the user explicitly asks for a manual review, use docker-compose.review.yml instead of docker-compose.e2e.yml.
+If the user asks to run E2E tests or an E2E stack, use docker-compose.e2e.yml.
 
 ### Pre-flight
 ```bash

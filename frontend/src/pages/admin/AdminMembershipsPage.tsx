@@ -1,12 +1,18 @@
 import { useState, useEffect, useRef } from 'react'
-import { CreditCardIcon } from '@heroicons/react/24/outline'
+import { CreditCardIcon, DocumentDuplicateIcon } from '@heroicons/react/24/outline'
 import { AdminSidebar } from '../../components/layout/AdminSidebar'
 import { MembershipStatusBadge } from '../../components/membership/MembershipStatusBadge'
 import { AdminCancelMembershipModal } from '../../components/membership/AdminCancelMembershipModal'
-import type { UserMembership, MembershipStatus } from '../../types/userMembership'
+import { AdminMembershipDetailsModal } from '../../components/membership/AdminMembershipDetailsModal'
+import type {
+  UserMembership,
+  MembershipStatus,
+  AdminMembershipsQuery,
+} from '../../types/userMembership'
 import { useMembershipStore } from '../../store/membershipStore'
 
 const PAGE_SIZE = 20
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /**
  * Formats an ISO 8601 date string ("2026-03-23") to a display string ("23 Mar 2026").
@@ -22,27 +28,50 @@ function formatMembershipDate(isoDateString: string): string {
   }).format(date)
 }
 
+function getMemberDisplayName(membership: UserMembership): string {
+  const fullName = [membership.userFirstName, membership.userLastName]
+    .filter(Boolean)
+    .join(' ')
+  if (fullName.trim().length > 0) return fullName
+  if (membership.userEmail) return membership.userEmail
+  return 'Member'
+}
+
+function getMemberInitials(membership: UserMembership): string {
+  const firstInitial = membership.userFirstName?.[0] ?? ''
+  const lastInitial = membership.userLastName?.[0] ?? ''
+  const initials = `${firstInitial}${lastInitial}`.toUpperCase()
+  if (initials.trim().length > 0) return initials
+  return membership.userEmail?.[0]?.toUpperCase() ?? '?'
+}
+
 function TableSkeletonRows() {
   return (
     <>
       {Array.from({ length: 5 }).map((_, i) => (
         <tr key={i} className="border-t border-gray-800 animate-pulse" aria-hidden="true">
+          <td className="px-4 py-3">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-full bg-gray-800" />
+              <div className="space-y-2">
+                <div className="h-4 w-32 rounded bg-gray-800" />
+                <div className="h-3 w-24 rounded bg-gray-800" />
+              </div>
+            </div>
+          </td>
           <td className="hidden px-4 py-3 sm:table-cell">
             <div className="h-4 w-24 rounded bg-gray-800" />
-          </td>
-          <td className="px-4 py-3">
-            <div className="h-4 w-32 rounded bg-gray-800" />
           </td>
           <td className="px-4 py-3">
             <div className="h-5 w-16 rounded-full bg-gray-800" />
           </td>
-          <td className="hidden px-4 py-3 sm:table-cell">
+          <td className="hidden px-4 py-3 lg:table-cell">
             <div className="h-4 w-24 rounded bg-gray-800" />
           </td>
-          <td className="hidden px-4 py-3 sm:table-cell">
+          <td className="hidden px-4 py-3 lg:table-cell">
             <div className="h-4 w-24 rounded bg-gray-800" />
           </td>
-          <td className="hidden px-4 py-3 sm:table-cell">
+          <td className="hidden px-4 py-3 xl:table-cell">
             <div className="h-4 w-16 rounded bg-gray-800" />
           </td>
           <td className="px-4 py-3 text-right">
@@ -54,13 +83,35 @@ function TableSkeletonRows() {
   )
 }
 
+function buildAdminMembershipsQuery(
+  status: MembershipStatus | '',
+  searchInput: string,
+  page: number
+): AdminMembershipsQuery {
+  const trimmedSearchInput = searchInput.trim()
+
+  return {
+    ...(status !== '' ? { status } : {}),
+    ...(trimmedSearchInput !== ''
+      ? UUID_PATTERN.test(trimmedSearchInput)
+        ? { userId: trimmedSearchInput }
+        : { memberQuery: trimmedSearchInput }
+      : {}),
+    page,
+    size: PAGE_SIZE,
+  }
+}
+
 export function AdminMembershipsPage() {
   const [page, setPage] = useState(0)
   const [statusFilter, setStatusFilter] = useState<MembershipStatus | ''>('')
-  const [userIdFilter, setUserIdFilter] = useState('')
-  const [debouncedUserId, setDebouncedUserId] = useState('')
+  const [memberSearchFilter, setMemberSearchFilter] = useState('')
+  const [debouncedMemberSearch, setDebouncedMemberSearch] = useState('')
   const [cancelTarget, setCancelTarget] = useState<UserMembership | null>(null)
-  const userIdDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [detailTarget, setDetailTarget] = useState<UserMembership | null>(null)
+  const [copiedUserId, setCopiedUserId] = useState<string | null>(null)
+  const memberSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const {
     adminMemberships,
@@ -72,35 +123,58 @@ export function AdminMembershipsPage() {
     fetchAdminMemberships,
   } = useMembershipStore()
 
-  // Debounce user ID filter input
+  // Debounce the member search input while keeping filter-on-change behavior.
   useEffect(() => {
-    if (userIdDebounceRef.current) clearTimeout(userIdDebounceRef.current)
-    userIdDebounceRef.current = setTimeout(() => {
-      setDebouncedUserId(userIdFilter)
+    if (memberSearchDebounceRef.current) clearTimeout(memberSearchDebounceRef.current)
+    memberSearchDebounceRef.current = setTimeout(() => {
+      setDebouncedMemberSearch(memberSearchFilter)
     }, 300)
     return () => {
-      if (userIdDebounceRef.current) clearTimeout(userIdDebounceRef.current)
+      if (memberSearchDebounceRef.current) clearTimeout(memberSearchDebounceRef.current)
     }
-  }, [userIdFilter])
+  }, [memberSearchFilter])
+
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current)
+    }
+  }, [])
 
   // Fetch when filters or page change
   useEffect(() => {
     fetchAdminMemberships(
-      statusFilter !== '' ? statusFilter : undefined,
-      debouncedUserId !== '' ? debouncedUserId : undefined,
-      page,
-      PAGE_SIZE
+      buildAdminMembershipsQuery(statusFilter, debouncedMemberSearch, page)
     )
-  }, [statusFilter, debouncedUserId, page, fetchAdminMemberships])
+  }, [statusFilter, debouncedMemberSearch, page, fetchAdminMemberships])
 
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setStatusFilter(e.target.value as MembershipStatus | '')
     setPage(0)
   }
 
-  const handleUserIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setUserIdFilter(e.target.value)
+  const handleMemberSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setMemberSearchFilter(e.target.value)
     setPage(0)
+  }
+
+  const handleCopyUserId = async (
+    event: React.MouseEvent<HTMLButtonElement>,
+    userId: string
+  ) => {
+    event.stopPropagation()
+    if (!navigator?.clipboard) return
+    try {
+      await navigator.clipboard.writeText(userId)
+      setCopiedUserId(userId)
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current)
+      copyTimeoutRef.current = setTimeout(() => setCopiedUserId(null), 1500)
+    } catch {
+      // Ignore clipboard errors
+    }
+  }
+
+  const openDetailModal = (membership: UserMembership) => {
+    setDetailTarget(membership)
   }
 
   const openCancelModal = (membership: UserMembership) => {
@@ -111,15 +185,19 @@ export function AdminMembershipsPage() {
     setCancelTarget(null)
   }
 
+  const handleDetailClose = () => {
+    setDetailTarget(null)
+  }
+
+  const handleDetailCancel = (membership: UserMembership) => {
+    setDetailTarget(null)
+    openCancelModal(membership)
+  }
+
   const handleMembershipCancelled = () => {
     setCancelTarget(null)
     // Re-fetch current page to reflect the updated status
-    fetchAdminMemberships(
-      statusFilter !== '' ? statusFilter : undefined,
-      debouncedUserId !== '' ? debouncedUserId : undefined,
-      page,
-      PAGE_SIZE
-    )
+    fetchAdminMemberships(buildAdminMembershipsQuery(statusFilter, debouncedMemberSearch, page))
   }
 
   const currentPage = adminMembershipsPage
@@ -175,14 +253,14 @@ export function AdminMembershipsPage() {
               htmlFor="user-id-filter"
               className="text-xs font-semibold uppercase tracking-wider text-gray-400"
             >
-              User ID
+              Name or UUID
             </label>
             <input
               id="user-id-filter"
               type="text"
-              value={userIdFilter}
-              onChange={handleUserIdChange}
-              placeholder="Paste user UUID..."
+              value={memberSearchFilter}
+              onChange={handleMemberSearchChange}
+              placeholder="Search by first name, last name, or UUID"
               className="w-72 rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder:text-gray-500 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:border-transparent"
             />
           </div>
@@ -206,13 +284,13 @@ export function AdminMembershipsPage() {
                 <tr>
                   <th
                     scope="col"
-                    className="hidden border-b border-gray-800 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 sm:table-cell"
+                    className="border-b border-gray-800 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400"
                   >
-                    User ID
+                    Member
                   </th>
                   <th
                     scope="col"
-                    className="border-b border-gray-800 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400"
+                    className="hidden border-b border-gray-800 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 sm:table-cell"
                   >
                     Plan
                   </th>
@@ -224,19 +302,19 @@ export function AdminMembershipsPage() {
                   </th>
                   <th
                     scope="col"
-                    className="hidden border-b border-gray-800 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 sm:table-cell"
+                    className="hidden border-b border-gray-800 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 lg:table-cell"
                   >
                     Start date
                   </th>
                   <th
                     scope="col"
-                    className="hidden border-b border-gray-800 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 sm:table-cell"
+                    className="hidden border-b border-gray-800 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 lg:table-cell"
                   >
                     End date
                   </th>
                   <th
                     scope="col"
-                    className="hidden border-b border-gray-800 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 sm:table-cell"
+                    className="hidden border-b border-gray-800 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 xl:table-cell"
                   >
                     Bookings
                   </th>
@@ -276,24 +354,68 @@ export function AdminMembershipsPage() {
                   adminMemberships.map((membership) => (
                     <tr
                       key={membership.id}
-                      className="border-t border-gray-800 transition-colors duration-100 hover:bg-gray-900 last:border-0"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => openDetailModal(membership)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault()
+                          openDetailModal(membership)
+                        }
+                      }}
+                      className="border-t border-gray-800 transition-colors duration-100 hover:bg-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 last:border-0 cursor-pointer"
                     >
-                      <td className="hidden px-4 py-3 font-mono text-xs text-gray-400 sm:table-cell">
-                        {membership.userId.slice(0, 8)}...
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-800 text-xs font-semibold text-white">
+                            {getMemberInitials(membership)}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="truncate font-semibold text-white">
+                                {getMemberDisplayName(membership)}
+                              </p>
+                              <button
+                                type="button"
+                                onClick={(event) => handleCopyUserId(event, membership.userId)}
+                                className="rounded-md p-1 text-gray-400 hover:bg-gray-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+                                aria-label="Copy user ID"
+                                title="Copy user ID"
+                              >
+                                <DocumentDuplicateIcon
+                                  className={`h-4 w-4 ${
+                                    copiedUserId === membership.userId ? 'text-green-400' : ''
+                                  }`}
+                                />
+                              </button>
+                            </div>
+                            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                              <span className="truncate">
+                                {membership.userEmail ?? 'No email on file'}
+                              </span>
+                              {membership.userPhone && (
+                                <>
+                                  <span className="hidden sm:inline text-gray-700">•</span>
+                                  <span className="hidden sm:inline">{membership.userPhone}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </td>
-                      <td className="px-4 py-3 font-medium text-white">
+                      <td className="hidden px-4 py-3 font-medium text-white sm:table-cell">
                         {membership.planName}
                       </td>
                       <td className="px-4 py-3">
                         <MembershipStatusBadge status={membership.status} />
                       </td>
-                      <td className="hidden px-4 py-3 text-gray-400 sm:table-cell">
+                      <td className="hidden px-4 py-3 text-gray-400 lg:table-cell">
                         {formatMembershipDate(membership.startDate)}
                       </td>
-                      <td className="hidden px-4 py-3 text-gray-400 sm:table-cell">
+                      <td className="hidden px-4 py-3 text-gray-400 lg:table-cell">
                         {formatMembershipDate(membership.endDate)}
                       </td>
-                      <td className="hidden px-4 py-3 text-gray-400 sm:table-cell">
+                      <td className="hidden px-4 py-3 text-gray-400 xl:table-cell">
                         {membership.bookingsUsedThisMonth} /{' '}
                         {membership.maxBookingsPerMonth}
                       </td>
@@ -301,7 +423,10 @@ export function AdminMembershipsPage() {
                         {membership.status === 'ACTIVE' && (
                           <button
                             type="button"
-                            onClick={() => openCancelModal(membership)}
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              openCancelModal(membership)
+                            }}
                             className="rounded-md px-3 py-2 text-xs font-medium text-red-400 transition-colors duration-150 hover:bg-red-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
                           >
                             Cancel
@@ -357,6 +482,15 @@ export function AdminMembershipsPage() {
           membership={cancelTarget}
           onCancel={handleCancelModalClose}
           onCancelled={handleMembershipCancelled}
+        />
+      )}
+
+      {detailTarget && (
+        <AdminMembershipDetailsModal
+          isOpen={true}
+          membership={detailTarget}
+          onClose={handleDetailClose}
+          onCancelMembership={handleDetailCancel}
         />
       )}
     </div>

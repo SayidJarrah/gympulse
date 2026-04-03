@@ -1,6 +1,9 @@
 import { create } from 'zustand'
 import type { AxiosError } from 'axios'
-import type { UserMembership, MembershipStatus } from '../types/userMembership'
+import type {
+  UserMembership,
+  AdminMembershipsQuery,
+} from '../types/userMembership'
 import type { ApiErrorResponse } from '../types/auth'
 import {
   getMyMembership,
@@ -33,12 +36,7 @@ interface MembershipState {
   cancelMyMembership: () => Promise<void>;
 
   // Admin actions
-  fetchAdminMemberships: (
-    status?: MembershipStatus,
-    userId?: string,
-    page?: number,
-    size?: number
-  ) => Promise<void>;
+  fetchAdminMemberships: (query?: AdminMembershipsQuery) => Promise<void>;
   adminCancelMembership: (membershipId: string) => Promise<void>;
 
   // Utility
@@ -115,16 +113,11 @@ export const useMembershipStore = create<MembershipState>((set, get) => ({
     await get().fetchMyMembership()
   },
 
-  fetchAdminMemberships: async (
-    status?: MembershipStatus,
-    userId?: string,
-    page = 0,
-    size = 20
-  ) => {
+  fetchAdminMemberships: async (query: AdminMembershipsQuery = {}) => {
     const requestId = ++latestAdminMembershipsRequestId
     set({ adminMembershipsLoading: true, adminMembershipsError: null })
     try {
-      const data = await getAdminMemberships(status, userId, page, size)
+      const data = await getAdminMemberships(query)
       if (requestId !== latestAdminMembershipsRequestId) {
         return
       }

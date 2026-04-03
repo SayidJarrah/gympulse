@@ -2,8 +2,8 @@ import axiosInstance from './axiosInstance'
 import type {
   UserMembership,
   MembershipPurchaseRequest,
-  MembershipStatus,
   PaginatedMemberships,
+  AdminMembershipsQuery,
 } from '../types/userMembership'
 
 // User endpoints — require authenticated Axios instance (token attached by interceptor)
@@ -28,16 +28,22 @@ export async function cancelMyMembership(): Promise<UserMembership> {
 // Admin endpoints
 
 export async function getAdminMemberships(
-  status?: MembershipStatus,
-  userId?: string,
-  page = 0,
-  size = 20,
-  sort = 'createdAt,desc'
+  query: AdminMembershipsQuery = {}
 ): Promise<PaginatedMemberships> {
+  const {
+    status,
+    userId,
+    memberQuery,
+    page = 0,
+    size = 20,
+    sort = 'createdAt,desc',
+  } = query
+
   const response = await axiosInstance.get<PaginatedMemberships>('/admin/memberships', {
     params: {
       ...(status !== undefined ? { status } : {}),
       ...(userId !== undefined && userId !== '' ? { userId } : {}),
+      ...(memberQuery !== undefined && memberQuery !== '' ? { memberQuery } : {}),
       page,
       size,
       sort,
