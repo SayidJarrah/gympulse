@@ -14,8 +14,10 @@ import { UserProfilePage } from './pages/profile/UserProfilePage'
 import { TrainerListPage } from './pages/trainers/TrainerListPage'
 import { TrainerFavoritesPage } from './pages/trainers/TrainerFavoritesPage'
 import { TrainerProfilePage } from './pages/trainers/TrainerProfilePage'
+import { GroupClassesSchedulePage } from './pages/schedule/GroupClassesSchedulePage'
 import { AdminRoute } from './components/layout/AdminRoute'
 import { AuthRoute } from './components/layout/AuthRoute'
+import { UserRoute } from './components/layout/UserRoute'
 import { LandingPage } from './pages/landing/LandingPage'
 
 function App() {
@@ -69,6 +71,14 @@ function App() {
             <AuthRoute>
               <TrainerProfilePage />
             </AuthRoute>
+          }
+        />
+        <Route
+          path="/schedule"
+          element={
+            <UserRoute>
+              <GroupClassesSchedulePage />
+            </UserRoute>
           }
         />
 

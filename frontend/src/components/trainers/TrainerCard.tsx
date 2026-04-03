@@ -1,5 +1,4 @@
 import type { TrainerResponse } from '../../types/scheduler'
-import { getTrainerPhotoUrl } from '../../api/trainers'
 
 interface TrainerCardProps {
   trainer: TrainerResponse;
@@ -10,9 +9,9 @@ export function TrainerCard({ trainer }: TrainerCardProps) {
 
   return (
     <div className="flex items-center gap-3 rounded-lg border border-gray-800 bg-gray-900 p-4">
-      {trainer.hasPhoto ? (
+      {trainer.photoUrl ? (
         <img
-          src={getTrainerPhotoUrl(trainer.id)}
+          src={trainer.photoUrl}
           alt={`${trainer.firstName} ${trainer.lastName}`}
           className="h-12 w-12 rounded-full object-cover"
         />

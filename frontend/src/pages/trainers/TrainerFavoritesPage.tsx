@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import type { AxiosError } from 'axios'
 import { addFavorite, removeFavorite } from '../../api/trainerDiscovery'
+import { Navbar } from '../../components/layout/Navbar'
 import { TrainerCard } from '../../components/trainers/discovery/TrainerCard'
 import { TrainerCardSkeleton } from '../../components/trainers/discovery/TrainerCardSkeleton'
 import { SortDropdown } from '../../components/trainers/discovery/SortDropdown'
@@ -94,6 +95,7 @@ export function TrainerFavoritesPage() {
   if (membershipLoading || membershipStatusPending) {
     return (
       <div className="min-h-screen bg-gray-950 text-white">
+        <Navbar />
         <main className="mx-auto max-w-7xl px-4 pb-16 pt-10 sm:px-6 lg:px-8">
           <div className="mb-8 flex flex-col gap-2">
             <div className="h-9 w-40 animate-pulse rounded-full bg-gray-800" />
@@ -115,6 +117,7 @@ export function TrainerFavoritesPage() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
+      <Navbar />
       <main className="mx-auto max-w-7xl px-4 pb-16 pt-10 sm:px-6 lg:px-8">
         <div className="mb-8 flex flex-col gap-2">
           <h1 className="text-3xl font-bold">My Favorites</h1>

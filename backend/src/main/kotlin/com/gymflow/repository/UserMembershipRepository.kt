@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
+import java.time.LocalDate
 import java.util.UUID
 
 interface UserMembershipRepository : JpaRepository<UserMembership, UUID> {
@@ -31,4 +32,18 @@ interface UserMembershipRepository : JpaRepository<UserMembership, UUID> {
 
     @Query("SELECT COUNT(m) FROM UserMembership m WHERE m.planId = :planId AND m.status = 'ACTIVE'")
     fun countActiveByPlanId(@Param("planId") planId: UUID): Long
+
+    @Query(
+        """
+        SELECT m FROM UserMembership m
+        WHERE m.userId = :userId
+          AND m.status = 'ACTIVE'
+          AND m.endDate >= :today
+          AND m.deletedAt IS NULL
+        """
+    )
+    fun findAccessibleActiveMembership(
+        @Param("userId") userId: UUID,
+        @Param("today") today: LocalDate
+    ): UserMembership?
 }

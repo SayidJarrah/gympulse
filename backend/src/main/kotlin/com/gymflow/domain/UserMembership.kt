@@ -36,5 +36,8 @@ data class UserMembership(
     val createdAt: OffsetDateTime = OffsetDateTime.now(),
 
     @Column(name = "updated_at", nullable = false)
-    var updatedAt: OffsetDateTime = OffsetDateTime.now()
+    var updatedAt: OffsetDateTime = OffsetDateTime.now(),
+
+    @Column(name = "deleted_at")
+    var deletedAt: OffsetDateTime? = null
 )

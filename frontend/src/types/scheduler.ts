@@ -24,6 +24,7 @@ export interface TrainerResponse {
   bio: string | null;
   specialisations: string[];
   hasPhoto: boolean;
+  photoUrl: string | null;
   createdAt: string;
   updatedAt: string;
 }

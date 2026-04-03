@@ -124,7 +124,12 @@ class TrainerService(
         phone = phone,
         bio = bio,
         specialisations = specialisations,
-        hasPhoto = photoData != null,
+        hasPhoto = profilePhotoUrl != null || photoData != null,
+        photoUrl = when {
+            profilePhotoUrl != null -> profilePhotoUrl
+            photoData != null -> "/api/v1/trainers/$id/photo"
+            else -> null
+        },
         createdAt = createdAt,
         updatedAt = updatedAt
     )

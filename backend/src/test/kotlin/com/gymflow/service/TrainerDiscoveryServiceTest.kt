@@ -17,6 +17,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import java.time.DayOfWeek
@@ -119,8 +120,9 @@ class TrainerDiscoveryServiceTest {
         val trainersPage = PageImpl(listOf(trainer1), pageable, 1)
         val specializations = listOf("Yoga")
         val lowerCaseSpecializations = listOf("yoga")
+        val pageableSlot = slot<Pageable>()
 
-        every { trainerRepository.findBySpecializations(lowerCaseSpecializations, any()) } returns trainersPage
+        every { trainerRepository.findBySpecializations(lowerCaseSpecializations, capture(pageableSlot)) } returns trainersPage
         every { classInstanceRepository.countScheduledClassesForTrainers(any()) } returns listOf(
             arrayOf(trainerId1, 3L)
         )
@@ -132,8 +134,18 @@ class TrainerDiscoveryServiceTest {
         assertEquals(1, result.totalElements)
         assertEquals(trainerId1, result.content[0].id)
         assertFalse(result.content[0].isFavorited)
+        assertEquals(0, pageableSlot.captured.pageNumber)
+        assertEquals(12, pageableSlot.captured.pageSize)
+        assertEquals(
+            listOf("last_name", "id"),
+            pageableSlot.captured.sort.map { it.property }.toList()
+        )
+        assertEquals(
+            listOf(Sort.Direction.ASC, Sort.Direction.ASC),
+            pageableSlot.captured.sort.map { it.direction }.toList()
+        )
 
-        verify(exactly = 1) { trainerRepository.findBySpecializations(lowerCaseSpecializations, pageable) }
+        verify(exactly = 1) { trainerRepository.findBySpecializations(lowerCaseSpecializations, any()) }
         verify(exactly = 1) { classInstanceRepository.countScheduledClassesForTrainers(setOf(trainerId1)) }
         verify(exactly = 1) { userMembershipRepository.existsByUserIdAndStatus(userId, "ACTIVE") }
         verify(exactly = 0) { userTrainerFavoriteRepository.findFavoritedTrainerIds(any(), any()) }

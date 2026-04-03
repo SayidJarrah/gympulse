@@ -10,6 +10,7 @@ import com.gymflow.service.ClassTemplateNotFoundException
 import com.gymflow.service.EmailAlreadyExistsException
 import com.gymflow.service.ImportFileTooLargeException
 import com.gymflow.service.ImportFormatInvalidException
+import com.gymflow.service.InvalidAnchorDateException
 import com.gymflow.service.InvalidCredentialsException
 import com.gymflow.service.InvalidExportFormatException
 import com.gymflow.service.InvalidDateOfBirthException
@@ -19,8 +20,10 @@ import com.gymflow.service.InvalidFitnessGoalsException
 import com.gymflow.service.InvalidLastNameException
 import com.gymflow.service.InvalidPhoneException
 import com.gymflow.service.InvalidPreferredClassTypesException
+import com.gymflow.service.InvalidScheduleViewException
 import com.gymflow.service.InvalidSlotException
 import com.gymflow.service.InvalidStatusFilterException
+import com.gymflow.service.InvalidTimeZoneException
 import com.gymflow.service.InvalidWeekFormatException
 import com.gymflow.service.MembershipAlreadyActiveException
 import com.gymflow.service.MembershipNotActiveException
@@ -416,6 +419,27 @@ class GlobalExceptionHandler {
         return ResponseEntity
             .status(HttpStatus.UNPROCESSABLE_ENTITY)
             .body(ErrorResponse(error = ex.message ?: "Invalid week format", code = "VALIDATION_ERROR"))
+    }
+
+    @ExceptionHandler(InvalidScheduleViewException::class)
+    fun handleInvalidScheduleView(ex: InvalidScheduleViewException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ErrorResponse(error = ex.message ?: "Invalid schedule view", code = "INVALID_SCHEDULE_VIEW"))
+    }
+
+    @ExceptionHandler(InvalidAnchorDateException::class)
+    fun handleInvalidAnchorDate(ex: InvalidAnchorDateException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ErrorResponse(error = ex.message ?: "Invalid anchor date", code = "INVALID_ANCHOR_DATE"))
+    }
+
+    @ExceptionHandler(InvalidTimeZoneException::class)
+    fun handleInvalidTimeZone(ex: InvalidTimeZoneException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ErrorResponse(error = ex.message ?: "Invalid time zone", code = "INVALID_TIME_ZONE"))
     }
 
     @ExceptionHandler(InvalidExportFormatException::class)

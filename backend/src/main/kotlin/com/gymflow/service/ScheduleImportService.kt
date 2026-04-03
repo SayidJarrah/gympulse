@@ -149,7 +149,8 @@ class ScheduleImportService(
             capacity = capacity,
             room = room,
             trainers = trainer?.let { mutableSetOf(it) } ?: mutableSetOf(),
-            type = "GROUP"
+            type = "GROUP",
+            status = "SCHEDULED"
         )
 
         return RowResult(instance, null)

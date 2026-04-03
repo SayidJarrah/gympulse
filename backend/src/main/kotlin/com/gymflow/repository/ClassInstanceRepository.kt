@@ -29,6 +29,22 @@ interface ClassInstanceRepository : JpaRepository<ClassInstance, UUID> {
         """
         SELECT DISTINCT ci FROM ClassInstance ci
         LEFT JOIN FETCH ci.trainers t
+        WHERE ci.deletedAt IS NULL
+          AND ci.type = 'GROUP'
+          AND ci.status = 'SCHEDULED'
+          AND ci.scheduledAt >= :start
+          AND ci.scheduledAt < :end
+        """
+    )
+    fun findVisibleGroupScheduleBetween(
+        @Param("start") start: OffsetDateTime,
+        @Param("end") end: OffsetDateTime
+    ): List<ClassInstance>
+
+    @Query(
+        """
+        SELECT DISTINCT ci FROM ClassInstance ci
+        LEFT JOIN FETCH ci.trainers t
         LEFT JOIN FETCH ci.room r
         LEFT JOIN FETCH ci.template tpl
         WHERE ci.id = :id
