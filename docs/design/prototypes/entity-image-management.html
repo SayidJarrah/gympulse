@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GymFlow - Entity Image Management Prototype</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background-color: #0F0F0F; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    [data-screen] { display: none; }
+    [data-screen].active { display: block; }
+    .state-btn.active { background: rgba(34, 197, 94, 0.14); border-color: rgba(34, 197, 94, 0.45); color: #86EFAC; }
+    .mesh {
+      background-image:
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.18), transparent 28%),
+        linear-gradient(135deg, rgba(255,255,255,0.04), transparent 46%);
+    }
+    .photo-glow { box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.22), 0 16px 36px rgba(0, 0, 0, 0.28); }
+    .thumb-cover { object-fit: cover; width: 100%; height: 100%; }
+  </style>
+</head>
+<body class="min-h-screen bg-[#0F0F0F] text-white">
+  <nav class="sticky top-0 z-50 border-b border-gray-800 bg-gray-900/90 backdrop-blur-md">
+    <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center gap-2.5">
+        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-6 w-6" aria-hidden="true">
+            <path d="M13 2L4.5 13.5H11L9 22L19.5 9.5H13.5L16 2Z" fill="white"></path>
+          </svg>
+        </div>
+        <span class="text-lg font-bold text-white">GymFlow</span>
+      </div>
+
+      <div class="hidden items-center gap-6 md:flex">
+        <a href="#" class="text-sm font-medium text-gray-400 hover:text-white">Dashboard</a>
+        <a href="#" class="text-sm font-medium text-gray-400 hover:text-white">Schedule</a>
+        <a href="#" class="text-sm font-medium text-gray-400 hover:text-white">Trainers</a>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <span class="hidden rounded-full border border-orange-500/30 bg-orange-500/10 px-2.5 py-1 text-xs font-medium text-orange-300 sm:inline-flex">Design prototype</span>
+        <img
+          src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=256&q=80"
+          alt="Current user photo"
+          class="h-10 w-10 rounded-full object-cover ring-2 ring-green-500/40"
+        />
+      </div>
+    </div>
+  </nav>
+
+  <div class="sticky top-16 z-40 border-b border-gray-800 bg-[#0F0F0F]">
+    <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-2 px-4 py-2 text-xs font-semibold sm:px-6 lg:px-8">
+      <span class="mr-2 uppercase tracking-wider text-gray-500">Surface</span>
+      <button class="state-btn active rounded-md border border-gray-700 bg-gray-800 px-2.5 py-1 text-gray-300" data-screen-btn="profile" onclick="showScreen('profile')">User profile</button>
+      <button class="state-btn rounded-md border border-gray-700 bg-gray-800 px-2.5 py-1 text-gray-300" data-screen-btn="trainers" onclick="showScreen('trainers')">Admin trainers</button>
+      <button class="state-btn rounded-md border border-gray-700 bg-gray-800 px-2.5 py-1 text-gray-300" data-screen-btn="rooms" onclick="showScreen('rooms')">Admin rooms</button>
+      <button class="state-btn rounded-md border border-gray-700 bg-gray-800 px-2.5 py-1 text-gray-300" data-screen-btn="classes" onclick="showScreen('classes')">Admin classes</button>
+      <button class="state-btn rounded-md border border-gray-700 bg-gray-800 px-2.5 py-1 text-gray-300" data-screen-btn="schedule" onclick="showScreen('schedule')">Member schedule</button>
+    </div>
+  </div>
+
+  <div id="profile" data-screen class="active">
+    <main class="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+      <section class="mesh rounded-[28px] border border-gray-800 bg-gray-900 p-6 shadow-xl shadow-black/40 sm:p-8">
+        <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div class="flex items-start gap-4">
+            <img
+              src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=256&q=80"
+              alt="Current profile photo"
+              class="photo-glow h-20 w-20 rounded-3xl object-cover"
+            />
+            <div>
+              <h1 class="text-3xl font-bold text-white">My Profile</h1>
+              <p class="mt-2 max-w-2xl text-sm text-gray-400 sm:text-base">
+                Manage the details you want GymFlow to remember about you, from contact information to the classes you care about most.
+              </p>
+              <p class="mt-3 text-xs font-medium uppercase tracking-[0.16em] text-green-300">Visible anywhere your GymFlow account is represented</p>
+            </div>
+          </div>
+          <div class="rounded-2xl border border-gray-800 bg-[#0F0F0F] px-4 py-4">
+            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">Current state</p>
+            <p class="mt-2 text-sm font-semibold text-white">Profile photo persisted</p>
+            <p class="mt-1 text-sm text-gray-400">Navbar and profile hero already reflect the same image.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="rounded-3xl border border-gray-800 bg-gray-900/80 p-6 shadow-2xl shadow-black/20">
+        <div class="mb-6">
+          <h2 class="text-xl font-semibold text-white">Account profile</h2>
+          <p class="mt-1 text-sm text-gray-400">The new photo field sits above the existing editable fields.</p>
+        </div>
+
+        <section class="rounded-2xl border border-gray-800 bg-[#0F0F0F] p-5">
+          <div class="flex flex-col gap-4 lg:flex-row lg:items-start">
+            <div class="shrink-0">
+              <img
+                src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=256&q=80"
+                alt="Current profile photo"
+                class="h-24 w-24 rounded-full object-cover ring-1 ring-green-500/30"
+              />
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-semibold text-gray-300">Profile photo</p>
+              <p class="mt-1 text-sm text-gray-400">Use a clear headshot so your account is easier to recognize across GymFlow.</p>
+              <div class="mt-4 flex flex-wrap gap-3">
+                <button class="inline-flex items-center justify-center rounded-md border border-green-500 px-4 py-2 text-sm font-medium text-green-300 hover:bg-green-500/10">Replace photo</button>
+                <button class="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-gray-400 hover:bg-gray-800 hover:text-white">Remove</button>
+              </div>
+              <p class="mt-3 text-xs text-green-400">Photo updated.</p>
+            </div>
+          </div>
+        </section>
+
+        <div class="mt-6 grid gap-5 md:grid-cols-2">
+          <div class="flex flex-col gap-2">
+            <label class="text-sm font-semibold text-gray-200">Email</label>
+            <input value="alicia.bator@example.com" disabled class="rounded-xl border border-gray-800 bg-gray-950/70 px-4 py-3 text-sm text-gray-400" />
+          </div>
+          <div class="flex flex-col gap-2">
+            <label class="text-sm font-semibold text-gray-200">Phone</label>
+            <input value="+48 501 234 567" class="rounded-xl border border-gray-700 bg-gray-950/70 px-4 py-3 text-sm text-white" />
+          </div>
+          <div class="flex flex-col gap-2">
+            <label class="text-sm font-semibold text-gray-200">First name</label>
+            <input value="Alicja" class="rounded-xl border border-gray-700 bg-gray-950/70 px-4 py-3 text-sm text-white" />
+          </div>
+          <div class="flex flex-col gap-2">
+            <label class="text-sm font-semibold text-gray-200">Last name</label>
+            <input value="Bator" class="rounded-xl border border-gray-700 bg-gray-950/70 px-4 py-3 text-sm text-white" />
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="trainers" data-screen>
+    <main class="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+      <section class="flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl font-bold text-white">Admin Trainers</h1>
+          <p class="mt-2 text-sm text-gray-400">Trainer photo upload stays inside the existing modal flow, but now works in both create and edit states.</p>
+        </div>
+        <button class="inline-flex items-center justify-center rounded-md bg-green-500 px-4 py-2 text-sm font-medium text-white hover:bg-green-600">Add trainer</button>
+      </section>
+
+      <section class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
+        <div class="overflow-hidden rounded-2xl border border-gray-800 bg-gray-900/80">
+          <table class="min-w-full divide-y divide-gray-800 text-left text-sm">
+            <thead class="bg-[#0F0F0F] text-gray-400">
+              <tr>
+                <th class="px-4 py-3 font-semibold">Trainer</th>
+                <th class="px-4 py-3 font-semibold">Specializations</th>
+                <th class="px-4 py-3 font-semibold">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-800">
+              <tr>
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-3">
+                    <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=256&q=80" alt="Current trainer photo" class="h-10 w-10 rounded-full object-cover" />
+                    <div>
+                      <p class="font-medium text-white">Marta Kowalska</p>
+                      <p class="text-xs text-gray-500">marta.k@example.com</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-4 py-3 text-gray-400">Yoga, Mobility</td>
+                <td class="px-4 py-3 text-gray-400">Edit, Delete</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-3">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 text-xs font-semibold text-gray-300">JS</div>
+                    <div>
+                      <p class="font-medium text-white">Jon Spencer</p>
+                      <p class="text-xs text-gray-500">jon.s@example.com</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-4 py-3 text-gray-400">Strength, HIIT</td>
+                <td class="px-4 py-3 text-gray-400">Edit, Delete</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="rounded-2xl border border-gray-800 bg-gray-900 shadow-xl shadow-black/30">
+          <div class="flex items-center justify-between border-b border-gray-800 px-6 py-5">
+            <div>
+              <h2 class="text-xl font-semibold text-white">Add Trainer</h2>
+              <p class="mt-1 text-sm text-gray-400">Queued photo uploads automatically after the trainer record is created.</p>
+            </div>
+            <span class="rounded-full border border-blue-500/30 bg-blue-500/10 px-2.5 py-1 text-xs font-medium text-blue-300">Queued file</span>
+          </div>
+          <div class="space-y-5 px-6 py-6">
+            <section class="rounded-2xl border border-gray-800 bg-[#0F0F0F] p-4">
+              <div class="flex flex-col gap-4 sm:flex-row sm:items-start">
+                <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=256&q=80" alt="Current trainer photo" class="h-24 w-24 rounded-full object-cover ring-1 ring-green-500/30" />
+                <div class="flex-1">
+                  <p class="text-sm font-semibold text-gray-300">Profile photo</p>
+                  <div class="mt-3 rounded-xl border-2 border-dashed border-gray-700 bg-gray-950/60 px-5 py-5">
+                    <p class="text-sm text-gray-300">Ready to upload after save.</p>
+                    <p class="mt-1 text-xs text-blue-400">A new trainer can be created first, then the queued image is uploaded automatically.</p>
+                  </div>
+                  <div class="mt-3 flex flex-wrap gap-3">
+                    <button class="inline-flex items-center justify-center rounded-md border border-green-500 px-4 py-2 text-sm font-medium text-green-300 hover:bg-green-500/10">Replace photo</button>
+                    <button class="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-gray-400 hover:bg-gray-800 hover:text-white">Discard file</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <div class="grid gap-4">
+              <div>
+                <label class="mb-1 block text-sm font-semibold text-gray-300">First name</label>
+                <input value="Marta" class="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white" />
+              </div>
+              <div>
+                <label class="mb-1 block text-sm font-semibold text-gray-300">Last name</label>
+                <input value="Kowalska" class="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white" />
+              </div>
+              <div>
+                <label class="mb-1 block text-sm font-semibold text-gray-300">Email</label>
+                <input value="marta.k@example.com" class="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white" />
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center justify-end gap-3 border-t border-gray-800 px-6 py-4">
+            <button class="rounded-md px-4 py-2 text-sm text-gray-400 hover:bg-gray-800 hover:text-white">Cancel</button>
+            <button class="rounded-md bg-green-500 px-4 py-2 text-sm font-medium text-white hover:bg-green-600">Save Trainer</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="rooms" data-screen>
+    <main class="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+      <section class="flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl font-bold text-white">Admin Rooms</h1>
+          <p class="mt-2 text-sm text-gray-400">Room identity becomes visual in the rooms list and room picker, without creating a separate gallery UI.</p>
+        </div>
+        <button class="inline-flex items-center justify-center rounded-md bg-green-500 px-4 py-2 text-sm font-medium text-white hover:bg-green-600">Add room</button>
+      </section>
+
+      <section class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
+        <div class="space-y-5">
+          <div class="overflow-hidden rounded-2xl border border-gray-800 bg-gray-900/80">
+            <table class="min-w-full divide-y divide-gray-800 text-left text-sm">
+              <thead class="bg-[#0F0F0F] text-gray-400">
+                <tr>
+                  <th class="px-4 py-3 font-semibold">Name</th>
+                  <th class="px-4 py-3 font-semibold">Capacity</th>
+                  <th class="px-4 py-3 font-semibold">Description</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-800">
+                <tr>
+                  <td class="px-4 py-3">
+                    <div class="flex items-center gap-3">
+                      <img src="https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=320&q=80" alt="Current room photo" class="h-10 w-12 rounded-lg object-cover" />
+                      <span class="font-medium text-white">Studio A</span>
+                    </div>
+                  </td>
+                  <td class="px-4 py-3 text-gray-400">24</td>
+                  <td class="px-4 py-3 text-gray-400">Bright studio with mirrored wall and soft flooring.</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3">
+                    <div class="flex items-center gap-3">
+                      <div class="flex h-10 w-12 items-center justify-center rounded-lg border border-gray-800 bg-gray-950 text-gray-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="h-5 w-5">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.75 21h16.5M4.5 3h15m-14.25 0v18m12.75-18v18M8.25 9.75h7.5m-7.5 4.5h7.5" />
+                        </svg>
+                      </div>
+                      <span class="font-medium text-white">Cycle Lab</span>
+                    </div>
+                  </td>
+                  <td class="px-4 py-3 text-gray-400">18</td>
+                  <td class="px-4 py-3 text-gray-400">No photo uploaded yet.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="rounded-2xl border border-gray-800 bg-gray-900/80 p-5">
+            <p class="text-sm font-semibold text-white">Room picker</p>
+            <p class="mt-1 text-sm text-gray-400">Each option gains a compact room thumbnail.</p>
+            <div class="mt-4 rounded-xl border border-gray-700 bg-[#0F0F0F] p-2">
+              <div class="flex items-center gap-3 rounded-lg px-2 py-2 text-sm text-white">
+                <img src="https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=160&q=80" alt="Current room photo" class="h-8 w-8 rounded-md object-cover" />
+                <span>Studio A</span>
+                <span class="ml-auto text-xs text-gray-500">24 cap</span>
+              </div>
+              <div class="mt-1 flex items-center gap-3 rounded-lg px-2 py-2 text-sm text-gray-300 hover:bg-gray-800">
+                <div class="flex h-8 w-8 items-center justify-center rounded-md border border-gray-800 bg-gray-950 text-gray-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="h-4 w-4">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.75 21h16.5M4.5 3h15m-14.25 0v18m12.75-18v18M8.25 9.75h7.5m-7.5 4.5h7.5" />
+                  </svg>
+                </div>
+                <span>Cycle Lab</span>
+                <span class="ml-auto text-xs text-gray-500">18 cap</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-gray-800 bg-gray-900 shadow-xl shadow-black/30">
+          <div class="border-b border-gray-800 px-6 py-5">
+            <h2 class="text-xl font-semibold text-white">Add Room</h2>
+            <p class="mt-1 text-sm text-gray-400">Rectangular media previews communicate place better than circular avatars.</p>
+          </div>
+          <div class="space-y-5 px-6 py-6">
+            <section class="rounded-2xl border border-gray-800 bg-[#0F0F0F] p-4">
+              <div class="overflow-hidden rounded-xl border border-gray-800 bg-gray-950">
+                <img src="https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=960&q=80" alt="Current room photo" class="h-40 w-full object-cover" />
+              </div>
+              <p class="mt-3 text-sm font-semibold text-gray-300">Room photo</p>
+              <p class="mt-1 text-sm text-gray-400">Show the space members should expect when they arrive.</p>
+              <div class="mt-3 flex flex-wrap gap-3">
+                <button class="inline-flex items-center justify-center rounded-md border border-green-500 px-4 py-2 text-sm font-medium text-green-300 hover:bg-green-500/10">Replace image</button>
+                <button class="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-gray-400 hover:bg-gray-800 hover:text-white">Remove</button>
+              </div>
+            </section>
+
+            <div>
+              <label class="mb-1 block text-sm font-semibold text-gray-300">Name</label>
+              <input value="Studio A" class="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white" />
+            </div>
+            <div>
+              <label class="mb-1 block text-sm font-semibold text-gray-300">Capacity</label>
+              <input value="24" class="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white" />
+            </div>
+            <div>
+              <label class="mb-1 block text-sm font-semibold text-gray-300">Description</label>
+              <textarea rows="3" class="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white">Bright studio with mirrored wall, soft flooring, and natural morning light.</textarea>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="classes" data-screen>
+    <main class="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+      <section class="flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl font-bold text-white">Admin Class Templates</h1>
+          <p class="mt-2 text-sm text-gray-400">Class images are uploaded on template creation, then reused everywhere members recognize the class.</p>
+        </div>
+        <button class="inline-flex items-center justify-center rounded-md bg-green-500 px-4 py-2 text-sm font-medium text-white hover:bg-green-600">Add template</button>
+      </section>
+
+      <section class="grid gap-6 lg:grid-cols-[420px_minmax(0,1fr)]">
+        <div class="rounded-2xl border border-gray-800 bg-gray-900 shadow-xl shadow-black/30">
+          <div class="border-b border-gray-800 px-6 py-5">
+            <h2 class="text-xl font-semibold text-white">Add Class Template</h2>
+            <p class="mt-1 text-sm text-gray-400">The class image field sits before category and capacity so the hero art becomes part of creation, not an afterthought.</p>
+          </div>
+          <div class="space-y-5 px-6 py-6">
+            <section class="rounded-2xl border border-gray-800 bg-[#0F0F0F] p-4">
+              <div class="overflow-hidden rounded-xl border border-gray-800 bg-gray-950">
+                <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=1200&q=80" alt="Current class image" class="h-40 w-full object-cover" />
+              </div>
+              <p class="mt-3 text-sm font-semibold text-gray-300">Class image</p>
+              <p class="mt-1 text-sm text-gray-400">Use a representative image for the class members will browse in schedules and details.</p>
+              <p class="mt-3 text-xs text-green-400">Image persisted. It now overrides category stock art.</p>
+            </section>
+
+            <div>
+              <label class="mb-1 block text-sm font-semibold text-gray-300">Name</label>
+              <input value="Strength Circuit" class="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white" />
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="mb-1 block text-sm font-semibold text-gray-300">Category</label>
+                <input value="Strength" class="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white" />
+              </div>
+              <div>
+                <label class="mb-1 block text-sm font-semibold text-gray-300">Difficulty</label>
+                <input value="Intermediate" class="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-5">
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div class="overflow-hidden rounded-2xl border border-gray-800 bg-gray-900/80 shadow-lg shadow-black/30">
+              <div class="relative h-28">
+                <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=1200&q=80" alt="Current class image" class="h-full w-full object-cover" />
+                <div class="absolute inset-0 bg-gradient-to-t from-gray-950/95 via-gray-950/40 to-transparent"></div>
+                <div class="absolute bottom-3 left-3 rounded-full border border-gray-700 bg-gray-900/70 px-2.5 py-1 text-xs text-gray-200">Strength</div>
+              </div>
+              <div class="p-5">
+                <div class="flex items-start justify-between gap-4">
+                  <h3 class="text-lg font-semibold text-white">Strength Circuit</h3>
+                  <span class="rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs text-blue-300">Intermediate</span>
+                </div>
+                <p class="mt-2 text-sm text-gray-400">55 min · Up to 20 · Studio A</p>
+              </div>
+            </div>
+
+            <div class="overflow-hidden rounded-2xl border border-gray-800 bg-gray-900/80 shadow-lg shadow-black/30">
+              <div class="relative h-28 bg-gray-950">
+                <img src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=1200&q=80" alt="Fallback class image" class="h-full w-full object-cover opacity-70" />
+                <div class="absolute inset-0 bg-gradient-to-t from-gray-950/95 via-gray-950/40 to-transparent"></div>
+                <div class="absolute bottom-3 left-3 rounded-full border border-gray-700 bg-gray-900/70 px-2.5 py-1 text-xs text-gray-200">Mind &amp; Body</div>
+              </div>
+              <div class="p-5">
+                <div class="flex items-start justify-between gap-4">
+                  <h3 class="text-lg font-semibold text-white">Breathwork</h3>
+                  <span class="rounded-full border border-gray-700 px-3 py-1 text-xs text-gray-300">All Levels</span>
+                </div>
+                <p class="mt-2 text-sm text-gray-400">35 min · Up to 18 · No uploaded image</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-2xl border border-gray-800 bg-gray-900/80 p-5">
+            <p class="text-sm font-semibold text-white">Class palette tile</p>
+            <div class="mt-4 space-y-3">
+              <div class="flex items-center gap-3 rounded-lg border border-gray-800 bg-[#0F0F0F] px-3 py-3">
+                <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=160&q=80" alt="Current class image" class="h-10 w-10 rounded-lg object-cover" />
+                <div class="min-w-0 flex-1">
+                  <p class="truncate text-sm font-medium text-white">Strength Circuit</p>
+                  <p class="text-xs text-gray-500">55 min</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3 rounded-lg border border-gray-800 bg-[#0F0F0F] px-3 py-3">
+                <span class="h-3 w-3 rounded-full bg-blue-400"></span>
+                <div class="min-w-0 flex-1">
+                  <p class="truncate text-sm font-medium text-white">Breathwork</p>
+                  <p class="text-xs text-gray-500">No uploaded image</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="schedule" data-screen>
+    <main class="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+      <section class="mesh rounded-[28px] border border-gray-800 bg-gray-900 p-6 shadow-xl shadow-black/40 sm:p-8">
+        <h1 class="text-3xl font-bold text-white">Member Schedule</h1>
+        <p class="mt-3 max-w-3xl text-sm text-gray-400 sm:text-base">Day and list schedule cards gain class thumbnails. Week-grid cards stay image-free for scan speed, while the detail modal gets the full hero image.</p>
+      </section>
+
+      <section class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+        <div class="space-y-4">
+          <button class="flex w-full items-start gap-3 rounded-xl border border-gray-800 bg-gray-900 p-4 text-left transition-colors duration-200 hover:border-gray-600">
+            <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=160&q=80" alt="Current class image" class="h-10 w-10 rounded-lg object-cover" />
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-semibold text-white">Strength Circuit</p>
+              <p class="mt-1 text-sm text-green-400">18:30 - 19:25</p>
+              <p class="mt-1 text-sm text-gray-400">Trainer: Marta Kowalska</p>
+            </div>
+          </button>
+
+          <button class="flex w-full items-start gap-3 rounded-xl border border-gray-800 bg-gray-900 p-4 text-left transition-colors duration-200 hover:border-gray-600">
+            <img src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=160&q=80" alt="Fallback class image" class="h-10 w-10 rounded-lg object-cover opacity-70" />
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-semibold text-white">Breathwork</p>
+              <p class="mt-1 text-sm text-green-400">20:00 - 20:35</p>
+              <p class="mt-1 text-sm text-gray-400">Trainer TBA</p>
+            </div>
+          </button>
+
+          <div class="rounded-2xl border border-gray-800 bg-[#0F0F0F] p-5">
+            <p class="text-sm font-semibold text-white">Week view exception</p>
+            <p class="mt-2 text-sm text-gray-400">The weekly grid remains text-first. Images are intentionally omitted there because those cards already compress time, trainer, and state into a very small area.</p>
+          </div>
+        </div>
+
+        <div class="overflow-hidden rounded-2xl border border-gray-800 bg-gray-900 shadow-xl shadow-black/30">
+          <div class="relative h-48">
+            <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=1200&q=80" alt="Current class image" class="h-full w-full object-cover" />
+            <div class="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/45 to-transparent"></div>
+            <div class="absolute bottom-4 left-4">
+              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-green-300">Class detail</p>
+              <h2 class="mt-2 text-2xl font-bold text-white">Strength Circuit</h2>
+            </div>
+          </div>
+          <div class="grid gap-4 px-5 py-5">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">Date</p>
+              <p class="mt-1 text-sm text-white">Friday, 3 April</p>
+            </div>
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">Time</p>
+              <p class="mt-1 text-sm text-white">18:30 - 19:25</p>
+            </div>
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">Trainer</p>
+              <div class="mt-2 flex items-center gap-3">
+                <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=160&q=80" alt="Current trainer photo" class="h-9 w-9 rounded-full object-cover" />
+                <span class="text-sm text-white">Marta Kowalska</span>
+              </div>
+            </div>
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">Room</p>
+              <div class="mt-2 flex items-center gap-3">
+                <img src="https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=160&q=80" alt="Current room photo" class="h-9 w-11 rounded-md object-cover" />
+                <span class="text-sm text-white">Studio A</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    function showScreen(id) {
+      document.querySelectorAll('[data-screen]').forEach((screen) => {
+        screen.classList.toggle('active', screen.id === id)
+      })
+      document.querySelectorAll('[data-screen-btn]').forEach((button) => {
+        button.classList.toggle('active', button.getAttribute('data-screen-btn') === id)
+      })
+    }
+  </script>
+</body>
+</html>

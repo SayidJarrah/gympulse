@@ -1,7 +1,7 @@
 # GymFlow — Product Overview
 
 > Living document. Updated automatically after each feature completes.
-> Last updated: 2026-03-30
+> Last updated: 2026-04-03
 
 ## What This App Does
 GymFlow is a gym membership and class booking platform. Members can purchase
@@ -34,6 +34,7 @@ profile pages linked to their classes. Admins manage everything from a dashboard
 | Group Classes Schedule View | 🔄 In progress | Member-facing read-only class schedule that reuses admin-managed timetable data in week, day, and list views |
 
 | Trainer Discovery | 🔄 In progress | Members and Guests browse trainer profiles with filtering by specialization, sorting by experience, availability previews, and a Member-only favorites list |
+| Entity Image Management | 🔄 In progress | Shared image uploads and display rules for user profile photos, trainer photos, room photos, and class-template images across admin and member surfaces |
 
 <!-- business-analyst adds a row here when each PRD is written -->
 
@@ -77,3 +78,4 @@ profile pages linked to their classes. Admins manage everything from a dashboard
 - User profile — member view and edit of personal details (name, phone, date of birth, fitness goals); email read-only; membership status display
 - Group Classes Schedule View — member-facing read-only schedule browser powered by admin scheduler data, with week, day, and list views
 - Trainer Discovery — member and guest browsing of trainer roster with specialization filter, experience sort, availability preview, and member-only favorites
+- Entity Image Management — shared image upload and display support for user profiles, trainers, rooms, and class templates, with inheritance into relevant schedule and discovery surfaces
