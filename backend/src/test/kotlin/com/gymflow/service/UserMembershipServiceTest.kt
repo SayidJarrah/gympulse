@@ -5,10 +5,13 @@ import com.gymflow.domain.UserMembership
 import com.gymflow.dto.MembershipPurchaseRequest
 import com.gymflow.repository.MembershipPlanRepository
 import com.gymflow.repository.UserMembershipRepository
+import com.gymflow.repository.UserProfileRepository
+import com.gymflow.repository.UserRepository
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -24,7 +27,22 @@ class UserMembershipServiceTest {
 
     private val userMembershipRepository: UserMembershipRepository = mockk()
     private val membershipPlanRepository: MembershipPlanRepository = mockk()
-    private val service = UserMembershipService(userMembershipRepository, membershipPlanRepository)
+    private val userRepository: UserRepository = mockk()
+    private val userProfileRepository: UserProfileRepository = mockk()
+    private val service = UserMembershipService(
+        userMembershipRepository = userMembershipRepository,
+        membershipPlanRepository = membershipPlanRepository,
+        userRepository = userRepository,
+        userProfileRepository = userProfileRepository
+    )
+
+    @BeforeEach
+    fun setUp() {
+        every { userRepository.findById(any()) } returns Optional.empty()
+        every { userProfileRepository.findById(any()) } returns Optional.empty()
+        every { userRepository.findAllById(any<Iterable<UUID>>()) } returns emptyList()
+        every { userProfileRepository.findAllById(any<Iterable<UUID>>()) } returns emptyList()
+    }
 
     // -----------------------------------------------------------------------
     // purchaseMembership — happy path
@@ -219,7 +237,7 @@ class UserMembershipServiceTest {
         every { userMembershipRepository.findAll(pageable) } returns page
         every { membershipPlanRepository.findById(plan.id) } returns Optional.of(plan)
 
-        val result = service.getAllMemberships(null, null, pageable)
+        val result = service.getAllMemberships(null, null, null, pageable)
 
         assertEquals(2, result.totalElements)
     }
@@ -234,7 +252,7 @@ class UserMembershipServiceTest {
         every { userMembershipRepository.findAllByStatus("ACTIVE", pageable) } returns page
         every { membershipPlanRepository.findById(plan.id) } returns Optional.of(plan)
 
-        val result = service.getAllMemberships("ACTIVE", null, pageable)
+        val result = service.getAllMemberships("ACTIVE", null, null, pageable)
 
         assertEquals(1, result.totalElements)
         assertEquals("ACTIVE", result.content[0].status)
@@ -251,7 +269,7 @@ class UserMembershipServiceTest {
         every { userMembershipRepository.findAllByUserId(userId, pageable) } returns page
         every { membershipPlanRepository.findById(plan.id) } returns Optional.of(plan)
 
-        val result = service.getAllMemberships(null, userId, pageable)
+        val result = service.getAllMemberships(null, userId, null, pageable)
 
         assertEquals(1, result.totalElements)
         assertEquals(userId, result.content[0].userId)
@@ -268,11 +286,61 @@ class UserMembershipServiceTest {
         every { userMembershipRepository.findAllByUserIdAndStatus(userId, "CANCELLED", pageable) } returns page
         every { membershipPlanRepository.findById(plan.id) } returns Optional.of(plan)
 
-        val result = service.getAllMemberships("CANCELLED", userId, pageable)
+        val result = service.getAllMemberships("CANCELLED", userId, null, pageable)
 
         assertEquals(1, result.totalElements)
         assertEquals("CANCELLED", result.content[0].status)
         assertEquals(userId, result.content[0].userId)
+    }
+
+    @Test
+    fun `getAllMemberships - filter by memberQuery - returns memberships for matching users`() {
+        val pageable = PageRequest.of(0, 20)
+        val plan = buildPlan()
+        val matchingUserId = UUID.randomUUID()
+        val membership = buildMembership(userId = matchingUserId, planId = plan.id)
+        val page = PageImpl(listOf(membership), pageable, 1)
+
+        every { userProfileRepository.findUserIdsByNameContainingIgnoreCase("john") } returns listOf(matchingUserId)
+        every { userMembershipRepository.findAllByUserIdIn(listOf(matchingUserId), pageable) } returns page
+        every { membershipPlanRepository.findById(plan.id) } returns Optional.of(plan)
+
+        val result = service.getAllMemberships(null, null, "john", pageable)
+
+        assertEquals(1, result.totalElements)
+        assertEquals(matchingUserId, result.content[0].userId)
+    }
+
+    @Test
+    fun `getAllMemberships - memberQuery with userId - intersects filters`() {
+        val pageable = PageRequest.of(0, 20)
+        val plan = buildPlan()
+        val userId = UUID.randomUUID()
+        val membership = buildMembership(userId = userId, planId = plan.id, status = "ACTIVE")
+        val page = PageImpl(listOf(membership), pageable, 1)
+
+        every { userProfileRepository.findUserIdsByNameContainingIgnoreCase("ann") } returns listOf(userId, UUID.randomUUID())
+        every { userMembershipRepository.findAllByUserIdInAndStatus(listOf(userId), "ACTIVE", pageable) } returns page
+        every { membershipPlanRepository.findById(plan.id) } returns Optional.of(plan)
+
+        val result = service.getAllMemberships("ACTIVE", userId, "ann", pageable)
+
+        assertEquals(1, result.totalElements)
+        assertEquals(userId, result.content[0].userId)
+        assertEquals("ACTIVE", result.content[0].status)
+    }
+
+    @Test
+    fun `getAllMemberships - memberQuery with no matching profiles - returns empty page`() {
+        val pageable = PageRequest.of(0, 20)
+
+        every { userProfileRepository.findUserIdsByNameContainingIgnoreCase("missing") } returns emptyList()
+
+        val result = service.getAllMemberships(null, null, "missing", pageable)
+
+        assertEquals(0, result.totalElements)
+        assertEquals(0, result.content.size)
+        verify(exactly = 0) { userMembershipRepository.findAllByUserIdIn(any<Collection<UUID>>(), pageable) }
     }
 
     // -----------------------------------------------------------------------
@@ -284,7 +352,7 @@ class UserMembershipServiceTest {
         val pageable = PageRequest.of(0, 20)
 
         assertThrows<InvalidMembershipStatusFilterException> {
-            service.getAllMemberships("PENDING", null, pageable)
+            service.getAllMemberships("PENDING", null, null, pageable)
         }
     }
 

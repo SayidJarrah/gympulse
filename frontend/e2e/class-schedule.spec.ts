@@ -394,6 +394,14 @@ function roomField(page: Page) {
   };
 }
 
+function roomSaveButton(page: Page) {
+  return page.getByRole('dialog').getByRole('button', { name: 'Save', exact: true });
+}
+
+function importDialog(page: Page) {
+  return page.getByRole('dialog');
+}
+
 function templateField(page: Page) {
   const d = page.locator('[role="dialog"]');
   return {
@@ -752,7 +760,7 @@ test.describe('Room Management', () => {
     await rf.capacity.fill(capacity);
     await rf.description.fill(description);
 
-    await page.getByRole('button', { name: 'Save' }).click();
+    await roomSaveButton(page).click();
     await expect(page.getByRole('dialog')).not.toBeVisible();
 
     // Room should appear in the list — assert via the row that contains both name and capacity
@@ -779,7 +787,7 @@ test.describe('Room Management', () => {
     await page.getByRole('button', { name: 'Add Room' }).click();
     const rf1 = roomField(page);
     await rf1.name.fill(originalName);
-    await page.getByRole('button', { name: 'Save' }).click();
+    await roomSaveButton(page).click();
     await expect(page.getByRole('dialog')).not.toBeVisible();
     await expect(page.getByText(originalName)).toBeVisible();
 
@@ -790,7 +798,7 @@ test.describe('Room Management', () => {
 
     const rf2 = roomField(page);
     await rf2.description.fill(updatedDescription);
-    await page.getByRole('button', { name: 'Save' }).click();
+    await roomSaveButton(page).click();
     await expect(page.getByRole('dialog')).not.toBeVisible();
 
     // Original name still present (edit only changed description)
@@ -806,7 +814,7 @@ test.describe('Room Management', () => {
     await page.getByRole('button', { name: 'Add Room' }).click();
     const rf = roomField(page);
     await rf.name.fill(roomName);
-    await page.getByRole('button', { name: 'Save' }).click();
+    await roomSaveButton(page).click();
     await expect(page.getByRole('dialog')).not.toBeVisible();
     await expect(page.getByText(roomName)).toBeVisible();
 
@@ -844,14 +852,14 @@ test.describe('Room Management', () => {
     await page.getByRole('button', { name: 'Add Room' }).click();
     const rf1 = roomField(page);
     await rf1.name.fill(roomName);
-    await page.getByRole('button', { name: 'Save' }).click();
+    await roomSaveButton(page).click();
     await expect(page.getByRole('dialog')).not.toBeVisible();
 
     // Create second room with same name
     await page.getByRole('button', { name: 'Add Room' }).click();
     const rf2 = roomField(page);
     await rf2.name.fill(roomName);
-    await page.getByRole('button', { name: 'Save' }).click();
+    await roomSaveButton(page).click();
 
     // Modal stays open with conflict message
     await expect(page.getByRole('dialog')).toBeVisible();
@@ -862,7 +870,7 @@ test.describe('Room Management', () => {
     await adminGoto(page, '/admin/rooms');
     await page.getByRole('button', { name: 'Add Room' }).click();
     // Submit with empty name
-    await page.getByRole('button', { name: 'Save' }).click();
+    await roomSaveButton(page).click();
     // Modal should remain open (backend returns 422 VALIDATION_ERROR)
     await expect(page.getByRole('dialog')).toBeVisible();
   });
@@ -1674,7 +1682,7 @@ test.describe('Import', () => {
     ).toBeVisible();
 
     // Upload button is disabled before a file is selected
-    await expect(page.getByRole('button', { name: 'Upload' })).toBeDisabled();
+    await expect(importDialog(page).getByRole('button', { name: 'Upload', exact: true })).toBeDisabled();
   });
 
   test('AC 39 — importing a CSV with invalid/missing column headers shows IMPORT_FORMAT_INVALID error', async ({ page }) => {
@@ -1701,7 +1709,7 @@ test.describe('Import', () => {
       buffer: invalidCsvBuffer,
     });
 
-    await page.getByRole('button', { name: 'Upload' }).click();
+    await importDialog(page).getByRole('button', { name: 'Upload', exact: true }).click();
 
     // ImportModal renders the IMPORT_FORMAT_INVALID message
     await expect(
@@ -1731,7 +1739,7 @@ test.describe('Import', () => {
     const fileInput = page.locator('input[type="file"]');
     await fileInput.setInputFiles(filePath);
 
-    await page.getByRole('button', { name: 'Upload' }).click();
+    await importDialog(page).getByRole('button', { name: 'Upload', exact: true }).click();
 
     // App should show the specific size error.
     await expect(
@@ -1763,7 +1771,7 @@ test.describe('Import', () => {
       `Bad Row,not-a-date,bad-time,abc,`,
     ].join('\n');
 
-    await page.getByRole('button', { name: 'Import' }).click();
+    await page.getByRole('button', { name: 'Import', exact: true }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
 
     const fileInput = page.locator('input[type="file"]');
@@ -1773,7 +1781,7 @@ test.describe('Import', () => {
       buffer: Buffer.from(csvContent),
     });
 
-    await page.getByRole('button', { name: 'Upload' }).click();
+    await importDialog(page).getByRole('button', { name: 'Upload', exact: true }).click();
 
     // Wait for response
     await expect(
@@ -1797,14 +1805,14 @@ test.describe('Import', () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await adminGoto(page, `/admin/scheduler?week=${week}`);
 
-    await page.getByRole('button', { name: 'Import' }).click();
+    await page.getByRole('button', { name: 'Import', exact: true }).click();
     const fileInput = page.locator('input[type="file"]');
     await fileInput.setInputFiles({
       name: 'unknown-trainer.csv',
       mimeType: 'text/csv',
       buffer: Buffer.from(csvContent),
     });
-    await page.getByRole('button', { name: 'Upload' }).click();
+    await importDialog(page).getByRole('button', { name: 'Upload', exact: true }).click();
 
     await expect(page.getByRole('heading', { name: 'Import Complete' })).toBeVisible();
     await expect(page.getByText('1 rows rejected')).toBeVisible();
@@ -1821,14 +1829,14 @@ test.describe('Import', () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await adminGoto(page, `/admin/scheduler?week=${week}`);
 
-    await page.getByRole('button', { name: 'Import' }).click();
+    await page.getByRole('button', { name: 'Import', exact: true }).click();
     const fileInput = page.locator('input[type="file"]');
     await fileInput.setInputFiles({
       name: 'unknown-room.csv',
       mimeType: 'text/csv',
       buffer: Buffer.from(csvContent),
     });
-    await page.getByRole('button', { name: 'Upload' }).click();
+    await importDialog(page).getByRole('button', { name: 'Upload', exact: true }).click();
 
     await expect(page.getByRole('heading', { name: 'Import Complete' })).toBeVisible();
     await expect(page.getByText('1 rows rejected')).toBeVisible();
@@ -1854,7 +1862,7 @@ test.describe('Import', () => {
       mimeType: 'text/csv',
       buffer: Buffer.from(csvContent),
     });
-    await page.getByRole('button', { name: 'Upload' }).click();
+    await importDialog(page).getByRole('button', { name: 'Upload', exact: true }).click();
 
     await expect(page.getByRole('heading', { name: 'Import Complete' })).toBeVisible();
     await expect(page.getByText('1 rows imported successfully')).toBeVisible();
@@ -1871,7 +1879,7 @@ test.describe('Import', () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await adminGoto(page, '/admin/scheduler');
 
-    await page.getByRole('button', { name: 'Import' }).click();
+    await page.getByRole('button', { name: 'Import', exact: true }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
 
     await page.getByRole('button', { name: 'Cancel' }).click();

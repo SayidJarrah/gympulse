@@ -29,6 +29,22 @@ interface ClassInstanceRepository : JpaRepository<ClassInstance, UUID> {
         """
         SELECT DISTINCT ci FROM ClassInstance ci
         LEFT JOIN FETCH ci.trainers t
+        WHERE ci.deletedAt IS NULL
+          AND ci.type = 'GROUP'
+          AND ci.status = 'SCHEDULED'
+          AND ci.scheduledAt >= :start
+          AND ci.scheduledAt < :end
+        """
+    )
+    fun findVisibleGroupScheduleBetween(
+        @Param("start") start: OffsetDateTime,
+        @Param("end") end: OffsetDateTime
+    ): List<ClassInstance>
+
+    @Query(
+        """
+        SELECT DISTINCT ci FROM ClassInstance ci
+        LEFT JOIN FETCH ci.trainers t
         LEFT JOIN FETCH ci.room r
         LEFT JOIN FETCH ci.template tpl
         WHERE ci.id = :id
@@ -113,4 +129,37 @@ interface ClassInstanceRepository : JpaRepository<ClassInstance, UUID> {
     @Modifying
     @Query("UPDATE ClassInstance ci SET ci.template = null WHERE ci.template.id = :templateId")
     fun clearTemplateAssignments(@Param("templateId") templateId: UUID)
+
+    @Query(
+        value = """
+        SELECT cit.trainer_id AS trainerId, COUNT(*) AS classCount
+        FROM class_instance_trainers cit
+        JOIN class_instances ci ON ci.id = cit.class_instance_id
+        WHERE cit.trainer_id IN (:trainerIds)
+          AND ci.deleted_at IS NULL
+          AND ci.scheduled_at > NOW()
+        GROUP BY cit.trainer_id
+        """,
+        nativeQuery = true
+    )
+    fun countScheduledClassesForTrainers(
+        @Param("trainerIds") trainerIds: Collection<UUID>
+    ): List<Array<Any>>
+
+    @Query(
+        value = """
+        SELECT
+            EXTRACT(DOW FROM ci.scheduled_at AT TIME ZONE 'UTC') AS day_of_week_int,
+            EXTRACT(HOUR FROM ci.scheduled_at AT TIME ZONE 'UTC') AS hour_of_day
+        FROM class_instances ci
+        JOIN class_instance_trainers cit ON cit.class_instance_id = ci.id
+        WHERE cit.trainer_id = :trainerId
+          AND ci.deleted_at IS NULL
+          AND ci.scheduled_at > NOW()
+        """,
+        nativeQuery = true
+    )
+    fun findScheduledDayHoursByTrainer(
+        @Param("trainerId") trainerId: UUID
+    ): List<Array<Any>>
 }

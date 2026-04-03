@@ -39,6 +39,13 @@ const samplePlan: MembershipPlan = {
 const activeMembership: UserMembership = {
   id: 'membership-1',
   userId: 'user-1',
+  userEmail: 'member@example.com',
+  userFirstName: 'Sam',
+  userLastName: 'Rivers',
+  userPhone: null,
+  userDateOfBirth: null,
+  userFitnessGoals: [],
+  userPreferredClassTypes: [],
   planId: 'plan-1',
   planName: 'Performance',
   startDate: '2026-03-29',

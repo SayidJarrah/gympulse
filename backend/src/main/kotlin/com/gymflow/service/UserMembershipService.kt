@@ -5,6 +5,8 @@ import com.gymflow.dto.UserMembershipResponse
 import com.gymflow.domain.UserMembership
 import com.gymflow.repository.MembershipPlanRepository
 import com.gymflow.repository.UserMembershipRepository
+import com.gymflow.repository.UserProfileRepository
+import com.gymflow.repository.UserRepository
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -18,7 +20,9 @@ import java.util.UUID
 @Transactional
 class UserMembershipService(
     private val userMembershipRepository: UserMembershipRepository,
-    private val membershipPlanRepository: MembershipPlanRepository
+    private val membershipPlanRepository: MembershipPlanRepository,
+    private val userRepository: UserRepository,
+    private val userProfileRepository: UserProfileRepository
 ) {
 
     fun purchaseMembership(userId: UUID, request: MembershipPurchaseRequest): UserMembershipResponse {
@@ -59,7 +63,19 @@ class UserMembershipService(
             )
         }
 
-        return saved.toResponse(planName = plan.name, maxBookingsPerMonth = plan.maxBookingsPerMonth)
+        val user = userRepository.findById(userId).orElse(null)
+        val profile = userProfileRepository.findById(userId).orElse(null)
+        return saved.toResponse(
+            planName = plan.name,
+            maxBookingsPerMonth = plan.maxBookingsPerMonth,
+            userEmail = user?.email,
+            userFirstName = profile?.firstName,
+            userLastName = profile?.lastName,
+            userPhone = profile?.phone,
+            userDateOfBirth = profile?.dateOfBirth,
+            userFitnessGoals = profile?.fitnessGoals ?: emptyList(),
+            userPreferredClassTypes = profile?.preferredClassTypes ?: emptyList()
+        )
     }
 
     @Transactional(readOnly = true)
@@ -70,7 +86,19 @@ class UserMembershipService(
         val plan = membershipPlanRepository.findById(membership.planId)
             .orElseThrow { PlanNotFoundException("Plan with id '${membership.planId}' not found") }
 
-        return membership.toResponse(planName = plan.name, maxBookingsPerMonth = plan.maxBookingsPerMonth)
+        val user = userRepository.findById(userId).orElse(null)
+        val profile = userProfileRepository.findById(userId).orElse(null)
+        return membership.toResponse(
+            planName = plan.name,
+            maxBookingsPerMonth = plan.maxBookingsPerMonth,
+            userEmail = user?.email,
+            userFirstName = profile?.firstName,
+            userLastName = profile?.lastName,
+            userPhone = profile?.phone,
+            userDateOfBirth = profile?.dateOfBirth,
+            userFitnessGoals = profile?.fitnessGoals ?: emptyList(),
+            userPreferredClassTypes = profile?.preferredClassTypes ?: emptyList()
+        )
     }
 
     fun cancelMyMembership(userId: UUID): UserMembershipResponse {
@@ -83,18 +111,53 @@ class UserMembershipService(
         val plan = membershipPlanRepository.findById(saved.planId)
             .orElseThrow { PlanNotFoundException("Plan with id '${saved.planId}' not found") }
 
-        return saved.toResponse(planName = plan.name, maxBookingsPerMonth = plan.maxBookingsPerMonth)
+        val user = userRepository.findById(userId).orElse(null)
+        val profile = userProfileRepository.findById(userId).orElse(null)
+        return saved.toResponse(
+            planName = plan.name,
+            maxBookingsPerMonth = plan.maxBookingsPerMonth,
+            userEmail = user?.email,
+            userFirstName = profile?.firstName,
+            userLastName = profile?.lastName,
+            userPhone = profile?.phone,
+            userDateOfBirth = profile?.dateOfBirth,
+            userFitnessGoals = profile?.fitnessGoals ?: emptyList(),
+            userPreferredClassTypes = profile?.preferredClassTypes ?: emptyList()
+        )
     }
 
     @Transactional(readOnly = true)
-    fun getAllMemberships(status: String?, userId: UUID?, pageable: Pageable): Page<UserMembershipResponse> {
+    fun getAllMemberships(
+        status: String?,
+        userId: UUID?,
+        memberQuery: String?,
+        pageable: Pageable
+    ): Page<UserMembershipResponse> {
         if (status != null && status != "ACTIVE" && status != "CANCELLED" && status != "EXPIRED") {
             throw InvalidMembershipStatusFilterException(
                 "Invalid status filter '$status'. Use ACTIVE, CANCELLED, or EXPIRED."
             )
         }
 
+        val normalizedMemberQuery = memberQuery?.trim()?.takeIf { it.isNotEmpty() }
+        val filteredUserIds = when {
+            normalizedMemberQuery == null -> null
+            else -> {
+                val matchedUserIds = userProfileRepository.findUserIdsByNameContainingIgnoreCase(normalizedMemberQuery)
+                when {
+                    matchedUserIds.isEmpty() -> return Page.empty(pageable)
+                    userId != null && userId !in matchedUserIds -> return Page.empty(pageable)
+                    userId != null -> listOf(userId)
+                    else -> matchedUserIds
+                }
+            }
+        }
+
         val page: Page<UserMembership> = when {
+            filteredUserIds != null && status != null ->
+                userMembershipRepository.findAllByUserIdInAndStatus(filteredUserIds, status, pageable)
+            filteredUserIds != null ->
+                userMembershipRepository.findAllByUserIdIn(filteredUserIds, pageable)
             status != null && userId != null ->
                 userMembershipRepository.findAllByUserIdAndStatus(userId, status, pageable)
             status != null ->
@@ -105,10 +168,26 @@ class UserMembershipService(
                 userMembershipRepository.findAll(pageable)
         }
 
+        val userIds = page.content.map { it.userId }.toSet()
+        val usersById = userRepository.findAllById(userIds).associateBy { it.id }
+        val profilesById = userProfileRepository.findAllById(userIds).associateBy { it.userId }
+
         return page.map { membership ->
             val plan = membershipPlanRepository.findById(membership.planId)
                 .orElseThrow { PlanNotFoundException("Plan with id '${membership.planId}' not found") }
-            membership.toResponse(planName = plan.name, maxBookingsPerMonth = plan.maxBookingsPerMonth)
+            val user = usersById[membership.userId]
+            val profile = profilesById[membership.userId]
+            membership.toResponse(
+                planName = plan.name,
+                maxBookingsPerMonth = plan.maxBookingsPerMonth,
+                userEmail = user?.email,
+                userFirstName = profile?.firstName,
+                userLastName = profile?.lastName,
+                userPhone = profile?.phone,
+                userDateOfBirth = profile?.dateOfBirth,
+                userFitnessGoals = profile?.fitnessGoals ?: emptyList(),
+                userPreferredClassTypes = profile?.preferredClassTypes ?: emptyList()
+            )
         }
     }
 
@@ -128,15 +207,44 @@ class UserMembershipService(
         val plan = membershipPlanRepository.findById(saved.planId)
             .orElseThrow { PlanNotFoundException("Plan with id '${saved.planId}' not found") }
 
-        return saved.toResponse(planName = plan.name, maxBookingsPerMonth = plan.maxBookingsPerMonth)
+        val user = userRepository.findById(saved.userId).orElse(null)
+        val profile = userProfileRepository.findById(saved.userId).orElse(null)
+        return saved.toResponse(
+            planName = plan.name,
+            maxBookingsPerMonth = plan.maxBookingsPerMonth,
+            userEmail = user?.email,
+            userFirstName = profile?.firstName,
+            userLastName = profile?.lastName,
+            userPhone = profile?.phone,
+            userDateOfBirth = profile?.dateOfBirth,
+            userFitnessGoals = profile?.fitnessGoals ?: emptyList(),
+            userPreferredClassTypes = profile?.preferredClassTypes ?: emptyList()
+        )
     }
 
     // --- Private helpers ---
 
-    private fun UserMembership.toResponse(planName: String, maxBookingsPerMonth: Int) =
+    private fun UserMembership.toResponse(
+        planName: String,
+        maxBookingsPerMonth: Int,
+        userEmail: String?,
+        userFirstName: String?,
+        userLastName: String?,
+        userPhone: String?,
+        userDateOfBirth: LocalDate?,
+        userFitnessGoals: List<String>,
+        userPreferredClassTypes: List<String>
+    ) =
         UserMembershipResponse(
             id = id,
             userId = userId,
+            userEmail = userEmail,
+            userFirstName = userFirstName,
+            userLastName = userLastName,
+            userPhone = userPhone,
+            userDateOfBirth = userDateOfBirth,
+            userFitnessGoals = userFitnessGoals,
+            userPreferredClassTypes = userPreferredClassTypes,
             planId = planId,
             planName = planName,
             startDate = startDate,

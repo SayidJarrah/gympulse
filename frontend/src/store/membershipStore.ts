@@ -1,6 +1,9 @@
 import { create } from 'zustand'
 import type { AxiosError } from 'axios'
-import type { UserMembership, MembershipStatus } from '../types/userMembership'
+import type {
+  UserMembership,
+  AdminMembershipsQuery,
+} from '../types/userMembership'
 import type { ApiErrorResponse } from '../types/auth'
 import {
   getMyMembership,
@@ -33,17 +36,15 @@ interface MembershipState {
   cancelMyMembership: () => Promise<void>;
 
   // Admin actions
-  fetchAdminMemberships: (
-    status?: MembershipStatus,
-    userId?: string,
-    page?: number,
-    size?: number
-  ) => Promise<void>;
+  fetchAdminMemberships: (query?: AdminMembershipsQuery) => Promise<void>;
   adminCancelMembership: (membershipId: string) => Promise<void>;
 
   // Utility
   setMembershipError: (message: string | null) => void;
 }
+
+let pendingMembershipRequest: Promise<void> | null = null
+let latestAdminMembershipsRequestId = 0
 
 export const useMembershipStore = create<MembershipState>((set, get) => ({
   // User slice initial state
@@ -61,30 +62,40 @@ export const useMembershipStore = create<MembershipState>((set, get) => ({
   adminMembershipsError: null,
 
   fetchMyMembership: async () => {
-    set({ membershipLoading: true, membershipError: null, membershipErrorCode: null })
-    try {
-      const data = await getMyMembership()
-      set({ activeMembership: data, membershipLoading: false })
-    } catch (err) {
-      const axiosError = err as AxiosError<ApiErrorResponse>
-      const code = axiosError.response?.data?.code ?? ''
-      if (code === 'NO_ACTIVE_MEMBERSHIP') {
-        // Not an error — user simply has no membership yet
-        set({
-          activeMembership: null,
-          membershipLoading: false,
-          membershipErrorCode: 'NO_ACTIVE_MEMBERSHIP',
-          membershipError: null,
-        })
-      } else {
-        const message = getMembershipErrorMessage(code, 'Failed to load your membership.')
-        set({
-          membershipLoading: false,
-          membershipError: message,
-          membershipErrorCode: code,
-        })
-      }
+    if (pendingMembershipRequest) {
+      return pendingMembershipRequest
     }
+
+    pendingMembershipRequest = (async () => {
+      set({ membershipLoading: true, membershipError: null, membershipErrorCode: null })
+      try {
+        const data = await getMyMembership()
+        set({ activeMembership: data, membershipLoading: false })
+      } catch (err) {
+        const axiosError = err as AxiosError<ApiErrorResponse>
+        const code = axiosError.response?.data?.code ?? ''
+        if (code === 'NO_ACTIVE_MEMBERSHIP') {
+          // Not an error — user simply has no membership yet
+          set({
+            activeMembership: null,
+            membershipLoading: false,
+            membershipErrorCode: 'NO_ACTIVE_MEMBERSHIP',
+            membershipError: null,
+          })
+        } else {
+          const message = getMembershipErrorMessage(code, 'Failed to load your membership.')
+          set({
+            membershipLoading: false,
+            membershipError: message,
+            membershipErrorCode: code,
+          })
+        }
+      } finally {
+        pendingMembershipRequest = null
+      }
+    })()
+
+    return pendingMembershipRequest
   },
 
   purchaseMembership: async (planId: string) => {
@@ -102,15 +113,14 @@ export const useMembershipStore = create<MembershipState>((set, get) => ({
     await get().fetchMyMembership()
   },
 
-  fetchAdminMemberships: async (
-    status?: MembershipStatus,
-    userId?: string,
-    page = 0,
-    size = 20
-  ) => {
+  fetchAdminMemberships: async (query: AdminMembershipsQuery = {}) => {
+    const requestId = ++latestAdminMembershipsRequestId
     set({ adminMembershipsLoading: true, adminMembershipsError: null })
     try {
-      const data = await getAdminMemberships(status, userId, page, size)
+      const data = await getAdminMemberships(query)
+      if (requestId !== latestAdminMembershipsRequestId) {
+        return
+      }
       set({
         adminMemberships: data.content,
         adminMembershipsTotalPages: data.totalPages,
@@ -119,6 +129,9 @@ export const useMembershipStore = create<MembershipState>((set, get) => ({
         adminMembershipsLoading: false,
       })
     } catch (err) {
+      if (requestId !== latestAdminMembershipsRequestId) {
+        return
+      }
       const axiosError = err as AxiosError<ApiErrorResponse>
       const code = axiosError.response?.data?.code ?? ''
       const message = getMembershipErrorMessage(code, 'Failed to load memberships.')

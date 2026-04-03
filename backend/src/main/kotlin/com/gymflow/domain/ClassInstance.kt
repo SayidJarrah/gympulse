@@ -28,6 +28,9 @@ data class ClassInstance(
     @Column(nullable = false)
     var type: String = "GROUP",
 
+    @Column(nullable = false)
+    var status: String = "SCHEDULED",
+
     @Column(name = "scheduled_at", nullable = false)
     var scheduledAt: OffsetDateTime,
 

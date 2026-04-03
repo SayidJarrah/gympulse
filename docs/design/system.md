@@ -1320,3 +1320,84 @@ const [isDragOver, setIsDragOver] = useState(false);
   {/* ClassInstanceCard rendered here when occupied */}
 </div>
 ```
+
+---
+
+### 6M. Sticky Segmented Toolbar
+
+**Purpose:** A sticky, member-facing control bar that combines segmented view switching with period navigation and compact context metadata. Used on pages where the content view and visible date range need to stay accessible while scrolling.
+
+#### Structure
+
+- **Root:** `sticky top-16 z-30 rounded-2xl border border-gray-800 bg-gray-900/95 shadow-lg shadow-black/40 backdrop-blur`
+- **Inner layout:** `flex flex-col gap-4 px-4 py-4 md:px-6 lg:flex-row lg:items-center lg:justify-between`
+- **Left zone:** segmented control
+- **Right zone:** period label card + navigation buttons + metadata badge
+
+#### Segmented Control
+
+- Wrapper: `inline-flex w-full rounded-xl border border-gray-800 bg-[#0F0F0F] p-1 sm:w-auto`
+- Button base: `min-h-11 flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900`
+- Active button: `bg-green-500 text-white`
+- Inactive button: `text-gray-400 hover:bg-gray-800 hover:text-white`
+- Disabled button: `cursor-not-allowed text-gray-600`
+
+#### Period Label and Navigation
+
+- Label card: `rounded-xl border border-gray-800 bg-[#0F0F0F] px-4 py-3 text-left`
+- Primary label: `text-base font-semibold text-white`
+- Secondary label: `mt-1 text-xs uppercase tracking-[0.12em] text-gray-500`
+- Button row: `inline-flex items-center gap-2`
+- Navigation button: use Secondary button variant for `Previous`, `Today`, `Next`
+
+#### Responsive Behaviour
+
+- Mobile: stack segmented control above the label and action row; segmented buttons fill available width.
+- Tablet: allow wrapping into two rows; keep the label full width when space is tight.
+- Desktop: keep controls in a single wrapped row with the segmented control on the left and period controls on the right.
+
+#### Loading / Error Rules
+
+- Loading: replace segmented buttons and label card with pulse blocks; do not show stale labels.
+- Invalid route/query state: hide the toolbar and replace the page body with a recovery state rather than leaving dead controls on screen.
+
+#### JSX Usage Example
+
+```jsx
+<section className="sticky top-16 z-30 rounded-2xl border border-gray-800 bg-gray-900/95 shadow-lg shadow-black/40 backdrop-blur">
+  <div className="flex flex-col gap-4 px-4 py-4 md:px-6 lg:flex-row lg:items-center lg:justify-between">
+    <div className="inline-flex w-full rounded-xl border border-gray-800 bg-[#0F0F0F] p-1 sm:w-auto">
+      {['Week', 'Day', 'List'].map((label) => (
+        <button
+          key={label}
+          type="button"
+          className={`min-h-11 flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 ${
+            label === activeView ? 'bg-green-500 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+          }`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="rounded-xl border border-gray-800 bg-[#0F0F0F] px-4 py-3 text-left">
+        <p className="text-base font-semibold text-white">{rangeLabel}</p>
+        <p className="mt-1 text-xs uppercase tracking-[0.12em] text-gray-500">{metaLabel}</p>
+      </div>
+
+      <div className="inline-flex items-center gap-2">
+        <button type="button" className="inline-flex items-center justify-center gap-2 rounded-md border border-green-500 bg-transparent px-4 py-2 text-sm font-medium text-green-400 transition-all duration-200 hover:bg-green-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900">
+          Previous
+        </button>
+        <button type="button" className="inline-flex items-center justify-center gap-2 rounded-md border border-green-500 bg-transparent px-4 py-2 text-sm font-medium text-green-400 transition-all duration-200 hover:bg-green-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900">
+          Today
+        </button>
+        <button type="button" className="inline-flex items-center justify-center gap-2 rounded-md border border-green-500 bg-transparent px-4 py-2 text-sm font-medium text-green-400 transition-all duration-200 hover:bg-green-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900">
+          Next
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+```

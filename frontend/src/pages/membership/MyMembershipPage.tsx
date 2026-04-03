@@ -16,10 +16,17 @@ export function MyMembershipPage() {
     membershipErrorCode,
     fetchMyMembership,
   } = useMembershipStore()
+  const membershipStatusPending =
+    activeMembership === null &&
+    membershipError === null &&
+    membershipErrorCode === null &&
+    !membershipLoading
 
   useEffect(() => {
-    fetchMyMembership()
-  }, [fetchMyMembership])
+    if (membershipStatusPending) {
+      void fetchMyMembership()
+    }
+  }, [fetchMyMembership, membershipStatusPending])
 
   const isNoMembership = membershipErrorCode === 'NO_ACTIVE_MEMBERSHIP'
 

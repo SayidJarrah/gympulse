@@ -10,6 +10,7 @@ import com.gymflow.service.ClassTemplateNotFoundException
 import com.gymflow.service.EmailAlreadyExistsException
 import com.gymflow.service.ImportFileTooLargeException
 import com.gymflow.service.ImportFormatInvalidException
+import com.gymflow.service.InvalidAnchorDateException
 import com.gymflow.service.InvalidCredentialsException
 import com.gymflow.service.InvalidExportFormatException
 import com.gymflow.service.InvalidDateOfBirthException
@@ -19,8 +20,10 @@ import com.gymflow.service.InvalidFitnessGoalsException
 import com.gymflow.service.InvalidLastNameException
 import com.gymflow.service.InvalidPhoneException
 import com.gymflow.service.InvalidPreferredClassTypesException
+import com.gymflow.service.InvalidScheduleViewException
 import com.gymflow.service.InvalidSlotException
 import com.gymflow.service.InvalidStatusFilterException
+import com.gymflow.service.InvalidTimeZoneException
 import com.gymflow.service.InvalidWeekFormatException
 import com.gymflow.service.MembershipAlreadyActiveException
 import com.gymflow.service.MembershipNotActiveException
@@ -44,6 +47,10 @@ import com.gymflow.service.TrainerHasAssignmentsException
 import com.gymflow.service.TrainerNotFoundException
 import com.gymflow.service.TrainerScheduleConflictException
 import com.gymflow.service.InvalidPhotoFormatException
+import com.gymflow.exception.AlreadyFavoritedException
+import com.gymflow.exception.FavoriteNotFoundException
+import com.gymflow.exception.MembershipRequiredException
+import com.gymflow.exception.InvalidSortFieldException
 import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -414,11 +421,60 @@ class GlobalExceptionHandler {
             .body(ErrorResponse(error = ex.message ?: "Invalid week format", code = "VALIDATION_ERROR"))
     }
 
+    @ExceptionHandler(InvalidScheduleViewException::class)
+    fun handleInvalidScheduleView(ex: InvalidScheduleViewException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ErrorResponse(error = ex.message ?: "Invalid schedule view", code = "INVALID_SCHEDULE_VIEW"))
+    }
+
+    @ExceptionHandler(InvalidAnchorDateException::class)
+    fun handleInvalidAnchorDate(ex: InvalidAnchorDateException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ErrorResponse(error = ex.message ?: "Invalid anchor date", code = "INVALID_ANCHOR_DATE"))
+    }
+
+    @ExceptionHandler(InvalidTimeZoneException::class)
+    fun handleInvalidTimeZone(ex: InvalidTimeZoneException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ErrorResponse(error = ex.message ?: "Invalid time zone", code = "INVALID_TIME_ZONE"))
+    }
+
     @ExceptionHandler(InvalidExportFormatException::class)
     fun handleInvalidExportFormat(ex: InvalidExportFormatException): ResponseEntity<ErrorResponse> {
         return ResponseEntity
             .status(HttpStatus.UNPROCESSABLE_ENTITY)
             .body(ErrorResponse(error = ex.message ?: "Invalid export format", code = "VALIDATION_ERROR"))
+    }
+
+    @ExceptionHandler(AlreadyFavoritedException::class)
+    fun handleAlreadyFavorited(ex: AlreadyFavoritedException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(ErrorResponse(error = ex.message ?: "Trainer already favorited", code = "ALREADY_FAVORITED"))
+    }
+
+    @ExceptionHandler(FavoriteNotFoundException::class)
+    fun handleFavoriteNotFound(ex: FavoriteNotFoundException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(ErrorResponse(error = ex.message ?: "Favorite not found", code = "FAVORITE_NOT_FOUND"))
+    }
+
+    @ExceptionHandler(MembershipRequiredException::class)
+    fun handleMembershipRequired(ex: MembershipRequiredException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.FORBIDDEN)
+            .body(ErrorResponse(error = ex.message ?: "Active membership required", code = "MEMBERSHIP_REQUIRED"))
+    }
+
+    @ExceptionHandler(InvalidSortFieldException::class)
+    fun handleInvalidSortField(ex: InvalidSortFieldException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ErrorResponse(error = ex.message ?: "Invalid sort field", code = "INVALID_SORT_FIELD"))
     }
 
     @ExceptionHandler(ImportFormatInvalidException::class)

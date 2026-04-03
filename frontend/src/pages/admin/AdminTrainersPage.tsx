@@ -16,7 +16,7 @@ import type { AxiosError } from 'axios'
 import { AdminSidebar } from '../../components/layout/AdminSidebar'
 import { TrainerFormModal } from '../../components/trainers/TrainerFormModal'
 import { TrainerDeleteConfirmModal } from '../../components/trainers/TrainerDeleteConfirmModal'
-import { getTrainerPhotoUrl, deleteTrainer, getTrainers } from '../../api/trainers'
+import { deleteTrainer, getTrainers } from '../../api/trainers'
 
 function TableSkeletonRows() {
   return (
@@ -256,9 +256,9 @@ export function AdminTrainersPage() {
                         className="border-t border-gray-800 transition-colors duration-100 hover:bg-gray-900 last:border-0"
                       >
                         <td className="px-4 py-3">
-                          {trainer.hasPhoto ? (
+                          {trainer.photoUrl ? (
                             <img
-                              src={getTrainerPhotoUrl(trainer.id)}
+                              src={trainer.photoUrl}
                               alt={`${trainer.firstName} ${trainer.lastName}`}
                               className="h-8 w-8 rounded-full object-cover"
                             />

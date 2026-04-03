@@ -82,7 +82,8 @@ class ClassInstanceService(
             capacity = capacity,
             room = room,
             trainers = trainers.toMutableSet(),
-            type = "GROUP"
+            type = "GROUP",
+            status = "SCHEDULED"
         )
 
         val saved = classInstanceRepository.save(instance)
@@ -160,7 +161,8 @@ class ClassInstanceService(
                     capacity = instance.capacity,
                     room = instance.room,
                     trainers = instance.trainers.toMutableSet(),
-                    type = instance.type
+                    type = instance.type,
+                    status = "SCHEDULED"
                 )
                 classInstanceRepository.save(copy)
                 copied += 1

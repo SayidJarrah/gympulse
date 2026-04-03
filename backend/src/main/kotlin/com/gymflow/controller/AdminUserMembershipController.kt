@@ -27,9 +27,10 @@ class AdminUserMembershipController(
     fun listAllMemberships(
         @RequestParam(required = false) status: String?,
         @RequestParam(required = false) userId: UUID?,
+        @RequestParam(required = false) memberQuery: String?,
         @PageableDefault(size = 20, sort = ["createdAt"], direction = Sort.Direction.DESC) pageable: Pageable
     ): ResponseEntity<Page<UserMembershipResponse>> {
-        return ResponseEntity.ok(userMembershipService.getAllMemberships(status, userId, pageable))
+        return ResponseEntity.ok(userMembershipService.getAllMemberships(status, userId, memberQuery, pageable))
     }
 
     @DeleteMapping("/{membershipId}")

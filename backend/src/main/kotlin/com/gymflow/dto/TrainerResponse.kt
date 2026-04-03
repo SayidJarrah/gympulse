@@ -12,6 +12,7 @@ data class TrainerResponse(
     val bio: String?,
     val specialisations: List<String>,
     val hasPhoto: Boolean,
+    val photoUrl: String?,
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime
 )

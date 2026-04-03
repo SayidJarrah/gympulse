@@ -17,17 +17,27 @@ export function PlansPage() {
   )
 
   const { isAuthenticated } = useAuthStore()
-  const { activeMembership, membershipErrorCode, fetchMyMembership } = useMembershipStore()
+  const {
+    activeMembership,
+    membershipErrorCode,
+    fetchMyMembership,
+    membershipLoading,
+  } = useMembershipStore()
+  const membershipStatusPending =
+    isAuthenticated &&
+    activeMembership === null &&
+    membershipErrorCode === null &&
+    !membershipLoading
 
   // Track which plan's purchase modal is open
   const [activatePlan, setActivatePlan] = useState<MembershipPlan | null>(null)
 
   // Fetch membership status whenever auth state changes
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchMyMembership()
+    if (membershipStatusPending) {
+      void fetchMyMembership()
     }
-  }, [isAuthenticated, fetchMyMembership])
+  }, [fetchMyMembership, membershipStatusPending])
 
   // Show "Activate" button only when user is authenticated and has no active membership
   const showActivateButtons =
