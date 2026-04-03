@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronDownIcon } from '@heroicons/react/24/outline'
+import { BuildingOfficeIcon, ChevronDownIcon } from '@heroicons/react/24/outline'
 import { Link } from 'react-router-dom'
 import { getRooms } from '../../api/rooms'
 import type { RoomResponse } from '../../types/scheduler'
@@ -49,6 +49,16 @@ export function RoomPicker({ value, onChange, label = 'Room' }: RoomPickerProps)
     return rooms.filter((room) => room.name.toLowerCase().includes(lower))
   }, [query, rooms])
 
+  const renderRoomThumbnail = (room: RoomResponse, className: string) => (
+    <div className={`flex items-center justify-center overflow-hidden rounded-lg border border-gray-800 bg-gray-950 ${className}`}>
+      {room.photoUrl ? (
+        <img src={room.photoUrl} alt={room.name} className="h-full w-full object-cover" />
+      ) : (
+        <BuildingOfficeIcon className="h-4 w-4 text-gray-500" aria-hidden="true" />
+      )}
+    </div>
+  )
+
   return (
     <div className="relative">
       <label className="mb-1 block text-sm font-semibold text-gray-300" htmlFor="room-picker">
@@ -64,12 +74,15 @@ export function RoomPicker({ value, onChange, label = 'Room' }: RoomPickerProps)
           error ? 'border-red-500/60' : 'border-gray-700'
         } ${!isLoading && rooms.length === 0 ? 'cursor-not-allowed opacity-70' : ''}`}
       >
-        <span className={selectedRoom ? 'text-white' : 'text-gray-500'}>
-          {!isLoading && rooms.length === 0
-            ? 'No rooms found — add one first'
-            : selectedRoom
-              ? selectedRoom.name
-              : 'Select a room'}
+        <span className={`flex min-w-0 items-center gap-3 ${selectedRoom ? 'text-white' : 'text-gray-500'}`}>
+          {selectedRoom && renderRoomThumbnail(selectedRoom, 'h-8 w-8 shrink-0')}
+          <span className="truncate">
+            {!isLoading && rooms.length === 0
+              ? 'No rooms found — add one first'
+              : selectedRoom
+                ? selectedRoom.name
+                : 'Select a room'}
+          </span>
         </span>
         <ChevronDownIcon className="h-4 w-4 text-gray-400" />
       </button>
@@ -112,9 +125,10 @@ export function RoomPicker({ value, onChange, label = 'Room' }: RoomPickerProps)
                       onChange(room.id)
                       setIsOpen(false)
                     }}
-                    className="flex w-full items-center px-4 py-2 text-left text-sm text-white hover:bg-gray-800"
+                    className="flex w-full items-center gap-3 px-4 py-2 text-left text-sm text-white hover:bg-gray-800"
                   >
-                    {room.name}
+                    {renderRoomThumbnail(room, 'h-8 w-8 shrink-0')}
+                    <span className="truncate">{room.name}</span>
                     {room.capacity && (
                       <span className="ml-auto text-xs text-gray-500">{room.capacity} cap</span>
                     )}

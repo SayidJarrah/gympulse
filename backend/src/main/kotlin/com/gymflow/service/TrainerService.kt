@@ -11,13 +11,15 @@ import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
+import java.time.OffsetDateTime
 import java.util.UUID
 
 @Service
 @Transactional
 class TrainerService(
     private val trainerRepository: TrainerRepository,
-    private val classInstanceRepository: ClassInstanceRepository
+    private val classInstanceRepository: ClassInstanceRepository,
+    private val photoValidationService: PhotoValidationService
 ) {
 
     @Transactional(readOnly = true)
@@ -89,18 +91,11 @@ class TrainerService(
     fun uploadPhoto(id: UUID, file: MultipartFile) {
         val trainer = trainerRepository.findById(id)
             .orElseThrow { TrainerNotFoundException("Trainer with id '$id' not found") }
+        val validated = photoValidationService.validatePhoto(file)
 
-        val contentType = file.contentType ?: ""
-        if (contentType !in setOf("image/jpeg", "image/png", "image/webp")) {
-            throw InvalidPhotoFormatException("Invalid photo format")
-        }
-
-        if (file.size > MAX_PHOTO_SIZE_BYTES) {
-            throw PhotoTooLargeException("Photo exceeds 5 MB limit")
-        }
-
-        trainer.photoData = file.bytes
-        trainer.photoMimeType = contentType
+        trainer.photoData = validated.bytes
+        trainer.photoMimeType = validated.mimeType
+        trainer.profilePhotoUrl = null
 
         trainerRepository.save(trainer)
     }
@@ -110,10 +105,19 @@ class TrainerService(
         val trainer = trainerRepository.findById(id)
             .orElseThrow { TrainerNotFoundException("Trainer with id '$id' not found") }
 
-        val data = trainer.photoData ?: throw PhotoNotFoundException("Photo not found")
-        val mimeType = trainer.photoMimeType ?: throw PhotoNotFoundException("Photo not found")
+        val data = trainer.photoData ?: throw ImageNotFoundException("Trainer photo not found")
+        val mimeType = trainer.photoMimeType ?: throw ImageNotFoundException("Trainer photo not found")
 
-        return TrainerPhoto(data, mimeType)
+        return TrainerPhoto(data, mimeType, trainer.updatedAt)
+    }
+
+    fun deletePhoto(id: UUID) {
+        val trainer = trainerRepository.findById(id)
+            .orElseThrow { TrainerNotFoundException("Trainer with id '$id' not found") }
+
+        trainer.photoData = null
+        trainer.photoMimeType = null
+        trainerRepository.save(trainer)
     }
 
     private fun Trainer.toResponse() = TrainerResponse(
@@ -140,16 +144,9 @@ class TrainerService(
         scheduledAt = scheduledAt
     )
 
-    data class TrainerPhoto(val data: ByteArray, val mimeType: String)
-
-    companion object {
-        private const val MAX_PHOTO_SIZE_BYTES = 5L * 1024 * 1024
-    }
+    data class TrainerPhoto(val data: ByteArray, val mimeType: String, val updatedAt: OffsetDateTime)
 }
 
 class TrainerEmailConflictException(message: String) : RuntimeException(message)
 class TrainerNotFoundException(message: String) : RuntimeException(message)
 class TrainerHasAssignmentsException(val affected: List<AffectedInstanceResponse>) : RuntimeException("Trainer has assignments")
-class InvalidPhotoFormatException(message: String) : RuntimeException(message)
-class PhotoTooLargeException(message: String) : RuntimeException(message)
-class PhotoNotFoundException(message: String) : RuntimeException(message)

@@ -24,18 +24,15 @@ function TableSkeletonRows() {
       {Array.from({ length: 5 }).map((_, i) => (
         <tr key={i} className="border-t border-gray-800" aria-hidden="true">
           <td className="px-4 py-3">
-            <div className="h-8 w-8 rounded-full bg-gray-800 animate-pulse" />
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-gray-800 animate-pulse" />
+              <div className="space-y-2">
+                <div className="h-4 w-28 rounded bg-gray-800 animate-pulse" />
+                <div className="h-3 w-40 rounded bg-gray-800 animate-pulse" />
+              </div>
+            </div>
           </td>
           <td className="px-4 py-3">
-            <div className="h-4 w-28 rounded bg-gray-800 animate-pulse" />
-          </td>
-          <td className="px-4 py-3">
-            <div className="h-4 w-24 rounded bg-gray-800 animate-pulse" />
-          </td>
-          <td className="px-4 py-3">
-            <div className="h-4 w-40 rounded bg-gray-800 animate-pulse" />
-          </td>
-          <td className="hidden px-4 py-3 sm:table-cell">
             <div className="h-4 w-24 rounded bg-gray-800 animate-pulse" />
           </td>
           <td className="hidden px-4 py-3 md:table-cell">
@@ -209,18 +206,9 @@ export function AdminTrainersPage() {
                 <thead className="sticky top-0 bg-gray-900">
                   <tr>
                     <th className="border-b border-gray-800 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
-                      Photo
+                      Name <ChevronUpIcon className="inline h-3 w-3 text-green-400" />
                     </th>
                     <th className="border-b border-gray-800 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
-                      Last Name <ChevronUpIcon className="inline h-3 w-3 text-green-400" />
-                    </th>
-                    <th className="border-b border-gray-800 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
-                      First Name
-                    </th>
-                    <th className="border-b border-gray-800 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
-                      Email
-                    </th>
-                    <th className="hidden border-b border-gray-800 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 sm:table-cell">
                       Phone
                     </th>
                     <th className="hidden border-b border-gray-800 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 md:table-cell">
@@ -236,7 +224,7 @@ export function AdminTrainersPage() {
 
                   {!isLoading && trainers.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="px-4 py-16 text-center">
+                      <td colSpan={4} className="px-4 py-16 text-center">
                         <div className="flex flex-col items-center gap-3">
                           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-800">
                             <UserGroupIcon className="h-6 w-6 text-gray-500" />
@@ -256,22 +244,27 @@ export function AdminTrainersPage() {
                         className="border-t border-gray-800 transition-colors duration-100 hover:bg-gray-900 last:border-0"
                       >
                         <td className="px-4 py-3">
-                          {trainer.photoUrl ? (
-                            <img
-                              src={trainer.photoUrl}
-                              alt={`${trainer.firstName} ${trainer.lastName}`}
-                              className="h-8 w-8 rounded-full object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-800 text-xs font-semibold text-gray-400">
-                              {initials}
+                          <div className="flex items-center gap-3">
+                            {trainer.photoUrl ? (
+                              <img
+                                src={trainer.photoUrl}
+                                alt={`${trainer.firstName} ${trainer.lastName}`}
+                                className="h-10 w-10 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 text-xs font-semibold text-gray-400">
+                                {initials}
+                              </div>
+                            )}
+                            <div>
+                              <p className="font-medium text-white">
+                                {trainer.firstName} {trainer.lastName}
+                              </p>
+                              <p className="text-xs text-gray-500">{trainer.email}</p>
                             </div>
-                          )}
+                          </div>
                         </td>
-                        <td className="px-4 py-3 font-medium text-white">{trainer.lastName}</td>
-                        <td className="px-4 py-3 text-white">{trainer.firstName}</td>
-                        <td className="px-4 py-3 text-gray-400">{trainer.email}</td>
-                        <td className="hidden px-4 py-3 text-gray-400 sm:table-cell">
+                        <td className="px-4 py-3 text-gray-400">
                           {trainer.phone ?? '—'}
                         </td>
                         <td className="hidden px-4 py-3 md:table-cell">

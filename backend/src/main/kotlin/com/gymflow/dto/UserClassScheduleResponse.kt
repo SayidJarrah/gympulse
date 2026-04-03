@@ -10,7 +10,8 @@ data class UserClassScheduleEntryResponse(
     val scheduledAt: OffsetDateTime,
     val localDate: LocalDate,
     val durationMin: Int,
-    val trainerNames: List<String>
+    val trainerNames: List<String>,
+    val classPhotoUrl: String?
 )
 
 data class UserClassScheduleResponse(

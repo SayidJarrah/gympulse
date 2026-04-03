@@ -3,10 +3,12 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
 import { useAuthStore } from '../../store/authStore'
 import { useMembershipStore } from '../../store/membershipStore'
+import { useProfileStore } from '../../store/profileStore'
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { isAuthenticated, user, clearAuth } = useAuthStore()
+  const { avatarUrl, ensureProfileLoaded, resetProfile } = useProfileStore()
   const {
     activeMembership,
     fetchMyMembership,
@@ -22,6 +24,7 @@ export function Navbar() {
     !membershipLoading
 
   const handleLogout = () => {
+    resetProfile()
     clearAuth()
     navigate('/login')
   }
@@ -31,6 +34,15 @@ export function Navbar() {
       void fetchMyMembership()
     }
   }, [fetchMyMembership, shouldResolveMembership])
+
+  useEffect(() => {
+    if (isAuthenticated && user?.role === 'USER') {
+      void ensureProfileLoaded()
+      return
+    }
+
+    resetProfile()
+  }, [ensureProfileLoaded, isAuthenticated, resetProfile, user?.role])
 
   const navLinks = [{ label: 'Plans', href: '/plans' }]
   const userNavLinks =
@@ -112,7 +124,15 @@ export function Navbar() {
                 className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-800 text-sm font-semibold text-white ring-2 ring-green-500/50"
                 aria-label="User menu"
               >
-                {user.email.slice(0, 2).toUpperCase()}
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt="Your profile"
+                    className="h-9 w-9 rounded-full object-cover"
+                  />
+                ) : (
+                  user.email.slice(0, 2).toUpperCase()
+                )}
               </div>
             </>
           ) : (

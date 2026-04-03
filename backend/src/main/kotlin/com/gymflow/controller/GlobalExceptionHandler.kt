@@ -15,8 +15,12 @@ import com.gymflow.service.InvalidCredentialsException
 import com.gymflow.service.InvalidExportFormatException
 import com.gymflow.service.InvalidDateOfBirthException
 import com.gymflow.service.InvalidFirstNameException
+import com.gymflow.service.ImageNotFoundException
+import com.gymflow.service.ImageRequiredException
+import com.gymflow.service.ImageTooLargeException
 import com.gymflow.service.InvalidMembershipStatusFilterException
 import com.gymflow.service.InvalidFitnessGoalsException
+import com.gymflow.service.InvalidImageFormatException
 import com.gymflow.service.InvalidLastNameException
 import com.gymflow.service.InvalidPhoneException
 import com.gymflow.service.InvalidPreferredClassTypesException
@@ -29,8 +33,6 @@ import com.gymflow.service.MembershipAlreadyActiveException
 import com.gymflow.service.MembershipNotActiveException
 import com.gymflow.service.MembershipNotFoundException
 import com.gymflow.service.NoActiveMembershipException
-import com.gymflow.service.PhotoNotFoundException
-import com.gymflow.service.PhotoTooLargeException
 import com.gymflow.service.PlanAlreadyActiveException
 import com.gymflow.service.PlanAlreadyInactiveException
 import com.gymflow.service.PlanHasActiveSubscribersException
@@ -46,7 +48,6 @@ import com.gymflow.service.TrainerEmailConflictException
 import com.gymflow.service.TrainerHasAssignmentsException
 import com.gymflow.service.TrainerNotFoundException
 import com.gymflow.service.TrainerScheduleConflictException
-import com.gymflow.service.InvalidPhotoFormatException
 import com.gymflow.exception.AlreadyFavoritedException
 import com.gymflow.exception.FavoriteNotFoundException
 import com.gymflow.exception.MembershipRequiredException
@@ -323,25 +324,32 @@ class GlobalExceptionHandler {
             .body(ErrorResponse(error = ex.message ?: "Trainer schedule conflict", code = "TRAINER_SCHEDULE_CONFLICT"))
     }
 
-    @ExceptionHandler(InvalidPhotoFormatException::class)
-    fun handleInvalidPhotoFormat(ex: InvalidPhotoFormatException): ResponseEntity<ErrorResponse> {
+    @ExceptionHandler(ImageRequiredException::class)
+    fun handleImageRequired(ex: ImageRequiredException): ResponseEntity<ErrorResponse> {
         return ResponseEntity
-            .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
-            .body(ErrorResponse(error = ex.message ?: "Invalid photo format", code = "INVALID_PHOTO_FORMAT"))
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ErrorResponse(error = ex.message ?: "Image file is required", code = "IMAGE_REQUIRED"))
     }
 
-    @ExceptionHandler(PhotoTooLargeException::class)
-    fun handlePhotoTooLarge(ex: PhotoTooLargeException): ResponseEntity<ErrorResponse> {
+    @ExceptionHandler(InvalidImageFormatException::class)
+    fun handleInvalidImageFormat(ex: InvalidImageFormatException): ResponseEntity<ErrorResponse> {
         return ResponseEntity
-            .status(HttpStatus.PAYLOAD_TOO_LARGE)
-            .body(ErrorResponse(error = ex.message ?: "Photo too large", code = "PHOTO_TOO_LARGE"))
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ErrorResponse(error = ex.message ?: "Invalid image format", code = "INVALID_IMAGE_FORMAT"))
     }
 
-    @ExceptionHandler(PhotoNotFoundException::class)
-    fun handlePhotoNotFound(ex: PhotoNotFoundException): ResponseEntity<ErrorResponse> {
+    @ExceptionHandler(ImageTooLargeException::class)
+    fun handleImageTooLarge(ex: ImageTooLargeException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ErrorResponse(error = ex.message ?: "Image too large", code = "IMAGE_TOO_LARGE"))
+    }
+
+    @ExceptionHandler(ImageNotFoundException::class)
+    fun handleImageNotFound(ex: ImageNotFoundException): ResponseEntity<ErrorResponse> {
         return ResponseEntity
             .status(HttpStatus.NOT_FOUND)
-            .body(ErrorResponse(error = ex.message ?: "Photo not found", code = "PHOTO_NOT_FOUND"))
+            .body(ErrorResponse(error = ex.message ?: "Image not found", code = "IMAGE_NOT_FOUND"))
     }
 
     @ExceptionHandler(RoomNotFoundException::class)

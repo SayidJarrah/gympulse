@@ -49,6 +49,8 @@ export interface RoomResponse {
   name: string;
   capacity: number | null;
   description: string | null;
+  hasPhoto: boolean;
+  photoUrl: string | null;
   createdAt?: string;
 }
 
@@ -61,6 +63,7 @@ export interface RoomRequest {
 export interface RoomSummaryResponse {
   id: string;
   name: string;
+  photoUrl: string | null;
 }
 
 export interface ClassTemplateResponse {
@@ -72,6 +75,8 @@ export interface ClassTemplateResponse {
   defaultCapacity: number;
   difficulty: Difficulty;
   room: RoomSummaryResponse | null;
+  hasPhoto: boolean;
+  photoUrl: string | null;
   isSeeded: boolean;
   createdAt: string;
   updatedAt: string;

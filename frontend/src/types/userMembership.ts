@@ -10,6 +10,8 @@ export interface UserMembership {
   userDateOfBirth: string | null;
   userFitnessGoals: string[];
   userPreferredClassTypes: string[];
+  userHasProfilePhoto: boolean;
+  userProfilePhotoUrl: string | null;
   planId: string;
   planName: string;
   startDate: string; // ISO 8601 date string: "2026-03-23"

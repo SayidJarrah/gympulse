@@ -8,5 +8,7 @@ data class RoomResponse(
     val name: String,
     val capacity: Int?,
     val description: String?,
+    val hasPhoto: Boolean,
+    val photoUrl: String?,
     val createdAt: OffsetDateTime
 )

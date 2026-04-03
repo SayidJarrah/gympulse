@@ -33,6 +33,15 @@ export function GroupScheduleEntryCard({
       onClick={() => onSelect?.(entry)}
       className="group flex w-full flex-col items-start gap-3 rounded-xl border border-gray-800 bg-[#0F0F0F] p-4 text-left transition-colors duration-200 hover:border-green-500/40 hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
     >
+      {entry.classPhotoUrl && (
+        <div className="h-36 w-full overflow-hidden rounded-xl border border-gray-800 bg-gray-950">
+          <img
+            src={entry.classPhotoUrl}
+            alt=""
+            className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
+          />
+        </div>
+      )}
       <div className="text-base font-semibold text-white">{entry.name}</div>
       <div className="flex items-center gap-2 text-sm font-semibold text-green-400">
         {formatTimeRange(entry.scheduledAt, entry.durationMin, timeZone)}

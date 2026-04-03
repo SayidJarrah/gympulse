@@ -54,7 +54,8 @@ class UserClassScheduleControllerTest {
                     scheduledAt = OffsetDateTime.parse("2026-03-30T16:00:00Z"),
                     localDate = LocalDate.parse("2026-03-30"),
                     durationMin = 60,
-                    trainerNames = listOf("Jane Doe")
+                    trainerNames = listOf("Jane Doe"),
+                    classPhotoUrl = "/api/v1/class-templates/123/photo"
                 )
             )
         )

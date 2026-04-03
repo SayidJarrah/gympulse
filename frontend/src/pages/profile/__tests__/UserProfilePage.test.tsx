@@ -5,15 +5,27 @@ import { MemoryRouter } from 'react-router-dom'
 import { UserProfilePage } from '../UserProfilePage'
 import { useProfileStore } from '../../../store/profileStore'
 import type { UserProfile } from '../../../types/userProfile'
-import { getMyProfile, updateMyProfile } from '../../../api/profile'
+import {
+  deleteMyProfilePhoto,
+  getMyProfile,
+  getMyProfilePhotoBlob,
+  updateMyProfile,
+  uploadMyProfilePhoto,
+} from '../../../api/profile'
 
 vi.mock('../../../api/profile', () => ({
   getMyProfile: vi.fn(),
   updateMyProfile: vi.fn(),
+  uploadMyProfilePhoto: vi.fn(),
+  deleteMyProfilePhoto: vi.fn(),
+  getMyProfilePhotoBlob: vi.fn(),
 }))
 
 const mockedGetMyProfile = vi.mocked(getMyProfile)
 const mockedUpdateMyProfile = vi.mocked(updateMyProfile)
+const mockedUploadMyProfilePhoto = vi.mocked(uploadMyProfilePhoto)
+const mockedDeleteMyProfilePhoto = vi.mocked(deleteMyProfilePhoto)
+const mockedGetMyProfilePhotoBlob = vi.mocked(getMyProfilePhotoBlob)
 
 const populatedProfile: UserProfile = {
   userId: '550e8400-e29b-41d4-a716-446655440000',
@@ -24,6 +36,8 @@ const populatedProfile: UserProfile = {
   dateOfBirth: '1994-08-12',
   fitnessGoals: ['Build strength', 'Improve mobility'],
   preferredClassTypes: ['Yoga', 'HIIT'],
+  hasProfilePhoto: false,
+  profilePhotoUrl: null,
   createdAt: '2026-03-29T09:00:00Z',
   updatedAt: '2026-03-29T09:00:00Z',
 }
@@ -50,8 +64,12 @@ describe('UserProfilePage', () => {
   beforeEach(() => {
     mockedGetMyProfile.mockReset()
     mockedUpdateMyProfile.mockReset()
+    mockedUploadMyProfilePhoto.mockReset()
+    mockedDeleteMyProfilePhoto.mockReset()
+    mockedGetMyProfilePhotoBlob.mockReset()
     useProfileStore.setState({
       profile: null,
+      avatarUrl: null,
       isLoading: false,
       isSaving: false,
       error: null,
@@ -101,7 +119,7 @@ describe('UserProfilePage', () => {
     renderPage()
 
     await screen.findByDisplayValue('Alice')
-    await user.click(screen.getByRole('button', { name: /save profile/i }))
+    await user.click(screen.getByRole('button', { name: /save changes/i }))
 
     expect(
       await screen.findByText('First name must be between 1 and 50 characters.')
@@ -124,7 +142,7 @@ describe('UserProfilePage', () => {
     const firstNameInput = await screen.findByLabelText(/first name/i)
     await user.clear(firstNameInput)
     await user.type(firstNameInput, 'Alicia')
-    await user.click(screen.getByRole('button', { name: /save profile/i }))
+    await user.click(screen.getByRole('button', { name: /save changes/i }))
 
     await waitFor(() => {
       expect(mockedUpdateMyProfile).toHaveBeenCalledWith({

@@ -65,7 +65,10 @@ class UserClassScheduleService(
                     scheduledAt = instance.scheduledAt,
                     localDate = localDate,
                     durationMin = instance.durationMin,
-                    trainerNames = trainerNames
+                    trainerNames = trainerNames,
+                    classPhotoUrl = instance.template
+                        ?.takeIf { it.photoData != null }
+                        ?.let { "/api/v1/class-templates/${it.id}/photo" }
                 )
             }
 

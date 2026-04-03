@@ -46,6 +46,8 @@ const activeMembership: UserMembership = {
   userDateOfBirth: null,
   userFitnessGoals: [],
   userPreferredClassTypes: [],
+  userHasProfilePhoto: false,
+  userProfilePhotoUrl: null,
   planId: 'plan-1',
   planName: 'Performance',
   startDate: '2026-03-29',

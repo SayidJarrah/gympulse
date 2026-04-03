@@ -10,6 +10,7 @@ import { MembershipStatusBadge } from './MembershipStatusBadge'
 interface AdminMembershipDetailsModalProps {
   isOpen: boolean;
   membership: UserMembership;
+  avatarUrl?: string | null;
   onClose: () => void;
   onCancelMembership: (membership: UserMembership) => void;
 }
@@ -53,6 +54,7 @@ function getInitials(firstName?: string | null, lastName?: string | null, email?
 export function AdminMembershipDetailsModal({
   isOpen,
   membership,
+  avatarUrl,
   onClose,
   onCancelMembership,
 }: AdminMembershipDetailsModalProps) {
@@ -127,9 +129,17 @@ export function AdminMembershipDetailsModal({
       <div className="relative w-full max-w-3xl rounded-2xl border border-gray-800 bg-gray-900 shadow-xl shadow-black/50">
         <div className="flex items-center justify-between border-b border-gray-800 px-6 py-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gray-800 text-sm font-semibold text-white">
-              {initials}
-            </div>
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt={`${displayName} avatar`}
+                className="h-11 w-11 rounded-full object-cover"
+              />
+            ) : (
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gray-800 text-sm font-semibold text-white">
+                {initials}
+              </div>
+            )}
             <div>
               <h2
                 id="admin-membership-details-title"

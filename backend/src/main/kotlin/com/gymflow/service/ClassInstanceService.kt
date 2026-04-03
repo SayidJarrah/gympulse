@@ -243,7 +243,13 @@ class ClassInstanceService(
         scheduledAt = scheduledAt,
         durationMin = durationMin,
         capacity = capacity,
-        room = room?.let { RoomSummaryResponse(it.id, it.name) },
+        room = room?.let {
+            RoomSummaryResponse(
+                id = it.id,
+                name = it.name,
+                photoUrl = if (it.photoData != null) "/api/v1/rooms/${it.id}/photo" else null
+            )
+        },
         trainers = trainers.map { TrainerSummaryResponse(it.id, it.firstName, it.lastName) },
         hasRoomConflict = hasRoomConflict,
         createdAt = createdAt,

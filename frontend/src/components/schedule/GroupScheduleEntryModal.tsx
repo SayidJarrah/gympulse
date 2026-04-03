@@ -102,34 +102,46 @@ export function GroupScheduleEntryModal({
           )}
 
           {!isStale && entry && trainerField && (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">
-                  Date
-                </p>
-                <p className="mt-1 text-sm text-white">
-                  {formatLongDateLabel(entry.localDate, timeZone)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">
-                  Time
-                </p>
-                <p className="mt-1 text-sm text-white">
-                  {formatTimeRange(entry.scheduledAt, entry.durationMin, timeZone)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">
-                  Duration
-                </p>
-                <p className="mt-1 text-sm text-white">{entry.durationMin} min</p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">
-                  {trainerField.label}
-                </p>
-                <p className="mt-1 text-sm text-white">{trainerField.value}</p>
+            <div className="space-y-5">
+              {entry.classPhotoUrl && (
+                <div className="h-48 overflow-hidden rounded-2xl border border-gray-800 bg-gray-950">
+                  <img
+                    src={entry.classPhotoUrl}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">
+                    Date
+                  </p>
+                  <p className="mt-1 text-sm text-white">
+                    {formatLongDateLabel(entry.localDate, timeZone)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">
+                    Time
+                  </p>
+                  <p className="mt-1 text-sm text-white">
+                    {formatTimeRange(entry.scheduledAt, entry.durationMin, timeZone)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">
+                    Duration
+                  </p>
+                  <p className="mt-1 text-sm text-white">{entry.durationMin} min</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">
+                    {trainerField.label}
+                  </p>
+                  <p className="mt-1 text-sm text-white">{trainerField.value}</p>
+                </div>
               </div>
             </div>
           )}

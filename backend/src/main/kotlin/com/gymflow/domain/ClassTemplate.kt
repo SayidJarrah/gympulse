@@ -7,6 +7,8 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -37,6 +39,13 @@ data class ClassTemplate(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room_id")
     var room: Room? = null,
+
+    @JdbcTypeCode(SqlTypes.BINARY)
+    @Column(name = "photo_data")
+    var photoData: ByteArray? = null,
+
+    @Column(name = "photo_mime_type")
+    var photoMimeType: String? = null,
 
     @Column(name = "is_seeded", nullable = false)
     var isSeeded: Boolean = false,

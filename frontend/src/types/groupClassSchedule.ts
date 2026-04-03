@@ -7,6 +7,7 @@ export interface GroupClassScheduleEntry {
   localDate: string;
   durationMin: number;
   trainerNames: string[];
+  classPhotoUrl: string | null;
 }
 
 export interface GroupClassScheduleResponse {

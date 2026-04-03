@@ -1,49 +1,52 @@
 package com.gymflow.controller
 
-import com.gymflow.service.TrainerService
+import com.gymflow.service.UserProfileService
 import org.springframework.http.CacheControl
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
-import java.time.Duration
 import java.util.UUID
 
 @RestController
-class TrainerPhotoController(
-    private val trainerService: TrainerService
+@RequestMapping("/api/v1/profile/me/photo")
+@PreAuthorize("hasRole('USER')")
+class UserProfilePhotoController(
+    private val userProfileService: UserProfileService
 ) {
 
-    @PostMapping("/api/v1/admin/trainers/{id}/photo")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping
     fun uploadPhoto(
-        @PathVariable id: UUID,
+        authentication: Authentication,
         @RequestParam("photo") photo: MultipartFile
     ): ResponseEntity<Map<String, String>> {
-        trainerService.uploadPhoto(id, photo)
+        val userId = UUID.fromString(authentication.name)
+        userProfileService.uploadMyProfilePhoto(userId, photo)
         return ResponseEntity.ok(mapOf("message" to "Photo uploaded successfully"))
     }
 
-    @GetMapping("/api/v1/trainers/{id}/photo")
-    fun getPhoto(@PathVariable id: UUID): ResponseEntity<ByteArray> {
-        val photo = trainerService.getPhoto(id)
+    @GetMapping
+    fun getPhoto(authentication: Authentication): ResponseEntity<ByteArray> {
+        val userId = UUID.fromString(authentication.name)
+        val photo = userProfileService.getMyProfilePhoto(userId)
+
         return ResponseEntity.ok()
-            .cacheControl(CacheControl.maxAge(Duration.ofMinutes(5)).cachePublic())
-            .eTag(photo.updatedAt.toInstant().toEpochMilli().toString())
+            .cacheControl(CacheControl.noStore())
             .contentType(MediaType.parseMediaType(photo.mimeType))
             .body(photo.data)
     }
 
-    @DeleteMapping("/api/v1/admin/trainers/{id}/photo")
-    @PreAuthorize("hasRole('ADMIN')")
-    fun deletePhoto(@PathVariable id: UUID): ResponseEntity<Void> {
-        trainerService.deletePhoto(id)
+    @DeleteMapping
+    fun deletePhoto(authentication: Authentication): ResponseEntity<Void> {
+        val userId = UUID.fromString(authentication.name)
+        userProfileService.deleteMyProfilePhoto(userId)
         return ResponseEntity.noContent().build()
     }
 }

@@ -36,6 +36,7 @@ const baseResponse: GroupClassScheduleResponse = {
       localDate: '2026-03-30',
       durationMin: 60,
       trainerNames: ['Jane Doe'],
+      classPhotoUrl: null,
     },
   ],
 }

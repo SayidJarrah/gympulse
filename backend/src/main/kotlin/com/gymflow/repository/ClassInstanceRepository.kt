@@ -29,6 +29,7 @@ interface ClassInstanceRepository : JpaRepository<ClassInstance, UUID> {
         """
         SELECT DISTINCT ci FROM ClassInstance ci
         LEFT JOIN FETCH ci.trainers t
+        LEFT JOIN FETCH ci.template tpl
         WHERE ci.deletedAt IS NULL
           AND ci.type = 'GROUP'
           AND ci.status = 'SCHEDULED'

@@ -33,3 +33,14 @@ export async function updateClassTemplate(
 export async function deleteClassTemplate(id: string, force?: boolean): Promise<void> {
   await axiosInstance.delete(`/admin/class-templates/${id}`, { params: { force } })
 }
+
+export async function uploadClassTemplatePhoto(id: string, file: File): Promise<void> {
+  const formData = new FormData()
+  formData.append('photo', file)
+
+  await axiosInstance.post(`/admin/class-templates/${id}/photo`, formData)
+}
+
+export async function deleteClassTemplatePhoto(id: string): Promise<void> {
+  await axiosInstance.delete(`/admin/class-templates/${id}/photo`)
+}

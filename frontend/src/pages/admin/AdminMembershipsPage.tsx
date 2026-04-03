@@ -4,12 +4,14 @@ import { AdminSidebar } from '../../components/layout/AdminSidebar'
 import { MembershipStatusBadge } from '../../components/membership/MembershipStatusBadge'
 import { AdminCancelMembershipModal } from '../../components/membership/AdminCancelMembershipModal'
 import { AdminMembershipDetailsModal } from '../../components/membership/AdminMembershipDetailsModal'
+import { getUserProfilePhotoBlob } from '../../api/profile'
 import type {
   UserMembership,
   MembershipStatus,
   AdminMembershipsQuery,
 } from '../../types/userMembership'
 import { useMembershipStore } from '../../store/membershipStore'
+import { revokeObjectUrl } from '../../utils/entityImage'
 
 const PAGE_SIZE = 20
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -110,8 +112,10 @@ export function AdminMembershipsPage() {
   const [cancelTarget, setCancelTarget] = useState<UserMembership | null>(null)
   const [detailTarget, setDetailTarget] = useState<UserMembership | null>(null)
   const [copiedUserId, setCopiedUserId] = useState<string | null>(null)
+  const [avatarUrls, setAvatarUrls] = useState<Record<string, string>>({})
   const memberSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const avatarUrlsRef = useRef<Record<string, string>>({})
 
   const {
     adminMemberships,
@@ -137,6 +141,74 @@ export function AdminMembershipsPage() {
   useEffect(() => {
     return () => {
       if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current)
+    }
+  }, [])
+
+  useEffect(() => {
+    avatarUrlsRef.current = avatarUrls
+  }, [avatarUrls])
+
+  useEffect(() => {
+    let isCancelled = false
+    const desiredIds = new Set(
+      adminMemberships
+        .filter((membership) => membership.userHasProfilePhoto || Boolean(membership.userProfilePhotoUrl))
+        .map((membership) => membership.userId)
+    )
+
+    const currentUrls = avatarUrlsRef.current
+    const nextUrls: Record<string, string> = { ...currentUrls }
+    Object.entries(currentUrls).forEach(([userId, url]) => {
+      if (!desiredIds.has(userId)) {
+        revokeObjectUrl(url)
+        delete nextUrls[userId]
+      }
+    })
+
+    if (Object.keys(nextUrls).length !== Object.keys(currentUrls).length) {
+      setAvatarUrls(nextUrls)
+    }
+
+    const missingIds = Array.from(desiredIds).filter((userId) => !nextUrls[userId])
+    if (missingIds.length === 0) {
+      return () => {
+        isCancelled = true
+      }
+    }
+
+    const loadPhotos = async () => {
+      const updates: Record<string, string> = {}
+      await Promise.all(
+        missingIds.map(async (userId) => {
+          try {
+            const blob = await getUserProfilePhotoBlob(userId)
+            updates[userId] = URL.createObjectURL(blob)
+          } catch {
+            // Ignore image fetch failures and keep initials fallback.
+          }
+        })
+      )
+
+      if (isCancelled) {
+        Object.values(updates).forEach(revokeObjectUrl)
+        return
+      }
+
+      if (Object.keys(updates).length > 0) {
+        setAvatarUrls((prev) => ({ ...prev, ...updates }))
+      }
+    }
+
+    loadPhotos()
+
+    return () => {
+      isCancelled = true
+    }
+  }, [adminMemberships])
+
+  useEffect(() => {
+    return () => {
+      Object.values(avatarUrlsRef.current).forEach(revokeObjectUrl)
     }
   }, [])
 
@@ -367,9 +439,17 @@ export function AdminMembershipsPage() {
                     >
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-800 text-xs font-semibold text-white">
-                            {getMemberInitials(membership)}
-                          </div>
+                          {avatarUrls[membership.userId] ? (
+                            <img
+                              src={avatarUrls[membership.userId]}
+                              alt={`${getMemberDisplayName(membership)} avatar`}
+                              className="h-9 w-9 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-800 text-xs font-semibold text-white">
+                              {getMemberInitials(membership)}
+                            </div>
+                          )}
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
                               <p className="truncate font-semibold text-white">
@@ -489,6 +569,7 @@ export function AdminMembershipsPage() {
         <AdminMembershipDetailsModal
           isOpen={true}
           membership={detailTarget}
+          avatarUrl={avatarUrls[detailTarget.userId] ?? null}
           onClose={handleDetailClose}
           onCancelMembership={handleDetailCancel}
         />

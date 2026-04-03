@@ -1,6 +1,7 @@
 package com.gymflow.service
 
 import com.gymflow.domain.ClassInstance
+import com.gymflow.domain.ClassTemplate
 import com.gymflow.domain.Trainer
 import com.gymflow.domain.UserMembership
 import com.gymflow.repository.ClassInstanceRepository
@@ -54,6 +55,16 @@ class UserClassScheduleServiceTest {
 
         val instance = ClassInstance(
             id = UUID.randomUUID(),
+            template = ClassTemplate(
+                id = UUID.randomUUID(),
+                name = "Yoga Flow",
+                category = "Mind & Body",
+                defaultDurationMin = 60,
+                defaultCapacity = 12,
+                difficulty = "All Levels",
+                photoData = byteArrayOf(9),
+                photoMimeType = "image/png"
+            ),
             name = "Yoga Flow",
             type = "GROUP",
             status = "SCHEDULED",
@@ -74,6 +85,10 @@ class UserClassScheduleServiceTest {
         assertEquals("2026-W14", response.week)
         assertEquals(1, response.entries.size)
         assertEquals(listOf("Jane Doe", "Marta Kowalska"), response.entries[0].trainerNames)
+        assertEquals(
+            "/api/v1/class-templates/${instance.template!!.id}/photo",
+            response.entries[0].classPhotoUrl
+        )
 
         verify(exactly = 1) { userMembershipRepository.findAccessibleActiveMembership(userId, today) }
         verify(exactly = 1) { classInstanceRepository.findVisibleGroupScheduleBetween(any(), any()) }
@@ -105,6 +120,7 @@ class UserClassScheduleServiceTest {
         assertEquals(LocalDate.of(2026, 3, 30), response.rangeStartDate)
         assertEquals(LocalDate.of(2026, 4, 13), response.rangeEndDateExclusive)
         assertEquals(LocalDate.of(2026, 3, 30), response.entries[0].localDate)
+        assertEquals(null, response.entries[0].classPhotoUrl)
     }
 
     @Test
@@ -144,6 +160,7 @@ class UserClassScheduleServiceTest {
         assertEquals(LocalDate.of(2026, 4, 1), response.rangeEndDateExclusive)
         assertEquals(1, response.entries.size)
         assertEquals("Visible", response.entries[0].name)
+        assertEquals(null, response.entries[0].classPhotoUrl)
     }
 
     @Test

@@ -1,6 +1,6 @@
 package com.gymflow.controller
 
-import com.gymflow.service.TrainerService
+import com.gymflow.service.ClassTemplateService
 import org.springframework.http.CacheControl
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -16,23 +16,23 @@ import java.time.Duration
 import java.util.UUID
 
 @RestController
-class TrainerPhotoController(
-    private val trainerService: TrainerService
+class ClassTemplatePhotoController(
+    private val classTemplateService: ClassTemplateService
 ) {
 
-    @PostMapping("/api/v1/admin/trainers/{id}/photo")
+    @PostMapping("/api/v1/admin/class-templates/{id}/photo")
     @PreAuthorize("hasRole('ADMIN')")
     fun uploadPhoto(
         @PathVariable id: UUID,
         @RequestParam("photo") photo: MultipartFile
     ): ResponseEntity<Map<String, String>> {
-        trainerService.uploadPhoto(id, photo)
+        classTemplateService.uploadPhoto(id, photo)
         return ResponseEntity.ok(mapOf("message" to "Photo uploaded successfully"))
     }
 
-    @GetMapping("/api/v1/trainers/{id}/photo")
+    @GetMapping("/api/v1/class-templates/{id}/photo")
     fun getPhoto(@PathVariable id: UUID): ResponseEntity<ByteArray> {
-        val photo = trainerService.getPhoto(id)
+        val photo = classTemplateService.getPhoto(id)
         return ResponseEntity.ok()
             .cacheControl(CacheControl.maxAge(Duration.ofMinutes(5)).cachePublic())
             .eTag(photo.updatedAt.toInstant().toEpochMilli().toString())
@@ -40,10 +40,10 @@ class TrainerPhotoController(
             .body(photo.data)
     }
 
-    @DeleteMapping("/api/v1/admin/trainers/{id}/photo")
+    @DeleteMapping("/api/v1/admin/class-templates/{id}/photo")
     @PreAuthorize("hasRole('ADMIN')")
     fun deletePhoto(@PathVariable id: UUID): ResponseEntity<Void> {
-        trainerService.deletePhoto(id)
+        classTemplateService.deletePhoto(id)
         return ResponseEntity.noContent().build()
     }
 }

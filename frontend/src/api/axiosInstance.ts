@@ -5,9 +5,6 @@ import type { LoginResponse, RefreshRequest } from '../types/auth'
 
 const axiosInstance = axios.create({
   baseURL: '/api/v1',
-  headers: {
-    'Content-Type': 'application/json',
-  },
 })
 
 // Request interceptor: attach access token from store
@@ -16,6 +13,14 @@ axiosInstance.interceptors.request.use(
     const { accessToken } = useAuthStore.getState()
     if (accessToken && config.headers) {
       config.headers.Authorization = `Bearer ${accessToken}`
+    }
+    if (config.headers && config.data && typeof FormData !== 'undefined' && config.data instanceof FormData) {
+      if (typeof config.headers.delete === 'function') {
+        config.headers.delete('Content-Type')
+      } else {
+        delete config.headers['Content-Type']
+        delete config.headers['content-type']
+      }
     }
     return config
   },
