@@ -49,6 +49,10 @@ function decodeJwtPayload(token: string): JwtPayload {
   return JSON.parse(Buffer.from(payload, 'base64url').toString('utf-8')) as JwtPayload;
 }
 
+function adminMembershipCancelButtons(page: Page) {
+  return page.locator('tbody').getByRole('button', { name: 'Cancel', exact: true });
+}
+
 async function registerViaApi(
   request: APIRequestContext,
   email: string,
@@ -564,13 +568,13 @@ test.describe('User Membership Purchase', () => {
     await expect(page.getByText('1 total')).toBeVisible();
     await expect(page.getByLabel('Status: Active')).toHaveCount(1);
     await expect(page.getByLabel('Status: Cancelled')).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Cancel' })).toHaveCount(1);
+    await expect(adminMembershipCancelButtons(page)).toHaveCount(1);
 
     await setAdminStatusFilter(page, 'CANCELLED');
     await expect(page.getByText('1 total')).toBeVisible();
     await expect(page.getByLabel('Status: Cancelled')).toHaveCount(1);
     await expect(page.getByLabel('Status: Active')).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Cancel' })).toHaveCount(0);
+    await expect(adminMembershipCancelButtons(page)).toHaveCount(0);
   });
 
   test('MEM-19 narrows the admin memberships table to a matching user ID', async ({ page, request }) => {
@@ -633,7 +637,7 @@ test.describe('User Membership Purchase', () => {
     await setAdminStatusFilter(page, 'ACTIVE');
 
     await expect(page.getByLabel('Status: Active')).toHaveCount(1);
-    await page.getByRole('button', { name: 'Cancel' }).click();
+    await adminMembershipCancelButtons(page).click();
     await page.getByRole('dialog', { name: 'Cancel this membership?' }).getByRole('button', { name: 'Confirm cancel' }).click();
 
     await expect(page.getByRole('dialog', { name: 'Cancel this membership?' })).not.toBeVisible();
@@ -649,9 +653,9 @@ test.describe('User Membership Purchase', () => {
     await setAdminUserIdFilter(page, membershipData.userId);
     await setAdminStatusFilter(page, 'ACTIVE');
     await expect(page.getByText('1 total')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Cancel' })).toHaveCount(1);
+    await expect(adminMembershipCancelButtons(page)).toHaveCount(1);
 
-    await page.getByRole('button', { name: 'Cancel' }).click();
+    await adminMembershipCancelButtons(page).click();
     await expect(page.getByRole('dialog', { name: 'Cancel this membership?' })).toBeVisible();
 
     await adminCancelMembershipViaApi(request, adminSession.accessToken, membershipData.membership.id);

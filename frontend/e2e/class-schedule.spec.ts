@@ -394,8 +394,21 @@ function roomField(page: Page) {
   };
 }
 
+function modalActionButton(page: Page, name: string): Locator {
+  return page.getByRole('dialog').getByRole('button', { name, exact: true });
+}
+
+async function clickVisible(locator: Locator): Promise<void> {
+  await expect(locator).toBeVisible();
+  await expect(locator).toBeEnabled();
+  await locator.evaluate((element: HTMLElement) => {
+    element.scrollIntoView({ block: 'center', inline: 'nearest' });
+    element.click();
+  });
+}
+
 function roomSaveButton(page: Page) {
-  return page.getByRole('dialog').getByRole('button', { name: 'Save', exact: true });
+  return modalActionButton(page, 'Save Room');
 }
 
 function importDialog(page: Page) {
@@ -443,7 +456,7 @@ test.describe('Trainer Profile Management', () => {
     await tf.phone.fill(phone);
     await tf.bio.fill(bio);
 
-    await page.getByRole('button', { name: 'Save Trainer' }).click();
+    await clickVisible(modalActionButton(page, 'Save Trainer'));
 
     // Modal should close after successful save
     await expect(page.getByRole('dialog')).not.toBeVisible();
@@ -475,7 +488,7 @@ test.describe('Trainer Profile Management', () => {
     await tf1.firstName.fill(firstName);
     await tf1.lastName.fill(lastName);
     await tf1.email.fill(email);
-    await page.getByRole('button', { name: 'Save Trainer' }).click();
+    await clickVisible(modalActionButton(page, 'Save Trainer'));
     await expect(page.getByRole('dialog')).not.toBeVisible();
     await expect(page.getByText(lastName)).toBeVisible();
 
@@ -487,7 +500,7 @@ test.describe('Trainer Profile Management', () => {
     const updatedBio = `Updated bio for ${suffix}`;
     const tf2 = trainerField(page);
     await tf2.bio.fill(updatedBio);
-    await page.getByRole('button', { name: 'Save Trainer' }).click();
+    await clickVisible(modalActionButton(page, 'Save Trainer'));
     await expect(page.getByRole('dialog')).not.toBeVisible();
 
     // Verify by re-opening; the trainer row should still exist
@@ -508,7 +521,7 @@ test.describe('Trainer Profile Management', () => {
     await tf.firstName.fill(firstName);
     await tf.lastName.fill(lastName);
     await tf.email.fill(email);
-    await page.getByRole('button', { name: 'Save Trainer' }).click();
+    await clickVisible(modalActionButton(page, 'Save Trainer'));
     await expect(page.getByRole('dialog')).not.toBeVisible();
     await expect(page.getByText(email)).toBeVisible();
 
@@ -560,7 +573,7 @@ test.describe('Trainer Profile Management', () => {
     await tf1.firstName.fill(firstName);
     await tf1.lastName.fill(lastName);
     await tf1.email.fill(email);
-    await page.getByRole('button', { name: 'Save Trainer' }).click();
+    await clickVisible(modalActionButton(page, 'Save Trainer'));
     await expect(page.getByRole('dialog')).not.toBeVisible();
 
     // Attempt to create second trainer with same email
@@ -569,7 +582,7 @@ test.describe('Trainer Profile Management', () => {
     await tf2.firstName.fill(`Other${suffix}`);
     await tf2.lastName.fill(`Person${suffix}`);
     await tf2.email.fill(email);
-    await page.getByRole('button', { name: 'Save Trainer' }).click();
+    await clickVisible(modalActionButton(page, 'Save Trainer'));
 
     // Modal stays open and shows the conflict message
     await expect(page.getByRole('dialog')).toBeVisible();
@@ -582,7 +595,7 @@ test.describe('Trainer Profile Management', () => {
     await expect(page.getByRole('dialog')).toBeVisible();
 
     // Submit with all fields empty (firstName, lastName, email required)
-    await page.getByRole('button', { name: 'Save Trainer' }).click();
+    await clickVisible(modalActionButton(page, 'Save Trainer'));
 
     // Modal should remain open — backend returns 422 VALIDATION_ERROR
     await expect(page.getByRole('dialog')).toBeVisible();
@@ -602,7 +615,7 @@ test.describe('Trainer Profile Management', () => {
     await tf.firstName.fill(firstName);
     await tf.lastName.fill(lastName);
     await tf.email.fill(email);
-    await page.getByRole('button', { name: 'Save Trainer' }).click();
+    await clickVisible(modalActionButton(page, 'Save Trainer'));
     await expect(page.getByRole('dialog')).not.toBeVisible();
 
     // Search by unique email so the new trainer is visible regardless of which
@@ -637,7 +650,7 @@ test.describe('Trainer Profile Management', () => {
     await tf.firstName.fill(firstName);
     await tf.lastName.fill(lastName);
     await tf.email.fill(email);
-    await page.getByRole('button', { name: 'Save Trainer' }).click();
+    await clickVisible(modalActionButton(page, 'Save Trainer'));
     await expect(page.getByRole('dialog')).not.toBeVisible();
 
     await page.getByPlaceholder('Search by name or email').fill(email);
@@ -673,7 +686,7 @@ test.describe('Trainer Profile Management', () => {
     await tf.firstName.fill(firstName);
     await tf.lastName.fill(lastName);
     await tf.email.fill(email);
-    await page.getByRole('button', { name: 'Save Trainer' }).click();
+    await clickVisible(modalActionButton(page, 'Save Trainer'));
     await expect(page.getByRole('dialog')).not.toBeVisible();
 
     await page.getByPlaceholder('Search by name or email').fill(email);
@@ -714,7 +727,7 @@ test.describe('Trainer Profile Management', () => {
     await tf.firstName.fill(firstName);
     await tf.lastName.fill(lastName);
     await tf.email.fill(email);
-    await page.getByRole('button', { name: 'Save Trainer' }).click();
+    await clickVisible(modalActionButton(page, 'Save Trainer'));
     await expect(page.getByRole('dialog')).not.toBeVisible();
 
     await page.getByPlaceholder('Search by name or email').fill(email);
@@ -760,7 +773,7 @@ test.describe('Room Management', () => {
     await rf.capacity.fill(capacity);
     await rf.description.fill(description);
 
-    await roomSaveButton(page).click();
+    await clickVisible(roomSaveButton(page));
     await expect(page.getByRole('dialog')).not.toBeVisible();
 
     // Room should appear in the list — assert via the row that contains both name and capacity
@@ -787,7 +800,7 @@ test.describe('Room Management', () => {
     await page.getByRole('button', { name: 'Add Room' }).click();
     const rf1 = roomField(page);
     await rf1.name.fill(originalName);
-    await roomSaveButton(page).click();
+    await clickVisible(roomSaveButton(page));
     await expect(page.getByRole('dialog')).not.toBeVisible();
     await expect(page.getByText(originalName)).toBeVisible();
 
@@ -798,7 +811,7 @@ test.describe('Room Management', () => {
 
     const rf2 = roomField(page);
     await rf2.description.fill(updatedDescription);
-    await roomSaveButton(page).click();
+    await clickVisible(roomSaveButton(page));
     await expect(page.getByRole('dialog')).not.toBeVisible();
 
     // Original name still present (edit only changed description)
@@ -814,7 +827,7 @@ test.describe('Room Management', () => {
     await page.getByRole('button', { name: 'Add Room' }).click();
     const rf = roomField(page);
     await rf.name.fill(roomName);
-    await roomSaveButton(page).click();
+    await clickVisible(roomSaveButton(page));
     await expect(page.getByRole('dialog')).not.toBeVisible();
     await expect(page.getByText(roomName)).toBeVisible();
 
@@ -852,14 +865,14 @@ test.describe('Room Management', () => {
     await page.getByRole('button', { name: 'Add Room' }).click();
     const rf1 = roomField(page);
     await rf1.name.fill(roomName);
-    await roomSaveButton(page).click();
+    await clickVisible(roomSaveButton(page));
     await expect(page.getByRole('dialog')).not.toBeVisible();
 
     // Create second room with same name
     await page.getByRole('button', { name: 'Add Room' }).click();
     const rf2 = roomField(page);
     await rf2.name.fill(roomName);
-    await roomSaveButton(page).click();
+    await clickVisible(roomSaveButton(page));
 
     // Modal stays open with conflict message
     await expect(page.getByRole('dialog')).toBeVisible();
@@ -870,7 +883,7 @@ test.describe('Room Management', () => {
     await adminGoto(page, '/admin/rooms');
     await page.getByRole('button', { name: 'Add Room' }).click();
     // Submit with empty name
-    await roomSaveButton(page).click();
+    await clickVisible(roomSaveButton(page));
     // Modal should remain open (backend returns 422 VALIDATION_ERROR)
     await expect(page.getByRole('dialog')).toBeVisible();
   });
@@ -926,7 +939,7 @@ test.describe('Class Template Management', () => {
     // Capacity
     await tpf.capacity.fill('15');
 
-    await page.getByRole('button', { name: 'Save Template' }).click();
+    await clickVisible(modalActionButton(page, 'Save Template'));
     await expect(page.getByRole('dialog')).not.toBeVisible();
 
     // Template card should appear
@@ -943,7 +956,7 @@ test.describe('Class Template Management', () => {
     await page.getByRole('button', { name: 'Add Template' }).click();
     const tpf1 = templateField(page);
     await tpf1.name.fill(templateName);
-    await page.getByRole('button', { name: 'Save Template' }).click();
+    await clickVisible(modalActionButton(page, 'Save Template'));
     await expect(page.getByRole('dialog')).not.toBeVisible();
     await expect(page.getByText(templateName)).toBeVisible();
 
@@ -954,7 +967,7 @@ test.describe('Class Template Management', () => {
 
     const tpf2 = templateField(page);
     await tpf2.duration.fill('90');
-    await page.getByRole('button', { name: 'Save Template' }).click();
+    await clickVisible(modalActionButton(page, 'Save Template'));
     await expect(page.getByRole('dialog')).not.toBeVisible();
   });
 
@@ -967,7 +980,7 @@ test.describe('Class Template Management', () => {
     await page.getByRole('button', { name: 'Add Template' }).click();
     const tpf = templateField(page);
     await tpf.name.fill(templateName);
-    await page.getByRole('button', { name: 'Save Template' }).click();
+    await clickVisible(modalActionButton(page, 'Save Template'));
     await expect(page.getByRole('dialog')).not.toBeVisible();
     await expect(page.getByText(templateName)).toBeVisible();
 
@@ -1017,14 +1030,14 @@ test.describe('Class Template Management', () => {
     await page.getByRole('button', { name: 'Add Template' }).click();
     const tpf1 = templateField(page);
     await tpf1.name.fill(templateName);
-    await page.getByRole('button', { name: 'Save Template' }).click();
+    await clickVisible(modalActionButton(page, 'Save Template'));
     await expect(page.getByRole('dialog')).not.toBeVisible();
 
     // Create second template with same name
     await page.getByRole('button', { name: 'Add Template' }).click();
     const tpf2 = templateField(page);
     await tpf2.name.fill(templateName);
-    await page.getByRole('button', { name: 'Save Template' }).click();
+    await clickVisible(modalActionButton(page, 'Save Template'));
 
     await expect(page.getByRole('dialog')).toBeVisible();
     await expect(page.getByText('A template with this name already exists')).toBeVisible();
