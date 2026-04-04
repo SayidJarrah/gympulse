@@ -5,7 +5,7 @@ import { useMembershipPlanStore } from '../store/membershipPlanStore'
  * Hook for the public plans catalogue page.
  * Fetches and returns the paginated list of active membership plans.
  */
-export function usePlans(page = 0, size = 20) {
+export function usePlans(page = 0, size = 20, enabled = true) {
   const {
     activePlans,
     activePlansTotalPages,
@@ -17,8 +17,12 @@ export function usePlans(page = 0, size = 20) {
   } = useMembershipPlanStore()
 
   useEffect(() => {
-    fetchActivePlans(page, size)
-  }, [page, size, fetchActivePlans])
+    if (!enabled) {
+      return
+    }
+
+    void fetchActivePlans(page, size)
+  }, [enabled, page, size, fetchActivePlans])
 
   return {
     plans: activePlans,

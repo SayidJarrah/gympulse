@@ -2,38 +2,19 @@ import { useEffect, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
 import { useAuthStore } from '../../store/authStore'
-import { useMembershipStore } from '../../store/membershipStore'
 import { useProfileStore } from '../../store/profileStore'
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { isAuthenticated, user, clearAuth } = useAuthStore()
   const { avatarUrl, ensureProfileLoaded, resetProfile } = useProfileStore()
-  const {
-    activeMembership,
-    fetchMyMembership,
-    membershipErrorCode,
-    membershipLoading,
-  } = useMembershipStore()
   const navigate = useNavigate()
-  const shouldResolveMembership =
-    isAuthenticated &&
-    user?.role === 'USER' &&
-    activeMembership === null &&
-    membershipErrorCode === null &&
-    !membershipLoading
 
   const handleLogout = () => {
     resetProfile()
     clearAuth()
     navigate('/login')
   }
-
-  useEffect(() => {
-    if (shouldResolveMembership) {
-      void fetchMyMembership()
-    }
-  }, [fetchMyMembership, shouldResolveMembership])
 
   useEffect(() => {
     if (isAuthenticated && user?.role === 'USER') {
@@ -44,14 +25,15 @@ export function Navbar() {
     resetProfile()
   }, [ensureProfileLoaded, isAuthenticated, resetProfile, user?.role])
 
-  const navLinks = [{ label: 'Plans', href: '/plans' }]
+  const navLinks =
+    isAuthenticated && user?.role === 'USER' ? [] : [{ label: 'Plans', href: '/plans' }]
   const userNavLinks =
     isAuthenticated && user?.role === 'USER'
       ? [
           { label: 'Home', href: '/home' },
           { label: 'Schedule', href: '/schedule' },
           { label: 'Trainers', href: '/trainers' },
-          ...(activeMembership ? [{ label: 'My Favorites', href: '/trainers/favorites' }] : []),
+          { label: 'My Favorites', href: '/trainers/favorites' },
           { label: 'Profile', href: '/profile' },
         ]
       : []

@@ -2,7 +2,7 @@
 
 ## Reference
 - PRD: `docs/prd/user-access-flow.md`
-- SDD: pending
+- SDD: `docs/sdd/user-access-flow.md`
 - Design System: `docs/design/system.md`
 - Related designs:
   - `docs/design/member-home.md`

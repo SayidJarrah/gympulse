@@ -24,6 +24,10 @@ import type {
 } from '../../types/groupClassSchedule'
 import { getBookingErrorMessage } from '../../utils/errorMessages'
 import {
+  formatRangeLabel,
+  formatShortDateLabel,
+} from '../../utils/scheduleFormatters'
+import {
   addDaysToIsoDate,
   formatIsoDate,
   getTodayIsoDate,
@@ -380,13 +384,24 @@ export function GroupClassesSchedulePage() {
         {isLoading ? (
           <ScheduleHeaderSkeleton />
         ) : (
-          <SchedulePageHeader timeZone={schedule?.timeZone ?? timeZone} showBadge={showTimeZoneBadge} />
+          <SchedulePageHeader
+            activeView={activeView}
+            anchorDate={activeAnchorDate}
+            bookedCount={bookedEntries.length}
+            hasActiveMembership={schedule?.hasActiveMembership ?? true}
+            onOpenBookings={handleOpenBookingsDrawer}
+            rangeEndDateExclusive={schedule?.rangeEndDateExclusive}
+            rangeStartDate={schedule?.rangeStartDate}
+            showBadge={showTimeZoneBadge}
+            timeZone={schedule?.timeZone ?? timeZone}
+            totalCount={entries.length}
+          />
         )}
 
         {isLoading && <ScheduleToolbarSkeleton />}
 
         {showToolbar && schedule && (
-          <section className="sticky top-16 z-30 rounded-2xl border border-gray-800 bg-gray-900/95 shadow-lg shadow-black/40 backdrop-blur">
+          <section className="sticky top-16 z-30 rounded-[24px] border border-gray-800 bg-gray-900/95 shadow-lg shadow-black/40 backdrop-blur">
             <div className="flex flex-col gap-4 px-4 py-4 md:px-6 lg:flex-row lg:items-center lg:justify-between">
               <GroupScheduleViewTabs
                 view={activeView}
@@ -562,40 +577,145 @@ export function GroupClassesSchedulePage() {
 }
 
 interface SchedulePageHeaderProps {
+  activeView: ScheduleView;
+  anchorDate: string;
+  bookedCount: number;
+  hasActiveMembership: boolean;
+  onOpenBookings: () => void;
+  rangeEndDateExclusive?: string;
+  rangeStartDate?: string;
   timeZone: string;
+  totalCount: number;
   showBadge: boolean;
 }
 
-function SchedulePageHeader({ timeZone, showBadge }: SchedulePageHeaderProps) {
+function SchedulePageHeader({
+  activeView,
+  anchorDate,
+  bookedCount,
+  hasActiveMembership,
+  onOpenBookings,
+  rangeEndDateExclusive,
+  rangeStartDate,
+  timeZone,
+  totalCount,
+  showBadge,
+}: SchedulePageHeaderProps) {
+  const rangeLabel =
+    activeView === 'day'
+      ? formatShortDateLabel(anchorDate, timeZone)
+      : rangeStartDate && rangeEndDateExclusive
+        ? formatRangeLabel(rangeStartDate, rangeEndDateExclusive, timeZone)
+        : formatShortDateLabel(anchorDate, timeZone)
+
   return (
-    <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-      <div>
-        <h1 className="text-3xl font-bold leading-tight text-white">Group Classes</h1>
-        <p className="text-base text-gray-400">
-          Browse the live programme, book open spots, and manage your upcoming classes.
-        </p>
+    <section className="relative overflow-hidden rounded-[28px] border border-gray-800 bg-gray-900 p-6 shadow-xl shadow-black/40 sm:p-8">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(34,197,94,0.22),_transparent_35%),radial-gradient(circle_at_bottom_left,_rgba(249,115,22,0.12),_transparent_28%)]" />
+      <div className="pointer-events-none absolute inset-0 opacity-20 [background-image:linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] [background-size:32px_32px]" />
+
+      <div className="relative grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-end">
+        <div className="space-y-5">
+          <div className="flex flex-wrap gap-2">
+            <span className="inline-flex items-center rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-green-300">
+              Class schedule
+            </span>
+            <span
+              className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
+                hasActiveMembership
+                  ? 'border border-gray-700 bg-[#0F0F0F] text-gray-300'
+                  : 'border border-orange-500/30 bg-orange-500/10 text-orange-300'
+              }`}
+            >
+              {hasActiveMembership ? 'Membership active' : 'Activation needed'}
+            </span>
+            {showBadge ? (
+              <span className="inline-flex items-center rounded-full border border-gray-700 bg-[#0F0F0F] px-3 py-1 text-xs font-medium text-gray-300">
+                Times shown in {timeZone}
+              </span>
+            ) : null}
+          </div>
+
+          <div className="space-y-3">
+            <p className="text-sm font-medium uppercase tracking-[0.22em] text-gray-400">
+              Live programme
+            </p>
+            <h1 className="font-['Barlow_Condensed'] text-5xl font-bold uppercase leading-none text-white sm:text-6xl">
+              Book your next session
+            </h1>
+            <p className="max-w-2xl text-base leading-normal text-gray-300">
+              Browse the live programme, reserve open spots, and keep your weekly training plan in one focused view.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2 text-sm text-gray-300">
+            <span className="rounded-full border border-gray-700 bg-[#0F0F0F] px-3 py-1.5">
+              {rangeLabel}
+            </span>
+            <span className="rounded-full border border-gray-700 bg-[#0F0F0F] px-3 py-1.5">
+              {activeView === 'week' ? 'Weekly planning board' : activeView === 'day' ? 'Day agenda' : 'Rolling list'}
+            </span>
+            <span className="rounded-full border border-gray-700 bg-[#0F0F0F] px-3 py-1.5">
+              {totalCount} {totalCount === 1 ? 'class' : 'classes'} in range
+            </span>
+          </div>
+        </div>
+
+        <div className="grid gap-3">
+          <div className="rounded-2xl border border-gray-800 bg-[#0F0F0F]/90 px-4 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">
+              Booked in this view
+            </p>
+            <p className="mt-2 font-['Barlow_Condensed'] text-4xl font-bold uppercase leading-none text-white">
+              {bookedCount}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-gray-800 bg-[#0F0F0F]/90 px-4 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">
+              Classes available
+            </p>
+            <p className="mt-2 text-xl font-semibold leading-tight text-white">
+              {totalCount} this range
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onOpenBookings}
+            className="inline-flex items-center justify-center rounded-md bg-green-500 px-4 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-green-600 hover:shadow-lg hover:shadow-green-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
+          >
+            Open booking hub
+          </button>
+        </div>
       </div>
-      {showBadge && (
-        <span className="inline-flex items-center gap-2 rounded-full border border-gray-700 bg-gray-900 px-3 py-1 text-xs font-medium text-gray-300">
-          Times shown in {timeZone}
-        </span>
-      )}
-    </div>
+    </section>
   )
 }
 
 function ScheduleHeaderSkeleton() {
   return (
-    <div className="flex flex-col gap-3">
-      <div className="h-8 w-52 rounded-full bg-gray-800 animate-pulse" />
-      <div className="h-4 w-72 rounded-full bg-gray-800 animate-pulse" />
-    </div>
+    <section className="rounded-[28px] border border-gray-800 bg-gray-900 p-6 shadow-xl shadow-black/30 sm:p-8">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="space-y-4">
+          <div className="flex gap-2">
+            <div className="h-7 w-28 rounded-full bg-gray-800 animate-pulse" />
+            <div className="h-7 w-32 rounded-full bg-gray-800 animate-pulse" />
+          </div>
+          <div className="h-4 w-28 rounded-full bg-gray-800 animate-pulse" />
+          <div className="h-16 w-80 rounded-xl bg-gray-800 animate-pulse" />
+          <div className="h-4 w-96 rounded-full bg-gray-800 animate-pulse" />
+        </div>
+        <div className="grid gap-3">
+          <div className="h-24 rounded-2xl bg-gray-800 animate-pulse" />
+          <div className="h-24 rounded-2xl bg-gray-800 animate-pulse" />
+          <div className="h-12 rounded-md bg-gray-800 animate-pulse" />
+        </div>
+      </div>
+    </section>
   )
 }
 
 function ScheduleToolbarSkeleton() {
   return (
-    <section className="sticky top-16 z-30 rounded-2xl border border-gray-800 bg-gray-900/95 shadow-lg shadow-black/40 backdrop-blur">
+    <section className="sticky top-16 z-30 rounded-[24px] border border-gray-800 bg-gray-900/95 shadow-lg shadow-black/40 backdrop-blur">
       <div className="flex flex-col gap-4 px-4 py-4 md:px-6 lg:flex-row lg:items-center lg:justify-between">
         <div className="inline-flex w-full rounded-xl border border-gray-800 bg-[#0F0F0F] p-1 sm:w-auto">
           {[1, 2, 3].map((item) => (

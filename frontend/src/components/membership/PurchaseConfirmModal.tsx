@@ -5,6 +5,7 @@ import type { MembershipPlan } from '../../types/membershipPlan'
 import { useMembershipStore } from '../../store/membershipStore'
 import { getMembershipErrorMessage } from '../../utils/membershipErrors'
 import { formatPrice } from '../../utils/planFormatters'
+import { buildHomeMembershipPath } from '../../utils/accessFlowNavigation'
 import type { AxiosError } from 'axios'
 import type { ApiErrorResponse } from '../../types/auth'
 
@@ -21,11 +22,11 @@ export function PurchaseConfirmModal({
   plan,
   onCancel,
   onSuccess,
-  redirectTo = '/membership',
+  redirectTo = buildHomeMembershipPath('activated'),
 }: PurchaseConfirmModalProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const { purchaseMembership } = useMembershipStore()
+  const { purchaseMembership, fetchMyMembership } = useMembershipStore()
   const navigate = useNavigate()
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
@@ -65,6 +66,18 @@ export function PurchaseConfirmModal({
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>
       const code = axiosError.response?.data?.code ?? ''
+
+      if (code === 'MEMBERSHIP_ALREADY_ACTIVE') {
+        await fetchMyMembership()
+
+        if (useMembershipStore.getState().activeMembership) {
+          onCancel()
+          onSuccess?.()
+          navigate(buildHomeMembershipPath('already-active'))
+          return
+        }
+      }
+
       setError(getMembershipErrorMessage(code))
       setIsLoading(false)
     }

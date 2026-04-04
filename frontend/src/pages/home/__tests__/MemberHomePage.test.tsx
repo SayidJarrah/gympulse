@@ -1,15 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, useLocation } from 'react-router-dom'
 import { MemberHomePage } from '../MemberHomePage'
 import { useMembershipStore } from '../../../store/membershipStore'
-import type { MembershipPlan } from '../../../types/membershipPlan'
 import type { MemberHomeClassPreviewResponse } from '../../../types/memberHome'
+import type { MembershipPlan } from '../../../types/membershipPlan'
 import type { TrainerDiscoveryResponse } from '../../../types/trainerDiscovery'
 import type { UserMembership } from '../../../types/userMembership'
-import { getMemberHomeClassesPreview, getMemberHomePlanTeasers, getMemberHomeTrainerPreview } from '../../../api/memberHome'
-import { getMyMembership, purchaseMembership } from '../../../api/memberships'
+import {
+  getMemberHomeClassesPreview,
+  getMemberHomePlanTeasers,
+  getMemberHomeTrainerPreview,
+} from '../../../api/memberHome'
+import { getMyMembership } from '../../../api/memberships'
 
 vi.mock('../../../api/memberHome', () => ({
   getMemberHomeClassesPreview: vi.fn(),
@@ -22,7 +25,6 @@ vi.mock('../../../api/memberships', async (importOriginal) => {
   return {
     ...actual,
     getMyMembership: vi.fn(),
-    purchaseMembership: vi.fn(),
   }
 })
 
@@ -35,7 +37,6 @@ vi.mock('../../../components/layout/Navbar', () => ({
 }))
 
 const mockedGetMyMembership = vi.mocked(getMyMembership)
-const mockedPurchaseMembership = vi.mocked(purchaseMembership)
 const mockedGetMemberHomePlanTeasers = vi.mocked(getMemberHomePlanTeasers)
 const mockedGetMemberHomeTrainerPreview = vi.mocked(getMemberHomeTrainerPreview)
 const mockedGetMemberHomeClassesPreview = vi.mocked(getMemberHomeClassesPreview)
@@ -115,10 +116,16 @@ function noMembershipError() {
   }
 }
 
-function renderPage() {
+function LocationDisplay() {
+  const location = useLocation()
+  return <div data-testid="location">{`${location.pathname}${location.search}${location.hash}`}</div>
+}
+
+function renderPage(initialEntry = '/home') {
   return render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[initialEntry]}>
       <MemberHomePage />
+      <LocationDisplay />
     </MemoryRouter>
   )
 }
@@ -126,7 +133,6 @@ function renderPage() {
 describe('MemberHomePage', () => {
   beforeEach(() => {
     mockedGetMyMembership.mockReset()
-    mockedPurchaseMembership.mockReset()
     mockedGetMemberHomePlanTeasers.mockReset()
     mockedGetMemberHomeTrainerPreview.mockReset()
     mockedGetMemberHomeClassesPreview.mockReset()
@@ -148,27 +154,36 @@ describe('MemberHomePage', () => {
     mockedGetMemberHomeClassesPreview.mockResolvedValue(classesPreview)
   })
 
-  it('renders the membership ACTIVE state', async () => {
+  it('renders the active state and consumes the activation banner query param', async () => {
     mockedGetMyMembership.mockResolvedValueOnce(activeMembership)
 
-    renderPage()
+    renderPage('/home?membershipBanner=activated#membership')
 
-    expect(await screen.findByRole('heading', { name: 'Monthly Plus' })).toBeInTheDocument()
-    expect(screen.getByLabelText('Status: Active')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Manage membership' })).toBeInTheDocument()
-    expect(screen.getByText('Yoga Flow')).toBeInTheDocument()
+    expect(await screen.findByText('Membership activated')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Monthly Plus' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Open schedule' })).toBeInTheDocument()
+
+    await waitFor(() => {
+      expect(screen.getByTestId('location')).toHaveTextContent('/home#membership')
+    })
   })
 
-  it('renders the no-membership state with teaser plans', async () => {
+  it('renders the no-membership teaser state with plans deep links', async () => {
     mockedGetMyMembership.mockRejectedValueOnce(noMembershipError())
     mockedGetMemberHomePlanTeasers.mockResolvedValueOnce([teaserPlan])
 
     renderPage()
 
-    expect(await screen.findByRole('heading', { name: 'No active membership' })).toBeInTheDocument()
-    expect(screen.getByText('Starter')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Activate Starter' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Jane Smith' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Activate your access' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Compare all plans' })).toHaveAttribute(
+      'href',
+      '/plans?source=home'
+    )
+    expect(screen.getByRole('link', { name: 'View plan' })).toHaveAttribute(
+      'href',
+      `/plans?source=home&highlight=${teaserPlan.id}`
+    )
+    expect(screen.queryByRole('button', { name: /Activate Starter/i })).not.toBeInTheDocument()
   })
 
   it('renders the no-plans-available state', async () => {
@@ -177,8 +192,11 @@ describe('MemberHomePage', () => {
 
     renderPage()
 
-    expect(await screen.findByRole('heading', { name: 'No active membership' })).toBeInTheDocument()
-    expect(screen.getByText('No plans available right now.')).toBeInTheDocument()
+    expect(
+      await screen.findByRole('heading', { name: 'Memberships are temporarily unavailable' })
+    ).toBeInTheDocument()
+    expect(screen.getByText('No plans available right now')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Browse trainers' })).toBeInTheDocument()
   })
 
   it('keeps membership and classes visible when the trainer section fails', async () => {
@@ -215,32 +233,6 @@ describe('MemberHomePage', () => {
     expect(await screen.findByRole('heading', { name: 'Monthly Plus' })).toBeInTheDocument()
     expect(screen.getAllByText('Could not load upcoming classes right now.')).toHaveLength(2)
     expect(screen.getByRole('link', { name: 'Jane Smith' })).toBeInTheDocument()
-  })
-
-  it('refreshes to the ACTIVE state after a successful inline purchase', async () => {
-    const user = userEvent.setup()
-
-    mockedGetMyMembership.mockRejectedValueOnce(noMembershipError())
-    mockedGetMemberHomePlanTeasers.mockResolvedValueOnce([teaserPlan])
-    mockedPurchaseMembership.mockResolvedValueOnce({
-      ...activeMembership,
-      planId: teaserPlan.id,
-      planName: teaserPlan.name,
-      maxBookingsPerMonth: teaserPlan.maxBookingsPerMonth,
-    })
-
-    renderPage()
-
-    await screen.findByRole('heading', { name: 'No active membership' })
-    await user.click(screen.getByRole('button', { name: 'Activate Starter' }))
-    await user.click(screen.getByRole('button', { name: 'Confirm' }))
-
-    await waitFor(() => {
-      expect(mockedPurchaseMembership).toHaveBeenCalledWith({ planId: teaserPlan.id })
-    })
-
-    expect(await screen.findByRole('heading', { name: 'Starter' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Manage membership' })).toBeInTheDocument()
   })
 
   it('keeps page-level horizontal overflow hidden', async () => {

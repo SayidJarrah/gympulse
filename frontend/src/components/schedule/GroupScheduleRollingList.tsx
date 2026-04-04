@@ -32,30 +32,41 @@ export function GroupScheduleRollingList({
 
   return (
     <section className="flex flex-col gap-4">
-      <h2 className="text-lg font-semibold text-white">Upcoming 14 days</h2>
+      <div className="flex flex-col gap-1">
+        <h2 className="text-lg font-semibold text-white">Upcoming 14 days</h2>
+        <p className="text-sm text-gray-400">
+          Scan the rolling programme day by day and open details only when you need them.
+        </p>
+      </div>
+
       {grouped.map((group) => (
         <div
           key={group.date}
-          className="rounded-2xl border border-gray-800 bg-gray-900"
+          className="rounded-[24px] border border-gray-800 bg-gray-900/80 shadow-md shadow-black/20"
         >
           <div className="border-b border-gray-800 px-5 py-4">
-            <h3 className="text-sm font-semibold text-gray-300">
-              {formatShortDateLabel(group.date, timeZone)}
-            </h3>
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-sm font-semibold text-gray-300">
+                {formatShortDateLabel(group.date, timeZone)}
+              </h3>
+              <span className="rounded-full border border-gray-700 bg-[#0F0F0F] px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-gray-300">
+                {group.items.length} {group.items.length === 1 ? 'class' : 'classes'}
+              </span>
+            </div>
           </div>
-          <div className="divide-y divide-gray-800">
+          <div className="grid gap-4 p-4 lg:grid-cols-2">
             {group.items.map((entry) => (
-              <div key={entry.id} className="p-4">
-                <GroupScheduleEntryCard
-                  entry={entry}
-                  timeZone={timeZone}
-                  showDate={false}
-                  onSelect={onSelectEntry}
-                  onBook={onBookEntry}
-                  onCancel={onCancelEntry}
-                  onBrowsePlans={onBrowsePlans}
-                />
-              </div>
+              <GroupScheduleEntryCard
+                key={entry.id}
+                entry={entry}
+                timeZone={timeZone}
+                showDate={false}
+                density="comfortable"
+                onSelect={onSelectEntry}
+                onBook={onBookEntry}
+                onCancel={onCancelEntry}
+                onBrowsePlans={onBrowsePlans}
+              />
             ))}
           </div>
         </div>

@@ -1,56 +1,31 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { Navigate, useSearchParams } from 'react-router-dom'
 import { Navbar } from '../../components/layout/Navbar'
-import { PlanCard, PlanCardSkeleton } from '../../components/plans/PlanCard'
 import { PurchaseConfirmModal } from '../../components/membership/PurchaseConfirmModal'
+import { PlanCard, PlanCardSkeleton } from '../../components/plans/PlanCard'
+import { PlansContextHeader } from '../../components/plans/PlansContextHeader'
 import { usePlans } from '../../hooks/usePlans'
-import { useAuthStore } from '../../store/authStore'
-import { useMembershipStore } from '../../store/membershipStore'
+import { usePlansAccessGate } from '../../hooks/usePlansAccessGate'
 import type { MembershipPlan } from '../../types/membershipPlan'
+import { getHighlightedPlanId } from '../../utils/accessFlowNavigation'
 
-const PLANS_PER_PAGE = 9 // 3-column grid fills nicely with multiples of 3
+const PLANS_PER_PAGE = 9
 
 export function PlansPage() {
   const [page, setPage] = useState(0)
+  const [searchParams] = useSearchParams()
+  const accessGate = usePlansAccessGate()
+  const plansEnabled = accessGate.mode === 'public' || accessGate.mode === 'authenticated'
   const { plans, totalPages, currentPage, totalElements, isLoading, error, refetch } = usePlans(
     page,
-    PLANS_PER_PAGE
+    PLANS_PER_PAGE,
+    plansEnabled
   )
-
-  const { isAuthenticated } = useAuthStore()
-  const {
-    activeMembership,
-    membershipErrorCode,
-    fetchMyMembership,
-    membershipLoading,
-  } = useMembershipStore()
-  const membershipStatusPending =
-    isAuthenticated &&
-    activeMembership === null &&
-    membershipErrorCode === null &&
-    !membershipLoading
-
-  // Track which plan's purchase modal is open
+  const highlightedPlanId = getHighlightedPlanId(searchParams)
   const [activatePlan, setActivatePlan] = useState<MembershipPlan | null>(null)
 
-  // Fetch membership status whenever auth state changes
-  useEffect(() => {
-    if (membershipStatusPending) {
-      void fetchMyMembership()
-    }
-  }, [fetchMyMembership, membershipStatusPending])
-
-  // Show "Activate" button only when user is authenticated and has no active membership
-  const showActivateButtons =
-    isAuthenticated &&
-    activeMembership === null &&
-    membershipErrorCode === 'NO_ACTIVE_MEMBERSHIP'
-
-  const handleActivate = (plan: MembershipPlan) => {
-    setActivatePlan(plan)
-  }
-
-  const handlePurchaseModalCancel = () => {
-    setActivatePlan(null)
+  if (accessGate.mode === 'redirect' && accessGate.redirectTo) {
+    return <Navigate replace to={accessGate.redirectTo} />
   }
 
   return (
@@ -58,119 +33,131 @@ export function PlansPage() {
       <Navbar />
 
       <main>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Page header */}
-          <div className="pt-12 pb-8">
-            <h1 className="text-3xl font-bold leading-tight text-white">Membership Plans</h1>
-            <p className="mt-2 text-base font-normal leading-normal text-gray-400">
-              Choose the plan that fits your goals.
-            </p>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="py-8">
+            {accessGate.mode === 'authenticated' ? (
+              <PlansContextHeader />
+            ) : (
+              <div className="pt-4 pb-4">
+                <h1 className="text-3xl font-bold leading-tight text-white">Membership Plans</h1>
+                <p className="mt-2 text-base font-normal leading-normal text-gray-400">
+                  Choose the plan that fits your goals.
+                </p>
+              </div>
+            )}
           </div>
 
-          {/* Plan count */}
-          {!isLoading && !error && (
-            <p className="mb-4 text-sm text-gray-400">
-              {totalElements} {totalElements === 1 ? 'plan' : 'plans'} available
-            </p>
-          )}
-
-          {/* Loading skeleton */}
-          {isLoading && (
-            <>
-              {/* Visually hidden live region announces loading to screen readers */}
-              <span className="sr-only" aria-live="polite">
-                Loading plans...
-              </span>
+          {accessGate.mode === 'loading' ? (
+            <div className="py-24" aria-live="polite">
               <div
-                className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+                className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-gray-700 border-t-green-500"
                 aria-hidden="true"
-              >
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <PlanCardSkeleton key={i} />
-                ))}
-              </div>
-            </>
-          )}
-
-          {/* Error state */}
-          {!isLoading && error && (
-            <div className="flex flex-col items-center gap-4 py-24 text-center">
-              <p className="text-base text-gray-400">{error}</p>
-              <button
-                type="button"
-                onClick={refetch}
-                className="inline-flex items-center justify-center rounded-md border border-green-500 bg-transparent px-4 py-2 text-sm font-medium text-green-400 transition-all duration-200 hover:bg-green-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0F0F0F]"
-              >
-                Try again
-              </button>
-            </div>
-          )}
-
-          {/* Empty state */}
-          {!isLoading && !error && plans.length === 0 && (
-            <div className="flex flex-col items-center gap-4 py-24 text-center">
-              <p className="text-lg font-semibold text-white">No plans available</p>
-              <p className="text-sm text-gray-400">
-                Check back later for available membership options.
+              />
+              <p className="mt-4 text-center text-sm text-gray-400">
+                Checking your membership access...
               </p>
             </div>
-          )}
-
-          {/* Plan grid */}
-          {!isLoading && !error && plans.length > 0 && (
+          ) : (
             <>
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {plans.map((plan) => (
-                  <PlanCard
-                    key={plan.id}
-                    plan={plan}
-                    onActivate={showActivateButtons ? () => handleActivate(plan) : undefined}
-                  />
-                ))}
-              </div>
+              {!isLoading && !error ? (
+                <p className="mb-4 text-sm text-gray-400">
+                  {totalElements} {totalElements === 1 ? 'plan' : 'plans'} available
+                </p>
+              ) : null}
 
-              {/* Pagination controls — only rendered when more than one page */}
-              {totalPages > 1 && (
-                <div className="mt-10 flex items-center justify-between">
-                  <p className="text-sm text-gray-400">
-                    Page {currentPage + 1} of {totalPages}
-                  </p>
-                  <div className="flex gap-3">
-                    <button
-                      type="button"
-                      disabled={currentPage === 0}
-                      onClick={() => setPage((p) => p - 1)}
-                      className="rounded-md border border-green-500 bg-transparent px-4 py-2 text-sm font-medium text-green-400 transition-all duration-200 hover:bg-green-500/10 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0F0F0F]"
-                    >
-                      Previous
-                    </button>
-                    <button
-                      type="button"
-                      disabled={currentPage >= totalPages - 1}
-                      onClick={() => setPage((p) => p + 1)}
-                      className="rounded-md bg-green-500 px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-green-600 hover:shadow-lg hover:shadow-green-500/25 disabled:cursor-not-allowed disabled:bg-green-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0F0F0F]"
-                    >
-                      Next
-                    </button>
+              {isLoading ? (
+                <>
+                  <span className="sr-only" aria-live="polite">
+                    Loading plans...
+                  </span>
+                  <div
+                    className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+                    aria-hidden="true"
+                  >
+                    {Array.from({ length: 3 }).map((_, index) => (
+                      <PlanCardSkeleton key={index} />
+                    ))}
                   </div>
+                </>
+              ) : null}
+
+              {!isLoading && error ? (
+                <div className="flex flex-col items-center gap-4 py-24 text-center">
+                  <p className="text-base text-gray-400">{error}</p>
+                  <button
+                    type="button"
+                    onClick={refetch}
+                    className="inline-flex items-center justify-center rounded-md border border-green-500 bg-transparent px-4 py-2 text-sm font-medium text-green-400 transition-all duration-200 hover:bg-green-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0F0F0F]"
+                  >
+                    Try again
+                  </button>
                 </div>
-              )}
+              ) : null}
+
+              {!isLoading && !error && plans.length === 0 ? (
+                <div className="flex flex-col items-center gap-4 py-24 text-center">
+                  <p className="text-lg font-semibold text-white">No plans available right now</p>
+                  <p className="text-sm text-gray-400">
+                    Check back later for available membership options.
+                  </p>
+                </div>
+              ) : null}
+
+              {!isLoading && !error && plans.length > 0 ? (
+                <>
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    {plans.map((plan) => (
+                      <PlanCard
+                        key={plan.id}
+                        plan={plan}
+                        highlighted={highlightedPlanId === plan.id}
+                        onActivate={accessGate.canPurchase ? () => setActivatePlan(plan) : undefined}
+                        ctaMode={accessGate.mode === 'authenticated' ? 'details' : 'register'}
+                      />
+                    ))}
+                  </div>
+
+                  {totalPages > 1 ? (
+                    <div className="mt-10 flex items-center justify-between">
+                      <p className="text-sm text-gray-400">
+                        Page {currentPage + 1} of {totalPages}
+                      </p>
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          disabled={currentPage === 0}
+                          onClick={() => setPage((current) => current - 1)}
+                          className="rounded-md border border-green-500 bg-transparent px-4 py-2 text-sm font-medium text-green-400 transition-all duration-200 hover:bg-green-500/10 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0F0F0F]"
+                        >
+                          Previous
+                        </button>
+                        <button
+                          type="button"
+                          disabled={currentPage >= totalPages - 1}
+                          onClick={() => setPage((current) => current + 1)}
+                          className="rounded-md bg-green-500 px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-green-600 hover:shadow-lg hover:shadow-green-500/25 disabled:cursor-not-allowed disabled:bg-green-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0F0F0F]"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+                </>
+              ) : null}
             </>
           )}
 
-          {/* Bottom spacing */}
           <div className="pb-16" />
         </div>
       </main>
 
-      {/* Purchase confirmation modal */}
-      {activatePlan && (
+      {activatePlan ? (
         <PurchaseConfirmModal
           isOpen={true}
           plan={activatePlan}
-          onCancel={handlePurchaseModalCancel}
+          onCancel={() => setActivatePlan(null)}
         />
-      )}
+      ) : null}
     </div>
   )
 }
