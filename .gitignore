@@ -25,3 +25,6 @@ screenshots/
 # Playwright output
 frontend/test-results/
 frontend/playwright-report/
+
+# Git worktrees
+.worktrees/
