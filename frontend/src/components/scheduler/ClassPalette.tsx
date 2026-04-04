@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { ClassTemplateResponse } from '../../types/scheduler'
+import { getClassTemplateArtworkFromResponse } from '../../utils/classTemplateArtwork'
 
 interface ClassPaletteProps {
   templates: ClassTemplateResponse[];
@@ -55,8 +56,15 @@ export function ClassPalette({ templates }: ClassPaletteProps) {
               }}
               className="mb-2 flex cursor-grab items-center gap-3 rounded-lg border border-gray-800 bg-gray-900 px-3 py-2.5 text-xs text-gray-200 transition-all duration-150 hover:border-gray-600 hover:bg-gray-800"
             >
-              <span className={`h-2.5 w-2.5 rounded-full ${CATEGORY_DOT[template.category] || 'bg-gray-500'}`} />
+              <div className="h-9 w-9 overflow-hidden rounded-lg border border-gray-800 bg-gray-950">
+                <img
+                  src={getClassTemplateArtworkFromResponse(template)}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+              </div>
               <span className="truncate text-sm font-medium text-white">{template.name}</span>
+              <span className={`h-2.5 w-2.5 rounded-full ${CATEGORY_DOT[template.category] || 'bg-gray-500'}`} />
               <span className="ml-auto text-xs text-gray-500">{template.defaultDurationMin} min</span>
             </div>
           ))

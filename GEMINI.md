@@ -6,6 +6,7 @@ This file contains project-specific instructions that take absolute precedence.
 
 ## Strategic Delegation
 - **Parallelism:** Execute multiple independent tool calls in parallel when possible.
+  Never parallelize PRD → SDD → Design work; each stage must finish before the next starts.
 - **Sub-agents:** Use `codebase_investigator` for deep analysis and `generalist` for batch refactoring or complex tasks.
 - **Teams:** Mimic "agent teams" by delegating specialized work to `generalist` sub-agents while adopting the personas in `.gemini/agents/`.
 
@@ -19,6 +20,11 @@ Follow these stages for any new feature. Do not skip stages.
 | 3. UI/UX Design | Design Spec | Read/Write `docs/design/{slug}.md` + Prototype |
 | 4. Implementation | Working Code | Build backend → frontend → E2E tests |
 | 5. Verification | PR | Run `/verify`, then create GitHub PR |
+
+Pipeline enforcement:
+- Do not start SDD until the PRD is complete and reviewed.
+- Do not start Design until the SDD is complete and reviewed.
+- If asked to run these stages in parallel, decline and proceed sequentially.
 
 ## Coding Conventions
 ### Backend (Kotlin)

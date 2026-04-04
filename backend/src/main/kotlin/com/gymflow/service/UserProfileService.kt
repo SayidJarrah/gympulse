@@ -8,7 +8,9 @@ import com.gymflow.repository.UserProfileRepository
 import com.gymflow.repository.UserRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.multipart.MultipartFile
 import java.time.LocalDate
+import java.time.OffsetDateTime
 import java.util.LinkedHashSet
 import java.util.Locale
 import java.util.UUID
@@ -16,7 +18,8 @@ import java.util.UUID
 @Service
 class UserProfileService(
     private val userProfileRepository: UserProfileRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val photoValidationService: PhotoValidationService
 ) {
 
     @Transactional(readOnly = true)
@@ -56,6 +59,63 @@ class UserProfileService(
 
         val saved = userProfileRepository.save(profile)
         return toResponse(user, saved)
+    }
+
+    @Transactional
+    fun uploadMyProfilePhoto(userId: UUID, file: MultipartFile) {
+        loadUser(userId)
+        val validated = photoValidationService.validatePhoto(file)
+        val profile = userProfileRepository.findById(userId).orElse(UserProfile(userId = userId))
+
+        profile.profilePhotoData = validated.bytes
+        profile.profilePhotoMimeType = validated.mimeType
+
+        userProfileRepository.save(profile)
+    }
+
+    @Transactional(readOnly = true)
+    fun getMyProfilePhoto(userId: UUID): UserProfilePhoto {
+        loadUser(userId)
+        val profile = userProfileRepository.findById(userId).orElseThrow {
+            ImageNotFoundException("Profile photo not found")
+        }
+        val photoData = profile.profilePhotoData ?: throw ImageNotFoundException("Profile photo not found")
+        val mimeType = profile.profilePhotoMimeType ?: throw ImageNotFoundException("Profile photo not found")
+
+        return UserProfilePhoto(
+            data = photoData,
+            mimeType = mimeType,
+            updatedAt = profile.updatedAt
+        )
+    }
+
+    @Transactional(readOnly = true)
+    fun getProfilePhotoForAdmin(userId: UUID): UserProfilePhoto {
+        val profile = userProfileRepository.findById(userId).orElseThrow {
+            ImageNotFoundException("Profile photo not found")
+        }
+        val photoData = profile.profilePhotoData ?: throw ImageNotFoundException("Profile photo not found")
+        val mimeType = profile.profilePhotoMimeType ?: throw ImageNotFoundException("Profile photo not found")
+
+        return UserProfilePhoto(
+            data = photoData,
+            mimeType = mimeType,
+            updatedAt = profile.updatedAt
+        )
+    }
+
+    @Transactional
+    fun deleteMyProfilePhoto(userId: UUID) {
+        loadUser(userId)
+        val profile = userProfileRepository.findById(userId).orElse(null) ?: return
+
+        if (profile.profilePhotoData == null && profile.profilePhotoMimeType == null) {
+            return
+        }
+
+        profile.profilePhotoData = null
+        profile.profilePhotoMimeType = null
+        userProfileRepository.save(profile)
     }
 
     private fun loadUser(userId: UUID): User {
@@ -167,11 +227,14 @@ class UserProfileService(
                 dateOfBirth = null,
                 fitnessGoals = emptyList(),
                 preferredClassTypes = emptyList(),
+                hasProfilePhoto = false,
+                profilePhotoUrl = null,
                 createdAt = user.createdAt,
                 updatedAt = user.updatedAt
             )
         }
 
+        val hasProfilePhoto = profile.profilePhotoData != null
         return UserProfileResponse(
             userId = user.id,
             email = user.email,
@@ -181,10 +244,18 @@ class UserProfileService(
             dateOfBirth = profile.dateOfBirth,
             fitnessGoals = profile.fitnessGoals.toList(),
             preferredClassTypes = profile.preferredClassTypes.toList(),
+            hasProfilePhoto = hasProfilePhoto,
+            profilePhotoUrl = if (hasProfilePhoto) "/api/v1/profile/me/photo" else null,
             createdAt = profile.createdAt,
             updatedAt = profile.updatedAt
         )
     }
+
+    data class UserProfilePhoto(
+        val data: ByteArray,
+        val mimeType: String,
+        val updatedAt: OffsetDateTime
+    )
 
     companion object {
         private val PHONE_REGEX = Regex("^\\+[1-9]\\d{7,19}$")

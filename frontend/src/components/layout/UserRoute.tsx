@@ -8,7 +8,7 @@ interface UserRouteProps {
 
 /**
  * Client-side member route guard.
- * Redirects unauthenticated users to /login and admins to /plans.
+ * Redirects unauthenticated users to /login and admins to /admin/plans.
  * Note: this is a UI convenience only — the server enforces real authorization via Spring Security.
  */
 export function UserRoute({ children }: UserRouteProps) {
@@ -19,7 +19,7 @@ export function UserRoute({ children }: UserRouteProps) {
   }
 
   if (user?.role !== 'USER') {
-    return <Navigate to="/plans" replace />
+    return <Navigate to="/admin/plans" replace />
   }
 
   return <>{children}</>

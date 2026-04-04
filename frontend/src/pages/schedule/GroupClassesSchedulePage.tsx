@@ -1,21 +1,31 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Navbar } from '../../components/layout/Navbar'
+import { BookingConfirmModal } from '../../components/schedule/BookingConfirmModal'
+import { BookingSummaryBar } from '../../components/schedule/BookingSummaryBar'
+import { BookingToast } from '../../components/schedule/BookingToast'
+import { CancelBookingModal } from '../../components/schedule/CancelBookingModal'
 import { GroupScheduleViewTabs } from '../../components/schedule/GroupScheduleViewTabs'
 import { GroupSchedulePeriodNavigator } from '../../components/schedule/GroupSchedulePeriodNavigator'
 import { GroupScheduleWeekGrid } from '../../components/schedule/GroupScheduleWeekGrid'
 import { GroupScheduleDayAgenda } from '../../components/schedule/GroupScheduleDayAgenda'
 import { GroupScheduleRollingList } from '../../components/schedule/GroupScheduleRollingList'
 import { GroupScheduleEntryModal } from '../../components/schedule/GroupScheduleEntryModal'
+import { MyBookingsDrawer } from '../../components/schedule/MyBookingsDrawer'
 import { useGroupClassSchedule } from '../../hooks/useGroupClassSchedule'
 import { useScheduleTimeZone } from '../../hooks/useScheduleTimeZone'
+import { useAuthStore } from '../../store/authStore'
+import { useBookingStore } from '../../store/bookingStore'
 import { useGroupClassScheduleStore } from '../../store/groupClassScheduleStore'
+import type { BookingResponse } from '../../types/booking'
 import type {
   GroupClassScheduleEntry,
   ScheduleView,
 } from '../../types/groupClassSchedule'
+import { getBookingErrorMessage } from '../../utils/errorMessages'
 import {
   addDaysToIsoDate,
+  formatIsoDate,
   getTodayIsoDate,
   isValidIsoDate,
 } from '../../utils/scheduleDates'
@@ -27,10 +37,109 @@ const INVALID_QUERY_CODES = new Set([
   'INVALID_TIME_ZONE',
 ])
 
+interface ToastState {
+  kind: 'success' | 'error';
+  message: string;
+}
+
+function getCancellationCutoffAt(scheduledAt: string): string {
+  return new Date(new Date(scheduledAt).getTime() - 3 * 60 * 60 * 1000).toISOString()
+}
+
+function buildBookingFromEntry(
+  entry: GroupClassScheduleEntry,
+  userId: string | null
+): BookingResponse | null {
+  if (!entry.currentUserBooking) {
+    return null
+  }
+
+  return {
+    id: entry.currentUserBooking.id,
+    userId: userId ?? '',
+    classId: entry.id,
+    status: entry.currentUserBooking.status,
+    bookedAt: entry.currentUserBooking.bookedAt,
+    cancelledAt: null,
+    className: entry.name,
+    scheduledAt: entry.scheduledAt,
+    durationMin: entry.durationMin,
+    trainerNames: entry.trainerNames,
+    classPhotoUrl: entry.classPhotoUrl,
+    isCancellable: entry.cancellationAllowed,
+    cancellationCutoffAt: getCancellationCutoffAt(entry.scheduledAt),
+  }
+}
+
+function patchEntryAfterBooking(
+  entry: GroupClassScheduleEntry,
+  booking: BookingResponse
+): GroupClassScheduleEntry {
+  const hadBooking = entry.currentUserBooking !== null
+  const nextConfirmedBookings = hadBooking
+    ? entry.confirmedBookings
+    : Math.min(entry.capacity, entry.confirmedBookings + 1)
+
+  return {
+    ...entry,
+    confirmedBookings: nextConfirmedBookings,
+    remainingSpots: Math.max(entry.capacity - nextConfirmedBookings, 0),
+    currentUserBooking: {
+      id: booking.id,
+      status: booking.status,
+      bookedAt: booking.bookedAt,
+    },
+    bookingAllowed: false,
+    bookingDeniedReason: 'ALREADY_BOOKED',
+    cancellationAllowed: booking.isCancellable,
+  }
+}
+
+function patchEntryAfterCancellation(
+  entry: GroupClassScheduleEntry,
+  hasActiveMembership: boolean
+): GroupClassScheduleEntry {
+  const startsAt = new Date(entry.scheduledAt).getTime()
+  const hasStarted = startsAt <= Date.now()
+  const nextConfirmedBookings =
+    entry.currentUserBooking !== null
+      ? Math.max(entry.confirmedBookings - 1, 0)
+      : entry.confirmedBookings
+
+  const bookingAllowed = !hasStarted && hasActiveMembership && nextConfirmedBookings < entry.capacity
+
+  return {
+    ...entry,
+    confirmedBookings: nextConfirmedBookings,
+    remainingSpots: Math.max(entry.capacity - nextConfirmedBookings, 0),
+    currentUserBooking: null,
+    bookingAllowed,
+    bookingDeniedReason: hasStarted
+      ? 'CLASS_ALREADY_STARTED'
+      : hasActiveMembership
+        ? nextConfirmedBookings >= entry.capacity
+          ? 'CLASS_FULL'
+          : null
+        : 'MEMBERSHIP_REQUIRED',
+    cancellationAllowed: false,
+  }
+}
+
 export function GroupClassesSchedulePage() {
   const timeZone = useScheduleTimeZone()
+  const navigate = useNavigate()
+  const userId = useAuthStore((state) => state.user?.id ?? null)
   const [searchParams, setSearchParams] = useSearchParams()
-  const { fetchSchedule } = useGroupClassScheduleStore()
+  const { fetchSchedule, patchScheduleEntry } = useGroupClassScheduleStore()
+  const {
+    myBookings,
+    myBookingsLoading,
+    myBookingsError,
+    fetchMyBookings,
+    bookClass,
+    cancelUserBooking,
+    upsertBooking,
+  } = useBookingStore()
 
   const rawView = searchParams.get('view')
   const rawDate = searchParams.get('date')
@@ -83,6 +192,14 @@ export function GroupClassesSchedulePage() {
 
   const [selectedEntry, setSelectedEntry] = useState<GroupClassScheduleEntry | null>(null)
   const [selectionStale, setSelectionStale] = useState(false)
+  const [isBookingsDrawerOpen, setIsBookingsDrawerOpen] = useState(false)
+  const [selectedBookEntry, setSelectedBookEntry] = useState<GroupClassScheduleEntry | null>(null)
+  const [selectedCancelBooking, setSelectedCancelBooking] = useState<BookingResponse | null>(null)
+  const [bookingActionError, setBookingActionError] = useState<string | null>(null)
+  const [isBookingSubmitting, setIsBookingSubmitting] = useState(false)
+  const [isCancelSubmitting, setIsCancelSubmitting] = useState(false)
+  const [toast, setToast] = useState<ToastState | null>(null)
+  const [pendingClassId, setPendingClassId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!selectedEntry || !schedule) return
@@ -95,9 +212,17 @@ export function GroupClassesSchedulePage() {
     setSelectionStale(false)
   }, [schedule, selectedEntry])
 
+  useEffect(() => {
+    if (!pendingClassId || !schedule) return
+    const matchedEntry = schedule.entries.find((entry) => entry.id === pendingClassId)
+    if (!matchedEntry) return
+    setSelectedEntry(matchedEntry)
+    setSelectionStale(false)
+    setPendingClassId(null)
+  }, [pendingClassId, schedule])
+
   const isInvalidState = hasInvalidParams || INVALID_QUERY_CODES.has(errorCode ?? '')
-  const isMembershipRequired = errorCode === 'NO_ACTIVE_MEMBERSHIP'
-  const isLoadError = Boolean(error) && !isInvalidState && !isMembershipRequired
+  const isLoadError = Boolean(error) && !isInvalidState
 
   const handleViewChange = (nextView: ScheduleView) => {
     setSearchParams({ view: nextView, date: activeAnchorDate })
@@ -128,11 +253,122 @@ export function GroupClassesSchedulePage() {
     void fetchSchedule(scheduleParams)
   }
 
-  const showToolbar = !isLoading && !isInvalidState && !isMembershipRequired && !isLoadError
+  const handleBrowsePlans = () => navigate('/plans')
+
+  const revalidateScheduleAndBookings = () => {
+    if (scheduleParams) {
+      void fetchSchedule(scheduleParams, { preserveSchedule: true })
+    }
+    void fetchMyBookings({ page: 0, size: 50 })
+  }
+
+  const handleOpenBookingsDrawer = () => {
+    setIsBookingsDrawerOpen(true)
+    void fetchMyBookings({ page: 0, size: 50 })
+  }
+
+  const handleBookRequest = (entry: GroupClassScheduleEntry) => {
+    setBookingActionError(null)
+    setSelectedBookEntry(entry)
+  }
+
+  const handleCancelRequest = (entry: GroupClassScheduleEntry) => {
+    const booking = buildBookingFromEntry(entry, userId)
+    if (!booking) {
+      return
+    }
+    setBookingActionError(null)
+    setSelectedCancelBooking(booking)
+  }
+
+  const handleConfirmBooking = async () => {
+    if (!selectedBookEntry) return
+
+    setIsBookingSubmitting(true)
+    setBookingActionError(null)
+    try {
+      const booking = await bookClass(selectedBookEntry.id)
+      patchScheduleEntry(selectedBookEntry.id, (entry) => patchEntryAfterBooking(entry, booking))
+      upsertBooking(booking)
+      setSelectedBookEntry(null)
+      setSelectedEntry((current) =>
+        current?.id === selectedBookEntry.id ? patchEntryAfterBooking(current, booking) : current
+      )
+      setToast({ kind: 'success', message: 'Spot booked.' })
+      revalidateScheduleAndBookings()
+    } catch (err) {
+      const errorResponse = err as { response?: { data?: { code?: string } } }
+      const code = errorResponse.response?.data?.code
+      const message = getBookingErrorMessage(code, 'Could not book this class right now.')
+      setBookingActionError(message)
+      setToast({ kind: 'error', message })
+    } finally {
+      setIsBookingSubmitting(false)
+    }
+  }
+
+  const handleConfirmCancellation = async () => {
+    if (!selectedCancelBooking) return
+
+    setIsCancelSubmitting(true)
+    setBookingActionError(null)
+    try {
+      const booking = await cancelUserBooking(selectedCancelBooking.id)
+      upsertBooking(booking)
+      if (schedule) {
+        patchScheduleEntry(booking.classId, (entry) =>
+          patchEntryAfterCancellation(entry, schedule.hasActiveMembership)
+        )
+      }
+      setSelectedCancelBooking(null)
+      setSelectedEntry((current) =>
+        current?.id === booking.classId && schedule
+          ? patchEntryAfterCancellation(current, schedule.hasActiveMembership)
+          : current
+      )
+      setToast({ kind: 'success', message: 'Booking cancelled.' })
+      revalidateScheduleAndBookings()
+    } catch (err) {
+      const errorResponse = err as { response?: { data?: { code?: string } } }
+      const code = errorResponse.response?.data?.code
+      const message = getBookingErrorMessage(code, 'Could not cancel this booking right now.')
+      setBookingActionError(message)
+      setToast({ kind: 'error', message })
+    } finally {
+      setIsCancelSubmitting(false)
+    }
+  }
+
+  const handleJumpToClass = (classId: string) => {
+    const visibleEntry = schedule?.entries.find((entry) => entry.id === classId)
+    setIsBookingsDrawerOpen(false)
+    if (visibleEntry) {
+      setSelectedEntry(visibleEntry)
+      setSelectionStale(false)
+      return
+    }
+
+    const relatedBooking = myBookings.find((booking) => booking.classId === classId)
+    if (!relatedBooking) {
+      return
+    }
+
+    setPendingClassId(classId)
+    setSearchParams({
+      view: 'day',
+      date: formatIsoDate(new Date(relatedBooking.scheduledAt), timeZone),
+    })
+  }
+
+  const showToolbar = !isLoading && !isInvalidState && !isLoadError
   const showTimeZoneBadge = showToolbar && Boolean(schedule)
 
   const entries = schedule?.entries ?? []
   const isEmpty = Boolean(schedule) && entries.length === 0
+  const bookedEntries = useMemo(
+    () => entries.filter((entry) => entry.currentUserBooking !== null),
+    [entries]
+  )
 
   return (
     <div
@@ -177,18 +413,20 @@ export function GroupClassesSchedulePage() {
           <ScheduleInvalidLinkState onReset={handleResetInvalid} />
         )}
 
-        {isMembershipRequired && (
-          <MembershipRequiredState />
-        )}
-
         {isLoadError && (
           <ScheduleLoadErrorState onRetry={handleRetry} />
         )}
 
         {isLoading && <ScheduleViewSkeleton view={activeView} />}
 
-        {!isLoading && !isInvalidState && !isMembershipRequired && !isLoadError && schedule && (
+        {!isLoading && !isInvalidState && !isLoadError && schedule && (
           <div className="flex flex-col gap-6">
+            <BookingSummaryBar
+              entries={bookedEntries}
+              timeZone={schedule.timeZone}
+              onOpenDrawer={handleOpenBookingsDrawer}
+            />
+
             {isEmpty && (
               <ScheduleEmptyState view={activeView} onToday={handleToday} />
             )}
@@ -202,6 +440,9 @@ export function GroupClassesSchedulePage() {
                   setSelectedEntry(entry)
                   setSelectionStale(false)
                 }}
+                onBookEntry={handleBookRequest}
+                onCancelEntry={handleCancelRequest}
+                onBrowsePlans={handleBrowsePlans}
               />
             )}
 
@@ -214,6 +455,9 @@ export function GroupClassesSchedulePage() {
                   setSelectedEntry(entry)
                   setSelectionStale(false)
                 }}
+                onBookEntry={handleBookRequest}
+                onCancelEntry={handleCancelRequest}
+                onBrowsePlans={handleBrowsePlans}
               />
             )}
 
@@ -225,6 +469,9 @@ export function GroupClassesSchedulePage() {
                   setSelectedEntry(entry)
                   setSelectionStale(false)
                 }}
+                onBookEntry={handleBookRequest}
+                onCancelEntry={handleCancelRequest}
+                onBrowsePlans={handleBrowsePlans}
               />
             )}
           </div>
@@ -236,11 +483,80 @@ export function GroupClassesSchedulePage() {
         entry={selectedEntry}
         isStale={selectionStale}
         timeZone={schedule?.timeZone ?? timeZone}
+        actionError={null}
+        onBook={(entry) => {
+          setSelectedEntry(null)
+          setSelectionStale(false)
+          handleBookRequest(entry)
+        }}
+        onCancelBooking={(entry) => {
+          setSelectedEntry(null)
+          setSelectionStale(false)
+          handleCancelRequest(entry)
+        }}
+        onBrowsePlans={handleBrowsePlans}
         onClose={() => {
           setSelectedEntry(null)
           setSelectionStale(false)
         }}
       />
+
+      {selectedBookEntry && (
+        <BookingConfirmModal
+          entry={selectedBookEntry}
+          isOpen={Boolean(selectedBookEntry)}
+          isSubmitting={isBookingSubmitting}
+          errorMessage={bookingActionError}
+          timeZone={schedule?.timeZone ?? timeZone}
+          onConfirm={handleConfirmBooking}
+          onClose={() => {
+            if (isBookingSubmitting) return
+            setSelectedBookEntry(null)
+            setBookingActionError(null)
+          }}
+        />
+      )}
+
+      {selectedCancelBooking && (
+        <CancelBookingModal
+          booking={selectedCancelBooking}
+          isOpen={Boolean(selectedCancelBooking)}
+          isSubmitting={isCancelSubmitting}
+          errorMessage={bookingActionError}
+          timeZone={schedule?.timeZone ?? timeZone}
+          onConfirm={handleConfirmCancellation}
+          onClose={() => {
+            if (isCancelSubmitting) return
+            setSelectedCancelBooking(null)
+            setBookingActionError(null)
+          }}
+        />
+      )}
+
+      <MyBookingsDrawer
+        isOpen={isBookingsDrawerOpen}
+        bookings={myBookings}
+        isLoading={myBookingsLoading}
+        errorMessage={myBookingsError}
+        timeZone={schedule?.timeZone ?? timeZone}
+        onRetry={() => {
+          void fetchMyBookings({ page: 0, size: 50 })
+        }}
+        onClose={() => setIsBookingsDrawerOpen(false)}
+        onCancelBooking={(booking) => {
+          setBookingActionError(null)
+          setSelectedCancelBooking(booking)
+        }}
+        onJumpToClass={handleJumpToClass}
+      />
+
+      {toast && (
+        <BookingToast
+          kind={toast.kind}
+          message={toast.message}
+          onDismiss={() => setToast(null)}
+        />
+      )}
     </div>
   )
 }
@@ -256,7 +572,7 @@ function SchedulePageHeader({ timeZone, showBadge }: SchedulePageHeaderProps) {
       <div>
         <h1 className="text-3xl font-bold leading-tight text-white">Group Classes</h1>
         <p className="text-base text-gray-400">
-          Browse the live programme included with your membership.
+          Browse the live programme, book open spots, and manage your upcoming classes.
         </p>
       </div>
       {showBadge && (
@@ -375,24 +691,6 @@ function ScheduleViewSkeleton({ view }: ScheduleViewSkeletonProps) {
           </div>
         ))}
       </div>
-    </div>
-  )
-}
-
-function MembershipRequiredState() {
-  return (
-    <div className="flex flex-col items-center gap-4 rounded-2xl border border-gray-800 bg-gray-900 px-6 py-16 text-center shadow-md shadow-black/50">
-      <h2 className="text-xl font-semibold text-white">Membership required</h2>
-      <p className="text-sm text-gray-400">
-        Group classes are available to Members with an active membership. Renew or choose a plan
-        to view the live programme.
-      </p>
-      <Link
-        to="/plans"
-        className="inline-flex items-center justify-center rounded-md bg-green-500 px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-green-600 hover:shadow-lg hover:shadow-green-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
-      >
-        Browse plans
-      </Link>
     </div>
   )
 }

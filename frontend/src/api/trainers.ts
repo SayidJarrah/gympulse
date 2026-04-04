@@ -37,11 +37,13 @@ export async function uploadTrainerPhoto(id: string, file: File): Promise<void> 
   const formData = new FormData()
   formData.append('photo', file)
 
-  await axiosInstance.post(`/admin/trainers/${id}/photo`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  })
+  await axiosInstance.post(`/admin/trainers/${id}/photo`, formData)
 }
 
 export function getTrainerPhotoUrl(id: string): string {
   return `/api/v1/trainers/${id}/photo`
+}
+
+export async function deleteTrainerPhoto(id: string): Promise<void> {
+  await axiosInstance.delete(`/admin/trainers/${id}/photo`)
 }

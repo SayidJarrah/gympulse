@@ -12,6 +12,8 @@ data class ClassTemplateResponse(
     val defaultCapacity: Int,
     val difficulty: String,
     val room: RoomSummaryResponse?,
+    val hasPhoto: Boolean,
+    val photoUrl: String?,
     val isSeeded: Boolean,
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime

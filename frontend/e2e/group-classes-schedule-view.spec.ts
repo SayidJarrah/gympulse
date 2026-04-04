@@ -258,21 +258,26 @@ test('SCHED-02 active members can browse week, day, and list views', async ({ pa
 
   await page.goto(`/schedule?view=week&date=${anchorDate}`);
 
-  await expect(page.getByRole('heading', { name: 'Group Classes' })).toBeVisible();
-  await expect(page.getByText(classOne.name)).toBeVisible();
-  await expect(page.getByText(classTwo.name)).toBeVisible();
-  await expect(page.getByText('Trainer TBA')).toBeVisible();
-  await expect(page.getByText(new RegExp(`${trainerA.firstName} ${trainerA.lastName}`))).toBeVisible();
+  const classOneCard = page.getByRole('button', { name: new RegExp(classOne.name) }).first();
+  const classTwoCard = page.getByRole('button', { name: new RegExp(classTwo.name) }).first();
 
-  await page.getByRole('button', { name: 'Day' }).click();
+  await expect(page.getByRole('heading', { name: 'Group Classes' })).toBeVisible();
+  await expect(classOneCard).toBeVisible();
+  await expect(classTwoCard).toBeVisible();
+  await expect(classTwoCard.getByText('Trainer TBA')).toBeVisible();
+  await expect(
+    classOneCard.getByText(new RegExp(`${trainerA.firstName} ${trainerA.lastName}`))
+  ).toBeVisible();
+
+  await page.getByRole('button', { name: 'Day', exact: true }).click();
   await expect(page.getByText('Day agenda')).toBeVisible();
   await expect(page).toHaveURL(new RegExp(`view=day&date=${anchorDate}`));
 
-  await page.getByRole('button', { name: 'List' }).click();
+  await page.getByRole('button', { name: 'List', exact: true }).click();
   await expect(page.getByText('Upcoming 14 days')).toBeVisible();
   await expect(page).toHaveURL(new RegExp(`view=list&date=${anchorDate}`));
 
-  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('button', { name: 'Next', exact: true }).click();
   await expect(page).toHaveURL(/date=/);
 
   await deleteClassInstanceViaApi(request, adminSession.accessToken, classOne.id);

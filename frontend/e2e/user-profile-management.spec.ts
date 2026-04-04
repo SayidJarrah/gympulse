@@ -85,7 +85,7 @@ test.describe('User Profile Management', () => {
     await addChip(page, '#profile-preferred-class-types', 'Yoga');
     await addChip(page, '#profile-preferred-class-types', 'HIIT');
 
-    await page.getByRole('button', { name: 'Save profile' }).click();
+    await page.getByRole('button', { name: 'Save changes', exact: true }).click();
 
     await expect(page.getByRole('status')).toContainText('Profile updated.');
     await expect(page.locator('#profile-phone')).toHaveValue('+48123123123');
@@ -123,7 +123,7 @@ test.describe('User Profile Management', () => {
     await expect(page).toHaveURL('/profile');
 
     await page.fill('#profile-phone', '12345');
-    await page.getByRole('button', { name: 'Save profile' }).click();
+    await page.getByRole('button', { name: 'Save changes', exact: true }).click();
 
     await expect(page.locator('#profile-phone-error')).toContainText(
       'Enter a valid international phone number.'

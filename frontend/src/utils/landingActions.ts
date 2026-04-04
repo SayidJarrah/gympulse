@@ -36,8 +36,8 @@ export function resolveLandingActions({
 
   if (hasActiveMembership) {
     return {
-      headerPrimary: { kind: 'link', label: 'Go to portal', to: '/membership' },
-      heroPrimary: { kind: 'link', label: 'Open member area', to: '/membership' },
+      headerPrimary: { kind: 'link', label: 'Go to portal', to: '/home' },
+      heroPrimary: { kind: 'link', label: 'Open member area', to: '/home' },
       heroSecondary: { kind: 'link', label: 'Review plans', to: '#plans' },
       planAction: { label: 'Compare plans', to: '/plans', variant: 'secondary' },
     }

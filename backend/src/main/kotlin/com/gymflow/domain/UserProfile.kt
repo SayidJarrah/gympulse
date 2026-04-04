@@ -37,6 +37,13 @@ data class UserProfile(
     @Column(name = "preferred_class_types", nullable = false)
     var preferredClassTypes: MutableList<String> = mutableListOf(),
 
+    @JdbcTypeCode(SqlTypes.BINARY)
+    @Column(name = "profile_photo_data")
+    var profilePhotoData: ByteArray? = null,
+
+    @Column(name = "profile_photo_mime_type")
+    var profilePhotoMimeType: String? = null,
+
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: OffsetDateTime = OffsetDateTime.now(),
 

@@ -65,6 +65,7 @@ class UserMembershipService(
 
         val user = userRepository.findById(userId).orElse(null)
         val profile = userProfileRepository.findById(userId).orElse(null)
+        val hasProfilePhoto = profile?.profilePhotoData != null
         return saved.toResponse(
             planName = plan.name,
             maxBookingsPerMonth = plan.maxBookingsPerMonth,
@@ -74,7 +75,9 @@ class UserMembershipService(
             userPhone = profile?.phone,
             userDateOfBirth = profile?.dateOfBirth,
             userFitnessGoals = profile?.fitnessGoals ?: emptyList(),
-            userPreferredClassTypes = profile?.preferredClassTypes ?: emptyList()
+            userPreferredClassTypes = profile?.preferredClassTypes ?: emptyList(),
+            userHasProfilePhoto = hasProfilePhoto,
+            userProfilePhotoUrl = if (hasProfilePhoto) "/api/v1/profile/me/photo" else null
         )
     }
 
@@ -88,6 +91,7 @@ class UserMembershipService(
 
         val user = userRepository.findById(userId).orElse(null)
         val profile = userProfileRepository.findById(userId).orElse(null)
+        val hasProfilePhoto = profile?.profilePhotoData != null
         return membership.toResponse(
             planName = plan.name,
             maxBookingsPerMonth = plan.maxBookingsPerMonth,
@@ -97,7 +101,9 @@ class UserMembershipService(
             userPhone = profile?.phone,
             userDateOfBirth = profile?.dateOfBirth,
             userFitnessGoals = profile?.fitnessGoals ?: emptyList(),
-            userPreferredClassTypes = profile?.preferredClassTypes ?: emptyList()
+            userPreferredClassTypes = profile?.preferredClassTypes ?: emptyList(),
+            userHasProfilePhoto = hasProfilePhoto,
+            userProfilePhotoUrl = if (hasProfilePhoto) "/api/v1/profile/me/photo" else null
         )
     }
 
@@ -113,6 +119,7 @@ class UserMembershipService(
 
         val user = userRepository.findById(userId).orElse(null)
         val profile = userProfileRepository.findById(userId).orElse(null)
+        val hasProfilePhoto = profile?.profilePhotoData != null
         return saved.toResponse(
             planName = plan.name,
             maxBookingsPerMonth = plan.maxBookingsPerMonth,
@@ -122,7 +129,9 @@ class UserMembershipService(
             userPhone = profile?.phone,
             userDateOfBirth = profile?.dateOfBirth,
             userFitnessGoals = profile?.fitnessGoals ?: emptyList(),
-            userPreferredClassTypes = profile?.preferredClassTypes ?: emptyList()
+            userPreferredClassTypes = profile?.preferredClassTypes ?: emptyList(),
+            userHasProfilePhoto = hasProfilePhoto,
+            userProfilePhotoUrl = if (hasProfilePhoto) "/api/v1/profile/me/photo" else null
         )
     }
 
@@ -177,6 +186,7 @@ class UserMembershipService(
                 .orElseThrow { PlanNotFoundException("Plan with id '${membership.planId}' not found") }
             val user = usersById[membership.userId]
             val profile = profilesById[membership.userId]
+            val hasProfilePhoto = profile?.profilePhotoData != null
             membership.toResponse(
                 planName = plan.name,
                 maxBookingsPerMonth = plan.maxBookingsPerMonth,
@@ -186,7 +196,9 @@ class UserMembershipService(
                 userPhone = profile?.phone,
                 userDateOfBirth = profile?.dateOfBirth,
                 userFitnessGoals = profile?.fitnessGoals ?: emptyList(),
-                userPreferredClassTypes = profile?.preferredClassTypes ?: emptyList()
+                userPreferredClassTypes = profile?.preferredClassTypes ?: emptyList(),
+                userHasProfilePhoto = hasProfilePhoto,
+                userProfilePhotoUrl = if (hasProfilePhoto) "/api/v1/admin/users/${membership.userId}/photo" else null
             )
         }
     }
@@ -209,6 +221,7 @@ class UserMembershipService(
 
         val user = userRepository.findById(saved.userId).orElse(null)
         val profile = userProfileRepository.findById(saved.userId).orElse(null)
+        val hasProfilePhoto = profile?.profilePhotoData != null
         return saved.toResponse(
             planName = plan.name,
             maxBookingsPerMonth = plan.maxBookingsPerMonth,
@@ -218,7 +231,9 @@ class UserMembershipService(
             userPhone = profile?.phone,
             userDateOfBirth = profile?.dateOfBirth,
             userFitnessGoals = profile?.fitnessGoals ?: emptyList(),
-            userPreferredClassTypes = profile?.preferredClassTypes ?: emptyList()
+            userPreferredClassTypes = profile?.preferredClassTypes ?: emptyList(),
+            userHasProfilePhoto = hasProfilePhoto,
+            userProfilePhotoUrl = if (hasProfilePhoto) "/api/v1/admin/users/${saved.userId}/photo" else null
         )
     }
 
@@ -233,7 +248,9 @@ class UserMembershipService(
         userPhone: String?,
         userDateOfBirth: LocalDate?,
         userFitnessGoals: List<String>,
-        userPreferredClassTypes: List<String>
+        userPreferredClassTypes: List<String>,
+        userHasProfilePhoto: Boolean,
+        userProfilePhotoUrl: String?
     ) =
         UserMembershipResponse(
             id = id,
@@ -245,6 +262,8 @@ class UserMembershipService(
             userDateOfBirth = userDateOfBirth,
             userFitnessGoals = userFitnessGoals,
             userPreferredClassTypes = userPreferredClassTypes,
+            userHasProfilePhoto = userHasProfilePhoto,
+            userProfilePhotoUrl = userProfilePhotoUrl,
             planId = planId,
             planName = planName,
             startDate = startDate,

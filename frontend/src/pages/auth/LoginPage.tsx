@@ -11,7 +11,7 @@ export function LoginPage() {
     try {
       await login(email, password)
       const role = useAuthStore.getState().user?.role
-      navigate(role === 'ADMIN' ? '/admin/plans' : '/plans')
+      navigate(role === 'ADMIN' ? '/admin/plans' : '/home')
     } catch {
       // Error is displayed via the error state in useAuth — no navigation on failure
     }

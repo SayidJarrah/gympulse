@@ -6,12 +6,18 @@ interface GroupScheduleRollingListProps {
   timeZone: string;
   entries: GroupClassScheduleEntry[];
   onSelectEntry?: (entry: GroupClassScheduleEntry) => void;
+  onBookEntry?: (entry: GroupClassScheduleEntry) => void;
+  onCancelEntry?: (entry: GroupClassScheduleEntry) => void;
+  onBrowsePlans?: () => void;
 }
 
 export function GroupScheduleRollingList({
   timeZone,
   entries,
   onSelectEntry,
+  onBookEntry,
+  onCancelEntry,
+  onBrowsePlans,
 }: GroupScheduleRollingListProps) {
   const grouped: Array<{ date: string; items: GroupClassScheduleEntry[] }> = []
   const groupedMap = new Map<string, GroupClassScheduleEntry[]>()
@@ -45,6 +51,9 @@ export function GroupScheduleRollingList({
                   timeZone={timeZone}
                   showDate={false}
                   onSelect={onSelectEntry}
+                  onBook={onBookEntry}
+                  onCancel={onCancelEntry}
+                  onBrowsePlans={onBrowsePlans}
                 />
               </div>
             ))}

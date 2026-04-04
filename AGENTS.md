@@ -267,12 +267,14 @@ JWT_EXPIRY_MS=3600000
 | Auth (register/login/JWT) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Membership plans | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | User membership purchase | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| User access flow | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Member Home | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| User access flow | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | User profile management | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Class schedule | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Group classes schedule view | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Trainer Discovery | ✅ | ✅ | ✅ | ✅ | ✅ | 🔄 | 🔄 |
-| Class booking & cancellation | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Entity image management | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Class booking & cancellation | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Attendance check-in | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Admin dashboard | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Notifications | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
@@ -283,6 +285,7 @@ JWT_EXPIRY_MS=3600000
 If Backend = ❌ but PRD = ✅ and SDD = ✅, documents exist — read them before starting.
 If PRD = ❌, requirements must be written first.
 A row with all ✅ means do NOT re-implement — only modify on explicit request.
+Documentation pipeline is strictly sequential: PRD → SDD → Design. Do not run these in parallel.
 
 **Adding new features:** When business-analyst writes a new PRD for a feature not
 in this table, add a new row with the feature name and set PRD = 🔄. Each agent

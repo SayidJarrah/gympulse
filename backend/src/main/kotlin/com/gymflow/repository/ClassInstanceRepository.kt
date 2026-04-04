@@ -1,9 +1,11 @@
 package com.gymflow.repository
 
 import com.gymflow.domain.ClassInstance
+import jakarta.persistence.LockModeType
+import org.springframework.data.jpa.repository.Lock
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
-import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.repository.query.Param
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -29,6 +31,7 @@ interface ClassInstanceRepository : JpaRepository<ClassInstance, UUID> {
         """
         SELECT DISTINCT ci FROM ClassInstance ci
         LEFT JOIN FETCH ci.trainers t
+        LEFT JOIN FETCH ci.template tpl
         WHERE ci.deletedAt IS NULL
           AND ci.type = 'GROUP'
           AND ci.status = 'SCHEDULED'
@@ -42,6 +45,35 @@ interface ClassInstanceRepository : JpaRepository<ClassInstance, UUID> {
     ): List<ClassInstance>
 
     @Query(
+        value = """
+        SELECT ci.id
+        FROM class_instances ci
+        WHERE ci.deleted_at IS NULL
+          AND ci.type = 'GROUP'
+          AND ci.status = 'SCHEDULED'
+          AND ci.scheduled_at > NOW()
+          AND ci.scheduled_at < :rangeEndUtcExclusive
+        ORDER BY ci.scheduled_at ASC
+        LIMIT 8
+        """,
+        nativeQuery = true
+    )
+    fun findUpcomingGroupPreviewIds(
+        @Param("rangeEndUtcExclusive") rangeEndUtcExclusive: OffsetDateTime
+    ): List<UUID>
+
+    @Query(
+        """
+        SELECT DISTINCT ci FROM ClassInstance ci
+        LEFT JOIN FETCH ci.trainers t
+        LEFT JOIN FETCH ci.template tpl
+        WHERE ci.deletedAt IS NULL
+          AND ci.id IN :ids
+        """
+    )
+    fun findPreviewDetailsByIds(@Param("ids") ids: Collection<UUID>): List<ClassInstance>
+
+    @Query(
         """
         SELECT DISTINCT ci FROM ClassInstance ci
         LEFT JOIN FETCH ci.trainers t
@@ -51,6 +83,16 @@ interface ClassInstanceRepository : JpaRepository<ClassInstance, UUID> {
         """
     )
     fun findWithDetailsById(@Param("id") id: UUID): ClassInstance?
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query(
+        """
+        SELECT ci FROM ClassInstance ci
+        WHERE ci.id = :id
+          AND ci.deletedAt IS NULL
+        """
+    )
+    fun findActiveByIdForUpdate(@Param("id") id: UUID): ClassInstance?
 
     @Query(
         value = """

@@ -7,6 +7,9 @@ interface GroupScheduleDayAgendaProps {
   timeZone: string;
   entries: GroupClassScheduleEntry[];
   onSelectEntry?: (entry: GroupClassScheduleEntry) => void;
+  onBookEntry?: (entry: GroupClassScheduleEntry) => void;
+  onCancelEntry?: (entry: GroupClassScheduleEntry) => void;
+  onBrowsePlans?: () => void;
 }
 
 export function GroupScheduleDayAgenda({
@@ -14,6 +17,9 @@ export function GroupScheduleDayAgenda({
   timeZone,
   entries,
   onSelectEntry,
+  onBookEntry,
+  onCancelEntry,
+  onBrowsePlans,
 }: GroupScheduleDayAgendaProps) {
   return (
     <section className="rounded-2xl border border-gray-800 bg-gray-900 shadow-md shadow-black/50">
@@ -31,6 +37,9 @@ export function GroupScheduleDayAgenda({
               timeZone={timeZone}
               showDate={false}
               onSelect={onSelectEntry}
+              onBook={onBookEntry}
+              onCancel={onCancelEntry}
+              onBrowsePlans={onBrowsePlans}
             />
           </div>
         ))}

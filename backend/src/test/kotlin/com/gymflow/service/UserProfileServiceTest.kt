@@ -22,7 +22,8 @@ class UserProfileServiceTest {
 
     private val userProfileRepository: UserProfileRepository = mockk()
     private val userRepository: UserRepository = mockk()
-    private val service = UserProfileService(userProfileRepository, userRepository)
+    private val photoValidationService: PhotoValidationService = mockk()
+    private val service = UserProfileService(userProfileRepository, userRepository, photoValidationService)
 
     @Test
     fun `getMyProfile returns synthesized response when profile row does not exist`() {
@@ -41,6 +42,8 @@ class UserProfileServiceTest {
         assertNull(response.dateOfBirth)
         assertEquals(emptyList<String>(), response.fitnessGoals)
         assertEquals(emptyList<String>(), response.preferredClassTypes)
+        assertEquals(false, response.hasProfilePhoto)
+        assertNull(response.profilePhotoUrl)
         assertEquals(user.createdAt, response.createdAt)
         assertEquals(user.updatedAt, response.updatedAt)
     }
@@ -70,6 +73,8 @@ class UserProfileServiceTest {
         assertEquals(LocalDate.of(1994, 8, 12), savedSlot.captured.dateOfBirth)
         assertEquals(listOf("Build strength", "Improve mobility"), savedSlot.captured.fitnessGoals)
         assertEquals(listOf("Yoga", "HIIT"), savedSlot.captured.preferredClassTypes)
+        assertNull(savedSlot.captured.profilePhotoData)
+        assertNull(savedSlot.captured.profilePhotoMimeType)
         assertEquals(user.email, response.email)
         assertEquals(listOf("Build strength", "Improve mobility"), response.fitnessGoals)
         assertEquals(listOf("Yoga", "HIIT"), response.preferredClassTypes)

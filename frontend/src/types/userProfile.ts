@@ -7,6 +7,8 @@ export interface UserProfile {
   dateOfBirth: string | null;
   fitnessGoals: string[];
   preferredClassTypes: string[];
+  hasProfilePhoto: boolean;
+  profilePhotoUrl: string | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -20,6 +20,7 @@ interface ClassInstanceEditPanelProps {
   onClose: () => void;
   onSave: (payload: ClassInstancePatchRequest) => Promise<void>;
   onDelete: () => Promise<void>;
+  onOpenBookingPanel?: () => void;
 }
 
 const TIME_OPTIONS = Array.from({ length: 32 }).map((_, index) => {
@@ -35,6 +36,7 @@ export function ClassInstanceEditPanel({
   onClose,
   onSave,
   onDelete,
+  onOpenBookingPanel,
 }: ClassInstanceEditPanelProps) {
   const [selectedTime, setSelectedTime] = useState('06:00')
   const [durationMin, setDurationMin] = useState(60)
@@ -134,6 +136,14 @@ export function ClassInstanceEditPanel({
           <div className="text-base font-semibold text-white">{instance.name}</div>
           <div className="text-sm text-gray-400">{dateLabel}</div>
         </div>
+
+        <button
+          type="button"
+          onClick={onOpenBookingPanel}
+          className="inline-flex items-center justify-center rounded-md border border-green-500/30 bg-green-500/10 px-4 py-2 text-sm font-semibold text-green-200 hover:bg-green-500/20"
+        >
+          Book for member
+        </button>
 
         <div>
           <label

@@ -19,6 +19,7 @@ import { AdminRoute } from './components/layout/AdminRoute'
 import { AuthRoute } from './components/layout/AuthRoute'
 import { UserRoute } from './components/layout/UserRoute'
 import { LandingPage } from './pages/landing/LandingPage'
+import { MemberHomePage } from './pages/home/MemberHomePage'
 
 function App() {
   return (
@@ -33,6 +34,14 @@ function App() {
         <Route path="/plans/:id" element={<PlanDetailPage />} />
 
         {/* Authenticated user routes */}
+        <Route
+          path="/home"
+          element={
+            <UserRoute>
+              <MemberHomePage />
+            </UserRoute>
+          }
+        />
         <Route
           path="/membership"
           element={

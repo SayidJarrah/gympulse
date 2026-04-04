@@ -13,6 +13,8 @@ data class UserProfileResponse(
     val dateOfBirth: LocalDate?,
     val fitnessGoals: List<String>,
     val preferredClassTypes: List<String>,
+    val hasProfilePhoto: Boolean,
+    val profilePhotoUrl: String?,
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime
 )

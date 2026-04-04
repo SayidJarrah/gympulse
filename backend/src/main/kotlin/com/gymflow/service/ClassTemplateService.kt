@@ -1,6 +1,7 @@
 package com.gymflow.service
 
 import com.gymflow.domain.ClassTemplate
+import com.gymflow.domain.Room
 import com.gymflow.dto.AffectedInstanceResponse
 import com.gymflow.dto.ClassTemplateRequest
 import com.gymflow.dto.ClassTemplateResponse
@@ -12,6 +13,8 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.multipart.MultipartFile
+import java.time.OffsetDateTime
 import java.util.UUID
 
 @Service
@@ -19,7 +22,8 @@ import java.util.UUID
 class ClassTemplateService(
     private val classTemplateRepository: ClassTemplateRepository,
     private val roomRepository: RoomRepository,
-    private val classInstanceRepository: ClassInstanceRepository
+    private val classInstanceRepository: ClassInstanceRepository,
+    private val photoValidationService: PhotoValidationService
 ) {
 
     @Transactional(readOnly = true)
@@ -102,6 +106,35 @@ class ClassTemplateService(
         classTemplateRepository.delete(template)
     }
 
+    fun uploadPhoto(id: UUID, file: MultipartFile) {
+        val template = classTemplateRepository.findById(id)
+            .orElseThrow { ClassTemplateNotFoundException("Class template with id '$id' not found") }
+        val validated = photoValidationService.validatePhoto(file)
+
+        template.photoData = validated.bytes
+        template.photoMimeType = validated.mimeType
+        classTemplateRepository.save(template)
+    }
+
+    @Transactional(readOnly = true)
+    fun getPhoto(id: UUID): ClassTemplatePhoto {
+        val template = classTemplateRepository.findById(id)
+            .orElseThrow { ClassTemplateNotFoundException("Class template with id '$id' not found") }
+        val photoData = template.photoData ?: throw ImageNotFoundException("Class template photo not found")
+        val mimeType = template.photoMimeType ?: throw ImageNotFoundException("Class template photo not found")
+
+        return ClassTemplatePhoto(photoData, mimeType, template.updatedAt)
+    }
+
+    fun deletePhoto(id: UUID) {
+        val template = classTemplateRepository.findById(id)
+            .orElseThrow { ClassTemplateNotFoundException("Class template with id '$id' not found") }
+
+        template.photoData = null
+        template.photoMimeType = null
+        classTemplateRepository.save(template)
+    }
+
     private fun seedDefaultTemplatesIfEmpty() {
         if (classTemplateRepository.count() != 0L) return
 
@@ -142,7 +175,9 @@ class ClassTemplateService(
         defaultDurationMin = defaultDurationMin,
         defaultCapacity = defaultCapacity,
         difficulty = difficulty,
-        room = room?.let { RoomSummaryResponse(it.id, it.name) },
+        room = room?.let { it.toSummaryResponse() },
+        hasPhoto = photoData != null,
+        photoUrl = if (photoData != null) "/api/v1/class-templates/$id/photo" else null,
         isSeeded = isSeeded,
         createdAt = createdAt,
         updatedAt = updatedAt
@@ -154,7 +189,19 @@ class ClassTemplateService(
         scheduledAt = scheduledAt
     )
 
+    private fun Room.toSummaryResponse() = RoomSummaryResponse(
+        id = id,
+        name = name,
+        photoUrl = if (photoData != null) "/api/v1/rooms/$id/photo" else null
+    )
+
     private data class SeedTemplate(val name: String, val category: String)
+
+    data class ClassTemplatePhoto(
+        val data: ByteArray,
+        val mimeType: String,
+        val updatedAt: OffsetDateTime
+    )
 }
 
 class ClassTemplateNotFoundException(message: String) : RuntimeException(message)

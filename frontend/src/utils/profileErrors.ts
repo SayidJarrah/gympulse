@@ -8,6 +8,10 @@ export const PROFILE_ERROR_MESSAGES: Record<string, string> = {
     'Fitness goals must contain up to 5 items, each 1 to 50 characters long.',
   INVALID_PREFERRED_CLASS_TYPES:
     'Preferred class types must contain up to 5 items, each 1 to 50 characters long.',
+  IMAGE_REQUIRED: 'Select an image before uploading.',
+  INVALID_IMAGE_FORMAT: 'File must be JPEG, PNG or WEBP.',
+  IMAGE_TOO_LARGE: 'File exceeds the 5 MB limit.',
+  IMAGE_NOT_FOUND: 'No profile photo is available.',
   ACCESS_DENIED: 'You do not have permission to view this profile.',
 }
 

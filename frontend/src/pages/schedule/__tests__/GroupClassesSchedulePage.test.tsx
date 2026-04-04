@@ -1,11 +1,24 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 import { GroupClassesSchedulePage } from '../GroupClassesSchedulePage'
 import { useGroupClassScheduleStore } from '../../../store/groupClassScheduleStore'
+import { useBookingStore } from '../../../store/bookingStore'
+import { cancelBooking, createBooking, getMyBookings } from '../../../api/bookings'
 import { getGroupClassSchedule } from '../../../api/groupClassSchedule'
 import type { GroupClassScheduleResponse } from '../../../types/groupClassSchedule'
+import type { BookingResponse } from '../../../types/booking'
+
+vi.mock('../../../api/bookings', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../api/bookings')>()
+  return {
+    ...actual,
+    createBooking: vi.fn(),
+    cancelBooking: vi.fn(),
+    getMyBookings: vi.fn(),
+  }
+})
 
 vi.mock('../../../api/groupClassSchedule', () => ({
   getGroupClassSchedule: vi.fn(),
@@ -20,6 +33,9 @@ vi.mock('../../../components/layout/Navbar', () => ({
 }))
 
 const mockedGetGroupClassSchedule = vi.mocked(getGroupClassSchedule)
+const mockedCreateBooking = vi.mocked(createBooking)
+const mockedCancelBooking = vi.mocked(cancelBooking)
+const mockedGetMyBookings = vi.mocked(getMyBookings)
 
 const baseResponse: GroupClassScheduleResponse = {
   view: 'week',
@@ -28,6 +44,7 @@ const baseResponse: GroupClassScheduleResponse = {
   week: '2026-W14',
   rangeStartDate: '2026-03-30',
   rangeEndDateExclusive: '2026-04-06',
+  hasActiveMembership: true,
   entries: [
     {
       id: 'entry-1',
@@ -36,8 +53,32 @@ const baseResponse: GroupClassScheduleResponse = {
       localDate: '2026-03-30',
       durationMin: 60,
       trainerNames: ['Jane Doe'],
+      classPhotoUrl: null,
+      capacity: 20,
+      confirmedBookings: 10,
+      remainingSpots: 10,
+      currentUserBooking: null,
+      bookingAllowed: true,
+      bookingDeniedReason: null,
+      cancellationAllowed: false,
     },
   ],
+}
+
+const confirmedBooking: BookingResponse = {
+  id: 'booking-1',
+  userId: 'user-1',
+  classId: 'entry-1',
+  status: 'CONFIRMED',
+  bookedAt: '2026-03-28T12:00:00Z',
+  cancelledAt: null,
+  className: 'Yoga Flow',
+  scheduledAt: '2026-03-30T16:00:00Z',
+  durationMin: 60,
+  trainerNames: ['Jane Doe'],
+  classPhotoUrl: null,
+  isCancellable: true,
+  cancellationCutoffAt: '2026-03-30T13:00:00Z',
 }
 
 function LocationDisplay() {
@@ -57,14 +98,25 @@ function renderPage(initialEntries: string[]) {
 describe('GroupClassesSchedulePage', () => {
   beforeEach(() => {
     mockedGetGroupClassSchedule.mockReset()
+    mockedCreateBooking.mockReset()
+    mockedCancelBooking.mockReset()
+    mockedGetMyBookings.mockReset()
     useGroupClassScheduleStore.setState({
       view: 'week',
       anchorDate: '2026-03-30',
       timeZone: 'UTC',
       schedule: null,
       isLoading: false,
+      isRefreshing: false,
       error: null,
       errorCode: null,
+    })
+    useBookingStore.setState({
+      myBookings: [],
+      myBookingsTotalPages: 0,
+      myBookingsPage: 0,
+      myBookingsLoading: false,
+      myBookingsError: null,
     })
   })
 
@@ -80,12 +132,14 @@ describe('GroupClassesSchedulePage', () => {
 
     renderPage(['/schedule'])
 
-    await waitFor(() => {
-      expect(mockedGetGroupClassSchedule).toHaveBeenCalledWith({
-        view: 'week',
-        anchorDate: '2026-03-30',
-        timeZone: 'UTC',
-      })
+    await act(async () => {
+      await vi.runAllTimersAsync()
+    })
+
+    expect(mockedGetGroupClassSchedule).toHaveBeenCalledWith({
+      view: 'week',
+      anchorDate: '2026-03-30',
+      timeZone: 'UTC',
     })
 
     expect(screen.getByTestId('location')).toHaveTextContent('view=week')
@@ -103,7 +157,7 @@ describe('GroupClassesSchedulePage', () => {
 
     renderPage(['/schedule?view=week&date=2026-03-30'])
 
-    await screen.findByText('Yoga Flow')
+    expect((await screen.findAllByText('Yoga Flow')).length).toBeGreaterThan(0)
     await user.click(screen.getByRole('button', { name: 'Day' }))
 
     await waitFor(() => {
@@ -172,20 +226,24 @@ describe('GroupClassesSchedulePage', () => {
     })
   })
 
-  it('renders the membership-required state', async () => {
-    mockedGetGroupClassSchedule.mockRejectedValueOnce({
-      response: {
-        data: {
-          code: 'NO_ACTIVE_MEMBERSHIP',
-          error: 'No active membership found',
+  it('renders membership-required actions without blocking schedule browsing', async () => {
+    mockedGetGroupClassSchedule.mockResolvedValueOnce({
+      ...baseResponse,
+      hasActiveMembership: false,
+      entries: [
+        {
+          ...baseResponse.entries[0],
+          bookingAllowed: false,
+          bookingDeniedReason: 'MEMBERSHIP_REQUIRED',
         },
-      },
+      ],
     })
 
     renderPage(['/schedule?view=week&date=2026-03-30'])
 
-    expect(await screen.findByText('Membership required')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Browse plans' })).toHaveAttribute('href', '/plans')
+    expect((await screen.findAllByText('Yoga Flow')).length).toBeGreaterThan(0)
+    expect(screen.getAllByRole('button', { name: 'Browse plans' }).length).toBeGreaterThan(0)
+    expect(screen.queryByText('Membership required')).not.toBeInTheDocument()
   })
 
   it('renders Trainer TBA for classes without trainers', async () => {
@@ -201,7 +259,136 @@ describe('GroupClassesSchedulePage', () => {
 
     renderPage(['/schedule?view=week&date=2026-03-30'])
 
-    expect(await screen.findByText('Trainer TBA')).toBeInTheDocument()
+    expect((await screen.findAllByText('Trainer TBA')).length).toBeGreaterThan(0)
+  })
+
+  it('books a class from the schedule confirmation modal', async () => {
+    const user = userEvent.setup()
+    mockedGetGroupClassSchedule
+      .mockResolvedValueOnce(baseResponse)
+      .mockResolvedValueOnce({
+        ...baseResponse,
+        entries: [
+          {
+            ...baseResponse.entries[0],
+            currentUserBooking: {
+              id: confirmedBooking.id,
+              status: confirmedBooking.status,
+              bookedAt: confirmedBooking.bookedAt,
+            },
+            bookingAllowed: false,
+            bookingDeniedReason: 'ALREADY_BOOKED',
+            cancellationAllowed: true,
+          },
+        ],
+      })
+    mockedCreateBooking.mockResolvedValueOnce(confirmedBooking)
+    mockedGetMyBookings.mockResolvedValueOnce({
+      content: [confirmedBooking],
+      totalElements: 1,
+      totalPages: 1,
+      number: 0,
+      size: 50,
+    })
+
+    renderPage(['/schedule?view=week&date=2026-03-30'])
+
+    expect((await screen.findAllByText('Yoga Flow')).length).toBeGreaterThan(0)
+    await user.click(screen.getAllByRole('button', { name: 'Book spot' })[0])
+    const confirmDialog = await screen.findByRole('dialog', { name: 'Confirm booking' })
+    await user.click(within(confirmDialog).getByRole('button', { name: 'Confirm booking' }))
+
+    await waitFor(() => {
+      expect(mockedCreateBooking).toHaveBeenCalledWith({ classId: 'entry-1' })
+    })
+
+    expect(await screen.findByText('Spot booked.')).toBeInTheDocument()
+    expect(await screen.findByText('You have 1 booked class in this view.')).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Cancel booking' }).length).toBeGreaterThan(0)
+  })
+
+  it('shows the bookings drawer for visible booked entries', async () => {
+    const user = userEvent.setup()
+    mockedGetGroupClassSchedule.mockResolvedValueOnce({
+      ...baseResponse,
+      entries: [
+        {
+          ...baseResponse.entries[0],
+          currentUserBooking: {
+            id: confirmedBooking.id,
+            status: confirmedBooking.status,
+            bookedAt: confirmedBooking.bookedAt,
+          },
+          bookingAllowed: false,
+          bookingDeniedReason: 'ALREADY_BOOKED',
+          cancellationAllowed: true,
+        },
+      ],
+    })
+    mockedGetMyBookings.mockResolvedValueOnce({
+      content: [confirmedBooking],
+      totalElements: 1,
+      totalPages: 1,
+      number: 0,
+      size: 50,
+    })
+
+    renderPage(['/schedule?view=week&date=2026-03-30'])
+
+    await screen.findByText('You have 1 booked class in this view.')
+    await user.click(screen.getByRole('button', { name: 'See my bookings' }))
+
+    expect(await screen.findByRole('heading', { name: 'My bookings' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Show class' })).toBeInTheDocument()
+  })
+
+  it('cancels a booking from the schedule card flow', async () => {
+    const user = userEvent.setup()
+    mockedGetGroupClassSchedule
+      .mockResolvedValueOnce({
+        ...baseResponse,
+        entries: [
+          {
+            ...baseResponse.entries[0],
+            currentUserBooking: {
+              id: confirmedBooking.id,
+              status: confirmedBooking.status,
+              bookedAt: confirmedBooking.bookedAt,
+            },
+            bookingAllowed: false,
+            bookingDeniedReason: 'ALREADY_BOOKED',
+            cancellationAllowed: true,
+          },
+        ],
+      })
+      .mockResolvedValueOnce(baseResponse)
+    mockedCancelBooking.mockResolvedValueOnce({
+      ...confirmedBooking,
+      status: 'CANCELLED',
+      cancelledAt: '2026-03-29T09:00:00Z',
+      isCancellable: false,
+    })
+    mockedGetMyBookings.mockResolvedValueOnce({
+      content: [],
+      totalElements: 0,
+      totalPages: 0,
+      number: 0,
+      size: 50,
+    })
+
+    renderPage(['/schedule?view=week&date=2026-03-30'])
+
+    await screen.findAllByRole('button', { name: 'Cancel booking' })
+    await user.click(screen.getAllByRole('button', { name: 'Cancel booking' })[0])
+    const cancelDialog = await screen.findByRole('dialog', { name: 'Cancel booking' })
+    await user.click(within(cancelDialog).getByRole('button', { name: 'Cancel booking' }))
+
+    await waitFor(() => {
+      expect(mockedCancelBooking).toHaveBeenCalledWith(confirmedBooking.id)
+    })
+
+    expect(await screen.findByText('Booking cancelled.')).toBeInTheDocument()
+    expect((await screen.findAllByRole('button', { name: 'Book spot' })).length).toBeGreaterThan(0)
   })
 
   it('prevents horizontal overflow on small screens', async () => {
@@ -209,7 +396,7 @@ describe('GroupClassesSchedulePage', () => {
 
     renderPage(['/schedule?view=week&date=2026-03-30'])
 
-    expect(await screen.findByText('Yoga Flow')).toBeInTheDocument()
+    expect((await screen.findAllByText('Yoga Flow')).length).toBeGreaterThan(0)
     expect(screen.getByTestId('schedule-root')).toHaveClass('overflow-x-hidden')
   })
 })

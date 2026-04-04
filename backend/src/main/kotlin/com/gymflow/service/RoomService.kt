@@ -4,19 +4,23 @@ import com.gymflow.domain.Room
 import com.gymflow.dto.AffectedInstanceResponse
 import com.gymflow.dto.RoomRequest
 import com.gymflow.dto.RoomResponse
+import com.gymflow.dto.RoomSummaryResponse
 import com.gymflow.repository.ClassInstanceRepository
 import com.gymflow.repository.RoomRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.multipart.MultipartFile
+import java.time.OffsetDateTime
 import java.util.UUID
 
 @Service
 @Transactional
 class RoomService(
     private val roomRepository: RoomRepository,
-    private val classInstanceRepository: ClassInstanceRepository
+    private val classInstanceRepository: ClassInstanceRepository,
+    private val photoValidationService: PhotoValidationService
 ) {
 
     @Transactional(readOnly = true)
@@ -77,18 +81,61 @@ class RoomService(
         roomRepository.delete(room)
     }
 
+    fun uploadPhoto(id: UUID, file: MultipartFile) {
+        val room = roomRepository.findById(id)
+            .orElseThrow { RoomNotFoundException("Room with id '$id' not found") }
+        val validated = photoValidationService.validatePhoto(file)
+
+        room.photoData = validated.bytes
+        room.photoMimeType = validated.mimeType
+        roomRepository.save(room)
+    }
+
+    @Transactional(readOnly = true)
+    fun getPhoto(id: UUID): RoomPhoto {
+        val room = roomRepository.findById(id)
+            .orElseThrow { RoomNotFoundException("Room with id '$id' not found") }
+        val photoData = room.photoData ?: throw ImageNotFoundException("Room photo not found")
+        val mimeType = room.photoMimeType ?: throw ImageNotFoundException("Room photo not found")
+
+        return RoomPhoto(photoData, mimeType, room.updatedAt)
+    }
+
+    fun deletePhoto(id: UUID) {
+        val room = roomRepository.findById(id)
+            .orElseThrow { RoomNotFoundException("Room with id '$id' not found") }
+
+        room.photoData = null
+        room.photoMimeType = null
+        roomRepository.save(room)
+    }
+
     private fun Room.toResponse() = RoomResponse(
         id = id,
         name = name,
         capacity = capacity,
         description = description,
+        hasPhoto = photoData != null,
+        photoUrl = if (photoData != null) "/api/v1/rooms/$id/photo" else null,
         createdAt = createdAt
+    )
+
+    fun Room.toSummaryResponse() = RoomSummaryResponse(
+        id = id,
+        name = name,
+        photoUrl = if (photoData != null) "/api/v1/rooms/$id/photo" else null
     )
 
     private fun com.gymflow.domain.ClassInstance.toAffectedInstance() = AffectedInstanceResponse(
         id = id,
         name = name,
         scheduledAt = scheduledAt
+    )
+
+    data class RoomPhoto(
+        val data: ByteArray,
+        val mimeType: String,
+        val updatedAt: OffsetDateTime
     )
 }
 

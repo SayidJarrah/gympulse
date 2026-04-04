@@ -24,7 +24,8 @@ class ClassInstanceService(
     private val classInstanceRepository: ClassInstanceRepository,
     private val trainerRepository: TrainerRepository,
     private val roomRepository: RoomRepository,
-    private val classTemplateRepository: ClassTemplateRepository
+    private val classTemplateRepository: ClassTemplateRepository,
+    private val bookingService: BookingService
 ) {
 
     @Transactional(readOnly = true)
@@ -103,6 +104,11 @@ class ClassInstanceService(
         val updatedScheduledAt = request.scheduledAt ?: instance.scheduledAt
         val updatedDurationMin = request.durationMin ?: instance.durationMin
         val updatedCapacity = request.capacity ?: instance.capacity
+        val confirmedBookings = bookingService.countConfirmedBookings(instance.id)
+
+        if (updatedCapacity < confirmedBookings) {
+            throw CapacityBelowConfirmedBookingsException("Capacity cannot be below confirmed bookings")
+        }
 
         validateSlotAlignment(updatedScheduledAt)
 
@@ -136,6 +142,9 @@ class ClassInstanceService(
     fun deleteInstance(id: UUID) {
         val instance = classInstanceRepository.findById(id)
             .orElseThrow { ClassInstanceNotFoundException("Class instance with id '$id' not found") }
+        if (bookingService.countConfirmedBookings(id) > 0) {
+            throw ClassHasActiveBookingsException("Class instance has active bookings")
+        }
         classInstanceRepository.delete(instance)
     }
 
@@ -243,7 +252,13 @@ class ClassInstanceService(
         scheduledAt = scheduledAt,
         durationMin = durationMin,
         capacity = capacity,
-        room = room?.let { RoomSummaryResponse(it.id, it.name) },
+        room = room?.let {
+            RoomSummaryResponse(
+                id = it.id,
+                name = it.name,
+                photoUrl = if (it.photoData != null) "/api/v1/rooms/${it.id}/photo" else null
+            )
+        },
         trainers = trainers.map { TrainerSummaryResponse(it.id, it.firstName, it.lastName) },
         hasRoomConflict = hasRoomConflict,
         createdAt = createdAt,
@@ -252,5 +267,7 @@ class ClassInstanceService(
 }
 
 class ClassInstanceNotFoundException(message: String) : RuntimeException(message)
+class CapacityBelowConfirmedBookingsException(message: String) : RuntimeException(message)
+class ClassHasActiveBookingsException(message: String) : RuntimeException(message)
 class TrainerScheduleConflictException(message: String) : RuntimeException(message)
 class InvalidSlotException(message: String) : RuntimeException(message)

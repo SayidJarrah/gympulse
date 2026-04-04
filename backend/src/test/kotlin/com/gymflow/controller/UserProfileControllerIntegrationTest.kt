@@ -14,9 +14,11 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
+import org.springframework.mock.web.MockMultipartFile
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
@@ -77,6 +79,20 @@ class UserProfileControllerIntegrationTest {
     }
 
     @Test
+    fun `upload profile photo returns 200 for authenticated user`() {
+        val user = buildUser(role = "USER")
+        val photo = MockMultipartFile("photo", "avatar.png", "image/png", byteArrayOf(1, 2, 3))
+
+        mockMvc.perform(
+            multipart("/api/v1/profile/me/photo")
+                .file(photo)
+                .header("Authorization", "Bearer ${jwtService.generateToken(user)}")
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.message").value("Photo uploaded successfully"))
+    }
+
+    @Test
     fun `update my profile returns mapped validation error`() {
         val user = buildUser(role = "USER")
         val request = UpdateUserProfileRequest(phone = "12345")
@@ -115,6 +131,8 @@ class UserProfileControllerIntegrationTest {
         dateOfBirth = LocalDate.of(1994, 8, 12),
         fitnessGoals = listOf("Build strength", "Improve mobility"),
         preferredClassTypes = listOf("Yoga", "HIIT"),
+        hasProfilePhoto = true,
+        profilePhotoUrl = "/api/v1/profile/me/photo",
         createdAt = OffsetDateTime.parse("2026-03-29T10:00:00Z"),
         updatedAt = OffsetDateTime.parse("2026-03-29T12:30:00Z")
     )

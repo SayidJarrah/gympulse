@@ -102,7 +102,12 @@ export const useMembershipStore = create<MembershipState>((set, get) => ({
     // Called from PurchaseConfirmModal — modal owns its own loading/error state.
     // This action throws on failure so the modal can catch and display the error.
     const data = await purchaseMembershipApi({ planId })
-    set({ activeMembership: data })
+    set({
+      activeMembership: data,
+      membershipLoading: false,
+      membershipError: null,
+      membershipErrorCode: null,
+    })
   },
 
   cancelMyMembership: async () => {

@@ -14,6 +14,8 @@ data class UserMembershipResponse(
     val userDateOfBirth: LocalDate?,
     val userFitnessGoals: List<String>,
     val userPreferredClassTypes: List<String>,
+    val userHasProfilePhoto: Boolean,
+    val userProfilePhotoUrl: String?,
     val planId: UUID,
     val planName: String,
     val startDate: LocalDate,

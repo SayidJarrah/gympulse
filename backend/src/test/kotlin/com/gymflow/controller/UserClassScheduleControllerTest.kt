@@ -1,11 +1,11 @@
 package com.gymflow.controller
 
 import com.gymflow.domain.User
+import com.gymflow.dto.ScheduleEntryBookingSummaryResponse
 import com.gymflow.dto.UserClassScheduleEntryResponse
 import com.gymflow.dto.UserClassScheduleResponse
 import com.gymflow.service.InvalidScheduleViewException
 import com.gymflow.service.JwtService
-import com.gymflow.service.NoActiveMembershipException
 import com.gymflow.service.UserClassScheduleService
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given
@@ -47,6 +47,7 @@ class UserClassScheduleControllerTest {
             week = "2026-W14",
             rangeStartDate = LocalDate.parse("2026-03-30"),
             rangeEndDateExclusive = LocalDate.parse("2026-04-06"),
+            hasActiveMembership = true,
             entries = listOf(
                 UserClassScheduleEntryResponse(
                     id = UUID.randomUUID(),
@@ -54,7 +55,19 @@ class UserClassScheduleControllerTest {
                     scheduledAt = OffsetDateTime.parse("2026-03-30T16:00:00Z"),
                     localDate = LocalDate.parse("2026-03-30"),
                     durationMin = 60,
-                    trainerNames = listOf("Jane Doe")
+                    trainerNames = listOf("Jane Doe"),
+                    classPhotoUrl = "/api/v1/class-templates/123/photo",
+                    capacity = 20,
+                    confirmedBookings = 4,
+                    remainingSpots = 16,
+                    currentUserBooking = ScheduleEntryBookingSummaryResponse(
+                        id = UUID.randomUUID(),
+                        status = "CONFIRMED",
+                        bookedAt = OffsetDateTime.parse("2026-03-29T12:00:00Z")
+                    ),
+                    bookingAllowed = false,
+                    bookingDeniedReason = "ALREADY_BOOKED",
+                    cancellationAllowed = true
                 )
             )
         )
@@ -78,8 +91,10 @@ class UserClassScheduleControllerTest {
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.view").value("week"))
+            .andExpect(jsonPath("$.hasActiveMembership").value(true))
             .andExpect(jsonPath("$.timeZone").value("Europe/Warsaw"))
             .andExpect(jsonPath("$.entries[0].name").value("Yoga Flow"))
+            .andExpect(jsonPath("$.entries[0].bookingDeniedReason").value("ALREADY_BOOKED"))
     }
 
     @Test
@@ -101,11 +116,21 @@ class UserClassScheduleControllerTest {
     }
 
     @Test
-    fun `get schedule returns 404 when membership is missing`() {
+    fun `get schedule returns 200 when membership is missing`() {
         val user = buildUser(role = "USER")
+        val response = UserClassScheduleResponse(
+            view = "week",
+            anchorDate = LocalDate.parse("2026-03-30"),
+            timeZone = "Europe/Warsaw",
+            week = "2026-W14",
+            rangeStartDate = LocalDate.parse("2026-03-30"),
+            rangeEndDateExclusive = LocalDate.parse("2026-04-06"),
+            hasActiveMembership = false,
+            entries = emptyList()
+        )
 
         given(userClassScheduleService.getSchedule(user.id, "week", "2026-03-30", "Europe/Warsaw"))
-            .willThrow(NoActiveMembershipException("No active membership found"))
+            .willReturn(response)
 
         mockMvc.perform(
             get("/api/v1/class-schedule")
@@ -114,8 +139,8 @@ class UserClassScheduleControllerTest {
                 .queryParam("timeZone", "Europe/Warsaw")
                 .header("Authorization", "Bearer ${jwtService.generateToken(user)}")
         )
-            .andExpect(status().isNotFound)
-            .andExpect(jsonPath("$.code").value("NO_ACTIVE_MEMBERSHIP"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.hasActiveMembership").value(false))
     }
 
     @Test

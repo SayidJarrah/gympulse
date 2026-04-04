@@ -1,10 +1,15 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import type { AxiosError } from 'axios'
+import { UserCircleIcon } from '@heroicons/react/24/outline'
 import { z } from 'zod'
+import { EntityImageField } from '../media/EntityImageField'
 import { ProfileChipInput } from './ProfileChipInput'
+import type { ApiErrorResponse } from '../../types/auth'
 import type { UpdateUserProfileRequest, UserProfile } from '../../types/userProfile'
 import type { ProfileFieldName } from '../../store/profileStore'
+import { getEntityImageErrorMessage, revokeObjectUrl } from '../../utils/entityImage'
 
 const nameSchema = z
   .string()
@@ -59,7 +64,11 @@ type UserProfileFormValues = z.infer<typeof userProfileFormSchema>
 
 interface UserProfileFormProps {
   profile: UserProfile;
+  avatarUrl: string | null;
   onSubmit: (request: UpdateUserProfileRequest) => Promise<void>;
+  onUploadPhoto: (file: File) => Promise<void>;
+  onDeletePhoto: () => Promise<void>;
+  onSetSuccessMessage: (message: string | null) => void;
   isSaving: boolean;
   fieldErrors: Partial<Record<ProfileFieldName, string>>;
 }
@@ -80,12 +89,28 @@ function defaultValuesFromProfile(profile: UserProfile): UserProfileFormValues {
   }
 }
 
+function getProfileInitials(profile: UserProfile): string {
+  const first = profile.firstName?.trim().charAt(0) ?? ''
+  const last = profile.lastName?.trim().charAt(0) ?? ''
+  const initials = `${first}${last}`.trim()
+  return initials || profile.email.slice(0, 2).toUpperCase()
+}
+
 export function UserProfileForm({
   profile,
+  avatarUrl,
   onSubmit,
+  onUploadPhoto,
+  onDeletePhoto,
+  onSetSuccessMessage,
   isSaving,
   fieldErrors,
 }: UserProfileFormProps) {
+  const [queuedPhoto, setQueuedPhoto] = useState<File | null>(null)
+  const [queuedPreviewUrl, setQueuedPreviewUrl] = useState<string | null>(null)
+  const [photoStatus, setPhotoStatus] = useState<string | null>(null)
+  const [photoStatusTone, setPhotoStatusTone] = useState<'default' | 'info' | 'success'>('default')
+  const [photoError, setPhotoError] = useState<string | null>(null)
   const {
     register,
     control,
@@ -101,6 +126,12 @@ export function UserProfileForm({
   useEffect(() => {
     reset(defaultValuesFromProfile(profile))
   }, [profile, reset])
+
+  useEffect(() => {
+    return () => {
+      revokeObjectUrl(queuedPreviewUrl)
+    }
+  }, [queuedPreviewUrl])
 
   useEffect(() => {
     if (fieldErrors.firstName) {
@@ -123,7 +154,54 @@ export function UserProfileForm({
     }
   }, [fieldErrors, setError])
 
+  const handlePhotoSelect = (file: File | null) => {
+    setPhotoError(null)
+
+    if (!file) {
+      revokeObjectUrl(queuedPreviewUrl)
+      setQueuedPhoto(null)
+      setQueuedPreviewUrl(null)
+      setPhotoStatus(null)
+      setPhotoStatusTone('default')
+      return
+    }
+
+    const nextPreviewUrl = URL.createObjectURL(file)
+    revokeObjectUrl(queuedPreviewUrl)
+    setQueuedPhoto(file)
+    setQueuedPreviewUrl(nextPreviewUrl)
+    setPhotoStatus('Ready to upload after save.')
+    setPhotoStatusTone('info')
+  }
+
+  const handlePhotoRemove = async () => {
+    setPhotoError(null)
+
+    if (queuedPhoto) {
+      handlePhotoSelect(null)
+      return
+    }
+
+    if (!avatarUrl || !window.confirm('Remove your current profile photo?')) {
+      return
+    }
+
+    try {
+      await onDeletePhoto()
+      setPhotoStatus('Photo removed.')
+      setPhotoStatusTone('success')
+    } catch (err) {
+      const axiosError = err as AxiosError<ApiErrorResponse>
+      const code = axiosError.response?.data?.code ?? ''
+      setPhotoError(getEntityImageErrorMessage(code, 'Failed to remove image.'))
+    }
+  }
+
   const handleFormSubmit = handleSubmit(async (values) => {
+    setPhotoError(null)
+    setPhotoStatus(null)
+    setPhotoStatusTone('default')
+
     await onSubmit({
       firstName: normalizeOptionalText(values.firstName),
       lastName: normalizeOptionalText(values.lastName),
@@ -132,7 +210,32 @@ export function UserProfileForm({
       fitnessGoals: values.fitnessGoals,
       preferredClassTypes: values.preferredClassTypes,
     })
+
+    if (!queuedPhoto) {
+      return
+    }
+
+    try {
+      await onUploadPhoto(queuedPhoto)
+      revokeObjectUrl(queuedPreviewUrl)
+      setQueuedPhoto(null)
+      setQueuedPreviewUrl(null)
+      setPhotoStatus('Photo updated.')
+      setPhotoStatusTone('success')
+      onSetSuccessMessage('Profile updated. Photo updated.')
+    } catch (err) {
+      const axiosError = err as AxiosError<ApiErrorResponse>
+      const code = axiosError.response?.data?.code ?? ''
+      setPhotoError(getEntityImageErrorMessage(code, 'Upload failed. Try again.'))
+      setPhotoStatus('Ready to upload after save.')
+      setPhotoStatusTone('info')
+      onSetSuccessMessage('Profile updated.')
+    }
   })
+
+  const visibleAvatarUrl = queuedPreviewUrl ?? avatarUrl
+  const showRemove = Boolean(queuedPhoto || avatarUrl)
+  const profileInitials = getProfileInitials(profile)
 
   return (
     <form onSubmit={handleFormSubmit} className="space-y-8" noValidate>
@@ -144,126 +247,153 @@ export function UserProfileForm({
           </p>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-2">
-          <div className="md:col-span-2">
-            <label htmlFor="profile-email" className="text-sm font-semibold text-gray-200">
-              Email
-            </label>
-            <input
-              id="profile-email"
-              type="email"
-              value={profile.email}
-              readOnly
-              disabled
-              className="mt-2 w-full rounded-xl border border-gray-800 bg-gray-950/70 px-4 py-3 text-sm text-gray-400"
-            />
-          </div>
+        <div className="grid gap-5">
+          <EntityImageField
+            title="Profile photo"
+            helperText="Use a clear headshot so your account is easier to recognize across GymFlow."
+            inputId="profile-photo"
+            variant="avatar"
+            previewUrl={visibleAvatarUrl}
+            previewAlt={`${profile.firstName ?? 'GymFlow'} ${profile.lastName ?? 'member'} profile`}
+            fallback={
+              <div className="flex h-full w-full items-center justify-center text-2xl font-semibold">
+                {visibleAvatarUrl ? null : profileInitials || <UserCircleIcon className="h-8 w-8" aria-hidden="true" />}
+              </div>
+            }
+            statusMessage={photoStatus}
+            statusTone={photoStatusTone}
+            errorMessage={photoError}
+            actionLabel={avatarUrl ? 'Replace photo' : 'Upload photo'}
+            removeLabel="Remove"
+            showRemove={showRemove}
+            disabled={isSaving}
+            onFileSelect={handlePhotoSelect}
+            onRemove={() => {
+              void handlePhotoRemove()
+            }}
+          />
 
-          <div className="flex flex-col gap-2">
-            <label htmlFor="profile-first-name" className="text-sm font-semibold text-gray-200">
-              First name
-            </label>
-            <input
-              id="profile-first-name"
-              type="text"
-              placeholder="e.g. Alice"
-              disabled={isSaving}
-              className={`w-full rounded-xl border bg-gray-950/70 px-4 py-3 text-sm text-white placeholder:text-gray-500 transition-colors duration-200 focus:border-transparent focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-70 ${
-                errors.firstName
-                  ? 'border-red-500/60 focus:ring-red-500'
-                  : 'border-gray-700 focus:ring-green-500'
-              }`}
-              aria-invalid={!!errors.firstName}
-              aria-describedby={errors.firstName ? 'profile-first-name-error' : undefined}
-              {...register('firstName')}
-            />
-            {errors.firstName && (
-              <p id="profile-first-name-error" className="text-xs text-red-400" role="alert">
-                {errors.firstName.message}
-              </p>
-            )}
-          </div>
+          <div className="grid gap-5 md:grid-cols-2">
+            <div className="md:col-span-2">
+              <label htmlFor="profile-email" className="text-sm font-semibold text-gray-200">
+                Email
+              </label>
+              <input
+                id="profile-email"
+                type="email"
+                value={profile.email}
+                readOnly
+                disabled
+                className="mt-2 w-full rounded-xl border border-gray-800 bg-gray-950/70 px-4 py-3 text-sm text-gray-400"
+              />
+            </div>
 
-          <div className="flex flex-col gap-2">
-            <label htmlFor="profile-last-name" className="text-sm font-semibold text-gray-200">
-              Last name
-            </label>
-            <input
-              id="profile-last-name"
-              type="text"
-              placeholder="e.g. Brown"
-              disabled={isSaving}
-              className={`w-full rounded-xl border bg-gray-950/70 px-4 py-3 text-sm text-white placeholder:text-gray-500 transition-colors duration-200 focus:border-transparent focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-70 ${
-                errors.lastName
-                  ? 'border-red-500/60 focus:ring-red-500'
-                  : 'border-gray-700 focus:ring-green-500'
-              }`}
-              aria-invalid={!!errors.lastName}
-              aria-describedby={errors.lastName ? 'profile-last-name-error' : undefined}
-              {...register('lastName')}
-            />
-            {errors.lastName && (
-              <p id="profile-last-name-error" className="text-xs text-red-400" role="alert">
-                {errors.lastName.message}
-              </p>
-            )}
-          </div>
+            <div className="flex flex-col gap-2">
+              <label htmlFor="profile-first-name" className="text-sm font-semibold text-gray-200">
+                First name
+              </label>
+              <input
+                id="profile-first-name"
+                type="text"
+                placeholder="e.g. Alice"
+                disabled={isSaving}
+                className={`w-full rounded-xl border bg-gray-950/70 px-4 py-3 text-sm text-white placeholder:text-gray-500 transition-colors duration-200 focus:border-transparent focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-70 ${
+                  errors.firstName
+                    ? 'border-red-500/60 focus:ring-red-500'
+                    : 'border-gray-700 focus:ring-green-500'
+                }`}
+                aria-invalid={!!errors.firstName}
+                aria-describedby={errors.firstName ? 'profile-first-name-error' : undefined}
+                {...register('firstName')}
+              />
+              {errors.firstName && (
+                <p id="profile-first-name-error" className="text-xs text-red-400" role="alert">
+                  {errors.firstName.message}
+                </p>
+              )}
+            </div>
 
-          <div className="flex flex-col gap-2">
-            <label htmlFor="profile-phone" className="text-sm font-semibold text-gray-200">
-              Phone
-            </label>
-            <input
-              id="profile-phone"
-              type="tel"
-              placeholder="+48 123 123 123"
-              disabled={isSaving}
-              className={`w-full rounded-xl border bg-gray-950/70 px-4 py-3 text-sm text-white placeholder:text-gray-500 transition-colors duration-200 focus:border-transparent focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-70 ${
-                errors.phone
-                  ? 'border-red-500/60 focus:ring-red-500'
-                  : 'border-gray-700 focus:ring-green-500'
-              }`}
-              aria-invalid={!!errors.phone}
-              aria-describedby="profile-phone-helper profile-phone-error"
-              {...register('phone')}
-            />
-            <p id="profile-phone-helper" className="text-xs text-gray-400">
-              Use international format. Spaces, dashes, and parentheses are allowed.
-            </p>
-            {errors.phone && (
-              <p id="profile-phone-error" className="text-xs text-red-400" role="alert">
-                {errors.phone.message}
-              </p>
-            )}
-          </div>
+            <div className="flex flex-col gap-2">
+              <label htmlFor="profile-last-name" className="text-sm font-semibold text-gray-200">
+                Last name
+              </label>
+              <input
+                id="profile-last-name"
+                type="text"
+                placeholder="e.g. Brown"
+                disabled={isSaving}
+                className={`w-full rounded-xl border bg-gray-950/70 px-4 py-3 text-sm text-white placeholder:text-gray-500 transition-colors duration-200 focus:border-transparent focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-70 ${
+                  errors.lastName
+                    ? 'border-red-500/60 focus:ring-red-500'
+                    : 'border-gray-700 focus:ring-green-500'
+                }`}
+                aria-invalid={!!errors.lastName}
+                aria-describedby={errors.lastName ? 'profile-last-name-error' : undefined}
+                {...register('lastName')}
+              />
+              {errors.lastName && (
+                <p id="profile-last-name-error" className="text-xs text-red-400" role="alert">
+                  {errors.lastName.message}
+                </p>
+              )}
+            </div>
 
-          <div className="flex flex-col gap-2">
-            <label htmlFor="profile-date-of-birth" className="text-sm font-semibold text-gray-200">
-              Date of birth
-            </label>
-            <input
-              id="profile-date-of-birth"
-              type="date"
-              disabled={isSaving}
-              max={new Date().toISOString().slice(0, 10)}
-              className={`w-full rounded-xl border bg-gray-950/70 px-4 py-3 text-sm text-white transition-colors duration-200 focus:border-transparent focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-70 ${
-                errors.dateOfBirth
-                  ? 'border-red-500/60 focus:ring-red-500'
-                  : 'border-gray-700 focus:ring-green-500'
-              }`}
-              aria-invalid={!!errors.dateOfBirth}
-              aria-describedby={errors.dateOfBirth ? 'profile-date-of-birth-error' : undefined}
-              {...register('dateOfBirth')}
-            />
-            {errors.dateOfBirth && (
-              <p
-                id="profile-date-of-birth-error"
-                className="text-xs text-red-400"
-                role="alert"
-              >
-                {errors.dateOfBirth.message}
+            <div className="flex flex-col gap-2">
+              <label htmlFor="profile-phone" className="text-sm font-semibold text-gray-200">
+                Phone
+              </label>
+              <input
+                id="profile-phone"
+                type="tel"
+                placeholder="+48 123 123 123"
+                disabled={isSaving}
+                className={`w-full rounded-xl border bg-gray-950/70 px-4 py-3 text-sm text-white placeholder:text-gray-500 transition-colors duration-200 focus:border-transparent focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-70 ${
+                  errors.phone
+                    ? 'border-red-500/60 focus:ring-red-500'
+                    : 'border-gray-700 focus:ring-green-500'
+                }`}
+                aria-invalid={!!errors.phone}
+                aria-describedby="profile-phone-helper profile-phone-error"
+                {...register('phone')}
+              />
+              <p id="profile-phone-helper" className="text-xs text-gray-400">
+                Use international format. Spaces, dashes, and parentheses are allowed.
               </p>
-            )}
+              {errors.phone && (
+                <p id="profile-phone-error" className="text-xs text-red-400" role="alert">
+                  {errors.phone.message}
+                </p>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label htmlFor="profile-date-of-birth" className="text-sm font-semibold text-gray-200">
+                Date of birth
+              </label>
+              <input
+                id="profile-date-of-birth"
+                type="date"
+                disabled={isSaving}
+                max={new Date().toISOString().slice(0, 10)}
+                className={`w-full rounded-xl border bg-gray-950/70 px-4 py-3 text-sm text-white transition-colors duration-200 focus:border-transparent focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-70 ${
+                  errors.dateOfBirth
+                    ? 'border-red-500/60 focus:ring-red-500'
+                    : 'border-gray-700 focus:ring-green-500'
+                }`}
+                aria-invalid={!!errors.dateOfBirth}
+                aria-describedby={errors.dateOfBirth ? 'profile-date-of-birth-error' : undefined}
+                {...register('dateOfBirth')}
+              />
+              {errors.dateOfBirth && (
+                <p
+                  id="profile-date-of-birth-error"
+                  className="text-xs text-red-400"
+                  role="alert"
+                >
+                  {errors.dateOfBirth.message}
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </section>
@@ -317,7 +447,7 @@ export function UserProfileForm({
         <div>
           <p className="text-sm font-medium text-white">Changes apply to your full profile.</p>
           <p className="mt-1 text-sm text-gray-400">
-            Empty fields are saved as blank values, and list order is preserved.
+            Empty fields are saved as blank values, and queued photo changes upload right after save.
           </p>
         </div>
 
@@ -326,7 +456,7 @@ export function UserProfileForm({
           disabled={isSaving}
           className="inline-flex items-center justify-center rounded-xl bg-green-500 px-5 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-green-600 hover:shadow-lg hover:shadow-green-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-950 disabled:cursor-not-allowed disabled:opacity-70"
         >
-          {isSaving ? 'Saving profile...' : 'Save profile'}
+          {isSaving ? 'Saving changes...' : 'Save changes'}
         </button>
       </div>
     </form>

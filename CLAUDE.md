@@ -49,6 +49,7 @@ Agent teams is enabled. Claude can dispatch multiple sub-agents in parallel usin
 - `/write-docs` stages: PRD → SDD → Design are strictly ordered (each consumes the previous output)
 - `/implement` Steps 1→2: frontend-dev depends on backend DTOs and endpoint contracts being finalised first
 - `/implement` Fix Loop: diagnose → fix → verify must complete one iteration before starting the next
+  - If a user requests parallel PRD/SDD/Design work, explicitly refuse and run the stages in order.
 
 **Agent assignments are unchanged** — each agent still owns its domain (backend-dev, frontend-dev, e2e-tester, solution-architect, etc.). Parallelism is about running independent agents concurrently, not merging their responsibilities.
 

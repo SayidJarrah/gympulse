@@ -10,7 +10,15 @@ data class UserClassScheduleEntryResponse(
     val scheduledAt: OffsetDateTime,
     val localDate: LocalDate,
     val durationMin: Int,
-    val trainerNames: List<String>
+    val trainerNames: List<String>,
+    val classPhotoUrl: String?,
+    val capacity: Int,
+    val confirmedBookings: Long,
+    val remainingSpots: Int,
+    val currentUserBooking: ScheduleEntryBookingSummaryResponse?,
+    val bookingAllowed: Boolean,
+    val bookingDeniedReason: String?,
+    val cancellationAllowed: Boolean
 )
 
 data class UserClassScheduleResponse(
@@ -20,5 +28,6 @@ data class UserClassScheduleResponse(
     val week: String,
     val rangeStartDate: LocalDate,
     val rangeEndDateExclusive: LocalDate,
+    val hasActiveMembership: Boolean,
     val entries: List<UserClassScheduleEntryResponse>
 )

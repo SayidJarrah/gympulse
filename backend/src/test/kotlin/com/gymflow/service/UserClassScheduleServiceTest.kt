@@ -1,18 +1,18 @@
 package com.gymflow.service
 
 import com.gymflow.domain.ClassInstance
+import com.gymflow.domain.ClassTemplate
 import com.gymflow.domain.Trainer
 import com.gymflow.domain.UserMembership
 import com.gymflow.repository.ClassInstanceRepository
 import com.gymflow.repository.UserMembershipRepository
+import com.gymflow.service.BookingService
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
@@ -22,6 +22,7 @@ class UserClassScheduleServiceTest {
 
     private val classInstanceRepository: ClassInstanceRepository = mockk()
     private val userMembershipRepository: UserMembershipRepository = mockk()
+    private val bookingService: BookingService = mockk()
 
     private lateinit var service: UserClassScheduleService
 
@@ -29,7 +30,7 @@ class UserClassScheduleServiceTest {
 
     @BeforeEach
     fun setUp() {
-        service = UserClassScheduleService(classInstanceRepository, userMembershipRepository)
+        service = UserClassScheduleService(classInstanceRepository, userMembershipRepository, bookingService)
     }
 
     @Test
@@ -54,6 +55,16 @@ class UserClassScheduleServiceTest {
 
         val instance = ClassInstance(
             id = UUID.randomUUID(),
+            template = ClassTemplate(
+                id = UUID.randomUUID(),
+                name = "Yoga Flow",
+                category = "Mind & Body",
+                defaultDurationMin = 60,
+                defaultCapacity = 12,
+                difficulty = "All Levels",
+                photoData = byteArrayOf(9),
+                photoMimeType = "image/png"
+            ),
             name = "Yoga Flow",
             type = "GROUP",
             status = "SCHEDULED",
@@ -65,15 +76,28 @@ class UserClassScheduleServiceTest {
 
         every { userMembershipRepository.findAccessibleActiveMembership(userId, today) } returns membership
         every { classInstanceRepository.findVisibleGroupScheduleBetween(any(), any()) } returns listOf(instance)
+        every { bookingService.countConfirmedBookings(any<Collection<UUID>>()) } returns mapOf(instance.id to 3L)
+        every { bookingService.findConfirmedBookingsByUserAndClassIds(any(), any<Collection<UUID>>()) } returns emptyMap()
 
         val response = service.getSchedule(userId, "week", anchorDate, timeZone)
 
         assertEquals("week", response.view)
+        assertEquals(true, response.hasActiveMembership)
         assertEquals(LocalDate.of(2026, 3, 30), response.rangeStartDate)
         assertEquals(LocalDate.of(2026, 4, 6), response.rangeEndDateExclusive)
         assertEquals("2026-W14", response.week)
         assertEquals(1, response.entries.size)
         assertEquals(listOf("Jane Doe", "Marta Kowalska"), response.entries[0].trainerNames)
+        assertEquals(12, response.entries[0].capacity)
+        assertEquals(3L, response.entries[0].confirmedBookings)
+        assertEquals(9, response.entries[0].remainingSpots)
+        assertEquals(false, response.entries[0].bookingAllowed)
+        assertEquals("CLASS_ALREADY_STARTED", response.entries[0].bookingDeniedReason)
+        assertEquals(false, response.entries[0].cancellationAllowed)
+        assertEquals(
+            "/api/v1/class-templates/${instance.template!!.id}/photo",
+            response.entries[0].classPhotoUrl
+        )
 
         verify(exactly = 1) { userMembershipRepository.findAccessibleActiveMembership(userId, today) }
         verify(exactly = 1) { classInstanceRepository.findVisibleGroupScheduleBetween(any(), any()) }
@@ -99,12 +123,15 @@ class UserClassScheduleServiceTest {
 
         every { userMembershipRepository.findAccessibleActiveMembership(userId, today) } returns membership
         every { classInstanceRepository.findVisibleGroupScheduleBetween(any(), any()) } returns listOf(instance)
+        every { bookingService.countConfirmedBookings(any<Collection<UUID>>()) } returns emptyMap()
+        every { bookingService.findConfirmedBookingsByUserAndClassIds(any(), any<Collection<UUID>>()) } returns emptyMap()
 
         val response = service.getSchedule(userId, "list", anchorDate, timeZone)
 
         assertEquals(LocalDate.of(2026, 3, 30), response.rangeStartDate)
         assertEquals(LocalDate.of(2026, 4, 13), response.rangeEndDateExclusive)
         assertEquals(LocalDate.of(2026, 3, 30), response.entries[0].localDate)
+        assertEquals(null, response.entries[0].classPhotoUrl)
     }
 
     @Test
@@ -137,6 +164,8 @@ class UserClassScheduleServiceTest {
             personal,
             deleted
         )
+        every { bookingService.countConfirmedBookings(any<Collection<UUID>>()) } returns emptyMap()
+        every { bookingService.findConfirmedBookingsByUserAndClassIds(any(), any<Collection<UUID>>()) } returns emptyMap()
 
         val response = service.getSchedule(userId, "day", anchorDate, timeZone)
 
@@ -144,18 +173,21 @@ class UserClassScheduleServiceTest {
         assertEquals(LocalDate.of(2026, 4, 1), response.rangeEndDateExclusive)
         assertEquals(1, response.entries.size)
         assertEquals("Visible", response.entries[0].name)
+        assertEquals(null, response.entries[0].classPhotoUrl)
     }
 
     @Test
-    fun `throws when membership is not active`() {
+    fun `schedule stays browsable without active membership`() {
         val today = LocalDate.now()
         every { userMembershipRepository.findAccessibleActiveMembership(userId, today) } returns null
+        every { classInstanceRepository.findVisibleGroupScheduleBetween(any(), any()) } returns emptyList()
+        every { bookingService.countConfirmedBookings(any<Collection<UUID>>()) } returns emptyMap()
+        every { bookingService.findConfirmedBookingsByUserAndClassIds(any(), any<Collection<UUID>>()) } returns emptyMap()
 
-        val exception = assertThrows<NoActiveMembershipException> {
-            service.getSchedule(userId, "week", "2026-03-30", "Europe/Warsaw")
-        }
+        val response = service.getSchedule(userId, "week", "2026-03-30", "Europe/Warsaw")
 
-        assertTrue(exception.message!!.contains("No active membership"))
+        assertEquals(false, response.hasActiveMembership)
+        assertEquals(emptyList<Any>(), response.entries)
     }
 
     private fun buildMembership(endDate: LocalDate): UserMembership = UserMembership(

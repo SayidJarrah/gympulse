@@ -35,3 +35,14 @@ export async function deleteRoom(id: string, force?: boolean): Promise<RoomHasIn
   }
   return null
 }
+
+export async function uploadRoomPhoto(id: string, file: File): Promise<void> {
+  const formData = new FormData()
+  formData.append('photo', file)
+
+  await axiosInstance.post(`/admin/rooms/${id}/photo`, formData)
+}
+
+export async function deleteRoomPhoto(id: string): Promise<void> {
+  await axiosInstance.delete(`/admin/rooms/${id}/photo`)
+}

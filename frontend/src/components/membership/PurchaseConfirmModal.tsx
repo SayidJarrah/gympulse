@@ -12,12 +12,16 @@ interface PurchaseConfirmModalProps {
   isOpen: boolean;
   plan: MembershipPlan;
   onCancel: () => void;
+  onSuccess?: () => void;
+  redirectTo?: string | null;
 }
 
 export function PurchaseConfirmModal({
   isOpen,
   plan,
   onCancel,
+  onSuccess,
+  redirectTo = '/membership',
 }: PurchaseConfirmModalProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -54,7 +58,10 @@ export function PurchaseConfirmModal({
     try {
       await purchaseMembership(plan.id)
       onCancel()
-      navigate('/membership')
+      onSuccess?.()
+      if (redirectTo) {
+        navigate(redirectTo)
+      }
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>
       const code = axiosError.response?.data?.code ?? ''

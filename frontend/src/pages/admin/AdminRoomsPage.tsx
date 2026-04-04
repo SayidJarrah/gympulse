@@ -23,7 +23,10 @@ function TableSkeletonRows() {
       {Array.from({ length: 5 }).map((_, i) => (
         <tr key={i} className="border-t border-gray-800" aria-hidden="true">
           <td className="px-4 py-3">
-            <div className="h-4 w-32 rounded bg-gray-800 animate-pulse" />
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-12 rounded-lg bg-gray-800 animate-pulse" />
+              <div className="h-4 w-32 rounded bg-gray-800 animate-pulse" />
+            </div>
           </td>
           <td className="px-4 py-3">
             <div className="h-4 w-16 rounded bg-gray-800 animate-pulse" />
@@ -207,7 +210,22 @@ export function AdminRoomsPage() {
                       key={room.id}
                       className="border-t border-gray-800 transition-colors duration-100 hover:bg-gray-900 last:border-0"
                     >
-                      <td className="px-4 py-3 font-medium text-white">{room.name}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-12 items-center justify-center overflow-hidden rounded-lg border border-gray-800 bg-gray-950">
+                            {room.photoUrl ? (
+                              <img
+                                src={room.photoUrl}
+                                alt={room.name}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <BuildingOfficeIcon className="h-5 w-5 text-gray-500" aria-hidden="true" />
+                            )}
+                          </div>
+                          <span className="font-medium text-white">{room.name}</span>
+                        </div>
+                      </td>
                       <td className="px-4 py-3 text-gray-400">{room.capacity ?? '—'}</td>
                       <td className="hidden px-4 py-3 text-gray-400 sm:table-cell">
                         {room.description ? (
