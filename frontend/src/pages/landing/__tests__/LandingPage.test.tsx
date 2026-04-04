@@ -148,7 +148,7 @@ describe('LandingPage', () => {
 
     expect(screen.getByRole('link', { name: /open member area/i })).toHaveAttribute(
       'href',
-      '/membership'
+      '/home'
     )
   })
 

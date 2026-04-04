@@ -4,9 +4,11 @@ import com.gymflow.domain.UserMembership
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
+import jakarta.persistence.LockModeType
 import java.time.LocalDate
 import java.util.UUID
 
@@ -51,6 +53,21 @@ interface UserMembershipRepository : JpaRepository<UserMembership, UUID> {
         """
     )
     fun findAccessibleActiveMembership(
+        @Param("userId") userId: UUID,
+        @Param("today") today: LocalDate
+    ): UserMembership?
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query(
+        """
+        SELECT m FROM UserMembership m
+        WHERE m.userId = :userId
+          AND m.status = 'ACTIVE'
+          AND m.endDate >= :today
+          AND m.deletedAt IS NULL
+        """
+    )
+    fun findAccessibleActiveMembershipForUpdate(
         @Param("userId") userId: UUID,
         @Param("today") today: LocalDate
     ): UserMembership?

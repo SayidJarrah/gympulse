@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GymFlow — Class Booking & Cancellation Prototype</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.14), transparent 24%),
+        radial-gradient(circle at top left, rgba(249, 115, 22, 0.08), transparent 22%),
+        #0F0F0F;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    [data-screen] { display: none; }
+    [data-screen].active { display: block; }
+    [data-modal] { display: none; }
+    [data-modal].active { display: flex; }
+
+    .state-btn.active {
+      background: rgba(34, 197, 94, 0.16);
+      border-color: rgba(34, 197, 94, 0.45);
+      color: #86EFAC;
+    }
+
+    .hero-surface {
+      background:
+        radial-gradient(circle at 12% 18%, rgba(34, 197, 94, 0.18), transparent 24%),
+        radial-gradient(circle at 80% 18%, rgba(255, 255, 255, 0.06), transparent 22%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.04), transparent 46%);
+    }
+
+    .schedule-card {
+      position: relative;
+      overflow: hidden;
+      transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+    }
+
+    .schedule-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(34, 197, 94, 0.28);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+    }
+
+    .booking-track {
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      scroll-snap-type: x mandatory;
+    }
+
+    .booking-track > * {
+      scroll-snap-align: start;
+      flex: 0 0 min(84vw, 340px);
+    }
+
+    .toast {
+      animation: toastUp 260ms ease-out;
+    }
+
+    .pulse-dot {
+      animation: pulseDot 1.5s ease-in-out infinite;
+    }
+
+    @keyframes toastUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulseDot {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.65; }
+    }
+  </style>
+</head>
+<body class="min-h-screen text-white">
+  <nav class="sticky top-0 z-40 border-b border-gray-800 bg-gray-900/88 backdrop-blur-md">
+    <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center gap-2.5">
+        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500 shadow-lg shadow-green-500/20">
+          <svg viewBox="0 0 24 24" class="h-6 w-6" aria-hidden="true"><path d="M13 2L4.5 13.5H11L9 22L19.5 9.5H13.5L16 2Z" fill="white" /></svg>
+        </div>
+        <span class="text-lg font-bold">GymFlow</span>
+      </div>
+      <div class="hidden items-center gap-6 sm:flex">
+        <a href="#" class="pb-0.5 text-sm font-medium text-gray-400 hover:text-white">Home</a>
+        <a href="#" class="border-b-2 border-green-500 pb-0.5 text-sm font-medium text-green-400">Schedule</a>
+        <a href="#" class="pb-0.5 text-sm font-medium text-gray-400 hover:text-white">Trainers</a>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="rounded-full border border-orange-500/30 bg-orange-500/10 px-2 py-0.5 text-xs font-medium text-orange-300">Member</span>
+        <div class="flex h-9 w-9 items-center justify-center rounded-full bg-gray-800 text-sm font-semibold ring-2 ring-green-500/40">JD</div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="sticky top-16 z-30 border-b border-gray-800 bg-[#0F0F0F]/95 backdrop-blur-sm">
+    <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-2 px-4 py-2 text-xs font-semibold sm:px-6 lg:px-8">
+      <span class="mr-1 uppercase tracking-wider text-gray-500">View state:</span>
+      <button class="state-btn active rounded-md border border-green-500/40 bg-green-500/10 px-2.5 py-1" data-target="member-schedule" onclick="showScreen('member-schedule')">Member schedule</button>
+      <button class="state-btn rounded-md border border-gray-700 bg-gray-800 px-2.5 py-1 text-gray-300" data-target="membership-required" onclick="showScreen('membership-required')">Membership required</button>
+      <button class="state-btn rounded-md border border-gray-700 bg-gray-800 px-2.5 py-1 text-gray-300" data-target="full-class" onclick="showScreen('full-class')">Full class</button>
+      <button class="state-btn rounded-md border border-gray-700 bg-gray-800 px-2.5 py-1 text-gray-300" data-target="cancel-locked" onclick="showScreen('cancel-locked')">Cancellation locked</button>
+      <button class="state-btn rounded-md border border-gray-700 bg-gray-800 px-2.5 py-1 text-gray-300" data-target="admin-panel" onclick="showScreen('admin-panel')">Admin booking</button>
+    </div>
+  </div>
+
+  <div id="member-schedule" data-screen class="active">
+    <main class="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+      <section class="hero-surface overflow-hidden rounded-[30px] border border-gray-800 bg-gray-900 p-6 shadow-2xl shadow-black/40 sm:p-8">
+        <div class="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_340px] lg:items-end">
+          <div>
+            <div class="inline-flex items-center gap-2 rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-green-300">Booking mode</div>
+            <h1 class="mt-5 max-w-3xl text-4xl font-bold leading-tight sm:text-5xl">Booking should feel exciting, not bureaucratic.</h1>
+            <p class="mt-4 max-w-2xl text-base leading-relaxed text-gray-300 sm:text-lg">This version turns the schedule into a live decision surface: visible momentum, immediate confirmation, and class cards that actually invite action.</p>
+          </div>
+          <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            <div class="rounded-2xl border border-gray-800 bg-[#0F0F0F]/85 px-4 py-4">
+              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">Tonight</p>
+              <p class="mt-2 text-sm font-semibold text-white">2 classes still have room</p>
+              <p class="mt-1 text-sm text-gray-400">Best moment to book</p>
+            </div>
+            <div class="rounded-2xl border border-gray-800 bg-[#0F0F0F]/85 px-4 py-4">
+              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">Your rhythm</p>
+              <p class="mt-2 text-sm font-semibold text-white"><span id="summary-count">2</span> active bookings</p>
+              <p class="mt-1 text-sm text-gray-400">One tap away from more</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="rounded-[28px] border border-gray-800 bg-gray-900 p-5 shadow-xl shadow-black/30">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">Your bookings</p>
+            <h2 class="mt-1 text-2xl font-bold">Current momentum</h2>
+            <p class="mt-2 text-sm text-gray-400">This strip should make existing bookings feel rewarding instead of hidden.</p>
+          </div>
+          <button class="rounded-md border border-gray-700 px-4 py-2 text-sm font-medium text-gray-300 transition-colors duration-200 hover:bg-gray-800 hover:text-white">See my bookings</button>
+        </div>
+        <div id="booking-strip" class="booking-track mt-5"></div>
+      </section>
+
+      <section class="grid gap-4 xl:grid-cols-3" id="class-grid"></section>
+    </main>
+  </div>
+
+  <div id="membership-required" data-screen>
+    <main class="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+      <section class="rounded-[28px] border border-gray-800 bg-gray-900 px-6 py-16 text-center shadow-xl shadow-black/30">
+        <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gray-800">
+          <svg viewBox="0 0 24 24" class="h-8 w-8 text-gray-500" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg>
+        </div>
+        <h1 class="mt-6 text-3xl font-bold">Active membership required to book</h1>
+        <p class="mx-auto mt-3 max-w-2xl text-base text-gray-400">Browsing stays open, but booking remains clearly gated. The restriction should feel understandable, not punishing.</p>
+        <div class="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <button class="rounded-md bg-green-500 px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-green-600 hover:shadow-lg hover:shadow-green-500/25">Browse plans</button>
+          <button class="rounded-md border border-gray-700 px-6 py-3 text-sm font-semibold text-gray-300 transition-colors duration-200 hover:bg-gray-800 hover:text-white">Keep browsing schedule</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="full-class" data-screen>
+    <main class="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+      <section class="rounded-[28px] border border-gray-800 bg-gray-900 p-6 shadow-xl shadow-black/30">
+        <h1 class="text-3xl font-bold">Full class state</h1>
+        <p class="mt-2 text-gray-400">No waitlist. Just a strong, honest explanation that the class is full right now.</p>
+      </section>
+      <article class="schedule-card rounded-[24px] border border-orange-500/30 bg-gray-900 p-6 shadow-xl shadow-black/20">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <span class="inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-3 py-1 text-xs font-semibold text-orange-300">Wed · 19:15</span>
+            <h2 class="mt-4 text-3xl font-bold">Box Fit</h2>
+            <p class="mt-2 text-sm text-gray-400">50 min · Marcus Hale</p>
+          </div>
+          <span class="inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-3 py-1 text-xs font-semibold text-orange-300">Fully booked</span>
+        </div>
+        <p class="mt-5 text-base text-gray-200">This class is fully booked.</p>
+      </article>
+    </main>
+  </div>
+
+  <div id="cancel-locked" data-screen>
+    <main class="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+      <section class="rounded-[28px] border border-gray-800 bg-gray-900 p-6 shadow-xl shadow-black/30">
+        <h1 class="text-3xl font-bold">Cancellation lock state</h1>
+        <p class="mt-2 text-gray-400">Inside the last 3 hours, the booking stays visible and premium, but the action clearly explains why it is closed.</p>
+      </section>
+      <article class="schedule-card rounded-[24px] border border-green-500/20 bg-gray-900 p-6 shadow-xl shadow-black/20">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <span class="inline-flex items-center gap-2 rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1 text-xs font-semibold text-green-300">Today · 18:00</span>
+            <h2 class="mt-4 text-3xl font-bold">Yoga Flow</h2>
+            <p class="mt-2 text-sm text-gray-400">60 min · Jane Doyle</p>
+          </div>
+          <span class="inline-flex items-center gap-2 rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1 text-xs font-semibold text-green-300">Booked</span>
+        </div>
+        <div class="mt-5 rounded-2xl border border-orange-500/30 bg-orange-500/10 px-4 py-3 text-sm text-orange-200">
+          You can no longer cancel within 3 hours of class start.
+        </div>
+        <button class="mt-5 w-full cursor-not-allowed rounded-md border border-gray-800 bg-gray-800 px-4 py-3 text-sm font-semibold text-gray-500" disabled>Cancel booking</button>
+      </article>
+    </main>
+  </div>
+
+  <div id="admin-panel" data-screen>
+    <main class="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+      <section class="rounded-[28px] border border-gray-800 bg-gray-900 p-6 shadow-xl shadow-black/30">
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <h1 class="text-3xl font-bold">Admin on-behalf booking</h1>
+            <p class="mt-2 text-gray-400">The panel should feel clean and operational, while still reflecting the same capacity and duplicate-booking rules.</p>
+          </div>
+          <span class="rounded-full border border-orange-500/30 bg-orange-500/10 px-2.5 py-1 text-xs font-medium text-orange-300">Admin only</span>
+        </div>
+      </section>
+      <section class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+        <article class="rounded-[24px] border border-gray-800 bg-gray-900 p-6 shadow-xl shadow-black/20">
+          <p class="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">Selected class</p>
+          <h2 class="mt-3 text-3xl font-bold">Pilates Core</h2>
+          <p class="mt-2 text-sm text-gray-400">Tue, 5 Apr · 07:30 · 45 min</p>
+          <div class="mt-5 grid gap-3 sm:grid-cols-2">
+            <div class="rounded-2xl border border-gray-800 bg-[#0F0F0F] p-4">
+              <p class="text-xs uppercase tracking-[0.14em] text-gray-500">Trainer</p>
+              <p class="mt-2 text-base font-semibold">Alina Costa</p>
+            </div>
+            <div class="rounded-2xl border border-gray-800 bg-[#0F0F0F] p-4">
+              <p class="text-xs uppercase tracking-[0.14em] text-gray-500">Capacity</p>
+              <p class="mt-2 text-base font-semibold">3 spots left</p>
+            </div>
+          </div>
+        </article>
+
+        <aside class="rounded-[24px] border border-gray-800 bg-gray-900 p-6 shadow-xl shadow-black/20">
+          <p class="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">Book for member</p>
+          <label class="mt-4 block text-sm font-medium text-gray-300">Find member</label>
+          <input type="text" value="julia@club.com" class="mt-2 w-full rounded-md border border-gray-700 bg-[#0F0F0F] px-3 py-2 text-sm text-white outline-none" />
+          <div class="mt-4 rounded-2xl border border-gray-800 bg-[#0F0F0F] p-4">
+            <p class="text-sm font-semibold text-white">Julia Davis</p>
+            <p class="mt-1 text-sm text-gray-400">No active membership</p>
+            <p class="mt-2 text-xs text-orange-300">Admin booking bypass applies.</p>
+          </div>
+          <div class="mt-4 rounded-2xl border border-orange-500/30 bg-orange-500/10 px-4 py-3 text-sm text-orange-200">
+            Duplicate booking, full class, and non-bookable class rules still apply.
+          </div>
+          <button class="mt-5 w-full rounded-md bg-green-500 px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-green-600 hover:shadow-lg hover:shadow-green-500/25">Confirm booking</button>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <div id="booking-modal" data-modal class="fixed inset-0 z-50 items-center justify-center bg-black/70 px-4 py-6 backdrop-blur-sm">
+    <div class="w-full max-w-md rounded-[24px] border border-gray-800 bg-gray-900 p-6 shadow-2xl shadow-black/60">
+      <p class="text-xs font-semibold uppercase tracking-[0.16em] text-green-300">Confirm booking</p>
+      <h2 id="modal-title" class="mt-3 text-3xl font-bold">Book this class?</h2>
+      <p id="modal-meta" class="mt-2 text-sm text-gray-400"></p>
+      <div class="mt-5 rounded-2xl border border-gray-800 bg-[#0F0F0F] p-4">
+        <p class="text-sm text-gray-300">Your spot will be confirmed immediately if capacity is still available.</p>
+      </div>
+      <div id="modal-error" class="mt-4 hidden rounded-2xl border border-orange-500/30 bg-orange-500/10 px-4 py-3 text-sm text-orange-200"></div>
+      <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+        <button class="rounded-md border border-gray-700 px-4 py-2 text-sm font-semibold text-gray-300 transition-colors duration-200 hover:bg-gray-800 hover:text-white" onclick="closeModals()">Keep browsing</button>
+        <button class="rounded-md bg-green-500 px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:bg-green-600" onclick="confirmBooking()">Confirm booking</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="cancel-modal" data-modal class="fixed inset-0 z-50 items-center justify-center bg-black/70 px-4 py-6 backdrop-blur-sm">
+    <div class="w-full max-w-md rounded-[24px] border border-gray-800 bg-gray-900 p-6 shadow-2xl shadow-black/60">
+      <p class="text-xs font-semibold uppercase tracking-[0.16em] text-orange-300">Cancel booking</p>
+      <h2 id="cancel-title" class="mt-3 text-3xl font-bold">Release your spot?</h2>
+      <p id="cancel-meta" class="mt-2 text-sm text-gray-400"></p>
+      <div class="mt-5 rounded-2xl border border-orange-500/30 bg-orange-500/10 px-4 py-3 text-sm text-orange-200">
+        You can cancel only until 3 hours before class start.
+      </div>
+      <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+        <button class="rounded-md border border-gray-700 px-4 py-2 text-sm font-semibold text-gray-300 transition-colors duration-200 hover:bg-gray-800 hover:text-white" onclick="closeModals()">Keep booking</button>
+        <button class="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:bg-red-700" onclick="confirmCancellation()">Cancel booking</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="pointer-events-none fixed bottom-5 right-5 z-50 flex flex-col gap-3"></div>
+
+  <script>
+    const initialClasses = [
+      {
+        id: 'yoga-flow',
+        name: 'Yoga Flow',
+        meta: 'Today · 18:00 · 60 min',
+        trainer: 'Jane Doyle',
+        description: 'Low-light studio reset with room to breathe and recover.',
+        spotsLeft: 5,
+        status: 'available'
+      },
+      {
+        id: 'pilates-core',
+        name: 'Pilates Core',
+        meta: 'Tomorrow · 07:30 · 45 min',
+        trainer: 'Alina Costa',
+        description: 'Compact morning intensity with clean, precise form cues.',
+        spotsLeft: 2,
+        status: 'booked'
+      },
+      {
+        id: 'box-fit',
+        name: 'Box Fit',
+        meta: 'Wed · 19:15 · 50 min',
+        trainer: 'Marcus Hale',
+        description: 'Fast combinations, short rests, and a fully booked room.',
+        spotsLeft: 0,
+        status: 'full'
+      },
+      {
+        id: 'mobility-lab',
+        name: 'Mobility Lab',
+        meta: 'Thu · 17:30 · 45 min',
+        trainer: 'Jane Doyle',
+        description: 'Recovery-first movement built for loosening up after work.',
+        spotsLeft: 4,
+        status: 'available'
+      },
+      {
+        id: 'strength-circuit',
+        name: 'Strength Circuit',
+        meta: 'Fri · 18:30 · 55 min',
+        trainer: 'Marcus Hale',
+        description: 'Booked already, but now inside the no-cancel cutoff.',
+        spotsLeft: 1,
+        status: 'locked'
+      },
+      {
+        id: 'recovery-stretch',
+        name: 'Recovery Stretch',
+        meta: 'Sat · 10:00 · 45 min',
+        trainer: 'Jane Doyle',
+        description: 'Open, calmer, and perfect as an easy weekend add-on.',
+        spotsLeft: 7,
+        status: 'available'
+      }
+    ]
+
+    let classState = JSON.parse(JSON.stringify(initialClasses))
+    let activeClassId = null
+
+    function bookingCount() {
+      return classState.filter((item) => item.status === 'booked' || item.status === 'locked').length
+    }
+
+    function bookingStripItems() {
+      return classState.filter((item) => item.status === 'booked' || item.status === 'locked')
+    }
+
+    function badgeForStatus(item) {
+      if (item.status === 'booked' || item.status === 'locked') {
+        return '<span class="inline-flex items-center gap-2 rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1 text-xs font-semibold text-green-300">Booked</span>'
+      }
+      if (item.status === 'full') {
+        return '<span class="inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-3 py-1 text-xs font-semibold text-orange-300">Fully booked</span>'
+      }
+      return `<span class="inline-flex items-center gap-2 rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1 text-xs font-semibold text-green-300"><span class="pulse-dot h-2 w-2 rounded-full bg-green-400"></span>${item.spotsLeft} spots left</span>`
+    }
+
+    function actionArea(item) {
+      if (item.status === 'available') {
+        return `
+          <button class="w-full rounded-md bg-green-500 px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-green-600 hover:shadow-lg hover:shadow-green-500/25" onclick="openBookingModal('${item.id}')">Book spot</button>
+          <button class="mt-3 inline-flex items-center gap-2 text-sm font-medium text-gray-400 transition-colors duration-200 hover:text-white">View details</button>
+        `
+      }
+      if (item.status === 'booked') {
+        return `
+          <p class="mb-3 text-sm text-gray-300">Your place is reserved.</p>
+          <button class="w-full rounded-md border border-gray-700 px-4 py-3 text-sm font-semibold text-gray-300 transition-colors duration-200 hover:bg-gray-800 hover:text-white" onclick="openCancelModal('${item.id}')">Cancel booking</button>
+        `
+      }
+      if (item.status === 'locked') {
+        return `
+          <p class="mb-3 text-sm text-orange-300">Cancellation closes 3 hours before class start.</p>
+          <button class="w-full cursor-not-allowed rounded-md border border-gray-800 bg-gray-800 px-4 py-3 text-sm font-semibold text-gray-500" disabled>Cancel booking</button>
+        `
+      }
+      return '<p class="text-sm text-gray-300">This class is fully booked.</p>'
+    }
+
+    function renderClassGrid() {
+      const grid = document.getElementById('class-grid')
+      const strip = document.getElementById('booking-strip')
+      const count = document.getElementById('summary-count')
+      if (!grid || !strip || !count) return
+
+      count.textContent = bookingCount()
+
+      strip.innerHTML = bookingStripItems().map((item) => `
+        <article class="rounded-[24px] border border-gray-800 bg-[#0F0F0F] p-4 shadow-lg shadow-black/20">
+          <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">${item.status === 'locked' ? 'Locked booking' : 'Booked class'}</p>
+          <h3 class="mt-3 text-xl font-bold">${item.name}</h3>
+          <p class="mt-1 text-sm text-gray-400">${item.meta}</p>
+          <p class="mt-4 text-sm text-gray-300">${item.trainer}</p>
+        </article>
+      `).join('')
+
+      grid.innerHTML = classState.map((item) => `
+        <article class="schedule-card rounded-[24px] border border-gray-800 bg-gray-900 p-5 shadow-xl shadow-black/20">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              ${badgeForStatus(item)}
+              <h2 class="mt-4 text-3xl font-bold">${item.name}</h2>
+              <p class="mt-2 text-sm text-gray-400">${item.meta}</p>
+            </div>
+          </div>
+          <div class="mt-5 rounded-2xl border border-gray-800 bg-[#0F0F0F] p-4">
+            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">Coach</p>
+            <p class="mt-2 text-base font-semibold">${item.trainer}</p>
+            <p class="mt-2 text-sm text-gray-400">${item.description}</p>
+          </div>
+          <div class="mt-5 border-t border-gray-800 pt-4">
+            ${actionArea(item)}
+          </div>
+        </article>
+      `).join('')
+    }
+
+    function showScreen(id) {
+      document.querySelectorAll('[data-screen]').forEach((screen) => {
+        screen.classList.toggle('active', screen.id === id)
+      })
+      document.querySelectorAll('.state-btn').forEach((button) => {
+        button.classList.toggle('active', button.dataset.target === id)
+      })
+      closeModals()
+    }
+
+    function openBookingModal(id) {
+      activeClassId = id
+      const item = classState.find((entry) => entry.id === id)
+      if (!item) return
+      document.getElementById('modal-title').textContent = `Book ${item.name}?`
+      document.getElementById('modal-meta').textContent = `${item.meta} · ${item.trainer}`
+      const error = document.getElementById('modal-error')
+      error.classList.add('hidden')
+      error.textContent = ''
+      document.getElementById('booking-modal').classList.add('active')
+    }
+
+    function openCancelModal(id) {
+      activeClassId = id
+      const item = classState.find((entry) => entry.id === id)
+      if (!item) return
+      document.getElementById('cancel-title').textContent = `Cancel ${item.name}?`
+      document.getElementById('cancel-meta').textContent = `${item.meta} · ${item.trainer}`
+      document.getElementById('cancel-modal').classList.add('active')
+    }
+
+    function closeModals() {
+      document.querySelectorAll('[data-modal]').forEach((modal) => modal.classList.remove('active'))
+    }
+
+    function openToast(message, tone = 'success') {
+      const container = document.getElementById('toast-container')
+      const toast = document.createElement('div')
+      toast.className = `toast rounded-2xl border px-4 py-3 text-sm font-medium shadow-xl shadow-black/40 ${
+        tone === 'success'
+          ? 'border-green-500/30 bg-green-500/10 text-green-200'
+          : 'border-orange-500/30 bg-orange-500/10 text-orange-200'
+      }`
+      toast.textContent = message
+      container.appendChild(toast)
+      window.setTimeout(() => toast.remove(), 2200)
+    }
+
+    function confirmBooking() {
+      const item = classState.find((entry) => entry.id === activeClassId)
+      if (!item) return
+      const error = document.getElementById('modal-error')
+      if (item.status === 'full') {
+        error.textContent = 'This class is fully booked.'
+        error.classList.remove('hidden')
+        return
+      }
+      if (item.status === 'booked' || item.status === 'locked') {
+        error.textContent = 'You already booked this class.'
+        error.classList.remove('hidden')
+        return
+      }
+      item.status = 'booked'
+      item.spotsLeft = Math.max(0, item.spotsLeft - 1)
+      renderClassGrid()
+      closeModals()
+      openToast('Spot booked.')
+    }
+
+    function confirmCancellation() {
+      const item = classState.find((entry) => entry.id === activeClassId)
+      if (!item) return
+      if (item.status === 'locked') {
+        closeModals()
+        openToast('You can no longer cancel within 3 hours of class start.', 'warning')
+        return
+      }
+      if (item.status === 'booked') {
+        item.status = 'available'
+        item.spotsLeft += 1
+        renderClassGrid()
+        closeModals()
+        openToast('Booking cancelled.')
+      }
+    }
+
+    renderClassGrid()
+  </script>
+</body>
+</html>

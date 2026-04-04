@@ -48,6 +48,7 @@ export function Navbar() {
   const userNavLinks =
     isAuthenticated && user?.role === 'USER'
       ? [
+          { label: 'Home', href: '/home' },
           { label: 'Schedule', href: '/schedule' },
           { label: 'Trainers', href: '/trainers' },
           ...(activeMembership ? [{ label: 'My Favorites', href: '/trainers/favorites' }] : []),

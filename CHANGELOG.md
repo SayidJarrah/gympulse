@@ -7,8 +7,10 @@
 - User membership purchase: PRD written — self-service plan activation, one-active-membership enforcement, user and admin cancel endpoints
 - Scheduler (admin): PRD written — trainer profile management, class template library with predefined seeds, drag-and-drop weekly calendar, trainer assignment with double-booking prevention, CSV/iCal import and export
 - User access flow: PRD written — membership gate on post-login routing, portal navigation shell, visually disabled nav items with tooltip for non-members, membership status widget with near-expiry warning; admin bypass to dashboard
+- Member Home: PRD written — default logged-in user home with current membership summary, trainer carousel, and upcoming classes carousel; no personal-training flow in this phase
 - User profile: PRD written — GET/PATCH /api/v1/users/me; editable fields: firstName, lastName, phone, dateOfBirth (min age 14), fitnessGoals (max 500 chars); email read-only; membership status display on profile page
 - Group Classes Schedule View: PRD written — member-facing read-only schedule powered by admin scheduler data, with week, day, and list views; no booking in this phase
+- Class booking & cancellation: PRD written — member self-booking with full-class blocking, no waitlist, informational plan limits, and self-cancellation blocked within 3 hours of start; admin on-behalf booking included
 - Trainer Discovery: PRD written — paginated trainer list with specialization filter and experience sort; full profile page with availability preview; Member-only favorites (save/remove/list); 38 acceptance criteria; 5 open questions flagged for schema and policy decisions
 
 ## Completed

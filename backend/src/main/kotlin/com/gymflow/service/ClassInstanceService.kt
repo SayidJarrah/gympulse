@@ -24,7 +24,8 @@ class ClassInstanceService(
     private val classInstanceRepository: ClassInstanceRepository,
     private val trainerRepository: TrainerRepository,
     private val roomRepository: RoomRepository,
-    private val classTemplateRepository: ClassTemplateRepository
+    private val classTemplateRepository: ClassTemplateRepository,
+    private val bookingService: BookingService
 ) {
 
     @Transactional(readOnly = true)
@@ -103,6 +104,11 @@ class ClassInstanceService(
         val updatedScheduledAt = request.scheduledAt ?: instance.scheduledAt
         val updatedDurationMin = request.durationMin ?: instance.durationMin
         val updatedCapacity = request.capacity ?: instance.capacity
+        val confirmedBookings = bookingService.countConfirmedBookings(instance.id)
+
+        if (updatedCapacity < confirmedBookings) {
+            throw CapacityBelowConfirmedBookingsException("Capacity cannot be below confirmed bookings")
+        }
 
         validateSlotAlignment(updatedScheduledAt)
 
@@ -136,6 +142,9 @@ class ClassInstanceService(
     fun deleteInstance(id: UUID) {
         val instance = classInstanceRepository.findById(id)
             .orElseThrow { ClassInstanceNotFoundException("Class instance with id '$id' not found") }
+        if (bookingService.countConfirmedBookings(id) > 0) {
+            throw ClassHasActiveBookingsException("Class instance has active bookings")
+        }
         classInstanceRepository.delete(instance)
     }
 
@@ -258,5 +267,7 @@ class ClassInstanceService(
 }
 
 class ClassInstanceNotFoundException(message: String) : RuntimeException(message)
+class CapacityBelowConfirmedBookingsException(message: String) : RuntimeException(message)
+class ClassHasActiveBookingsException(message: String) : RuntimeException(message)
 class TrainerScheduleConflictException(message: String) : RuntimeException(message)
 class InvalidSlotException(message: String) : RuntimeException(message)

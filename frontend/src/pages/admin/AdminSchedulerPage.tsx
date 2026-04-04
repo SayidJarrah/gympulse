@@ -8,6 +8,7 @@ import { WeekNavigator } from '../../components/scheduler/WeekNavigator'
 import { ExportMenu } from '../../components/scheduler/ExportMenu'
 import { ImportModal } from '../../components/scheduler/ImportModal'
 import { CopyWeekConfirmModal } from '../../components/scheduler/CopyWeekConfirmModal'
+import { AdminBookForMemberPanel } from '../../components/scheduler/AdminBookForMemberPanel'
 import { ClassInstanceEditPanel } from '../../components/scheduler/ClassInstanceEditPanel'
 import { useSchedulerStore } from '../../store/schedulerStore'
 import { formatWeekString, getWeekStart } from '../../utils/week'
@@ -45,6 +46,7 @@ export function AdminSchedulerPage() {
   const [selectedInstance, setSelectedInstance] = useState<ClassInstanceResponse | null>(null)
   const [isImportOpen, setIsImportOpen] = useState(false)
   const [isCopyOpen, setIsCopyOpen] = useState(false)
+  const [isBookForMemberOpen, setIsBookForMemberOpen] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -135,6 +137,7 @@ export function AdminSchedulerPage() {
     await deleteClassInstance(selectedInstance.id)
     removeInstance(selectedInstance.id)
     setSelectedInstance(null)
+    setIsBookForMemberOpen(false)
   }
 
   const handleCopyWeek = async () => {
@@ -236,6 +239,13 @@ export function AdminSchedulerPage() {
         onClose={() => setSelectedInstance(null)}
         onSave={handleSaveInstance}
         onDelete={handleDeleteInstance}
+        onOpenBookingPanel={() => setIsBookForMemberOpen(true)}
+      />
+
+      <AdminBookForMemberPanel
+        classInstance={selectedInstance}
+        isOpen={Boolean(selectedInstance) && isBookForMemberOpen}
+        onClose={() => setIsBookForMemberOpen(false)}
       />
 
       <ImportModal

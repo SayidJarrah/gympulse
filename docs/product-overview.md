@@ -1,7 +1,7 @@
 # GymFlow — Product Overview
 
 > Living document. Updated automatically after each feature completes.
-> Last updated: 2026-04-03
+> Last updated: 2026-04-04
 
 ## What This App Does
 GymFlow is a gym membership and class booking platform. Members can purchase
@@ -30,8 +30,10 @@ profile pages linked to their classes. Admins manage everything from a dashboard
 | Scheduler (admin) | 🔄 In progress | Admin-only workspace to manage trainer profiles, define class templates, compose a weekly drag-and-drop schedule, and import/export the programme |
 
 | User access flow | 🔄 In progress | Membership gate on login, portal navigation shell, disabled nav items for non-members, and membership status widget |
+| Member Home | 🔄 In progress | Default logged-in home for users with current membership status, trainer discovery preview, and upcoming class preview |
 | User profile | 🔄 In progress | Member view and edit of personal profile fields (name, phone, date of birth, fitness goals); email is read-only |
 | Group Classes Schedule View | 🔄 In progress | Member-facing read-only class schedule that reuses admin-managed timetable data in week, day, and list views |
+| Class Booking & Cancellation | 🔄 In progress | Members book and cancel class reservations with a 3-hour cancellation cutoff, full-class blocking, and no waitlist in v1 |
 
 | Trainer Discovery | 🔄 In progress | Members and Guests browse trainer profiles with filtering by specialization, sorting by experience, availability previews, and a Member-only favorites list |
 | Entity Image Management | 🔄 In progress | Shared image uploads and display rules for user profile photos, trainer photos, room photos, and class-template images across admin and member surfaces |
@@ -55,6 +57,12 @@ profile pages linked to their classes. Admins manage everything from a dashboard
 |--------|------|------|-------------|
 | GET | `/api/v1/health` | None | Service health check — returns `{"status":"ok"}` |
 
+### Member Home
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/v1/member-home/classes-preview` | Bearer token (`USER`) | Returns up to 8 upcoming scheduled group classes in the next 14 local days for the Member Home carousel |
+
 ## Data Model
 
 ### User
@@ -75,7 +83,9 @@ profile pages linked to their classes. Admins manage everything from a dashboard
 - User membership purchase — self-service plan activation for authenticated members; one active membership per user enforced
 - Scheduler (admin) — trainer profiles, class template library, drag-and-drop weekly calendar, trainer assignment, CSV/iCal import and export
 - User access flow — membership gate on login, portal navigation shell with persistent nav, disabled items for non-members, and membership status widget
+- Member Home — default logged-in user destination with current membership summary, trainer carousel, and upcoming group classes carousel
 - User profile — member view and edit of personal details (name, phone, date of birth, fitness goals); email read-only; membership status display
 - Group Classes Schedule View — member-facing read-only schedule browser powered by admin scheduler data, with week, day, and list views
+- Class Booking & Cancellation — member self-booking with full-class blocking and a 3-hour self-cancellation cutoff; admin on-behalf booking; no waitlist in v1
 - Trainer Discovery — member and guest browsing of trainer roster with specialization filter, experience sort, availability preview, and member-only favorites
 - Entity Image Management — shared image upload and display support for user profiles, trainers, rooms, and class templates, with inheritance into relevant schedule and discovery surfaces

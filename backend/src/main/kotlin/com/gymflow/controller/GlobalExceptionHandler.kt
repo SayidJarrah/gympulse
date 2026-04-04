@@ -10,7 +10,9 @@ import com.gymflow.service.ClassTemplateNotFoundException
 import com.gymflow.service.EmailAlreadyExistsException
 import com.gymflow.service.ImportFileTooLargeException
 import com.gymflow.service.ImportFormatInvalidException
+import com.gymflow.service.InvalidBookingStatusException
 import com.gymflow.service.InvalidAnchorDateException
+import com.gymflow.service.InvalidClassIdException
 import com.gymflow.service.InvalidCredentialsException
 import com.gymflow.service.InvalidExportFormatException
 import com.gymflow.service.InvalidDateOfBirthException
@@ -28,6 +30,7 @@ import com.gymflow.service.InvalidScheduleViewException
 import com.gymflow.service.InvalidSlotException
 import com.gymflow.service.InvalidStatusFilterException
 import com.gymflow.service.InvalidTimeZoneException
+import com.gymflow.service.InvalidUserIdException
 import com.gymflow.service.InvalidWeekFormatException
 import com.gymflow.service.MembershipAlreadyActiveException
 import com.gymflow.service.MembershipNotActiveException
@@ -48,10 +51,22 @@ import com.gymflow.service.TrainerEmailConflictException
 import com.gymflow.service.TrainerHasAssignmentsException
 import com.gymflow.service.TrainerNotFoundException
 import com.gymflow.service.TrainerScheduleConflictException
+import com.gymflow.service.AlreadyBookedException
+import com.gymflow.service.BookingNotActiveException
+import com.gymflow.service.BookingNotFoundException
+import com.gymflow.service.CancellationWindowClosedException
+import com.gymflow.service.CapacityBelowConfirmedBookingsException
+import com.gymflow.service.ClassAlreadyStartedException
+import com.gymflow.service.ClassFullException
+import com.gymflow.service.ClassHasActiveBookingsException
+import com.gymflow.service.ClassNotBookableException
+import com.gymflow.service.ClassNotFoundException
+import com.gymflow.service.UserNotFoundException
 import com.gymflow.exception.AlreadyFavoritedException
 import com.gymflow.exception.FavoriteNotFoundException
 import com.gymflow.exception.MembershipRequiredException
 import com.gymflow.exception.InvalidSortFieldException
+import com.gymflow.exception.MemberHomeInvalidTimeZoneException
 import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -161,6 +176,32 @@ class GlobalExceptionHandler {
         return ResponseEntity
             .status(HttpStatus.BAD_REQUEST)
             .body(ErrorResponse(error = ex.message ?: "Invalid status filter", code = "INVALID_STATUS_FILTER"))
+    }
+
+    @ExceptionHandler(InvalidClassIdException::class)
+    fun handleInvalidClassId(ex: InvalidClassIdException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ErrorResponse(error = "A valid class must be selected", code = "INVALID_CLASS_ID"))
+    }
+
+    @ExceptionHandler(InvalidUserIdException::class)
+    fun handleInvalidUserId(ex: InvalidUserIdException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ErrorResponse(error = "A valid user must be selected", code = "INVALID_USER_ID"))
+    }
+
+    @ExceptionHandler(InvalidBookingStatusException::class)
+    fun handleInvalidBookingStatus(ex: InvalidBookingStatusException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(
+                ErrorResponse(
+                    error = "Invalid booking status. Use CONFIRMED, CANCELLED, or ATTENDED",
+                    code = "INVALID_BOOKING_STATUS"
+                )
+            )
     }
 
     @ExceptionHandler(OptimisticLockingFailureException::class)
@@ -415,6 +456,103 @@ class GlobalExceptionHandler {
             .body(ErrorResponse(error = ex.message ?: "Class instance not found", code = "CLASS_INSTANCE_NOT_FOUND"))
     }
 
+    @ExceptionHandler(ClassNotFoundException::class)
+    fun handleClassNotFound(ex: ClassNotFoundException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(ErrorResponse(error = "Class not found", code = "CLASS_NOT_FOUND"))
+    }
+
+    @ExceptionHandler(ClassNotBookableException::class)
+    fun handleClassNotBookable(ex: ClassNotBookableException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(ErrorResponse(error = "This class is no longer open for booking", code = "CLASS_NOT_BOOKABLE"))
+    }
+
+    @ExceptionHandler(ClassAlreadyStartedException::class)
+    fun handleClassAlreadyStarted(ex: ClassAlreadyStartedException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(
+                ErrorResponse(
+                    error = "Booking is no longer available because this class has already started",
+                    code = "CLASS_ALREADY_STARTED"
+                )
+            )
+    }
+
+    @ExceptionHandler(AlreadyBookedException::class)
+    fun handleAlreadyBooked(ex: AlreadyBookedException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(ErrorResponse(error = "You already booked this class", code = "ALREADY_BOOKED"))
+    }
+
+    @ExceptionHandler(ClassFullException::class)
+    fun handleClassFull(ex: ClassFullException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(ErrorResponse(error = "This class is fully booked", code = "CLASS_FULL"))
+    }
+
+    @ExceptionHandler(BookingNotFoundException::class)
+    fun handleBookingNotFound(ex: BookingNotFoundException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(ErrorResponse(error = "Booking not found", code = "BOOKING_NOT_FOUND"))
+    }
+
+    @ExceptionHandler(BookingNotActiveException::class)
+    fun handleBookingNotActive(ex: BookingNotActiveException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(ErrorResponse(error = "This booking can no longer be cancelled", code = "BOOKING_NOT_ACTIVE"))
+    }
+
+    @ExceptionHandler(CancellationWindowClosedException::class)
+    fun handleCancellationWindowClosed(ex: CancellationWindowClosedException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(
+                ErrorResponse(
+                    error = "You can no longer cancel within 3 hours of class start",
+                    code = "CANCELLATION_WINDOW_CLOSED"
+                )
+            )
+    }
+
+    @ExceptionHandler(UserNotFoundException::class)
+    fun handleUserNotFound(ex: UserNotFoundException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(ErrorResponse(error = "User not found", code = "USER_NOT_FOUND"))
+    }
+
+    @ExceptionHandler(CapacityBelowConfirmedBookingsException::class)
+    fun handleCapacityBelowConfirmedBookings(ex: CapacityBelowConfirmedBookingsException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(
+                ErrorResponse(
+                    error = "Capacity cannot be reduced below confirmed bookings",
+                    code = "CAPACITY_BELOW_CONFIRMED_BOOKINGS"
+                )
+            )
+    }
+
+    @ExceptionHandler(ClassHasActiveBookingsException::class)
+    fun handleClassHasActiveBookings(ex: ClassHasActiveBookingsException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(
+                ErrorResponse(
+                    error = "Class has active bookings and cannot be deleted",
+                    code = "CLASS_HAS_ACTIVE_BOOKINGS"
+                )
+            )
+    }
+
     @ExceptionHandler(InvalidSlotException::class)
     fun handleInvalidSlot(ex: InvalidSlotException): ResponseEntity<ErrorResponse> {
         return ResponseEntity
@@ -445,6 +583,13 @@ class GlobalExceptionHandler {
 
     @ExceptionHandler(InvalidTimeZoneException::class)
     fun handleInvalidTimeZone(ex: InvalidTimeZoneException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ErrorResponse(error = ex.message ?: "Invalid time zone", code = "INVALID_TIME_ZONE"))
+    }
+
+    @ExceptionHandler(MemberHomeInvalidTimeZoneException::class)
+    fun handleMemberHomeInvalidTimeZone(ex: MemberHomeInvalidTimeZoneException): ResponseEntity<ErrorResponse> {
         return ResponseEntity
             .status(HttpStatus.BAD_REQUEST)
             .body(ErrorResponse(error = ex.message ?: "Invalid time zone", code = "INVALID_TIME_ZONE"))

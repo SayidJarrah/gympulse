@@ -1,6 +1,7 @@
 package com.gymflow.service
 
 import com.gymflow.domain.Trainer
+import com.gymflow.dto.ScheduleEntryBookingSummaryResponse
 import com.gymflow.dto.UserClassScheduleEntryResponse
 import com.gymflow.dto.UserClassScheduleResponse
 import com.gymflow.repository.ClassInstanceRepository
@@ -20,7 +21,8 @@ import java.util.UUID
 @Service
 class UserClassScheduleService(
     private val classInstanceRepository: ClassInstanceRepository,
-    private val userMembershipRepository: UserMembershipRepository
+    private val userMembershipRepository: UserMembershipRepository,
+    private val bookingService: BookingService
 ) {
 
     @Transactional(readOnly = true)
@@ -34,11 +36,8 @@ class UserClassScheduleService(
         val anchor = parseAnchorDate(anchorDate)
         val zoneId = parseTimeZone(timeZone)
 
-        val today = LocalDate.now()
-        val membership = userMembershipRepository.findAccessibleActiveMembership(userId, today)
-        if (membership == null) {
-            throw NoActiveMembershipException("No active membership found for the current user")
-        }
+        val today = LocalDate.now(ZoneOffset.UTC)
+        val hasActiveMembership = userMembershipRepository.findAccessibleActiveMembership(userId, today) != null
 
         val week = formatWeek(anchor)
         val range = buildRange(scheduleView, anchor)
@@ -50,6 +49,9 @@ class UserClassScheduleService(
             .withOffsetSameInstant(ZoneOffset.UTC)
 
         val instances = classInstanceRepository.findVisibleGroupScheduleBetween(startUtc, endUtc)
+        val confirmedCounts = bookingService.countConfirmedBookings(instances.map { it.id })
+        val currentUserBookings = bookingService.findConfirmedBookingsByUserAndClassIds(userId, instances.map { it.id })
+        val now = java.time.OffsetDateTime.now(ZoneOffset.UTC)
         val entries = instances
             .filter { it.deletedAt == null && it.type == "GROUP" && it.status == "SCHEDULED" }
             .sortedBy { it.scheduledAt }
@@ -58,6 +60,18 @@ class UserClassScheduleService(
                 val trainerNames = instance.trainers
                     .sortedWith(compareBy<Trainer>({ it.lastName.lowercase(Locale.ROOT) }, { it.firstName.lowercase(Locale.ROOT) }))
                     .map { "${it.firstName} ${it.lastName}" }
+                val confirmedBookings = confirmedCounts[instance.id] ?: 0L
+                val remainingSpots = (instance.capacity.toLong() - confirmedBookings).coerceAtLeast(0).toInt()
+                val currentUserBooking = currentUserBookings[instance.id]
+                val cancellationAllowed = currentUserBooking != null &&
+                    now.isBefore(instance.scheduledAt.minusHours(3))
+                val bookingDeniedReason = when {
+                    currentUserBooking != null -> "ALREADY_BOOKED"
+                    !instance.scheduledAt.isAfter(now) -> "CLASS_ALREADY_STARTED"
+                    confirmedBookings >= instance.capacity.toLong() -> "CLASS_FULL"
+                    !hasActiveMembership -> "MEMBERSHIP_REQUIRED"
+                    else -> null
+                }
 
                 UserClassScheduleEntryResponse(
                     id = instance.id,
@@ -68,7 +82,20 @@ class UserClassScheduleService(
                     trainerNames = trainerNames,
                     classPhotoUrl = instance.template
                         ?.takeIf { it.photoData != null }
-                        ?.let { "/api/v1/class-templates/${it.id}/photo" }
+                        ?.let { "/api/v1/class-templates/${it.id}/photo" },
+                    capacity = instance.capacity,
+                    confirmedBookings = confirmedBookings,
+                    remainingSpots = remainingSpots,
+                    currentUserBooking = currentUserBooking?.let {
+                        ScheduleEntryBookingSummaryResponse(
+                            id = it.id,
+                            status = it.status,
+                            bookedAt = it.bookedAt
+                        )
+                    },
+                    bookingAllowed = bookingDeniedReason == null,
+                    bookingDeniedReason = bookingDeniedReason,
+                    cancellationAllowed = cancellationAllowed
                 )
             }
 
@@ -79,6 +106,7 @@ class UserClassScheduleService(
             week = week,
             rangeStartDate = range.start,
             rangeEndDateExclusive = range.end,
+            hasActiveMembership = hasActiveMembership,
             entries = entries
         )
     }

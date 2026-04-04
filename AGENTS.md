@@ -267,13 +267,14 @@ JWT_EXPIRY_MS=3600000
 | Auth (register/login/JWT) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Membership plans | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | User membership purchase | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| User access flow | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Member Home | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| User access flow | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | User profile management | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Class schedule | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Group classes schedule view | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Trainer Discovery | ✅ | ✅ | ✅ | ✅ | ✅ | 🔄 | 🔄 |
 | Entity image management | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Class booking & cancellation | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Class booking & cancellation | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Attendance check-in | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Admin dashboard | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Notifications | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |

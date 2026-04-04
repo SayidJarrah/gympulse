@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { LoginPage } from '../LoginPage'
+import { useAuthStore } from '../../../store/authStore'
 
 // Mock useAuth hook
 const mockLogin = vi.fn()
@@ -34,6 +35,12 @@ describe('LoginPage', () => {
   beforeEach(() => {
     mockLogin.mockReset()
     mockNavigate.mockReset()
+    useAuthStore.setState({
+      accessToken: null,
+      refreshToken: null,
+      user: null,
+      isAuthenticated: false,
+    })
     mockUseAuth.mockReturnValue({
       login: mockLogin,
       isLoading: false,
@@ -52,8 +59,14 @@ describe('LoginPage', () => {
     expect(screen.getByRole('link', { name: /register/i })).toHaveAttribute('href', '/register')
   })
 
-  it('calls login and navigates to /classes on successful submission', async () => {
+  it('calls login and navigates to /home on successful member submission', async () => {
     mockLogin.mockResolvedValueOnce(undefined)
+    useAuthStore.setState({
+      accessToken: 'access-token',
+      refreshToken: 'refresh-token',
+      user: { id: 'user-1', email: 'alice@example.com', role: 'USER' },
+      isAuthenticated: true,
+    })
 
     renderLoginPage()
 
@@ -65,11 +78,31 @@ describe('LoginPage', () => {
       expect(mockLogin).toHaveBeenCalledWith('alice@example.com', 'password99')
     })
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/classes')
+      expect(mockNavigate).toHaveBeenCalledWith('/home')
     })
   })
 
-  it('does NOT navigate to /classes when login throws an error', async () => {
+  it('navigates admins to /admin/plans on successful submission', async () => {
+    mockLogin.mockResolvedValueOnce(undefined)
+    useAuthStore.setState({
+      accessToken: 'access-token',
+      refreshToken: 'refresh-token',
+      user: { id: 'admin-1', email: 'admin@example.com', role: 'ADMIN' },
+      isAuthenticated: true,
+    })
+
+    renderLoginPage()
+
+    await userEvent.type(screen.getByLabelText(/email address/i), 'admin@example.com')
+    await userEvent.type(screen.getByLabelText('Password', { exact: true }), 'password99')
+    await userEvent.click(screen.getByRole('button', { name: /^sign in$/i }))
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/admin/plans')
+    })
+  })
+
+  it('does NOT navigate to /home when login throws an error', async () => {
     mockUseAuth.mockReturnValue({
       login: mockLogin,
       isLoading: false,

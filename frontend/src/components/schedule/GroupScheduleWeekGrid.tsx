@@ -11,6 +11,9 @@ interface GroupScheduleWeekGridProps {
   timeZone: string;
   entries: GroupClassScheduleEntry[];
   onSelectEntry?: (entry: GroupClassScheduleEntry) => void;
+  onBookEntry?: (entry: GroupClassScheduleEntry) => void;
+  onCancelEntry?: (entry: GroupClassScheduleEntry) => void;
+  onBrowsePlans?: () => void;
 }
 
 export function GroupScheduleWeekGrid({
@@ -18,6 +21,9 @@ export function GroupScheduleWeekGrid({
   timeZone,
   entries,
   onSelectEntry,
+  onBookEntry,
+  onCancelEntry,
+  onBrowsePlans,
 }: GroupScheduleWeekGridProps) {
   const weekDates = getWeekDates(anchorDate, timeZone)
   const today = getTodayIsoDate(timeZone)
@@ -42,6 +48,9 @@ export function GroupScheduleWeekGrid({
         timeZone={timeZone}
         showDate={false}
         onSelect={onSelectEntry}
+        onBook={onBookEntry}
+        onCancel={onCancelEntry}
+        onBrowsePlans={onBrowsePlans}
       />
     ))
   }
