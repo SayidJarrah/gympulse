@@ -3,6 +3,7 @@ import type { MembershipPlan } from '../../types/membershipPlan'
 import type { UserMembership } from '../../types/userMembership'
 import { formatPrice } from '../../utils/planFormatters'
 import { MembershipStatusBadge } from '../membership/MembershipStatusBadge'
+import { MemberHomeSectionErrorCard } from './MemberHomeSectionErrorCard'
 
 interface Props {
   membership: UserMembership | null;
@@ -10,11 +11,13 @@ interface Props {
   mode: 'loading' | 'active' | 'empty' | 'error';
   errorMessage: string | null;
   planTeasersLoading?: boolean;
+  planTeasersError?: string | null;
   onRetryMembership: () => void;
-  onBrowsePlans: () => void;
   onManageMembership: () => void;
-  onExploreClasses: () => void;
-  onSelectPlan: (plan: MembershipPlan) => void;
+  onOpenSchedule: () => void;
+  onBrowseTrainers: () => void;
+  browsePlansHref: string;
+  getPlanHref: (planId: string) => string;
 }
 
 function formatDate(dateIso: string): string {
@@ -31,17 +34,19 @@ export function MembershipPrimaryCard({
   mode,
   errorMessage,
   planTeasersLoading = false,
+  planTeasersError = null,
   onRetryMembership,
-  onBrowsePlans,
   onManageMembership,
-  onExploreClasses,
-  onSelectPlan,
+  onOpenSchedule,
+  onBrowseTrainers,
+  browsePlansHref,
+  getPlanHref,
 }: Props) {
   if (mode === 'loading') {
     return (
       <section
         aria-label="Loading membership"
-        className="rounded-[24px] border border-gray-800 bg-[#0F0F0F] p-6 shadow-md shadow-black/40"
+        className="rounded-[28px] border border-gray-800 bg-gray-900 p-6 shadow-xl shadow-black/30 sm:p-8"
       >
         <div className="animate-pulse space-y-6">
           <div className="space-y-3">
@@ -51,7 +56,7 @@ export function MembershipPrimaryCard({
           </div>
           <div className="grid gap-4 sm:grid-cols-3">
             {Array.from({ length: 3 }).map((_, index) => (
-              <div key={index} className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+              <div key={index} className="rounded-2xl border border-gray-800 bg-[#0F0F0F] p-4">
                 <div className="h-3 w-20 rounded-full bg-gray-800" />
                 <div className="mt-3 h-6 w-28 rounded-full bg-gray-800" />
               </div>
@@ -65,7 +70,7 @@ export function MembershipPrimaryCard({
 
   if (mode === 'error') {
     return (
-      <section className="rounded-[24px] border border-red-500/30 bg-red-500/10 p-6 shadow-md shadow-black/40">
+      <section className="rounded-[28px] border border-red-500/30 bg-red-500/10 p-6 shadow-xl shadow-black/30 sm:p-8">
         <h2 className="text-2xl font-semibold leading-tight text-white">Membership unavailable</h2>
         <p className="mt-3 text-sm text-gray-300">
           {errorMessage ?? 'We couldn’t load your current membership. Please try again.'}
@@ -94,11 +99,11 @@ export function MembershipPrimaryCard({
       bookingUsagePercent === 0 ? 0 : Math.max(1, Math.round(bookingUsagePercent / 10))
 
     return (
-      <section className="rounded-[24px] border border-gray-800 bg-[#0F0F0F] p-6 shadow-md shadow-black/40">
+      <section className="rounded-[28px] border border-gray-800 bg-gray-900 p-6 shadow-xl shadow-black/30 sm:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-sm font-medium uppercase tracking-[0.18em] text-gray-500">
-              Membership
+              Your access
             </p>
             <h2 className="mt-2 text-3xl font-semibold leading-tight text-white">
               {membership.planName}
@@ -146,28 +151,34 @@ export function MembershipPrimaryCard({
           </button>
           <button
             type="button"
-            onClick={onExploreClasses}
+            onClick={onOpenSchedule}
             className="inline-flex items-center justify-center rounded-md border border-green-500 bg-transparent px-4 py-2 text-sm font-medium text-green-400 transition-all duration-200 hover:bg-green-500/10 hover:text-green-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
           >
-            Explore classes
+            Open schedule
           </button>
         </div>
       </section>
     )
   }
 
+  const hasNoPlansAvailable =
+    !planTeasersLoading && !planTeasersError && availablePlans.length === 0
+  const headerBody = hasNoPlansAvailable
+    ? 'Membership access is temporarily unavailable. You can still explore the club.'
+    : 'Pick a plan to unlock booking and member-only access.'
+
   return (
-    <section className="rounded-[24px] border border-gray-800 bg-[#0F0F0F] p-6 shadow-md shadow-black/40">
+    <section className="rounded-[28px] border border-gray-800 bg-gray-900 p-6 shadow-xl shadow-black/30 sm:p-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-sm font-medium uppercase tracking-[0.18em] text-gray-500">
-            Membership
+            Your access
           </p>
           <h2 className="mt-2 text-3xl font-semibold leading-tight text-white">
-            No active membership
+            {hasNoPlansAvailable ? 'Memberships are temporarily unavailable' : 'Activate your access'}
           </h2>
           <p className="mt-2 text-sm text-gray-400">
-            Pick a plan to unlock class booking and member access.
+            {headerBody}
           </p>
         </div>
         <span className="inline-flex items-center gap-1 rounded-full border border-orange-500/30 bg-orange-500/10 px-2.5 py-1 text-xs font-medium text-orange-300">
@@ -177,9 +188,12 @@ export function MembershipPrimaryCard({
 
       <div className="mt-6">
         {planTeasersLoading ? (
-          <div className="grid gap-3 lg:grid-cols-3" aria-label="Loading plans">
+          <div className="flex gap-3 overflow-x-auto pb-2 lg:grid lg:grid-cols-3 lg:overflow-visible" aria-label="Loading plans">
             {Array.from({ length: 3 }).map((_, index) => (
-              <div key={index} className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+              <div
+                key={index}
+                className="min-w-[240px] rounded-2xl border border-gray-800 bg-[#0F0F0F] p-4 lg:min-w-0"
+              >
                 <div className="animate-pulse space-y-3">
                   <div className="h-4 w-24 rounded-full bg-gray-800" />
                   <div className="h-6 w-20 rounded-full bg-gray-800" />
@@ -188,12 +202,18 @@ export function MembershipPrimaryCard({
               </div>
             ))}
           </div>
+        ) : planTeasersError ? (
+          <MemberHomeSectionErrorCard
+            title="Plans unavailable"
+            body={planTeasersError}
+            onRetry={onRetryMembership}
+          />
         ) : availablePlans.length > 0 ? (
-          <div className="grid gap-3 lg:grid-cols-3">
+          <div className="flex gap-4 overflow-x-auto pb-2 lg:grid lg:grid-cols-3 lg:overflow-visible">
             {availablePlans.map((plan) => (
               <div
                 key={plan.id}
-                className="rounded-2xl border border-gray-800 bg-gray-900 p-4 shadow-sm shadow-black/40"
+                className="min-w-[240px] rounded-2xl border border-gray-800 bg-[#111827] p-5 shadow-md shadow-black/40 transition-all duration-200 hover:-translate-y-0.5 hover:border-green-500/40 lg:min-w-0"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
@@ -207,48 +227,58 @@ export function MembershipPrimaryCard({
                 <p className="mt-3 text-sm text-gray-400">
                   {plan.maxBookingsPerMonth} class bookings per month.
                 </p>
-                <button
-                  type="button"
-                  onClick={() => onSelectPlan(plan)}
+                <Link
+                  to={getPlanHref(plan.id)}
                   className="mt-4 inline-flex w-full items-center justify-center rounded-md border border-green-500 bg-transparent px-4 py-2 text-sm font-medium text-green-400 transition-all duration-200 hover:bg-green-500/10 hover:text-green-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
                 >
-                  Activate {plan.name}
-                </button>
+                  View plan
+                </Link>
               </div>
             ))}
           </div>
         ) : (
-          <div className="rounded-2xl border border-gray-800 bg-gray-900 px-5 py-6">
-            <p className="text-base font-semibold text-white">No plans available right now.</p>
-            <p className="mt-2 text-sm text-gray-400">
-              Please check back later.
+          <div className="rounded-2xl border border-orange-500/30 bg-orange-500/10 p-6">
+            <p className="text-base font-semibold text-white">No plans available right now</p>
+            <p className="mt-2 text-sm text-orange-100/80">
+              There are currently no memberships available to activate. This is a catalogue issue, not a problem with your account.
             </p>
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+              <button
+                type="button"
+                onClick={onRetryMembership}
+                className="inline-flex items-center justify-center rounded-md bg-orange-500 px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
+              >
+                Retry
+              </button>
+              <button
+                type="button"
+                onClick={onBrowseTrainers}
+                className="inline-flex items-center justify-center rounded-md border border-orange-500/40 bg-transparent px-4 py-2 text-sm font-medium text-orange-100 transition-all duration-200 hover:bg-orange-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
+              >
+                Browse trainers
+              </button>
+            </div>
           </div>
         )}
       </div>
 
-      <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-        <button
-          type="button"
-          onClick={onBrowsePlans}
-          className="inline-flex items-center justify-center rounded-md bg-green-500 px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-green-600 hover:shadow-lg hover:shadow-green-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
-        >
-          Browse plans
-        </button>
-        <button
-          type="button"
-          onClick={onExploreClasses}
-          className="inline-flex items-center justify-center rounded-md border border-green-500 bg-transparent px-4 py-2 text-sm font-medium text-green-400 transition-all duration-200 hover:bg-green-500/10 hover:text-green-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
-        >
-          See what&apos;s inside the club
-        </button>
-      </div>
-
-      {availablePlans.length > 0 && (
-        <p className="mt-4 text-xs text-gray-500">
-          Prefer the full catalogue? <Link to="/plans" className="text-green-400 hover:text-green-300">Browse every plan</Link>
-        </p>
-      )}
+      {!hasNoPlansAvailable ? (
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+          <Link
+            to={browsePlansHref}
+            className="inline-flex items-center justify-center rounded-md bg-green-500 px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-green-600 hover:shadow-lg hover:shadow-green-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
+          >
+            Compare all plans
+          </Link>
+          <button
+            type="button"
+            onClick={onOpenSchedule}
+            className="inline-flex items-center justify-center rounded-md border border-green-500 bg-transparent px-4 py-2 text-sm font-medium text-green-400 transition-all duration-200 hover:bg-green-500/10 hover:text-green-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
+          >
+            See schedule
+          </button>
+        </div>
+      ) : null}
     </section>
   )
 }
@@ -260,7 +290,7 @@ interface MetricCardProps {
 
 function MetricCard({ label, value }: MetricCardProps) {
   return (
-    <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+    <div className="rounded-2xl border border-gray-800 bg-[#0F0F0F] p-4">
       <p className="text-sm font-medium text-gray-400">{label}</p>
       <p className="mt-2 text-lg font-semibold leading-tight text-white">{value}</p>
     </div>

@@ -1,17 +1,22 @@
-import { useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Navbar } from '../../components/layout/Navbar'
 import { ClassPreviewCarousel } from '../../components/home/ClassPreviewCarousel'
 import { MemberHomeHero } from '../../components/home/MemberHomeHero'
+import { MembershipAccessBanner } from '../../components/home/MembershipAccessBanner'
 import { MembershipPrimaryCard } from '../../components/home/MembershipPrimaryCard'
 import { QuickActionsPanel } from '../../components/home/QuickActionsPanel'
 import { TrainerPreviewCarousel } from '../../components/home/TrainerPreviewCarousel'
-import { PurchaseConfirmModal } from '../../components/membership/PurchaseConfirmModal'
 import { useMemberHomeClassesPreview } from '../../hooks/useMemberHomeClassesPreview'
 import { useMemberHomeMembershipSection } from '../../hooks/useMemberHomeMembershipSection'
 import { useMemberHomeTrainerPreview } from '../../hooks/useMemberHomeTrainerPreview'
 import { usePageMeta } from '../../hooks/usePageMeta'
-import type { MembershipPlan } from '../../types/membershipPlan'
+import {
+  buildPlansPath,
+  getMembershipBanner,
+  withoutMembershipBanner,
+  type MembershipBanner,
+} from '../../utils/accessFlowNavigation'
 
 const PAGE_TITLE = 'GymFlow | Member Home'
 const PAGE_DESCRIPTION =
@@ -19,14 +24,16 @@ const PAGE_DESCRIPTION =
 
 export function MemberHomePage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const classesSectionRef = useRef<HTMLElement | null>(null)
-  const [selectedPlan, setSelectedPlan] = useState<MembershipPlan | null>(null)
+  const [banner, setBanner] = useState<MembershipBanner | null>(null)
 
   const {
     membership,
     availablePlans,
     mode,
     error,
+    planTeasersError,
     planTeasersLoading,
     retry: retryMembership,
   } = useMemberHomeMembershipSection()
@@ -37,6 +44,29 @@ export function MemberHomePage() {
     title: PAGE_TITLE,
     description: PAGE_DESCRIPTION,
   })
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search)
+    const membershipBanner = getMembershipBanner(searchParams)
+
+    if (!membershipBanner) {
+      return
+    }
+
+    setBanner(membershipBanner)
+
+    const nextSearchParams = withoutMembershipBanner(searchParams)
+    const search = nextSearchParams.toString()
+
+    navigate(
+      {
+        pathname: location.pathname,
+        search: search ? `?${search}` : '',
+        hash: location.hash,
+      },
+      { replace: true }
+    )
+  }, [location.hash, location.pathname, location.search, navigate])
 
   const heroStats = useMemo(() => {
     if (membership) {
@@ -72,26 +102,33 @@ export function MemberHomePage() {
       <Navbar />
 
       <main className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 sm:px-6 lg:px-8">
+        <section id="membership" className="scroll-mt-24">
+          <div className="flex flex-col gap-4">
+            {banner ? <MembershipAccessBanner banner={banner} /> : null}
+            <MembershipPrimaryCard
+              membership={membership}
+              availablePlans={availablePlans}
+              mode={mode}
+              errorMessage={error}
+              planTeasersLoading={planTeasersLoading}
+              planTeasersError={planTeasersError}
+              onRetryMembership={() => {
+                void retryMembership()
+              }}
+              onManageMembership={() => navigate('/membership')}
+              onOpenSchedule={() => navigate('/schedule')}
+              onBrowseTrainers={() => navigate('/trainers')}
+              browsePlansHref={buildPlansPath({ source: 'home' })}
+              getPlanHref={(planId) => buildPlansPath({ source: 'home', highlight: planId })}
+            />
+          </div>
+        </section>
+
         <MemberHomeHero
           firstName={firstName}
           hasActiveMembership={membership !== null}
           activePlanName={membership?.planName ?? null}
           stats={heroStats}
-        />
-
-        <MembershipPrimaryCard
-          membership={membership}
-          availablePlans={availablePlans}
-          mode={mode}
-          errorMessage={error}
-          planTeasersLoading={planTeasersLoading}
-          onRetryMembership={() => {
-            void retryMembership()
-          }}
-          onBrowsePlans={() => navigate('/plans')}
-          onManageMembership={() => navigate('/membership')}
-          onExploreClasses={() => navigate('/schedule')}
-          onSelectPlan={(plan) => setSelectedPlan(plan)}
         />
 
         <QuickActionsPanel
@@ -125,16 +162,6 @@ export function MemberHomePage() {
           />
         </section>
       </main>
-
-      {selectedPlan ? (
-        <PurchaseConfirmModal
-          isOpen={true}
-          plan={selectedPlan}
-          redirectTo={null}
-          onCancel={() => setSelectedPlan(null)}
-          onSuccess={() => setSelectedPlan(null)}
-        />
-      ) : null}
     </div>
   )
 }

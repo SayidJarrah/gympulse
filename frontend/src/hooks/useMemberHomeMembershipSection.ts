@@ -5,6 +5,7 @@ import { useMembershipStore } from '../store/membershipStore'
 import type { ApiErrorResponse } from '../types/auth'
 import type { MembershipPlan } from '../types/membershipPlan'
 import type { UserMembership } from '../types/userMembership'
+import { getPlanErrorMessage } from '../utils/planErrors'
 
 type MembershipPrimaryCardMode = 'loading' | 'active' | 'empty' | 'error'
 
@@ -15,6 +16,7 @@ interface UseMemberHomeMembershipSectionResult {
   error: string | null;
   errorCode: string | null;
   planTeasersLoading: boolean;
+  planTeasersError: string | null;
   retry: () => Promise<void>;
 }
 
@@ -47,7 +49,7 @@ export function useMemberHomeMembershipSection(): UseMemberHomeMembershipSection
       setHasLoadedPlanTeasers(true)
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>
-      setPlanTeasersErrorCode(axiosError.response?.data?.code ?? null)
+      setPlanTeasersErrorCode(axiosError.response?.data?.code ?? 'UNKNOWN')
       setAvailablePlans([])
       setHasLoadedPlanTeasers(true)
     } finally {
@@ -87,6 +89,13 @@ export function useMemberHomeMembershipSection(): UseMemberHomeMembershipSection
     await fetchMyMembership()
   }
 
+  const planTeasersError = planTeasersErrorCode
+    ? getPlanErrorMessage(
+        planTeasersErrorCode,
+        'We couldn’t load plans right now. Please try again.'
+      )
+    : null
+
   if (membershipLoading || membershipStatusPending) {
     return {
       membership: null,
@@ -95,6 +104,7 @@ export function useMemberHomeMembershipSection(): UseMemberHomeMembershipSection
       error: null,
       errorCode: null,
       planTeasersLoading,
+      planTeasersError,
       retry,
     }
   }
@@ -107,6 +117,7 @@ export function useMemberHomeMembershipSection(): UseMemberHomeMembershipSection
       error: null,
       errorCode: null,
       planTeasersLoading: false,
+      planTeasersError,
       retry,
     }
   }
@@ -118,7 +129,8 @@ export function useMemberHomeMembershipSection(): UseMemberHomeMembershipSection
       mode: 'empty',
       error: null,
       errorCode: planTeasersErrorCode ?? membershipErrorCode,
-      planTeasersLoading,
+      planTeasersLoading: planTeasersLoading || !hasLoadedPlanTeasers,
+      planTeasersError,
       retry,
     }
   }
@@ -130,6 +142,7 @@ export function useMemberHomeMembershipSection(): UseMemberHomeMembershipSection
     error: membershipError ?? 'We couldn’t load your current membership. Please try again.',
     errorCode: membershipErrorCode,
     planTeasersLoading: false,
+    planTeasersError: null,
     retry,
   }
 }

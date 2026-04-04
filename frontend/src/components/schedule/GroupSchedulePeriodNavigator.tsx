@@ -48,12 +48,12 @@ export function GroupSchedulePeriodNavigator({
 
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="rounded-xl border border-gray-800 bg-[#0F0F0F] px-4 py-3 text-left">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="rounded-2xl border border-gray-800 bg-[#0F0F0F] px-4 py-3 text-left">
           <div className="h-4 w-36 rounded-full bg-gray-800 animate-pulse" />
           <div className="mt-2 h-3 w-20 rounded-full bg-gray-800 animate-pulse" />
         </div>
-        <div className="inline-flex items-center gap-2">
+        <div className="inline-flex items-center gap-2 self-start">
           {['Previous', 'Today', 'Next'].map((labelText) => (
             <div
               key={labelText}
@@ -66,22 +66,22 @@ export function GroupSchedulePeriodNavigator({
   }
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
       <div
-        className="rounded-xl border border-gray-800 bg-[#0F0F0F] px-4 py-3 text-left"
+        className="rounded-2xl border border-gray-800 bg-[#0F0F0F] px-4 py-3 text-left"
         aria-live="polite"
       >
         <p className="text-base font-semibold text-white">{label}</p>
-        <p className="mt-1 text-xs uppercase tracking-[0.12em] text-gray-500">
+        <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">
           {meta}
         </p>
       </div>
-      <div className="inline-flex items-center gap-2">
+      <div className="inline-flex flex-wrap items-center gap-2">
         <button
           type="button"
           onClick={onPrevious}
           disabled={disabled}
-          className="inline-flex items-center justify-center rounded-md border border-green-500 bg-transparent px-3 py-2 text-sm font-medium text-green-400 transition-all duration-200 hover:bg-green-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-600"
+          className="inline-flex items-center justify-center rounded-md border border-gray-700 bg-transparent px-3 py-2 text-sm font-medium text-gray-200 transition-all duration-200 hover:border-green-500/40 hover:bg-green-500/10 hover:text-green-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-600"
         >
           Previous
         </button>
@@ -89,7 +89,7 @@ export function GroupSchedulePeriodNavigator({
           type="button"
           onClick={onToday}
           disabled={disabled}
-          className="inline-flex items-center justify-center rounded-md border border-green-500 bg-transparent px-3 py-2 text-sm font-medium text-green-400 transition-all duration-200 hover:bg-green-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-600"
+          className="inline-flex items-center justify-center rounded-md bg-green-500 px-3 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-green-600 hover:shadow-lg hover:shadow-green-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 disabled:cursor-not-allowed disabled:bg-green-500/40"
         >
           Today
         </button>
@@ -97,7 +97,7 @@ export function GroupSchedulePeriodNavigator({
           type="button"
           onClick={onNext}
           disabled={disabled}
-          className="inline-flex items-center justify-center rounded-md border border-green-500 bg-transparent px-3 py-2 text-sm font-medium text-green-400 transition-all duration-200 hover:bg-green-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-600"
+          className="inline-flex items-center justify-center rounded-md border border-gray-700 bg-transparent px-3 py-2 text-sm font-medium text-gray-200 transition-all duration-200 hover:border-green-500/40 hover:bg-green-500/10 hover:text-green-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-600"
         >
           Next
         </button>

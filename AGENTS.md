@@ -268,7 +268,7 @@ JWT_EXPIRY_MS=3600000
 | Membership plans | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | User membership purchase | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Member Home | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
-| User access flow | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| User access flow | ✅ | ✅ | ✅ | ❌ | ✅ | ❌ | ❌ |
 | User profile management | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Class schedule | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Group classes schedule view | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
