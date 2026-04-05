@@ -632,13 +632,19 @@ Two React components guard routes in `src/components/layout/`:
 
 Both guards are **UI-only conveniences**. Spring Security enforces the same access rules on the server side. The server is the authoritative access control layer.
 
-### Admin Post-Login Redirect
+### Post-Login Redirect
 
-`LoginPage.tsx` reads the role from `authStore` immediately after a successful login and navigates:
-- `role === 'ADMIN'` → `/admin/plans`
-- `role !== 'ADMIN'` (i.e. `'USER'`) → `/plans`
+After a successful login `LoginPage.tsx` branches on role and membership state:
 
-This behaviour is exercised by E2E tests AUTH-04 (member → `/plans`) and AUTH-05 (admin → `/admin/plans`).
+| Condition | Destination |
+|-----------|-------------|
+| `role === 'ADMIN'` | `/admin/plans` |
+| Regular user, `hasActiveMembership: true` | `/home` |
+| Regular user, `hasActiveMembership: false` | `/plans` |
+
+`hasActiveMembership` is returned by `POST /api/v1/auth/login` in `LoginResponse`. `AuthService` populates it by calling `UserMembershipRepository.findAccessibleActiveMembership(userId, today)`, which checks `status = ACTIVE`, `end_date ≥ today`, and `deleted_at IS NULL`.
+
+This behaviour is exercised by E2E tests AUTH-04 (member → `/home`) and AUTH-05 (admin → `/admin/plans`).
 
 ### `TestSupportController` and Its Production-Disable Mechanism
 
