@@ -1110,3 +1110,62 @@ placeholder avatar when the resolved URL is null.
    stated in this SDD are sourced from the authoritative migration SQL files (V8, V11, V12).
    If the live schema has diverged from the migration files (e.g., a manual `ALTER TABLE`
    was run outside Flyway), backend-dev should verify with `\d trainers` before applying V15.
+
+---
+
+## 7. Implementation Decisions (post-audit)
+
+The following decisions were made during the audit gap-fix pass (2026-04-05) and were not
+documented in the original SDD.
+
+### AC 38 — Guest redirect target is `/memberships`
+
+`TrainerFavoritesPage.tsx` redirects non-Member users to `/memberships`, not `/plans`.
+The design spec (Flow 9 and the `My Favorites` screen note) explicitly states: *"If the Guest
+navigates directly to `/trainers/favorites`, they are redirected to `/memberships`."*
+The prior implementation redirected to `/plans`, contradicting the design spec.
+
+### AC 3 — Pagination envelope field: `number` instead of `page`
+
+The SDD sample JSON in Section 2 (`GET /api/v1/trainers`) shows `"page": 0` in the
+response envelope. The actual backend uses Spring Data's `Page<T>` serialized directly,
+which produces `"number": 0` (Spring Data's native field name for the current page index).
+
+**Decision:** Accept `number` as the canonical field name. The frontend TypeScript type
+`PaginatedTrainerDiscoveryResponse` uses `number: number` to match the actual API response.
+The SDD sample JSON is aspirational and diverges from Spring Data's native output.
+Changing the field to `page` would require a custom response wrapper — a higher-risk
+refactor with no user-facing benefit. Both the backend and frontend are internally consistent
+using `number`.
+
+### `parseSortForNative` vs `parseSortForEntity` branching
+
+`TrainerDiscoveryService` contains two sort-parsing helpers:
+
+- **`parseSortForEntity`** — used when no `specialization` filter is active. The query runs
+  as a JPQL entity query (`Page<Trainer>`). Spring Data translates the `Sort` into SQL
+  automatically, including `NULLS LAST` via `Sort.Order.nullsLast()`.
+
+- **`parseSortForNative`** — used when a `specialization` filter is active. The query runs
+  as a native SQL query (required for the `unnest()` array predicate). `NULLS LAST` is
+  appended directly to the ORDER BY clause in the SQL string because Spring Data does not
+  guarantee `NULLS LAST` propagation for native queries on all dialects.
+
+Callers in the service select the helper based on whether `specializations` is non-empty.
+This branching is internal to the service and not visible to controllers or the frontend.
+
+### `getDistinctSpecializations` — client-side strategy with 200-trainer cap
+
+No `/api/v1/trainers/specializations` endpoint exists. The function
+`getDistinctSpecializations()` in `frontend/src/api/trainerDiscovery.ts` fetches the first
+200 trainers sorted A–Z and derives distinct specializations entirely client-side.
+
+**Rationale:** Adding a backend endpoint was deferred to avoid scope creep on the initial
+delivery. For the expected gym scale (fewer than 200 trainers), the 200-trainer cap is
+sufficient.
+
+**Known limitation:** If the gym grows beyond 200 trainers, specializations from page 2+
+will be silently omitted from the filter panel. The mitigation is to add a dedicated
+`GET /api/v1/trainers/specializations` endpoint that queries `SELECT DISTINCT
+unnest(specialisations) FROM trainers WHERE deleted_at IS NULL` and returns a sorted
+string array. This is tracked as a tech debt item.

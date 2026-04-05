@@ -28,7 +28,7 @@ export function TrainerFavoritesPage() {
     isAuthenticated &&
     activeMembership === null &&
     membershipErrorCode === null
-  const shouldRedirectToPlans = membershipErrorCode === 'NO_ACTIVE_MEMBERSHIP'
+  const shouldRedirectToMemberships = membershipErrorCode === 'NO_ACTIVE_MEMBERSHIP'
 
   const [sortOption, setSortOption] = useState<TrainerDiscoverySortOption>('lastName,asc')
   const [currentPage, setCurrentPage] = useState(0)
@@ -49,10 +49,10 @@ export function TrainerFavoritesPage() {
   }, [fetchMyMembership, membershipLoading, membershipStatusPending])
 
   useEffect(() => {
-    if (shouldRedirectToPlans) {
-      navigate('/plans')
+    if (shouldRedirectToMemberships) {
+      navigate('/memberships')
     }
-  }, [navigate, shouldRedirectToPlans])
+  }, [navigate, shouldRedirectToMemberships])
 
   const displayTrainers = useMemo(() => {
     return trainers
@@ -112,6 +112,7 @@ export function TrainerFavoritesPage() {
   }
 
   if (!isMember) {
+    navigate('/memberships')
     return null
   }
 

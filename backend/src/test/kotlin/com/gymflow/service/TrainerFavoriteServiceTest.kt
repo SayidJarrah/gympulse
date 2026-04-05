@@ -16,7 +16,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.springframework.dao.DataIntegrityViolationException
 import java.util.UUID
 
 class TrainerFavoriteServiceTest {
@@ -52,6 +51,7 @@ class TrainerFavoriteServiceTest {
     fun addFavoriteSuccess() {
         every { userMembershipRepository.existsByUserIdAndStatus(userId, "ACTIVE") } returns true
         every { trainerRepository.findByIdAndDeletedAtIsNull(trainerId) } returns trainer
+        every { userTrainerFavoriteRepository.existsByUserIdAndTrainerId(userId, trainerId) } returns false
         every { userTrainerFavoriteRepository.save(any<UserTrainerFavorite>()) } returnsArgument 0
 
         val result = trainerFavoriteService.addFavorite(userId, trainerId)
@@ -62,6 +62,7 @@ class TrainerFavoriteServiceTest {
 
         verify(exactly = 1) { userMembershipRepository.existsByUserIdAndStatus(userId, "ACTIVE") }
         verify(exactly = 1) { trainerRepository.findByIdAndDeletedAtIsNull(trainerId) }
+        verify(exactly = 1) { userTrainerFavoriteRepository.existsByUserIdAndTrainerId(userId, trainerId) }
         verify(exactly = 1) { userTrainerFavoriteRepository.save(any<UserTrainerFavorite>()) }
     }
 
@@ -99,7 +100,7 @@ class TrainerFavoriteServiceTest {
     fun addFavoriteAlreadyFavorited() {
         every { userMembershipRepository.existsByUserIdAndStatus(userId, "ACTIVE") } returns true
         every { trainerRepository.findByIdAndDeletedAtIsNull(trainerId) } returns trainer
-        every { userTrainerFavoriteRepository.save(any<UserTrainerFavorite>()) } throws DataIntegrityViolationException("Duplicate entry")
+        every { userTrainerFavoriteRepository.existsByUserIdAndTrainerId(userId, trainerId) } returns true
 
         assertThrows<AlreadyFavoritedException> {
             trainerFavoriteService.addFavorite(userId, trainerId)
@@ -107,7 +108,8 @@ class TrainerFavoriteServiceTest {
 
         verify(exactly = 1) { userMembershipRepository.existsByUserIdAndStatus(userId, "ACTIVE") }
         verify(exactly = 1) { trainerRepository.findByIdAndDeletedAtIsNull(trainerId) }
-        verify(exactly = 1) { userTrainerFavoriteRepository.save(any<UserTrainerFavorite>()) }
+        verify(exactly = 1) { userTrainerFavoriteRepository.existsByUserIdAndTrainerId(userId, trainerId) }
+        verify(exactly = 0) { userTrainerFavoriteRepository.save(any<UserTrainerFavorite>()) }
     }
 
     @Test

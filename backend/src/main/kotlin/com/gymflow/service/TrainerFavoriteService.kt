@@ -8,7 +8,6 @@ import com.gymflow.exception.MembershipRequiredException
 import com.gymflow.repository.TrainerRepository
 import com.gymflow.repository.UserMembershipRepository
 import com.gymflow.repository.UserTrainerFavoriteRepository
-import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
@@ -25,12 +24,10 @@ class TrainerFavoriteService(
         requireActiveMembership(userId)
         val trainer = trainerRepository.findByIdAndDeletedAtIsNull(trainerId)
             ?: throw TrainerNotFoundException("Trainer with id '$trainerId' not found")
-        val favorite = UserTrainerFavorite(userId = userId, trainerId = trainerId)
-        try {
-            userTrainerFavoriteRepository.save(favorite)
-        } catch (ex: DataIntegrityViolationException) {
+        if (userTrainerFavoriteRepository.existsByUserIdAndTrainerId(userId, trainerId)) {
             throw AlreadyFavoritedException(trainerId)
         }
+        userTrainerFavoriteRepository.save(UserTrainerFavorite(userId = userId, trainerId = trainerId))
         return TrainerFavoriteResponse(
             trainerId = trainer.id,
             firstName = trainer.firstName,

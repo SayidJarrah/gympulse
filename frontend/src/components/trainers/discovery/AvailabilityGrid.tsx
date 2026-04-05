@@ -21,6 +21,8 @@ interface AvailabilityGridProps {
 }
 
 export function AvailabilityGrid({ preview }: AvailabilityGridProps) {
+  const allEmpty = DAYS.every((day) => (preview[day]?.length ?? 0) === 0)
+
   return (
     <div className="overflow-x-auto rounded-2xl border border-gray-800 bg-gray-900/70 p-4">
       <div className="grid min-w-[640px] grid-cols-[120px_repeat(7,minmax(80px,1fr))] gap-2">
@@ -52,6 +54,9 @@ export function AvailabilityGrid({ preview }: AvailabilityGridProps) {
           </div>
         ))}
       </div>
+      {allEmpty && (
+        <p className="text-xs text-gray-500 italic mt-2">No scheduled classes yet.</p>
+      )}
     </div>
   )
 }

@@ -110,16 +110,22 @@ export function TrainerProfilePage() {
           </div>
         ) : (
           <div className="space-y-8">
+            <Link
+              to="/trainers"
+              className="inline-flex items-center gap-1 text-sm text-green-400 hover:text-green-300"
+            >
+              &#8592; Back to trainers
+            </Link>
             <div className="flex flex-col gap-6 rounded-2xl border border-gray-800 bg-gray-900/70 p-6 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-5">
                 {profile.profilePhotoUrl ? (
                   <img
                     src={profile.profilePhotoUrl}
                     alt={`${profile.firstName} ${profile.lastName}`}
-                    className="h-20 w-20 rounded-full object-cover"
+                    className="h-28 w-28 rounded-2xl object-cover"
                   />
                 ) : (
-                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gray-800 text-lg font-semibold text-gray-300">
+                  <div className="flex h-28 w-28 items-center justify-center rounded-2xl bg-gray-800 text-lg font-semibold text-gray-300">
                     {profile.firstName[0]}{profile.lastName[0]}
                   </div>
                 )}
