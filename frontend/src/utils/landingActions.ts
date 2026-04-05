@@ -36,14 +36,14 @@ export function resolveLandingActions({
 
   if (hasActiveMembership) {
     return {
-      headerPrimary: { kind: 'link', label: 'Go to portal', to: '/home' },
-      heroPrimary: { kind: 'link', label: 'Open member area', to: '/home' },
+      headerPrimary: { kind: 'link', label: 'Go to portal', to: '/membership' },
+      heroPrimary: { kind: 'link', label: 'Open member area', to: '/membership' },
       heroSecondary: { kind: 'link', label: 'Review plans', to: '#plans' },
       planAction: { label: 'Compare plans', to: '/plans', variant: 'secondary' },
     }
   }
 
-  if (membershipLoading || membershipErrorCode === null) {
+  if (membershipLoading) {
     return {
       headerPrimary: {
         kind: 'disabled',
@@ -57,6 +57,18 @@ export function resolveLandingActions({
       },
       heroSecondary: { kind: 'link', label: 'See how it works', to: '#journey' },
       planAction: { label: 'View full plans', to: '/plans', variant: 'primary' },
+    }
+  }
+
+  // Error fallback: loading is false, no active membership, and no error code set
+  // (silent failure — no fetch result landed). Treat the user as a guest so the CTA
+  // remains actionable rather than permanently disabled.
+  if (membershipErrorCode === null) {
+    return {
+      headerPrimary: { kind: 'link', label: 'Create account', to: '/register' },
+      heroPrimary: { kind: 'link', label: 'Join GymFlow', to: '/register' },
+      heroSecondary: { kind: 'link', label: 'Browse plans', to: '#plans' },
+      planAction: { label: 'Create account', to: '/register', variant: 'primary' },
     }
   }
 

@@ -266,7 +266,59 @@ benefits grids in v1.
 
 ---
 
-## 7. Risks & Notes
+## 7. Auth-Aware CTA Resolution Matrix
+
+### `resolveLandingActions` Resolution Logic
+
+The `resolveLandingActions` helper in `src/utils/landingActions.ts` determines which CTA
+actions are presented to the user based on their authentication and membership state.
+Evaluation order matters — conditions are checked top to bottom and the first match wins.
+
+| Condition | Primary CTA destination | Label |
+|-----------|------------------------|-------|
+| Not authenticated (guest) | `/register` | "Join GymFlow" / "Create account" |
+| Authenticated, role = `ADMIN` | `/admin/plans` | "Manage plans" |
+| Authenticated, `hasActiveMembership = true` | `/membership` | "Open member area" / "Go to portal" |
+| Authenticated, `membershipLoading = true` | disabled | "Checking membership" |
+| Authenticated, `membershipLoading = false`, `membershipErrorCode = null` (silent error fallback) | `/register` | "Join GymFlow" / "Create account" |
+| Authenticated, `membershipErrorCode = 'NO_ACTIVE_MEMBERSHIP'` | `/plans` | "View membership plans" |
+| Any other authenticated state | `/plans` | "View membership plans" |
+
+#### Silent error fallback
+When `membershipLoading` is `false` and `membershipErrorCode` is `null` but
+`hasActiveMembership` is also `false`, it means the membership fetch either never fired or
+failed without setting an error code. The user must not remain stuck on the disabled
+"Checking membership" state. In this case the resolver falls through to the guest branch
+(`/register`), keeping the CTA actionable.
+
+### `LandingPlanAction` Type
+
+```typescript
+interface LandingPlanAction {
+  label: string;
+  to: string;
+  variant: 'primary' | 'secondary';
+}
+```
+
+The `variant` field controls button appearance in `PlansPreviewSection`:
+- `'primary'` — filled green button (`bg-green-500`)
+- `'secondary'` — outlined button (`border border-gray-700 bg-gray-900`)
+
+### Footer Auth Links
+
+`LandingFooter` always renders sign-in and register links regardless of authentication
+state. These links are unconditional — they are not gated on `isAuthenticated`.
+
+### Analytics: `landing_page_view`
+
+The `landing_page_view` event fires **once on mount** via a `useEffect` with an empty
+dependency array `[]`. It must not be re-fired on auth state changes. This is intentional
+— the page view represents the initial render, not a reaction to state updates.
+
+---
+
+## 8. Risks & Notes
 
 ### Risk: The Page Becomes Overloaded Again During Implementation
 The main failure mode here is quiet scope growth. If classes, trainers, testimonials, or
