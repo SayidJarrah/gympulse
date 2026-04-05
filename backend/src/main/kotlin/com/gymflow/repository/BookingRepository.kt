@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Lock
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import java.util.UUID
@@ -73,6 +74,10 @@ interface BookingRepository : JpaRepository<Booking, UUID> {
         @Param("bookingId") bookingId: UUID,
         @Param("userId") userId: UUID
     ): Booking?
+
+    @Modifying
+    @Query("DELETE FROM Booking b WHERE b.userId IN :userIds")
+    fun deleteAllByUserIds(@Param("userIds") userIds: Collection<UUID>): Int
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query(
