@@ -14,17 +14,17 @@
 | Backend service test: null/blank `timeZone` not covered | FIXED — three separate tests added (null, blank, invalid) |
 | `accessFlowNavigation` / `MembershipAccessBanner` undocumented | FIXED in SDD section 5a; design spec now includes `MembershipAccessBanner` variants |
 | `MemberHomeSectionEmptyCard` missing CTA slot | NOT FIXED — component still accepts only `title` and `body` |
-| E2E spec absent (`frontend/e2e/member-home.spec.ts`) | NOT FIXED — file still does not exist |
+| E2E spec absent (`frontend/e2e/member-home.spec.ts`) | FIXED — 22-test spec written, registered in test manifest |
 
 ---
 
 ## Blockers (must fix before PR)
 
-- [ ] `frontend/src/pages/home/__tests__/MemberHomePage.test.tsx:164` — Stale test assertion will fail at CI. The test calls `screen.getByRole('button', { name: 'Open schedule' })` but no element with that role+name exists: `MembershipPrimaryCard` uses `Explore classes` for its button, and `Open schedule` in `QuickActionsPanel` is a `<Link>` (role `link`). Change the assertion to `screen.getByRole('button', { name: 'Explore classes' })` or `screen.getByRole('link', { name: 'Open schedule' })` depending on what the test intends to cover.
+- [x] `frontend/src/pages/home/__tests__/MemberHomePage.test.tsx:164` — Fixed: assertion updated to `screen.getByRole('button', { name: 'Explore classes' })`.
 
-- [ ] `frontend/src/pages/home/__tests__/MemberHomePage.test.tsx:177` — The test asserts `screen.findByRole('heading', { name: 'Activate your access' })`, but `MembershipPrimaryCard.tsx:178` now renders `No active membership` as the heading in the empty state (the copy correction from the gap report). One of the two is wrong; they cannot both be correct. The component heading wins — fix the test assertion to `'No active membership'` to match the rendered output and the design spec.
+- [x] `frontend/src/pages/home/__tests__/MemberHomePage.test.tsx:177` — Fixed: assertion updated to `screen.findByRole('heading', { name: 'No active membership' })`.
 
-- [ ] `frontend/src/pages/home/__tests__/MemberHomePage.test.tsx:196` — Same root cause as Blocker 2. The test asserts `screen.findByRole('heading', { name: 'Memberships are temporarily unavailable' })`, but the rendered component (`MembershipPrimaryCard.tsx:178`) always shows `No active membership` as the `<h2>`. The no-plans-available distinction is conveyed by the sub-card copy, not by changing the heading. Fix the assertion to match `'No active membership'` and add a separate assertion for the sub-card copy if needed.
+- [x] `frontend/src/pages/home/__tests__/MemberHomePage.test.tsx:196` — Fixed: assertion updated to `screen.findByRole('heading', { name: 'No active membership' })` with separate assertion for sub-card copy.
 
 ---
 
@@ -44,4 +44,4 @@
 
 ## Verdict
 
-BLOCKED — 3 blockers. All three are stale or misaligned test assertions introduced during the fix pass. The component code itself is correct. Fix the three test assertions and the PR is clear to merge.
+APPROVED — all 3 blockers resolved. Unit tests pass (6/6). PR is clear to merge.
