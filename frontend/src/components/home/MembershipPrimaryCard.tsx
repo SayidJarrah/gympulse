@@ -14,7 +14,7 @@ interface Props {
   planTeasersError?: string | null;
   onRetryMembership: () => void;
   onManageMembership: () => void;
-  onOpenSchedule: () => void;
+  onExploreClasses: () => void;
   onBrowseTrainers: () => void;
   browsePlansHref: string;
   getPlanHref: (planId: string) => string;
@@ -37,7 +37,7 @@ export function MembershipPrimaryCard({
   planTeasersError = null,
   onRetryMembership,
   onManageMembership,
-  onOpenSchedule,
+  onExploreClasses,
   onBrowseTrainers,
   browsePlansHref,
   getPlanHref,
@@ -151,10 +151,10 @@ export function MembershipPrimaryCard({
           </button>
           <button
             type="button"
-            onClick={onOpenSchedule}
+            onClick={onExploreClasses}
             className="inline-flex items-center justify-center rounded-md border border-green-500 bg-transparent px-4 py-2 text-sm font-medium text-green-400 transition-all duration-200 hover:bg-green-500/10 hover:text-green-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
           >
-            Open schedule
+            Explore classes
           </button>
         </div>
       </section>
@@ -175,7 +175,7 @@ export function MembershipPrimaryCard({
             Your access
           </p>
           <h2 className="mt-2 text-3xl font-semibold leading-tight text-white">
-            {hasNoPlansAvailable ? 'Memberships are temporarily unavailable' : 'Activate your access'}
+            No active membership
           </h2>
           <p className="mt-2 text-sm text-gray-400">
             {headerBody}
@@ -272,10 +272,10 @@ export function MembershipPrimaryCard({
           </Link>
           <button
             type="button"
-            onClick={onOpenSchedule}
+            onClick={onExploreClasses}
             className="inline-flex items-center justify-center rounded-md border border-green-500 bg-transparent px-4 py-2 text-sm font-medium text-green-400 transition-all duration-200 hover:bg-green-500/10 hover:text-green-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
           >
-            See schedule
+            See what's inside the club
           </button>
         </div>
       ) : null}

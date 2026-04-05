@@ -80,12 +80,26 @@ Save to `docs/reviews/{feature}-{YYYYMMDD}.md`:
 ## Blockers (must fix before PR)
 - [ ] {specific issue — file:line, what's wrong, what it should be}
 
-## Suggestions (non-blocking, logged for reference)
+## Suggestions (non-blocking)
 - {improvement idea}
 
 ## Verdict
 {BLOCKED | APPROVED}
 ```
+
+After writing the review doc, append each suggestion to `docs/backlog/tech-debt.md` using this format:
+
+```markdown
+## TD-{next N} — {short title}
+Source: docs/reviews/{feature}-{YYYYMMDD}.md
+Feature: {feature}
+Added: {YYYY-MM-DD}
+Effort: S | M | L
+{one paragraph description}
+```
+
+Effort guide: **S** = a few lines, **M** = less than half a day, **L** = needs its own planning.
+If `docs/backlog/tech-debt.md` does not exist, create it first.
 
 **Blocker criteria:**
 - Broken UX flow (user cannot complete a primary action end-to-end)
@@ -140,3 +154,7 @@ PR format:
 - Title: `feat({feature}): {one-line description from SDD}`
 - Branch: `feature/{feature}`
 - Base: `main`, Draft: true
+
+After creating the PR, report how many suggestions were logged:
+> "{N} suggestion(s) logged to docs/backlog/tech-debt.md (TD-{first}–TD-{last})"
+If N is 0, omit this line.

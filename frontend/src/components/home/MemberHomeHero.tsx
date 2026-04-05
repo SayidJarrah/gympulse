@@ -14,8 +14,8 @@ export function MemberHomeHero({
   const greetingName = firstName ? `, ${firstName}` : ''
 
   return (
-    <section className="rounded-2xl border border-gray-800 bg-[#111827]/80 p-6 shadow-md shadow-black/40">
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-start">
+    <section className="overflow-hidden rounded-[28px] border border-gray-800 bg-gray-900 p-6 shadow-xl shadow-black/40 sm:p-8">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-end">
         <div className="space-y-5">
           <div className="flex flex-wrap gap-2">
             <span className="inline-flex items-center rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-green-300">

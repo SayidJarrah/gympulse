@@ -97,7 +97,7 @@ export function TrainerPreviewCarousel({ trainers, loading, errorMessage, onRetr
         </div>
       ) : errorMessage ? (
         <MemberHomeSectionErrorCard
-          title="Could not load trainers right now."
+          title="Trainers unavailable"
           body={errorMessage}
           onRetry={onRetry}
         />

@@ -145,6 +145,23 @@ Layout: `min-h-screen bg-[#0F0F0F]`; sticky shared `Navbar`; page shell `mx-auto
 - Classes empty title: `No upcoming classes`
 - Classes empty body: `There are no scheduled group classes in the current preview window.`
 
+#### MembershipAccessBanner
+
+- Purpose: confirm to the returning member that a post-purchase navigation round-trip completed successfully, or explain why their membership state has not changed.
+- Trigger: rendered by `MemberHomePage` when the `membershipBanner` query param is present on page load. The param is stripped from the URL immediately after reading.
+- Location in layout: renders inside the membership section `<div>`, above `MembershipPrimaryCard`.
+
+##### `activated` variant
+- Styling: green success banner.
+- Tailwind tokens (within design system): `border-green-500/30 bg-green-500/10 text-green-300`.
+- Copy: confirms the plan was activated and membership is now active.
+
+##### `already-active` variant
+- Styling: blue informational banner.
+- Tailwind tokens used in implementation: `border-blue-500/30 bg-blue-500/10 text-blue-300`.
+- **Design system note:** this uses an ad-hoc blue that is outside the documented design system colour tokens. The design system defines no blue semantic token. This should be revisited and aligned with the system palette in a future design pass.
+- Copy: informs the user that their membership was already active when the activation was attempted.
+
 ## Component States
 | Component | Loading | Empty | Error | Populated |
 |-----------|---------|-------|-------|-----------|

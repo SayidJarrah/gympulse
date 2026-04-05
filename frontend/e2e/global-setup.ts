@@ -106,7 +106,13 @@ async function apiRequest<T>(
 }
 
 async function deleteInstance(token: string, id: string): Promise<void> {
-  await apiRequest<void>('DELETE', `${API_BASE}/admin/class-instances/${id}`, token)
+  try {
+    await apiRequest<void>('DELETE', `${API_BASE}/admin/class-instances/${id}`, token)
+  } catch (err) {
+    // 409 CLASS_HAS_ACTIVE_BOOKINGS — instance cannot be deleted; skip it
+    if (err instanceof Error && err.message.includes('409')) return
+    throw err
+  }
 }
 
 async function login(): Promise<string> {

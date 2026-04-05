@@ -105,7 +105,7 @@ export function ClassPreviewCarousel({
         </div>
       ) : errorMessage ? (
         <MemberHomeSectionErrorCard
-          title="Could not load upcoming classes right now."
+          title="Classes unavailable"
           body={errorMessage}
           onRetry={onRetry}
         />
