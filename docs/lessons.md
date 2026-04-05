@@ -17,6 +17,12 @@ Applies when: {situation where this rule kicks in}
 
 <!-- Add lessons below this line -->
 
+## Lesson 4 — Resolve contradictions by UX intent, not majority vote
+Date: 2026-04-05
+Correction: A three-way contradiction (code `/home`, SDD `/classes`, E2E `/plans`) was resolved by picking the value two sources agreed on (`/plans`), ignoring correct UX. A member with an active plan landing on the purchase page on every login is disruptive.
+Rule: When sources contradict each other, do not resolve by majority vote. Reason about user intent first: what state is the user in, and where does it make sense to send them? If the answer requires product judgement that cannot be derived from the docs, stop and ask the user before committing to one path.
+Applies when: Any time code, SDD, design spec, or E2E tests disagree on a user-facing behaviour — especially navigation, redirects, or flow branching.
+
 ## Lesson 3 — Never commit directly to main
 Date: 2026-04-05
 Correction: A workflow fix was committed directly to main instead of going through a PR.

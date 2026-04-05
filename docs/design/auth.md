@@ -35,7 +35,7 @@
 4. While the form is submitting, the submit button enters the loading state (same as
    Flow 1, with "Signing in..." label).
 5a. On success (200): tokens are stored in the auth store and the guest is redirected
-    to `/classes`.
+    to `/plans` (regular users) or `/admin/plans` (admins).
 5b. On `INVALID_CREDENTIALS` (401): the server error banner appears above the submit
     button with the message "Incorrect email or password. Please try again."
 5c. On `VALIDATION_ERROR` (400): inline field error (same as Flow 1, step 5c).

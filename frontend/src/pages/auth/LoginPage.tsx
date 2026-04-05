@@ -5,13 +5,17 @@ import { useAuthStore } from '../../store/authStore'
 
 export function LoginPage() {
   const navigate = useNavigate()
-  const { login, isLoading, error } = useAuth()
+  const { login, isLoading, error, fieldErrors } = useAuth()
 
   const handleSubmit = async (email: string, password: string): Promise<void> => {
     try {
-      await login(email, password)
+      const { hasActiveMembership } = await login(email, password)
       const role = useAuthStore.getState().user?.role
-      navigate(role === 'ADMIN' ? '/admin/plans' : '/home')
+      if (role === 'ADMIN') {
+        navigate('/admin/plans')
+      } else {
+        navigate(hasActiveMembership ? '/home' : '/plans')
+      }
     } catch {
       // Error is displayed via the error state in useAuth — no navigation on failure
     }
@@ -56,6 +60,7 @@ export function LoginPage() {
             onSubmit={handleSubmit}
             isLoading={isLoading}
             error={error}
+            fieldErrors={fieldErrors}
           />
         </div>
       </div>

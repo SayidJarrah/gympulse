@@ -60,7 +60,7 @@ class AuthControllerIntegrationTest {
     fun `register - 201 on valid request`() {
         val userId = UUID.randomUUID()
         val email = "alice@example.com"
-        given(userRepository.findByEmail(email)).willReturn(null)
+        given(userRepository.findByEmailAndDeletedAtIsNull(email)).willReturn(null)
         given(userRepository.save(any(User::class.java))).willAnswer { invocation ->
             invocation.arguments[0] as User
         }
@@ -114,7 +114,7 @@ class AuthControllerIntegrationTest {
     fun `register - 409 on duplicate email`() {
         val email = "alice@example.com"
         val existingUser = buildUser(email = email)
-        given(userRepository.findByEmail(email)).willReturn(existingUser)
+        given(userRepository.findByEmailAndDeletedAtIsNull(email)).willReturn(existingUser)
 
         mockMvc.perform(
             post("/api/v1/auth/register")
@@ -135,7 +135,7 @@ class AuthControllerIntegrationTest {
         val password = "secret99"
         val user = buildUser(email = email, passwordHash = passwordEncoder.encode(password))
 
-        given(userRepository.findByEmail(email)).willReturn(user)
+        given(userRepository.findByEmailAndDeletedAtIsNull(email)).willReturn(user)
         given(refreshTokenRepository.save(any(RefreshToken::class.java))).willAnswer { invocation ->
             invocation.arguments[0] as RefreshToken
         }
@@ -154,7 +154,7 @@ class AuthControllerIntegrationTest {
 
     @Test
     fun `login - 401 when email not found`() {
-        given(userRepository.findByEmail(org.mockito.ArgumentMatchers.anyString())).willReturn(null)
+        given(userRepository.findByEmailAndDeletedAtIsNull(org.mockito.ArgumentMatchers.anyString())).willReturn(null)
 
         mockMvc.perform(
             post("/api/v1/auth/login")
@@ -169,7 +169,7 @@ class AuthControllerIntegrationTest {
     fun `login - 401 when password is wrong`() {
         val email = "alice@example.com"
         val user = buildUser(email = email, passwordHash = passwordEncoder.encode("correctpass"))
-        given(userRepository.findByEmail(email)).willReturn(user)
+        given(userRepository.findByEmailAndDeletedAtIsNull(email)).willReturn(user)
 
         mockMvc.perform(
             post("/api/v1/auth/login")

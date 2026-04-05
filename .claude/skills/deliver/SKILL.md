@@ -107,6 +107,7 @@ If `docs/backlog/tech-debt.md` does not exist, create it first.
 - Domain rule violated (contradicts gymflow-domain skill)
 - Design structurally off-spec (layout diverges from design spec)
 - Missing required UI states (no loading state, no error handling)
+- Implementation behaviour not documented in the SDD (redirect targets, response fields, routing logic, error messages) — if the code does something the SDD does not describe, that is a blocker
 
 **Never block on:**
 - Minor styling preferences not in the design spec

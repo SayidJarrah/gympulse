@@ -4,6 +4,7 @@ import com.gymflow.domain.RefreshToken
 import com.gymflow.domain.User
 import com.gymflow.dto.LoginResponse
 import com.gymflow.repository.RefreshTokenRepository
+import com.gymflow.repository.UserMembershipRepository
 import com.gymflow.repository.UserRepository
 import io.mockk.every
 import io.mockk.mockk
@@ -24,12 +25,14 @@ class AuthServiceTest {
 
     private val userRepository: UserRepository = mockk()
     private val refreshTokenRepository: RefreshTokenRepository = mockk()
+    private val userMembershipRepository: UserMembershipRepository = mockk()
     private val passwordEncoder: BCryptPasswordEncoder = BCryptPasswordEncoder(10)
     private val jwtService: JwtService = mockk()
 
     private val authService = AuthService(
         userRepository = userRepository,
         refreshTokenRepository = refreshTokenRepository,
+        userMembershipRepository = userMembershipRepository,
         passwordEncoder = passwordEncoder,
         jwtService = jwtService,
         refreshTokenExpiryDays = 30
@@ -45,7 +48,7 @@ class AuthServiceTest {
         val password = "secret99"
         val userSlot = slot<User>()
 
-        every { userRepository.findByEmail(email) } returns null
+        every { userRepository.findByEmailAndDeletedAtIsNull(email) } returns null
         every { userRepository.save(capture(userSlot)) } answers { userSlot.captured }
 
         val response = authService.register(email, password)
@@ -63,7 +66,7 @@ class AuthServiceTest {
         val email = "alice@example.com"
         val existingUser = buildUser(email = email)
 
-        every { userRepository.findByEmail(email) } returns existingUser
+        every { userRepository.findByEmailAndDeletedAtIsNull(email) } returns existingUser
 
         assertThrows<EmailAlreadyExistsException> {
             authService.register(email, "password1")
@@ -78,7 +81,7 @@ class AuthServiceTest {
         val password = "mypassw0rd"
         val userSlot = slot<User>()
 
-        every { userRepository.findByEmail(email) } returns null
+        every { userRepository.findByEmailAndDeletedAtIsNull(email) } returns null
         every { userRepository.save(capture(userSlot)) } answers { userSlot.captured }
 
         authService.register(email, password)
@@ -101,10 +104,11 @@ class AuthServiceTest {
         val password = "secret99"
         val user = buildUser(email = email, passwordHash = passwordEncoder.encode(password))
 
-        every { userRepository.findByEmail(email) } returns user
+        every { userRepository.findByEmailAndDeletedAtIsNull(email) } returns user
         every { jwtService.generateToken(user) } returns "mock.jwt.token"
         every { jwtService.getExpiresInSeconds() } returns 3600L
         every { refreshTokenRepository.save(any()) } answers { firstArg() }
+        every { userMembershipRepository.findAccessibleActiveMembership(user.id, any()) } returns null
 
         val response = authService.login(email, password)
 
@@ -112,11 +116,30 @@ class AuthServiceTest {
         assertNotNull(response.refreshToken)
         assertEquals("Bearer", response.tokenType)
         assertEquals(3600L, response.expiresIn)
+        assertFalse(response.hasActiveMembership)
+    }
+
+    @Test
+    fun `login - user with active membership - hasActiveMembership is true`() {
+        val email = "member@example.com"
+        val password = "secret99"
+        val user = buildUser(email = email, passwordHash = passwordEncoder.encode(password))
+        val membership = mockk<com.gymflow.domain.UserMembership>()
+
+        every { userRepository.findByEmailAndDeletedAtIsNull(email) } returns user
+        every { jwtService.generateToken(user) } returns "mock.jwt.token"
+        every { jwtService.getExpiresInSeconds() } returns 3600L
+        every { refreshTokenRepository.save(any()) } answers { firstArg() }
+        every { userMembershipRepository.findAccessibleActiveMembership(user.id, any()) } returns membership
+
+        val response = authService.login(email, password)
+
+        assertTrue(response.hasActiveMembership)
     }
 
     @Test
     fun `login - email not found - throws InvalidCredentialsException`() {
-        every { userRepository.findByEmail(any()) } returns null
+        every { userRepository.findByEmailAndDeletedAtIsNull(any()) } returns null
 
         assertThrows<InvalidCredentialsException> {
             authService.login("unknown@example.com", "password1")
@@ -128,7 +151,7 @@ class AuthServiceTest {
         val email = "alice@example.com"
         val user = buildUser(email = email, passwordHash = passwordEncoder.encode("correctpass"))
 
-        every { userRepository.findByEmail(email) } returns user
+        every { userRepository.findByEmailAndDeletedAtIsNull(email) } returns user
 
         assertThrows<InvalidCredentialsException> {
             authService.login(email, "wrongpassword")
@@ -138,7 +161,7 @@ class AuthServiceTest {
     @Test
     fun `login - wrong password and email not found - both throw same exception type`() {
         // Verifies user enumeration is not possible (same exception type for both cases)
-        every { userRepository.findByEmail("no@example.com") } returns null
+        every { userRepository.findByEmailAndDeletedAtIsNull("no@example.com") } returns null
 
         val ex1 = assertThrows<InvalidCredentialsException> {
             authService.login("no@example.com", "anything")
@@ -146,7 +169,7 @@ class AuthServiceTest {
 
         val email = "alice@example.com"
         val user = buildUser(email = email, passwordHash = passwordEncoder.encode("correctpass"))
-        every { userRepository.findByEmail(email) } returns user
+        every { userRepository.findByEmailAndDeletedAtIsNull(email) } returns user
 
         val ex2 = assertThrows<InvalidCredentialsException> {
             authService.login(email, "wrongpass")
