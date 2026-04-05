@@ -8,6 +8,7 @@ import com.gymflow.exception.MembershipRequiredException
 import com.gymflow.repository.TrainerRepository
 import com.gymflow.repository.UserMembershipRepository
 import com.gymflow.repository.UserTrainerFavoriteRepository
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
@@ -27,7 +28,11 @@ class TrainerFavoriteService(
         if (userTrainerFavoriteRepository.existsByUserIdAndTrainerId(userId, trainerId)) {
             throw AlreadyFavoritedException(trainerId)
         }
-        userTrainerFavoriteRepository.save(UserTrainerFavorite(userId = userId, trainerId = trainerId))
+        try {
+            userTrainerFavoriteRepository.save(UserTrainerFavorite(userId = userId, trainerId = trainerId))
+        } catch (e: DataIntegrityViolationException) {
+            throw AlreadyFavoritedException(trainerId)
+        }
         return TrainerFavoriteResponse(
             trainerId = trainer.id,
             firstName = trainer.firstName,

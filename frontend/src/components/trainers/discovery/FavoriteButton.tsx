@@ -22,12 +22,12 @@ export function FavoriteButton({
     ? (isFavorited ? 'Removing...' : 'Saving...')
     : label
 
-  return (
+  const button = (
     <button
       type="button"
-      onClick={onToggle}
-      disabled={!isMember || loading}
-      title={title}
+      onClick={isMember && !loading ? onToggle : undefined}
+      disabled={loading}
+      aria-disabled={!isMember || loading}
       aria-label={ariaLabel}
       className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 ${
         loading
@@ -36,7 +36,7 @@ export function FavoriteButton({
             ? isFavorited
               ? 'border-green-500 text-green-400 hover:bg-green-500/10'
               : 'border-gray-700 text-gray-300 hover:border-green-500 hover:text-green-400'
-            : 'border-gray-700 text-gray-500 cursor-not-allowed'
+            : 'border-gray-700 text-gray-500 pointer-events-none cursor-not-allowed'
       }`}
       aria-pressed={isFavorited}
     >
@@ -58,5 +58,11 @@ export function FavoriteButton({
       )}
       {showLabel && <span>{loading ? (isFavorited ? 'Removing...' : 'Saving...') : label}</span>}
     </button>
+  )
+
+  return !isMember ? (
+    <span title="Membership required to save favorites.">{button}</span>
+  ) : (
+    button
   )
 }
