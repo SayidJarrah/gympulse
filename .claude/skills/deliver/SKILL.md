@@ -24,7 +24,7 @@ Before starting each stage, check for the required input artifact:
 
 | Stage | Required artifact | Output artifact |
 |-------|------------------|----------------|
-| BA | Feature description from user | `docs/prd/{feature}.md` |
+| BA | `docs/briefs/{feature}.md` (or gap report for post-audit path) | `docs/prd/{feature}.md` |
 | Designer | `docs/prd/{feature}.md` | `docs/design/{feature}.md` + prototype |
 | SA | `docs/prd/{feature}.md` + `docs/design/{feature}.md` | `docs/sdd/{feature}.md` |
 | Developer | `docs/sdd/{feature}.md` + `docs/design/{feature}.md` | implementation in git |
@@ -37,6 +37,18 @@ If an artifact is missing, run the stage that produces it — do not skip ahead.
 
 If `docs/gaps/{feature}.md` exists (created by `/audit`), skip stages whose artifacts
 already exist. Start from the first stage where the gap report identifies missing work.
+
+## Brief Detection (New Feature Path)
+
+When `docs/prd/{feature}.md` does not exist and no gap report is present:
+
+1. Check for `docs/briefs/{feature}.md`.
+2. If the brief exists — pass it to the BA as input. Proceed with the pipeline.
+3. If the brief does not exist — stop immediately with:
+   > "No PRD or brief found for `{feature}`. Run `/brief {feature}` first."
+
+Never allow the BA to proceed without either a brief or a gap report. Guessing
+requirements produces low-quality PRDs that cascade into design and implementation errors.
 
 ## Branch Pre-Flight (run before dispatching the Developer)
 
