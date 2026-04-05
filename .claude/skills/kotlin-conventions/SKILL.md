@@ -56,6 +56,12 @@ When a `save()` involves a unique constraint, always use a two-layer guard:
 2. `try { repo.save(entity) } catch (e: DataIntegrityViolationException) { throw YourDomainException() }` for the race-condition case.
 An application-level check alone is not race-safe — two concurrent requests can both pass it and then collide at the DB.
 
+## Deletion Order — FK Constraint Safety
+Before writing any bulk-delete method that removes rows from a table referenced by foreign keys, scan all Flyway migrations (`V1__` through the latest) for every `REFERENCES {table}(id)` constraint pointing at that table.
+- If the constraint has `ON DELETE CASCADE` — no action needed, the DB handles it.
+- If the constraint has `ON DELETE RESTRICT` or no explicit clause (defaults to RESTRICT) — you must delete the child rows first, in a separate `@Modifying @Query` call within the same `@Transactional` method.
+Never infer that no FK children exist from the entity class alone — the DB constraint is the authoritative source.
+
 ## Flyway Migrations
 Never edit a migration file (`V{N}__*.sql`) after it has been applied to any environment.
 Flyway stores the checksum on apply; editing the file causes a checksum mismatch that prevents the backend from starting.

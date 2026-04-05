@@ -4,7 +4,8 @@
 **Severity:** Critical — Blocking  
 **ID:** BUG-2026-04-05-001  
 **Discovered during:** P1 fix verification pass for `feature/trainers-discovery`  
-**Reported by:** QA (e2e-tester)
+**Reported by:** QA (e2e-tester)  
+**Status:** RESOLVED 2026-04-05 — both stacks healthy (see Resolution section below)
 
 ---
 
@@ -118,3 +119,28 @@ Backend developer. Options to resolve:
   inspection). This is purely an infrastructure/DB-state issue preventing live verification.
 - This issue must be resolved before any E2E spec run can validate the `feature/trainers-discovery`
   fixes end-to-end.
+
+---
+
+## Resolution (2026-04-05)
+
+Applied DB-level checksum repair on both stacks — no code or migration files changed.
+
+**Root cause clarification:** The two Docker images (`gymflow-backend:review` and `gymflow-backend:e2e`)
+were built at different times from different states of V5, resulting in opposite mismatches:
+- Review DB had checksum `448048695`; container resolved `1241034472` → updated DB to `1241034472`.
+- E2E DB had checksum `1241034472`; container resolved `448048695` → updated DB to `448048695`.
+
+**Commands run:**
+```sql
+-- Review DB (port 5432, database: gymflow)
+UPDATE flyway_schema_history SET checksum = 1241034472 WHERE version = '5';
+
+-- E2E DB (port 5433, database: gymflow_e2e)
+UPDATE flyway_schema_history SET checksum = 448048695 WHERE version = '5';
+```
+
+Both backends confirmed healthy via `GET /api/v1/health` returning `{"status":"ok"}`.
+
+**Long-term fix:** Rebuild both images from the same HEAD so Flyway computes a single
+consistent checksum, eliminating this divergence.

@@ -193,6 +193,69 @@ Added: 2026-04-05
 Effort: S
 Both `@Modifying` methods in `UserMembershipRepository` omit `@Transactional` at the method level. They work today only because every caller is already in a service-level transaction. A bare call from a non-transactional context would throw `TransactionRequiredException` at runtime. Add `@Transactional` to both repository methods as a defensive guard, consistent with Spring Data JPA convention for `@Modifying` queries.
 
+## TD-027 — Login redirects USER without active membership to /plans instead of /home
+Source: docs/bugs/20260405-205540-login-redirect-user-without-membership.md
+Feature: auth
+Added: 2026-04-05
+Effort: S
+`LoginPage.tsx` navigates to `/plans` when the user has no active membership and `/home` when they do. PRD AC 1 requires all USER accounts to land on `/home` unconditionally after login. The current logic breaks AC-01 in `member-home.spec.ts` and affects any first-time user or post-cancellation flow. Fix: always navigate to `/home` for USER role; drop the membership check.
+
+## TD-028 — Post-purchase navigation goes to /home#membership instead of /membership
+Source: docs/bugs/20260405-205540-purchase-redirects-to-home-membership-not-membership-page.md
+Feature: user-membership-purchase
+Added: 2026-04-05
+Effort: S
+`PurchaseConfirmModal` calls `buildHomeMembershipPath('activated')` which resolves to `/home?membershipBanner=activated#membership`. The E2E specs (MEM-01, MEM-04, MEM-05, MEM-07, MEM-09, MEM-10, MEM-11, MEM-13) all assert `page.toHaveURL('/membership')`. Affects 8 tests. Fix: navigate to `/membership?membershipBanner=activated` after a successful purchase and align `buildHomeMembershipPath` callers accordingly.
+
+## TD-029 — Edit modals render "Save Changes" in edit mode; specs assert entity-specific labels
+Source: docs/bugs/20260405-205540-edit-modal-save-button-label.md
+Feature: class-schedule
+Added: 2026-04-05
+Effort: S
+`TrainerFormModal`, `RoomFormModal`, and `ClassTemplateFormModal` all render "Save Changes" as the submit button label in edit mode. The E2E specs locate the button via `getByRole('button', { name: 'Save Trainer' / 'Save Room' / 'Save Template' })` — these selectors find nothing in edit mode, blocking 7 tests (AC 3, AC 2, SCH-09 through SCH-11, AC 11, AC 18). Fix: pass the entity-specific label in edit mode, or update the specs to use "Save Changes".
+
+## TD-030 — Schedule page h1 is "Book your next session"; specs assert "Group Classes"
+Source: docs/bugs/20260405-205540-schedule-page-heading-mismatch.md
+Feature: group-classes-schedule-view
+Added: 2026-04-05
+Effort: S
+`GroupClassesSchedulePage` renders `<h1>Book your next session</h1>`. Four E2E specs (SCHED-02, SCHED-03, SCHED-05, IMG-04) look for `getByRole('heading', { name: 'Group Classes' })` which is absent. Additionally the membership-required state does not render a "Membership required" heading — only an "Activation needed" badge in the toolbar. Fix: align the heading with the spec or update the specs to match the implemented copy.
+
+## TD-031 — Duplicate favorite POST returns 201 instead of 409 ALREADY_FAVORITED
+Source: docs/bugs/20260405-205540-td02-duplicate-favorite-returns-201.md
+Feature: trainer-discovery
+Added: 2026-04-05
+Effort: M
+`UserTrainerFavorite` uses `@IdClass` with a composite key. Spring Data JPA's `save()` calls `merge()` for non-null IDs, silently succeeding on duplicates. The `existsByUserIdAndTrainerId` pre-check also does not throw. All duplicate POSTs return 201; the DB PK constraint ensures only one row is stored but no error is surfaced. Fix: read the entity by composite key after the existence check, throw `AlreadyFavoritedException` if it exists, and wrap `save()` in a `DataIntegrityViolationException` catch for the race-condition case.
+
+## TD-032 — AC-05 spec: getByText('Active') matches 3 DOM nodes (strict mode violation)
+Source: docs/bugs/20260405-205540-member-home-ac05-strict-mode-violation.md
+Feature: member-home
+Added: 2026-04-05
+Effort: S
+`member-home.spec.ts` AC-05 uses `page.getByText('Active')` which matches the status badge plus two other elements in strict mode, causing the test to throw. Fix the selector to `page.getByLabel('Status: Active')` or `page.getByTestId('membership-status-badge')` to target the badge uniquely.
+
+## TD-033 — AC-24 spec: activation banner regex matches h1 and banner simultaneously
+Source: docs/bugs/20260405-205540-member-home-ac24-strict-mode-banner.md
+Feature: member-home
+Added: 2026-04-05
+Effort: S
+`member-home.spec.ts` AC-24 uses `getByText(/activated|welcome|membership active/i)` which matches both the hero `<h1>Welcome back</h1>` and the banner paragraph. Strict mode throws on multiple matches. Narrow the selector to target only the banner element, e.g. `page.getByRole('status').getByText(/membership activated/i)`.
+
+## TD-034 — AC-09 spec: "no active plans" precondition is structurally impossible
+Source: docs/bugs/20260405-205540-member-home-ac09-no-plans-state.md
+Feature: member-home
+Added: 2026-04-05
+Effort: M
+`member-home.spec.ts` AC-09 expects the membership section to show "No plans available right now" but global-setup unconditionally seeds E2E plans after cleanup. The precondition (zero active plans) can never be satisfied by cleanup alone. Rewrite the test using test-local setup: seed a user with no plans, assert the empty state, then tear down in `afterEach`. Do not rely on global plan absence.
+
+## TD-035 — IMG-01 spec: waitForEvent('dialog') may never fire if remove button uses React modal
+Source: docs/bugs/20260405-205540-img01-remove-photo-native-dialog.md
+Feature: entity-image-management
+Added: 2026-04-05
+Effort: S
+`entity-image-management.spec.ts` IMG-01 calls `page.waitForEvent('dialog')` before clicking Remove. If the remove confirmation uses a custom React modal rather than `window.confirm()`, no native dialog event fires and the test hangs for 30 s. Investigate whether the implementation uses a native `confirm()` or a React modal; if the latter, replace the dialog event listener with a `getByRole('dialog')` assertion targeting the custom modal.
+
 ## TD-024 — SDD Section 2 sample JSON still shows "page" field, contradicts Section 7
 Source: docs/reviews/trainer-discovery-20260405.md
 Feature: trainer-discovery

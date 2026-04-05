@@ -11,10 +11,10 @@ Read before writing new specs to identify regression risk.
 | membership-plans | `e2e/membership-plans.spec.ts` | 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,18a,18b,19,20,21 | 2026-04-05 (PLAN-19 fails: AC20 bug; PLAN-20 fails: GET /memberships/{id} 500) |
 | user-membership-purchase | `e2e/user-membership-purchase.spec.ts` | all | — |
 | group-classes-schedule-view | `e2e/group-classes-schedule-view.spec.ts` | all | — |
-| trainer-discovery | `e2e/trainer-discovery.spec.ts` | TD-01 (happy path), TD-02 (AC18), TD-03 (AC38 redirect), TD-04 (AC38 nav) | BLOCKED — Flyway V5 checksum mismatch prevents stack rebuild (see docs/bugs/20260405-193700-flyway-v5-checksum-mismatch-blocks-stack-rebuild.md) |
+| trainer-discovery | `e2e/trainer-discovery.spec.ts` | TD-01 (happy path), TD-02 (AC18), TD-03 (AC38 redirect), TD-04 (AC38 nav) | — |
 | class-schedule | `e2e/class-schedule.spec.ts` | all | — |
 | entity-image-management | `e2e/entity-image-management.spec.ts` | all | — |
-| user-profile-management | `e2e/user-profile-management.spec.ts` | all | — |
+| user-profile-management | `e2e/user-profile-management.spec.ts` | AC3,AC6,AC7,AC11(client-side) | — |
 | landing-page | `e2e/landing-page.spec.ts` | 1,2,3,4,5,14,19,20 | — |
 | member-home | `e2e/member-home.spec.ts` | 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,18,19,20,21,22,23,24,25,26 | — |
 

@@ -61,7 +61,7 @@ export function FavoriteButton({
   )
 
   return !isMember ? (
-    <span title="Membership required to save favorites.">{button}</span>
+    <span title={title}>{button}</span>
   ) : (
     button
   )

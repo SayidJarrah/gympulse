@@ -17,6 +17,18 @@ Applies when: {situation where this rule kicks in}
 
 <!-- Add lessons below this line -->
 
+## Lesson 6 — Test preconditions that assume global DB emptiness are fragile
+Date: 2026-04-05
+Correction: After fixing the E2E cleanup endpoint, AC-09 ("when no active plans exist") still failed — not because of dirty DB state, but because global-setup unconditionally re-seeds plans after cleanup. The test assumed zero plans would exist at run time, which is structurally impossible given the seed.
+Rule: When a test requires a specific DB state (e.g. "no active plans"), do not rely on cleanup alone to establish that state if global-setup seeds data unconditionally. Use test-local setup (seed only what the test needs, cancel/delete it in afterEach) or a dedicated fixture that creates then tears down the exact precondition. Never write a test whose precondition contradicts what the shared seed guarantees.
+Applies when: Writing or reviewing E2E tests that depend on the absence of a resource (no plans, no trainers, no bookings) or on a specific count of resources.
+
+## Lesson 5 — Verify external tool capabilities before writing a plan that depends on them
+Date: 2026-04-05
+Correction: The Figma migration plan (Phase 3) assumed Figma MCP had write access to design content. It does not — Figma's REST API is read-only for frames, components, and styles. The blocker was only discovered at execution time.
+Rule: Before writing any plan that depends on an external API or MCP tool, verify the tool's actual operation list covers the required use cases. If uncertain, mark the capability as an assumption and validate it as the first step of the plan — not mid-execution. Never write "agent creates X via MCP" without confirming the MCP exposes a create/update tool for X.
+Applies when: Any plan that requires an agent to write to an external system (Figma, GitHub, Jira, etc.) via MCP or REST API.
+
 ## Lesson 4 — Resolve contradictions by UX intent, not majority vote
 Date: 2026-04-05
 Correction: A three-way contradiction (code `/home`, SDD `/classes`, E2E `/plans`) was resolved by picking the value two sources agreed on (`/plans`), ignoring correct UX. A member with an active plan landing on the purchase page on every login is disruptive.
