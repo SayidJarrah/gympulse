@@ -556,4 +556,249 @@ test.describe('Membership Plans', () => {
     );
     await expect(rowForPlan(page, plan.name)).toContainText('$42.00');
   });
+
+  // ---------------------------------------------------------------------------
+  // PLAN-19 — AC20: updatedAt changes after PUT
+  // Verifies the @PreUpdate callback on MembershipPlan.kt fires on a PUT.
+  // ---------------------------------------------------------------------------
+  test('PLAN-19 AC20: updatedAt is updated after editing a plan via PUT', async ({ request }) => {
+    const adminToken = await loginAsAdminApi(request);
+    const created = await createPlanApi(request, adminToken, {
+      name: uniquePlanName('UpdatedAt Check'),
+      description: 'Original description for updatedAt test.',
+      priceInCents: 2500,
+      durationDays: 14,
+    });
+
+    // Introduce a small delay so updatedAt can be strictly after createdAt even
+    // if the DB timestamp resolution is one second.
+    await new Promise((resolve) => setTimeout(resolve, 1100));
+
+    const putResponse = await request.put(`${API_BASE}/membership-plans/${created.id}`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+      data: {
+        name: uniquePlanName('UpdatedAt Changed'),
+        description: 'Updated description for updatedAt test.',
+        priceInCents: 2500,
+        durationDays: 14,
+      },
+    });
+
+    expect(putResponse.ok()).toBeTruthy();
+    const putBody = await putResponse.json() as MembershipPlan;
+
+    // The PUT response itself must show updatedAt strictly after createdAt.
+    expect(new Date(putBody.updatedAt).getTime()).toBeGreaterThan(
+      new Date(putBody.createdAt).getTime()
+    );
+
+    // Confirm via a fresh GET that the persisted updatedAt is also after createdAt.
+    // Uses the public GET /{id} endpoint — there is no admin GET-by-ID endpoint.
+    const getResponse = await request.get(`${API_BASE}/membership-plans/${created.id}`);
+    expect(getResponse.ok()).toBeTruthy();
+    const getBody = await getResponse.json() as MembershipPlan;
+
+    expect(new Date(getBody.updatedAt).getTime()).toBeGreaterThan(
+      new Date(getBody.createdAt).getTime()
+    );
+  });
+
+  // ---------------------------------------------------------------------------
+  // PLAN-20 — AC19: Deactivating a plan does NOT alter existing UserMembership records
+  // ---------------------------------------------------------------------------
+  test('PLAN-20 AC19: deactivating a plan leaves existing UserMembership records intact', async ({ request }) => {
+    const adminToken = await loginAsAdminApi(request);
+    const plan = await createPlanApi(request, adminToken, {
+      name: uniquePlanName('Deactivate Membership Guard'),
+    });
+
+    // Subscribe a user to the plan.
+    const userEmail = uniqueEmail('e2e-deact-guard');
+    const userPassword = 'Member@1234';
+    await registerUserApi(request, userEmail, userPassword);
+    const userSession = await loginUserApi(request, userEmail, userPassword);
+
+    const purchaseResponse = await request.post(`${API_BASE}/memberships`, {
+      headers: { Authorization: `Bearer ${userSession.accessToken}` },
+      data: { planId: plan.id },
+    });
+    expect(purchaseResponse.ok()).toBeTruthy();
+    const membership = await purchaseResponse.json() as { id: string; planId: string; status: string };
+
+    // Deactivate the plan.
+    await deactivatePlanApi(request, adminToken, plan.id);
+
+    // Fetch the user's active membership via /me (the correct read endpoint).
+    // GET /memberships/{id} does not exist — /me returns the user's active membership.
+    const membershipGetResponse = await request.get(`${API_BASE}/memberships/me`, {
+      headers: { Authorization: `Bearer ${userSession.accessToken}` },
+    });
+    expect(membershipGetResponse.ok()).toBeTruthy();
+    const membershipBody = await membershipGetResponse.json() as { id: string; planId: string; status: string };
+
+    expect(membershipBody.status).toBe('ACTIVE');
+    expect(membershipBody.planId).toBe(plan.id);
+  });
+
+  // ---------------------------------------------------------------------------
+  // PLAN-21 — AC13: PUT to a non-existent plan ID returns 404 PLAN_NOT_FOUND
+  // ---------------------------------------------------------------------------
+  test('PLAN-21 AC13: PUT to a non-existent plan ID returns 404 PLAN_NOT_FOUND', async ({ request }) => {
+    const adminToken = await loginAsAdminApi(request);
+
+    const response = await request.put(`${API_BASE}/membership-plans/${NONEXISTENT_PLAN_ID}`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+      data: buildPlanRequest(),
+    });
+
+    expect(response.status()).toBe(404);
+    const body = await response.json() as { code: string };
+    expect(body.code).toBe('PLAN_NOT_FOUND');
+  });
+
+  // ---------------------------------------------------------------------------
+  // PLAN-22 — AC12: PUT validation returns same 400 error codes as POST
+  // ---------------------------------------------------------------------------
+  test('PLAN-22 AC12: PUT with blank name returns 400 INVALID_NAME', async ({ request }) => {
+    const adminToken = await loginAsAdminApi(request);
+    const plan = await createPlanApi(request, adminToken);
+
+    const response = await request.put(`${API_BASE}/membership-plans/${plan.id}`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+      data: buildPlanRequest({ name: '   ' }),
+    });
+
+    expect(response.status()).toBe(400);
+    const body = await response.json() as { code: string };
+    expect(body.code).toBe('INVALID_NAME');
+  });
+
+  test('PLAN-22 AC12: PUT with blank description returns 400 INVALID_DESCRIPTION', async ({ request }) => {
+    const adminToken = await loginAsAdminApi(request);
+    const plan = await createPlanApi(request, adminToken);
+
+    const response = await request.put(`${API_BASE}/membership-plans/${plan.id}`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+      data: buildPlanRequest({ description: '   ' }),
+    });
+
+    expect(response.status()).toBe(400);
+    const body = await response.json() as { code: string };
+    expect(body.code).toBe('INVALID_DESCRIPTION');
+  });
+
+  test('PLAN-22 AC12: PUT with priceInCents=0 returns 400 INVALID_PRICE', async ({ request }) => {
+    const adminToken = await loginAsAdminApi(request);
+    const plan = await createPlanApi(request, adminToken);
+
+    const response = await request.put(`${API_BASE}/membership-plans/${plan.id}`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+      data: buildPlanRequest({ priceInCents: 0 }),
+    });
+
+    expect(response.status()).toBe(400);
+    const body = await response.json() as { code: string };
+    expect(body.code).toBe('INVALID_PRICE');
+  });
+
+  test('PLAN-22 AC12: PUT with durationDays=0 returns 400 INVALID_DURATION', async ({ request }) => {
+    const adminToken = await loginAsAdminApi(request);
+    const plan = await createPlanApi(request, adminToken);
+
+    const response = await request.put(`${API_BASE}/membership-plans/${plan.id}`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+      data: buildPlanRequest({ durationDays: 0 }),
+    });
+
+    expect(response.status()).toBe(400);
+    const body = await response.json() as { code: string };
+    expect(body.code).toBe('INVALID_DURATION');
+  });
+
+  // ---------------------------------------------------------------------------
+  // PLAN-23 — AC21 sort: ?sort parameter respected on both list endpoints
+  // ---------------------------------------------------------------------------
+  test('PLAN-23 AC21: ?sort=name,asc and ?sort=name,desc respected on public list endpoint', async ({ request }) => {
+    const adminToken = await loginAsAdminApi(request);
+    // Create two plans whose names sort predictably. Prefix guarantees uniqueness
+    // without interfering with pre-existing data because we only check order
+    // within the result set — using sort on name and page=0&size=1000 to get all.
+    const nameAlpha = `AAAAAA Sort Alpha ${Date.now()}`;
+    const nameZeta  = `ZZZZZZ Sort Zeta  ${Date.now()}`;
+
+    await createPlanApi(request, adminToken, { name: nameZeta,  description: 'sort zeta',  priceInCents: 1000, durationDays: 1 });
+    await createPlanApi(request, adminToken, { name: nameAlpha, description: 'sort alpha', priceInCents: 1000, durationDays: 1 });
+
+    // Ascending: AAAAAA should appear before ZZZZZZ in the response array.
+    const ascResponse = await request.get(`${API_BASE}/membership-plans?sort=name,asc&size=1000`);
+    expect(ascResponse.ok()).toBeTruthy();
+    const ascBody = await ascResponse.json() as PaginatedPlans;
+    const ascNames = ascBody.content.map((p) => p.name);
+    expect(ascNames.indexOf(nameAlpha)).toBeLessThan(ascNames.indexOf(nameZeta));
+
+    // Descending: ZZZZZZ should appear before AAAAAA in the response array.
+    const descResponse = await request.get(`${API_BASE}/membership-plans?sort=name,desc&size=1000`);
+    expect(descResponse.ok()).toBeTruthy();
+    const descBody = await descResponse.json() as PaginatedPlans;
+    const descNames = descBody.content.map((p) => p.name);
+    expect(descNames.indexOf(nameZeta)).toBeLessThan(descNames.indexOf(nameAlpha));
+  });
+
+  test('PLAN-23 AC21: ?sort=name,asc and ?sort=name,desc respected on admin list endpoint', async ({ request }) => {
+    const adminToken = await loginAsAdminApi(request);
+    const nameAlpha = `AAAAAA Admin Sort Alpha ${Date.now()}`;
+    const nameZeta  = `ZZZZZZ Admin Sort Zeta  ${Date.now()}`;
+
+    await createPlanApi(request, adminToken, { name: nameZeta,  description: 'admin sort zeta',  priceInCents: 1000, durationDays: 1 });
+    await createPlanApi(request, adminToken, { name: nameAlpha, description: 'admin sort alpha', priceInCents: 1000, durationDays: 1 });
+
+    // Ascending.
+    const ascResponse = await request.get(`${API_BASE}/admin/membership-plans?sort=name,asc&size=1000`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    expect(ascResponse.ok()).toBeTruthy();
+    const ascBody = await ascResponse.json() as PaginatedPlans;
+    const ascNames = ascBody.content.map((p) => p.name);
+    expect(ascNames.indexOf(nameAlpha)).toBeLessThan(ascNames.indexOf(nameZeta));
+
+    // Descending.
+    const descResponse = await request.get(`${API_BASE}/admin/membership-plans?sort=name,desc&size=1000`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    expect(descResponse.ok()).toBeTruthy();
+    const descBody = await descResponse.json() as PaginatedPlans;
+    const descNames = descBody.content.map((p) => p.name);
+    expect(descNames.indexOf(nameZeta)).toBeLessThan(descNames.indexOf(nameAlpha));
+  });
+
+  // ---------------------------------------------------------------------------
+  // PLAN-24 — AC7 API-level 401/403 clarification
+  //
+  // AC7 says "403 without ADMIN JWT" but Spring returns 401 for a missing token
+  // and 403 for a non-admin token. Both behaviours are correct and expected.
+  // ---------------------------------------------------------------------------
+  test('PLAN-24 AC7: POST without any JWT returns 401', async ({ request }) => {
+    const response = await request.post(`${API_BASE}/membership-plans`, {
+      data: buildPlanRequest(),
+    });
+
+    expect(response.status()).toBe(401);
+  });
+
+  test('PLAN-24 AC7: POST with a non-admin JWT returns 403 ACCESS_DENIED', async ({ request }) => {
+    // Register and log in a plain user (no ADMIN role).
+    const userEmail = uniqueEmail('e2e-nonadmin');
+    const userPassword = 'Member@1234';
+    await registerUserApi(request, userEmail, userPassword);
+    const userSession = await loginUserApi(request, userEmail, userPassword);
+
+    const response = await request.post(`${API_BASE}/membership-plans`, {
+      headers: { Authorization: `Bearer ${userSession.accessToken}` },
+      data: buildPlanRequest(),
+    });
+
+    expect(response.status()).toBe(403);
+    const body = await response.json() as { code: string };
+    expect(body.code).toBe('ACCESS_DENIED');
+  });
 });

@@ -36,4 +36,5 @@ export const FIELD_ERROR_CODES: Record<string, keyof import('../types/membership
   INVALID_DESCRIPTION: 'description',
   INVALID_PRICE: 'priceInCents',
   INVALID_DURATION: 'durationDays',
+  PLAN_HAS_ACTIVE_SUBSCRIBERS: 'priceInCents',
 }

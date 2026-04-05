@@ -115,3 +115,38 @@ Feature: landing-page
 Added: 2026-04-05
 Effort: S
 `PlansPreviewSection.tsx:92` applies `hover:-translate-y-1` without `will-change-transform`. On low-end Android devices this can trigger a paint pass rather than a compositor-only animation. Adding Tailwind's `will-change-transform` class promotes each plan card to its own compositing layer, keeping the hover lift smooth under load.
+
+## TD-015 — PLAN-19 uses setTimeout for updatedAt timing
+Source: docs/reviews/membership-plans-20260405.md
+Feature: membership-plans
+Added: 2026-04-05
+Effort: S
+`membership-plans.spec.ts` PLAN-19 introduces a 1100 ms `setTimeout` to ensure `updatedAt > createdAt`. Replace with a direct string inequality assertion (`putBody.updatedAt !== created.updatedAt`) — no sleep needed — or wrap in a `test.describe` with a `slow()` annotation if the delay is genuinely required for DB timestamp resolution.
+
+## TD-016 — PLAN-22 tests share the same test ID
+Source: docs/reviews/membership-plans-20260405.md
+Feature: membership-plans
+Added: 2026-04-05
+Effort: S
+Three Playwright tests in `membership-plans.spec.ts` all use the title `'PLAN-22 AC12: PUT with ...'`. Playwright selects by full title; duplicate IDs prevent running a single sub-case by ID. Rename to `PLAN-22a`, `PLAN-22b`, `PLAN-22c` or nest inside a `test.describe('PLAN-22 AC12')` block.
+
+## TD-017 — maxBookingsPerMonth not settable via admin UI or API request
+Source: docs/reviews/membership-plans-20260405.md
+Feature: membership-plans
+Added: 2026-04-05
+Effort: M
+`MembershipPlanRequest` (Kotlin DTO and TypeScript interface) does not expose `maxBookingsPerMonth`. Admins cannot configure a plan's monthly booking cap at creation or edit time. The field defaults to 0 (unlimited) for all plans. Add the field to `MembershipPlanRequest`, `PlanForm`, and the SDD before the booking-cap enforcement is completed — otherwise all plans will forever have no cap.
+
+## TD-018 — Benchmark Citations missing from docs/design/membership-plans.md
+Source: docs/reviews/membership-plans-20260405.md
+Feature: membership-plans
+Added: 2026-04-05
+Effort: S
+The design-standards skill requires a Benchmark Citation on every screen design. `docs/design/membership-plans.md` has no `Benchmark:` section for any of its three screens (Plans Catalogue, Plan Detail, Admin Plans Management). Add citations identifying the reference application and the specific pattern borrowed before the next design review cycle.
+
+## TD-019 — AC7 SDD still says 403 for no-JWT callers; Spring returns 401
+Source: docs/reviews/membership-plans-20260405.md
+Feature: membership-plans
+Added: 2026-04-05
+Effort: S
+`docs/sdd/membership-plans.md` AC7 row states "403 without ADMIN JWT". Spring Security returns 401 for a missing token and 403 for a valid non-admin token. PLAN-24 tests both correctly but without an SDD update. Add a note to the SDD AC7 section acknowledging the 401/403 distinction to prevent future reviewers from flagging the same ambiguity.
