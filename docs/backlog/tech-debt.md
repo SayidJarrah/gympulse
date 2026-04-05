@@ -87,3 +87,31 @@ Feature: auth
 Added: 2026-04-05
 Effort: S
 `axiosInstance.ts:31-35` uses module-level `isRefreshing` and `pendingRequests` variables. These survive Vite hot-module replacement, causing the pending-request queue to hold stale closures after a hot reload, occasionally manifesting as requests that never resolve in development. Encapsulate the queue state in a closure or a small class that is reset on each interceptor setup.
+
+## TD-011 — Silent-error fallback routes authenticated user to /register
+Source: docs/reviews/landing-page-20260405.md
+Feature: landing-page
+Added: 2026-04-05
+Effort: S
+`landingActions.ts:66-73`: when membership loading completes silently (no error code set), an authenticated user is routed to `/register`. Most registration flows redirect authenticated users away, which produces a confusing bounce. Consider routing to `/plans` instead, since it is safe for both members and non-members. Requires a product decision before changing the SDD-documented behaviour.
+
+## TD-012 — fetchMyMembership infinite-loop guard relies on invisible empty-string sentinel
+Source: docs/reviews/landing-page-20260405.md
+Feature: landing-page
+Added: 2026-04-05
+Effort: S
+`LandingPage.tsx:48` guards against re-fetching using `membershipErrorCode === null`. This works because `membershipStore.ts:86` sets `membershipErrorCode` to an empty string `''` (not `null`) on a network failure with no response body. The coupling is invisible — if the store default changes, an infinite fetch loop re-emerges. Add an explanatory comment in `LandingPage.tsx` documenting the dependency, or add an explicit `membershipFetchAttempted: boolean` flag to the store.
+
+## TD-013 — SDD Section 7 resolution matrix omits planAction for membershipLoading row
+Source: docs/reviews/landing-page-20260405.md
+Feature: landing-page
+Added: 2026-04-05
+Effort: S
+`docs/sdd/landing-page.md` Section 7's resolution matrix documents primary, header, and hero CTAs for every condition but does not specify `planAction` for the `membershipLoading = true` state. The implementation at `landingActions.ts:59` returns a primary-variant `/plans` CTA during loading. Update the matrix with a planAction column or a note for the loading row to keep the SDD complete.
+
+## TD-014 — Plan card hover animation not composite-only on low-end mobile
+Source: docs/reviews/landing-page-20260405.md
+Feature: landing-page
+Added: 2026-04-05
+Effort: S
+`PlansPreviewSection.tsx:92` applies `hover:-translate-y-1` without `will-change-transform`. On low-end Android devices this can trigger a paint pass rather than a compositor-only animation. Adding Tailwind's `will-change-transform` class promotes each plan card to its own compositing layer, keeping the hover lift smooth under load.
