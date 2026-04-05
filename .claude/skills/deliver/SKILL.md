@@ -159,3 +159,20 @@ PR format:
 After creating the PR, report how many suggestions were logged:
 > "{N} suggestion(s) logged to docs/backlog/tech-debt.md (TD-{first}–TD-{last})"
 If N is 0, omit this line.
+
+## Post-PR Retrospective
+
+After the PR is created, briefly review what caused friction during this delivery cycle —
+unexpected failures, wasted debugging steps, wrong assumptions, repeated back-and-forth.
+
+For each friction point, ask:
+
+> **"Does a human need to remember this, or should an agent just be told directly?"**
+
+- **Human** (process correction, product judgement, recurring mistake by the operator)
+  → candidate for `docs/lessons.md`
+- **Agent** (coding rule, tool behaviour, spec-writing guard, infra fact)
+  → candidate for the relevant skill (`kotlin-conventions`, `test-manifest`, `react-conventions`, etc.)
+
+Present the candidates to the user with a one-line "human or agent?" verdict for each.
+Do not write to `docs/lessons.md` or any skill without the user's explicit confirmation.

@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.OffsetDateTime
 import java.util.UUID
 
 @Service
@@ -65,6 +66,7 @@ class MembershipPlanService(
         plan.description = request.description!!
         plan.priceInCents = newPrice
         plan.durationDays = request.durationDays!!
+        plan.updatedAt = OffsetDateTime.now()
 
         return membershipPlanRepository.save(plan).toResponse()
     }
@@ -78,6 +80,7 @@ class MembershipPlanService(
         }
 
         plan.status = "INACTIVE"
+        plan.updatedAt = OffsetDateTime.now()
         return membershipPlanRepository.save(plan).toResponse()
     }
 
@@ -90,6 +93,7 @@ class MembershipPlanService(
         }
 
         plan.status = "ACTIVE"
+        plan.updatedAt = OffsetDateTime.now()
         return membershipPlanRepository.save(plan).toResponse()
     }
 

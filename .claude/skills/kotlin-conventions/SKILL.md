@@ -12,6 +12,7 @@ description: GymPulse Kotlin/Spring Boot coding conventions. Load when writing,
 - All timestamps use `OffsetDateTime`, never `LocalDateTime`
 - Soft-delete pattern: `var deletedAt: OffsetDateTime? = null`
 - Relationships: always `FetchType.LAZY`, never EAGER
+- **Never use `@PreUpdate` or `@PrePersist` on `data class` entities** — JPA lifecycle callbacks are silently ignored on Kotlin `data class` entities. Always assign fields explicitly in the service method before calling `save()` (e.g. `entity.updatedAt = OffsetDateTime.now()`).
 
 ## DTOs
 - Kotlin data classes only — never regular classes

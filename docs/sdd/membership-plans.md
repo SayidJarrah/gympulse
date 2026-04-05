@@ -87,6 +87,33 @@ CREATE TRIGGER trg_membership_plans_updated_at
 The `set_updated_at()` trigger function was created in migration `V2b`. Attaching a
 trigger to `membership_plans` reuses it without re-creating it.
 
+### Additive Migrations
+
+#### V7__add_max_bookings_per_month_to_membership_plans.sql
+
+```sql
+ALTER TABLE membership_plans
+  ADD COLUMN max_bookings_per_month INTEGER NOT NULL DEFAULT 0;
+
+ALTER TABLE membership_plans
+  ADD CONSTRAINT chk_membership_plans_max_bookings
+    CHECK (max_bookings_per_month >= 0);
+```
+
+Notes:
+- Added after the initial V4 migration because the column was defined in the domain model
+  but omitted from V4. It is required by `UserMembershipResponse` (user-membership-purchase
+  feature), which denormalises this value from the plan into the membership response.
+- Default value `0` means "unlimited" for all existing plans migrated under V4. No data
+  backfill is required: `0` is the correct business default (no limit enforced).
+- A CHECK constraint `>= 0` is added at the DB level. The application must not write
+  negative values; zero means no monthly cap.
+- No index is added: this column is read via plan ID lookups, not filtered independently.
+- `NOT NULL DEFAULT 0` ensures backward compatibility — the column exists on every row
+  immediately after the migration without a two-phase deployment.
+- This column is NOT currently enforced as a hard booking cap. See Section 6 — Risks & Notes
+  for the partial enforcement caveat.
+
 ### Modified Tables
 
 None. `user_memberships` does not exist yet (owned by the "User membership purchase"
@@ -287,7 +314,9 @@ to set an initial status.
    throw `PlanHasActiveSubscribersException` (409).
 5. Update `name`, `description`, `priceInCents`, `durationDays` on the entity.
    The `@Version` field on the entity handles optimistic locking automatically.
-6. Persist and return 200. The `updated_at` trigger fires on the DB UPDATE.
+   Also explicitly set `updatedAt = OffsetDateTime.now()` on the entity before saving —
+   see the `updatedAt` note in Section 3 for why application-side assignment is required.
+6. Persist and return 200.
 
 ---
 
@@ -413,6 +442,9 @@ data class MembershipPlan(
     @Column(name = "duration_days", nullable = false)
     var durationDays: Int,
 
+    @Column(name = "max_bookings_per_month", nullable = false)
+    var maxBookingsPerMonth: Int = 0,
+
     @Column(nullable = false)
     var status: String = "ACTIVE",
 
@@ -434,9 +466,13 @@ Notes:
 - `status` is stored as a plain `String` rather than a Kotlin `enum` class so that the
   DB CHECK constraint is the single source of truth for allowed values and no JPA
   `@Enumerated` configuration is required.
-- `updatedAt` is managed by the DB trigger; the JPA column is `updatable = false` only
-  for `createdAt`. `updatedAt` is overwritten by the trigger on every UPDATE, so JPA
-  can write it too without conflict — do NOT mark it `updatable = false`.
+- `updatedAt` uses a **dual-write** strategy: the service methods (`updatePlan`,
+  `deactivatePlan`, `activatePlan`) explicitly set `entity.updatedAt = OffsetDateTime.now()`
+  before calling `save()`. This is the reliable mechanism — the application-side write
+  ensures the response body returned to the caller always contains the correct timestamp.
+  The DB trigger (`trg_membership_plans_updated_at`) remains in place as a safety net for
+  any direct DB writes, but the application-side set is the primary guarantee and must not
+  be removed. Do NOT mark `updatedAt` as `updatable = false` in the JPA column annotation.
 
 ### DTO Field Specifications
 
@@ -467,11 +503,21 @@ data class MembershipPlanResponse(
     val description: String,
     val priceInCents: Int,
     val durationDays: Int,
+    val maxBookingsPerMonth: Int,   // 0 = no monthly limit enforced at this stage
     val status: String,
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime
 )
 ```
+
+Notes on `maxBookingsPerMonth`:
+- Sourced from `MembershipPlan.maxBookingsPerMonth` (added by migration V7).
+- A value of `0` means the plan carries no monthly booking cap. The field is included in
+  every plan response so the frontend and the user-membership-purchase feature can read it
+  without an extra API call.
+- Enforcement of this cap against `UserMembership.bookingsUsedThisMonth` is partial: the
+  field exists on the entity but no booking-creation guard currently rejects a request when
+  the monthly limit is reached. See Section 6 — Risks & Notes (Monthly Booking Limit).
 
 ### Repository Specification
 
@@ -479,11 +525,35 @@ data class MembershipPlanResponse(
 ```kotlin
 interface MembershipPlanRepository : JpaRepository<MembershipPlan, UUID> {
     fun findAllByStatus(status: String, pageable: Pageable): Page<MembershipPlan>
+
+    // E2E test-support methods — NOT exposed via any controller endpoint
+    fun findAllByNameStartingWith(prefix: String): List<MembershipPlan>
+
+    @Modifying
+    @Query("DELETE FROM MembershipPlan p WHERE p.name LIKE CONCAT(:prefix, '%')")
+    fun deleteAllByNameStartingWith(@Param("prefix") prefix: String): Int
 }
 ```
 
 The admin "all plans" query uses `findAll(pageable)` from `JpaRepository` directly.
 The public list uses `findAllByStatus("ACTIVE", pageable)`.
+
+#### Test-support methods
+
+`findAllByNameStartingWith(prefix: String): List<MembershipPlan>`
+- Spring Data derived query. Returns all plans whose `name` starts with the given prefix.
+- Purpose: E2E test isolation — test suites create plans with a known name prefix (e.g.
+  `"E2E_"`) and use this method to verify or clean up those rows after the test run.
+- NOT called by any `@RestController`. No HTTP endpoint exposes this method.
+
+`deleteAllByNameStartingWith(prefix: String): Int`
+- Custom JPQL `@Modifying` query. Deletes all `MembershipPlan` rows whose `name` starts
+  with the given prefix. Returns the count of deleted rows.
+- Purpose: E2E test teardown — bulk removal of test-seeded plans without touching
+  production data.
+- `@Modifying` is required because the query modifies data; must be called within a
+  `@Transactional` context (the calling test cleanup service is responsible for this).
+- NOT called by any `@RestController`. No HTTP endpoint exposes this method.
 
 ### Service Specification
 
@@ -588,6 +658,7 @@ export interface MembershipPlan {
   description: string;
   priceInCents: number;
   durationDays: number;
+  maxBookingsPerMonth: number; // 0 = no monthly limit
   status: PlanStatus;
   createdAt: string; // ISO 8601
   updatedAt: string; // ISO 8601
@@ -661,6 +732,136 @@ interface MembershipPlanState {
   setError(message: string | null): void;
 }
 ```
+
+### Frontend Access Gate — `usePlansAccessGate`
+
+**File:** `src/hooks/usePlansAccessGate.ts`
+
+This hook controls which variant of `/plans` a visitor sees and whether they should be
+redirected away from the page entirely.
+
+#### Mode resolution
+
+The hook resolves one of four modes: `'public' | 'loading' | 'authenticated' | 'redirect'`.
+
+| Visitor state | Mode returned |
+|---------------|---------------|
+| Not authenticated, or authenticated as ADMIN | `public` |
+| Authenticated USER, membership state not yet fetched | `loading` |
+| Authenticated USER, membership fetch in flight | `loading` |
+| Authenticated USER, has an ACTIVE membership | `redirect` |
+| Authenticated USER, no active membership (`NO_ACTIVE_MEMBERSHIP`) | `authenticated` |
+
+#### Redirect target
+
+When `mode === 'redirect'`, `redirectTo` is set to the result of
+`buildHomeMembershipPath('already-active')`, which resolves to:
+
+```
+/home?membershipBanner=already-active#membership
+```
+
+`PlansPage` reads this value and renders `<Navigate replace to={accessGate.redirectTo} />`.
+The `replace` flag prevents the browser from adding `/plans` to the history stack,
+so the user cannot navigate back to the plans page with the Back button and trigger the
+redirect loop.
+
+#### Store dependencies
+
+The hook reads from two Zustand stores:
+
+| Store | Fields read |
+|-------|-------------|
+| `authStore` | `isAuthenticated`, `user.role` |
+| `membershipStore` | `activeMembership`, `membershipErrorCode`, `membershipLoading`, `fetchMyMembership` |
+
+If the membership state has not yet been fetched (`activeMembership === null`,
+`membershipErrorCode === null`, `membershipLoading === false`), the hook triggers
+`fetchMyMembership()` via a `useEffect`. This is a lazy fetch — the hook does not
+call the API on every render, only when the state is in the "not yet attempted" state.
+
+#### `canPurchase` flag
+
+`canPurchase: boolean` is `true` only when `mode === 'authenticated'` AND
+`membershipErrorCode === 'NO_ACTIVE_MEMBERSHIP'`. `PlansPage` uses this to decide whether
+to pass an `onActivate` handler to `PlanCard`. When `canPurchase` is `true`, each card
+renders an "Activate" button that opens `PurchaseConfirmModal`.
+
+#### Summary
+
+```typescript
+type PlansAccessMode = 'public' | 'loading' | 'authenticated' | 'redirect'
+
+interface UsePlansAccessGateResult {
+  mode: PlansAccessMode;
+  canPurchase: boolean;
+  redirectTo: string | null;   // non-null only when mode === 'redirect'
+}
+```
+
+---
+
+### PlansPage Authenticated Variants
+
+**File:** `src/pages/plans/PlansPage.tsx`
+
+`PlansPage` renders differently depending on the mode returned by `usePlansAccessGate`.
+The plan list API call is only triggered when `mode === 'public'` or `mode === 'authenticated'`
+(i.e. `plansEnabled = true`). When `mode === 'loading'` or `mode === 'redirect'`, the
+API call is suppressed.
+
+#### PlansContextHeader
+
+**File:** `src/components/plans/PlansContextHeader.tsx`
+
+Shown instead of the standard `PageHeader` when `accessGate.mode === 'authenticated'`.
+
+Displays:
+- A "Back to Home" link (navigates to `/home#membership` via `buildHomeMembershipPath()`).
+- A section label: "MEMBERSHIP ACCESS" (uppercase, tracked, muted).
+- A heading: "Choose the plan that unlocks your booking access".
+- A subheading: "Compare all current options, then continue into the existing purchase flow."
+- An "No active membership" orange badge to make the user's state explicit.
+
+This component is only rendered for authenticated users with no active membership
+(`mode === 'authenticated'`). Guests and unauthenticated visitors see the standard static
+`PageHeader` instead.
+
+#### `highlighted` prop on PlanCard
+
+**Type:** `highlighted?: boolean` (defaults to `false`)
+
+When `true`, the card renders with a distinct visual treatment:
+- Border: `border-green-500/50` (green tint, semi-transparent).
+- Background: `bg-green-500/10` (green wash).
+- A "Highlighted on Home" label badge appears above the plan name.
+
+`PlansPage` sets `highlighted={highlightedPlanId === plan.id}`, where `highlightedPlanId`
+is read from the `?highlight={planId}` URL query parameter via `getHighlightedPlanId()`.
+This allows the home page (or any other surface) to link to `/plans?highlight={id}` and
+visually call out a specific plan without changing page behaviour.
+
+#### `ctaMode` variants on PlanCard
+
+**Type:** `ctaMode?: 'register' | 'details'` (defaults to `'register'`)
+
+| Mode | CTA rendered | When used |
+|------|--------------|-----------|
+| `'register'` | "Get Started" button — navigates to `/register` | Guests / public visitors |
+| `'details'` | "View details" link — navigates to `/plans/:id` | Authenticated users with no active membership |
+
+`PlansPage` sets `ctaMode={accessGate.mode === 'authenticated' ? 'details' : 'register'}`.
+
+Rationale: an authenticated user who has landed on `/plans` to choose a plan should be
+directed to the plan detail page (where the purchase flow begins), not to `/register`.
+Sending them to `/register` would be incorrect since they already have an account.
+
+Note: when `accessGate.canPurchase` is `true` AND `onActivate` is provided to `PlanCard`,
+the `onActivate` handler takes priority over both CTA modes. The card renders an "Activate"
+button that opens `PurchaseConfirmModal` directly. `ctaMode` is only used when `onActivate`
+is absent.
+
+---
 
 ### Error Code to User Message Mapping
 
@@ -787,6 +988,24 @@ error before Bean Validation runs; the existing `GlobalExceptionHandler` `Except
 catch-all will return 500. If a more specific error is needed for malformed JSON, add a
 `HttpMessageNotReadableException` handler — this is a minor edge case and is not
 required by any acceptance criterion.
+
+### Monthly Booking Limit (maxBookingsPerMonth) — Partial Enforcement
+The `max_bookings_per_month` column (added by V7) exists on the `membership_plans` table
+and is mapped to `MembershipPlan.maxBookingsPerMonth`. The value is included in every
+`MembershipPlanResponse` and in the frontend `MembershipPlan` TypeScript type.
+
+However, the booking-creation path does NOT currently check this limit. A member can
+exceed their plan's monthly booking allowance without being rejected. The
+`bookingsUsedThisMonth` counter on `UserMembership` is incremented on each booking but
+is never compared against `maxBookingsPerMonth` at request time.
+
+This is a known open policy question (see domain model: "Monthly booking limit enforcement
+— field exists, enforcement partial"). Until enforcement is added, callers should treat
+`maxBookingsPerMonth = 0` as "unlimited" and any non-zero value as advisory only.
+
+When enforcement is eventually added, it belongs in the booking-creation service, not in
+the membership-plans feature. No SDD change for this feature is required at that time;
+only the booking feature SDD will need updating.
 
 ### Frontend Admin Route Guard
 The `/admin/plans` route must be accessible only to users with `role = 'ADMIN'`. The

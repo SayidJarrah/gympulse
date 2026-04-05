@@ -8,7 +8,7 @@ Read before writing new specs to identify regression risk.
 | Feature | Spec file | ACs covered | Last passing |
 |---------|-----------|-------------|--------------|
 | auth | `e2e/auth.spec.ts` | all | — |
-| membership-plans | `e2e/membership-plans.spec.ts` | all | — |
+| membership-plans | `e2e/membership-plans.spec.ts` | 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,18a,18b,19,20,21 | 2026-04-05 (PLAN-19 fails: AC20 bug; PLAN-20 fails: GET /memberships/{id} 500) |
 | user-membership-purchase | `e2e/user-membership-purchase.spec.ts` | all | — |
 | group-classes-schedule-view | `e2e/group-classes-schedule-view.spec.ts` | all | — |
 | trainer-discovery | `e2e/trainer-discovery.spec.ts` | all | — |

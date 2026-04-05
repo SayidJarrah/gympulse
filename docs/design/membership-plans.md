@@ -63,18 +63,38 @@ Who sees it: Guest / USER
 
 Layout: Full-width page. `bg-[#0F0F0F]` page background. Sticky navbar at top. Content centered in `max-w-7xl mx-auto px-4 sm:px-6 lg:px-8`. Page heading + description above a responsive plan card grid. Pagination controls below the grid.
 
-#### PageHeader
+The page renders in two header variants depending on user state:
+- **Public header** (`PageHeader`) — shown to guests and unauthenticated visitors.
+- **Authenticated header** (`PlansContextHeader`) — shown to authenticated users with no active membership.
+
+Active members are never shown this page — they are redirected to `/home?membershipBanner=already-active#membership` before the page body renders.
+
+#### PageHeader (guest variant)
+- Shown when: visitor is a guest or unauthenticated.
 - Data shown: Static heading "Membership Plans", subheading "Choose the plan that fits your goals."
 - User actions: None (read only)
 - Tailwind structure:
   ```
-  <div className="pt-12 pb-8">
+  <div className="pt-4 pb-4">
     <h1 className="text-3xl font-bold leading-tight text-white">Membership Plans</h1>
     <p className="mt-2 text-base font-normal leading-normal text-gray-400">
       Choose the plan that fits your goals.
     </p>
   </div>
   ```
+
+#### PlansContextHeader (authenticated no-membership variant)
+- Shown when: visitor is authenticated as USER with no active membership.
+- Component: `src/components/plans/PlansContextHeader.tsx`
+- Purpose: frames the page as a prerequisite purchase step, not a general browsing experience.
+- Data shown:
+  - "Back to Home" link — navigates to `/home#membership` via `buildHomeMembershipPath()`.
+  - Section label: "MEMBERSHIP ACCESS" (uppercase, `tracking-[0.18em]`, `text-gray-400`).
+  - Heading: "Choose the plan that unlocks your booking access".
+  - Subheading: "Compare all current options, then continue into the existing purchase flow."
+  - "No active membership" orange badge (`text-orange-300`, orange border and background).
+- User actions: "Back to Home" link only.
+- Tailwind surface: `rounded-[28px] border border-gray-800 bg-gray-900 p-6 shadow-xl shadow-black/30`.
 
 #### PlanGrid
 - Data shown: Paginated array of `MembershipPlan` objects (`content` from API). `totalElements` shown as a muted count ("5 plans available").
@@ -88,9 +108,38 @@ Layout: Full-width page. `bg-[#0F0F0F]` page background. Sticky navbar at top. C
 - Empty state: centered illustration + text "No plans available" + muted subtext "Check back later for available membership options." (no icon button — this is a read-only page).
 - Error state: centered text "Failed to load plans." + secondary button "Try again" that re-triggers the fetch.
 
-#### PlanCard (public variant)
+#### PlanCard
+- Component: `src/components/plans/PlanCard.tsx`
 - Data shown: `name`, `description` (truncated to 2 lines with `line-clamp-2`), `priceInCents` (formatted as dollars: `$29.99`), `durationDays` (formatted as "30 days" or "1 year" for 365).
-- User actions: Entire card is a link to `/plans/:id`. "Get Started" button at card bottom navigates to `/register`.
+- User actions: Entire card is a link to `/plans/:id` (via absolute-positioned `<Link>`).
+
+**`highlighted` prop** (`boolean`, default `false`):
+
+When `true`, indicates this plan was linked from another surface (e.g. home page) with
+`/plans?highlight={planId}`. Visual treatment:
+- Card border: `border-green-500/50` (instead of `border-gray-800`).
+- Card background: `bg-green-500/10` (instead of `bg-gray-900`).
+- A "Highlighted on Home" label badge appears above the plan name (`text-green-300`, green border/bg).
+- Cards with `highlighted={false}` are unaffected.
+
+**`ctaMode` prop** (`'register' | 'details'`, default `'register'`):
+
+Controls which call-to-action button appears at the bottom of the card.
+
+| Mode | CTA shown | Navigation target | When used |
+|------|-----------|-------------------|-----------|
+| `'register'` | "Get Started" button | `/register` | Guests / public visitors |
+| `'details'` | "View details" link | `/plans/:id` | Authenticated users with no active membership |
+
+`PlansPage` sets `ctaMode` based on the access gate mode:
+- `accessGate.mode === 'authenticated'` → `ctaMode='details'`
+- All other modes → `ctaMode='register'` (default)
+
+**`onActivate` handler** (`() => void`, optional):
+
+When provided (only when `accessGate.canPurchase === true`), the card renders an
+"Activate" button instead of the `ctaMode` CTA. Clicking it opens `PurchaseConfirmModal`
+for the plan. The `onActivate` handler takes precedence over `ctaMode`.
 - Tailwind structure:
   ```
   <a
@@ -357,7 +406,8 @@ Layout: Two-column admin shell. Left: `Sidebar` (from design system 6H). Right: 
   2. **Description** — `<textarea>` (3 rows), required. Placeholder: "Describe what is included in this plan." Error: "Description must not be blank."
   3. **Price** — number input, required, min 1. Label: "Price (in cents)". Helper text: "Enter the price in cents — e.g. 2999 for $29.99." Error: "Price must be greater than zero."
   4. **Duration** — number input, required, min 1. Label: "Duration (days)". Helper text: "Number of days the membership is valid." Error: "Duration must be at least one day."
-- Inline error banner (above the footer, inside the modal body): shown for server-side errors that are not field-level (`PLAN_HAS_ACTIVE_SUBSCRIBERS`, `PLAN_EDIT_CONFLICT`). Uses the error status color pattern from the design system.
+- Inline error banner (above the footer, inside the modal body): shown for server-side errors that are not field-level (`PLAN_EDIT_CONFLICT`). Uses the error status color pattern from the design system.
+- `PLAN_HAS_ACTIVE_SUBSCRIBERS` is treated as a **field-level** error: the error message is displayed below the Price input with a red error border, not in the banner. This makes it immediately clear to the admin which field caused the conflict.
 - Tailwind structure for the form body:
   ```
   <form onSubmit={handleSubmit} className="flex flex-col gap-5">
@@ -480,7 +530,7 @@ Layout: Two-column admin shell. Left: `Sidebar` (from design system 6H). Right: 
 | `PLAN_NOT_FOUND` | "This plan could not be found." | PlanDetailNotFound state (public); inline error on admin action if plan was deleted out of band |
 | `PLAN_ALREADY_INACTIVE` | "This plan is already inactive." | Inside StatusConfirmationModal body |
 | `PLAN_ALREADY_ACTIVE` | "This plan is already active." | Inside StatusConfirmationModal body |
-| `PLAN_HAS_ACTIVE_SUBSCRIBERS` | "Cannot change the price while members are subscribed to this plan." | Inside PlanFormModal server error banner |
+| `PLAN_HAS_ACTIVE_SUBSCRIBERS` | "Cannot change the price while members are subscribed to this plan." | Below Price input field (field-level error, red border on Price input) |
 | `PLAN_EDIT_CONFLICT` | "Another admin updated this plan at the same time. Please reload and try again." | Inside PlanFormModal server error banner |
 | `ACCESS_DENIED` | "You do not have permission to perform this action." | Inside PlanFormModal server error banner |
 | `INVALID_STATUS_FILTER` | "Invalid status filter. Use ACTIVE or INACTIVE." | Should not appear in the UI (tabs generate valid values); log as unexpected error |
