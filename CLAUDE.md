@@ -33,6 +33,8 @@ gympulse/
 │   ├── sdd/           # Per-feature technical design
 │   ├── design/        # UI/UX specs + prototypes
 │   ├── gaps/          # Audit gap reports
+│   ├── reviews/       # Post-deliver review docs
+│   ├── backlog/       # Tech debt (auto-populated by /deliver reviewer)
 │   ├── qa/            # Test manifest
 │   └── lessons.md     # Self-improvement lessons
 └── docker-compose.review.yml
@@ -59,6 +61,7 @@ gympulse/
 | `/deliver {feature}` | New feature — full pipeline from current stage |
 | `/redesign {page}` | Existing page needs visual/UX upgrade |
 | `/audit {feature}` | Feature is "done" but completeness is uncertain |
+| `/backlog` | View tech debt items; `/backlog {feature}` to filter; `/backlog close TD-N` to remove |
 | `/run` | Start the stack with health diagnostics |
 | `/verify` | Run full E2E suite |
 | `/status` | Reconstruct what's in flight from git + docs |
