@@ -102,6 +102,13 @@ export function MemberHomePage() {
       <Navbar />
 
       <main className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 sm:px-6 lg:px-8">
+        <MemberHomeHero
+          firstName={firstName}
+          hasActiveMembership={membership !== null}
+          activePlanName={membership?.planName ?? null}
+          stats={heroStats}
+        />
+
         <section id="membership" className="scroll-mt-24">
           <div className="flex flex-col gap-4">
             {banner ? <MembershipAccessBanner banner={banner} /> : null}
@@ -116,20 +123,13 @@ export function MemberHomePage() {
                 void retryMembership()
               }}
               onManageMembership={() => navigate('/membership')}
-              onOpenSchedule={() => navigate('/schedule')}
+              onExploreClasses={() => navigate('/schedule')}
               onBrowseTrainers={() => navigate('/trainers')}
               browsePlansHref={buildPlansPath({ source: 'home' })}
               getPlanHref={(planId) => buildPlansPath({ source: 'home', highlight: planId })}
             />
           </div>
         </section>
-
-        <MemberHomeHero
-          firstName={firstName}
-          hasActiveMembership={membership !== null}
-          activePlanName={membership?.planName ?? null}
-          stats={heroStats}
-        />
 
         <QuickActionsPanel
           hasActiveMembership={membership !== null}

@@ -161,7 +161,7 @@ describe('MemberHomePage', () => {
 
     expect(await screen.findByText('Membership activated')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Monthly Plus' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Open schedule' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Explore classes' })).toBeInTheDocument()
 
     await waitFor(() => {
       expect(screen.getByTestId('location')).toHaveTextContent('/home#membership')
@@ -174,7 +174,7 @@ describe('MemberHomePage', () => {
 
     renderPage()
 
-    expect(await screen.findByRole('heading', { name: 'Activate your access' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'No active membership' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Compare all plans' })).toHaveAttribute(
       'href',
       '/plans?source=home'
@@ -193,7 +193,7 @@ describe('MemberHomePage', () => {
     renderPage()
 
     expect(
-      await screen.findByRole('heading', { name: 'Memberships are temporarily unavailable' })
+      await screen.findByRole('heading', { name: 'No active membership' })
     ).toBeInTheDocument()
     expect(screen.getByText('No plans available right now')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Browse trainers' })).toBeInTheDocument()
@@ -213,7 +213,8 @@ describe('MemberHomePage', () => {
     renderPage()
 
     expect(await screen.findByRole('heading', { name: 'Monthly Plus' })).toBeInTheDocument()
-    expect(screen.getByText('Could not load trainers right now.')).toBeInTheDocument()
+    expect(screen.getByText('Trainers unavailable')).toBeInTheDocument()
+    expect(screen.getByText('Invalid sort selection. Please refresh the page.')).toBeInTheDocument()
     expect(screen.getByText('Yoga Flow')).toBeInTheDocument()
   })
 
@@ -231,7 +232,8 @@ describe('MemberHomePage', () => {
     renderPage()
 
     expect(await screen.findByRole('heading', { name: 'Monthly Plus' })).toBeInTheDocument()
-    expect(screen.getAllByText('Could not load upcoming classes right now.')).toHaveLength(2)
+    expect(screen.getByText('Classes unavailable')).toBeInTheDocument()
+    expect(screen.getByText('Could not load upcoming classes right now.')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Jane Smith' })).toBeInTheDocument()
   })
 

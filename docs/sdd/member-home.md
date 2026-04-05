@@ -447,6 +447,42 @@ Form and interaction constraints:
 
 ---
 
+## 5a. Post-Purchase Flow: `accessFlowNavigation` Protocol
+
+This section documents the implementation of PRD AC 24 ("Home page updates to ACTIVE state after purchase").
+
+The actual implementation navigates to `/plans` with query params rather than embedding `PurchaseConfirmModal` inline. The `accessFlowNavigation` utility in `frontend/src/utils/accessFlowNavigation.ts` manages this round-trip.
+
+### URL construction
+
+`buildPlansPath(options)` generates the URL for the plan browse/activate flow:
+- `buildPlansPath({ source: 'home' })` → `/plans?source=home`
+- `buildPlansPath({ source: 'home', highlight: planId })` → `/plans?source=home&highlight={planId}`
+
+The `highlight` param signals to `PlansPage` that a specific plan should be visually emphasised on arrival.
+
+### `membershipBanner` query param
+
+After a successful plan activation on `/plans`, the user is returned to `/home` with a `membershipBanner` query param:
+
+| Value | Meaning |
+|-------|---------|
+| `activated` | Plan was successfully purchased and activated |
+| `already-active` | User attempted to activate but already had an active membership |
+
+### Reading and stripping the banner param
+
+On mount, `MemberHomePage` calls `getMembershipBanner(searchParams)` to read the current `membershipBanner` value from the URL. If a recognised value is found:
+1. The banner state is set, causing `MembershipAccessBanner` to render.
+2. `withoutMembershipBanner(searchParams)` strips the `membershipBanner` key from the URL.
+3. `navigate({ …, search }, { replace: true })` replaces the history entry so the param is not visible on back-navigation or page refresh.
+
+### Relationship to PRD AC 24
+
+PRD AC 24 requires the home page to reflect ACTIVE membership after a purchase. This is satisfied by the round-trip: the membership section re-fetches on mount (the `useMemberHomeMembershipSection` hook re-runs), and the `activated` banner confirms to the user that the state change happened. The membership card transitions from `empty` mode to `active` mode during the same page load.
+
+---
+
 ## 6. Risks & Notes
 - The main product assumption carried into this SDD is that trainer and class previews are visible to any authenticated `USER`, including users without an active membership. This is consistent with `docs/design/member-home.md`, but the PRD still lists it as an open question.
 - The full `/schedule` page remains membership-gated. Member Home preview visibility does not imply schedule entitlement.

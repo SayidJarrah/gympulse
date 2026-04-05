@@ -41,6 +41,20 @@ class MemberHomeServiceTest {
     }
 
     @Test
+    fun `throws when time zone is null`() {
+        assertThrows<MemberHomeInvalidTimeZoneException> {
+            service.getUpcomingClassesPreview(null)
+        }
+    }
+
+    @Test
+    fun `throws when time zone is blank`() {
+        assertThrows<MemberHomeInvalidTimeZoneException> {
+            service.getUpcomingClassesPreview("")
+        }
+    }
+
+    @Test
     fun `empty result keeps 14 day preview window`() {
         val timeZone = "Europe/Warsaw"
         val zoneId = ZoneId.of(timeZone)
