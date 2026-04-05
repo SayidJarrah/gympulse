@@ -1,6 +1,7 @@
 package com.gymflow.service
 
 import com.gymflow.dto.E2eCleanupResponse
+import com.gymflow.repository.BookingRepository
 import com.gymflow.repository.MembershipPlanRepository
 import com.gymflow.repository.UserMembershipRepository
 import com.gymflow.repository.UserRepository
@@ -11,7 +12,8 @@ import org.springframework.transaction.annotation.Transactional
 class E2eTestSupportService(
     private val membershipPlanRepository: MembershipPlanRepository,
     private val userRepository: UserRepository,
-    private val userMembershipRepository: UserMembershipRepository
+    private val userMembershipRepository: UserMembershipRepository,
+    private val bookingRepository: BookingRepository
 ) {
 
     @Transactional
@@ -35,6 +37,7 @@ class E2eTestSupportService(
             0
         } else {
             val userIds = matchedUsers.map { it.id }
+            bookingRepository.deleteAllByUserIds(userIds)
             val deletedCount = userMembershipRepository.deleteAllByUserIds(userIds)
             val distinctEmailPrefixes = matchedUsers
                 .map { user -> normalizedEmailPrefixes.first { prefix -> user.email.startsWith(prefix) } }
@@ -50,6 +53,8 @@ class E2eTestSupportService(
             .distinctBy { it.id }
 
         if (matchedPlans.isNotEmpty()) {
+            val planIds = matchedPlans.map { it.id }
+            userMembershipRepository.deleteAllByPlanIds(planIds)
             val distinctPlanPrefixes = matchedPlans
                 .map { plan -> normalizedPlanPrefixes.first { prefix -> plan.name.startsWith(prefix) } }
                 .distinct()

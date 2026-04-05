@@ -179,6 +179,20 @@ Added: 2026-04-05
 Effort: M
 `getDistinctSpecializations()` in `frontend/src/api/trainerDiscovery.ts` fetches the first 200 trainers sorted A–Z and derives distinct specializations entirely client-side. If the gym grows beyond 200 trainers, specializations from later pages are silently omitted from the filter panel without any warning to the user. The correct fix is a dedicated `GET /api/v1/trainers/specializations` endpoint that queries `SELECT DISTINCT unnest(specialisations) FROM trainers WHERE deleted_at IS NULL` and returns a sorted string array.
 
+## TD-025 — E2e cleanup response omits plan-path membership deletion count
+Source: docs/reviews/e2e-cleanup-fk-constraint-20260405.md
+Feature: e2e-cleanup
+Added: 2026-04-05
+Effort: S
+`E2eTestSupportService.kt:52-54` calls `userMembershipRepository.deleteAllByPlanIds(planIds)` but discards the return value. The `deletedMemberships` field in `E2eCleanupResponse` only counts memberships removed via the user path. Capture the return value and add it to the counter so the response accurately reports all membership rows removed during a cleanup run.
+
+## TD-026 — deleteAllByPlanIds and deleteAllByUserIds lack method-level @Transactional
+Source: docs/reviews/e2e-cleanup-fk-constraint-20260405.md
+Feature: e2e-cleanup
+Added: 2026-04-05
+Effort: S
+Both `@Modifying` methods in `UserMembershipRepository` omit `@Transactional` at the method level. They work today only because every caller is already in a service-level transaction. A bare call from a non-transactional context would throw `TransactionRequiredException` at runtime. Add `@Transactional` to both repository methods as a defensive guard, consistent with Spring Data JPA convention for `@Modifying` queries.
+
 ## TD-024 — SDD Section 2 sample JSON still shows "page" field, contradicts Section 7
 Source: docs/reviews/trainer-discovery-20260405.md
 Feature: trainer-discovery

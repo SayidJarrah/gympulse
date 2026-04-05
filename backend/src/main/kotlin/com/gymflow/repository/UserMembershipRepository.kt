@@ -40,6 +40,10 @@ interface UserMembershipRepository : JpaRepository<UserMembership, UUID> {
     @Query("DELETE FROM UserMembership m WHERE m.userId IN :userIds")
     fun deleteAllByUserIds(@Param("userIds") userIds: Collection<UUID>): Int
 
+    @Modifying
+    @Query("DELETE FROM UserMembership m WHERE m.planId IN :planIds")
+    fun deleteAllByPlanIds(@Param("planIds") planIds: Collection<UUID>): Int
+
     @Query("SELECT COUNT(m) FROM UserMembership m WHERE m.planId = :planId AND m.status = 'ACTIVE'")
     fun countActiveByPlanId(@Param("planId") planId: UUID): Long
 
