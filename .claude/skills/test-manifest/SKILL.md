@@ -14,6 +14,17 @@ The manifest lives at `docs/qa/test-manifest.md`. Tester owns and maintains it.
 2. Check the Regression Risk Map — identify which existing specs the new feature might affect
 3. Flag at-risk specs in your report before writing anything new
 4. If at-risk specs exist: run them first to confirm they currently pass (establish baseline)
+5. **For every API call in a new spec, verify the endpoint exists in the controller before writing it.**
+   Grep the relevant controller file for the exact `@GetMapping`/`@PostMapping`/`@PutMapping` path.
+   If the endpoint does not exist, use the correct substitute or mark the test pending — never
+   call a non-existent path and assume it will return a useful response.
+
+## Stack Mapping (local runs)
+
+Playwright specs in `frontend/e2e/` target the **review stack** (port 8080, `docker-compose.review.yml`).
+The E2E stack (port 8081, `docker-compose.e2e.yml`) is only used by `/verify`.
+When a code fix needs to be verified by running specs locally, rebuild the review stack backend —
+rebuilding the E2E stack has no effect on local spec runs.
 
 ## After Writing New Specs
 
