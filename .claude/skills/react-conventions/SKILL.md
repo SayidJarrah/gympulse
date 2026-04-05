@@ -44,3 +44,9 @@ export const errorMessages: Record<string, string> = {
 - Zustand for global state (auth, shared entity lists)
 - `useState` for local component state
 - Never use context for data that changes frequently
+
+## Disabled Buttons with Tooltips
+Never use `disabled={true}` on a button that must show a tooltip (e.g. guest-state buttons).
+HTML `disabled` suppresses `title` attribute tooltip firing on touch devices and in Firefox/Safari.
+Instead: use `aria-disabled="true"` on the button, wrap it in `<span title="...">`, and block
+clicks via `onClick={condition ? handler : undefined}` + `pointer-events-none` class.
