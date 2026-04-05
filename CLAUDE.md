@@ -40,6 +40,11 @@ gympulse/
 └── docker-compose.review.yml
 ```
 
+## Git Rules — Non-Negotiable
+- **Never commit directly to `main`** — all changes go through a feature branch and PR, no exceptions
+- Branch naming: `feature/{slug}`, `fix/{slug}`, `chore/{slug}`
+- When work doesn't belong to an open feature branch, create a new `chore/` branch for it
+
 ## Security Rules — Non-Negotiable
 - **Never hardcode secrets** — use env vars: `@Value("\${...}")` in Spring, `import.meta.env` in Vite
 - **Never commit `.env`** — `.env.example` with placeholders only

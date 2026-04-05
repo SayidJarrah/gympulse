@@ -17,6 +17,12 @@ Applies when: {situation where this rule kicks in}
 
 <!-- Add lessons below this line -->
 
+## Lesson 3 — Never commit directly to main
+Date: 2026-04-05
+Correction: A workflow fix was committed directly to main instead of going through a PR.
+Rule: All commits must go to a feature/fix/chore branch and merge via PR. Before committing, check the current branch with `git branch --show-current`. If it is `main`, stop — create or switch to an appropriate branch first.
+Applies when: Any time code, config, or docs changes are about to be committed.
+
 ## Lesson 2 — Always check if running stack is stale before declaring it ready
 Date: 2026-04-05
 Correction: User pointed out the running stack was 22 hours old and therefore not running the latest code changes.
