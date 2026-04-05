@@ -20,6 +20,26 @@ If Docker is not running: **STOP.** Tell user to start Docker Desktop.
 If compose file missing: **STOP.** File is required.
 If a port is in use: identify the conflicting process, ask user before stopping it.
 
+## Staleness Check
+
+If the stack is already running, check whether the containers are older than the latest commit:
+
+```bash
+# Last git commit time (Unix timestamp)
+LAST_COMMIT=$(git log -1 --format=%ct)
+
+# Earliest container start time among backend and frontend
+CONTAINER_START=$(docker inspect --format='{{.State.StartedAt}}' gympulse-backend-1 gympulse-frontend-1 2>/dev/null \
+  | sort | head -1 | xargs -I{} date -j -f "%Y-%m-%dT%H:%M:%S" "$(echo {} | cut -c1-19)" "+%s" 2>/dev/null \
+  || echo 0)
+
+[ "$LAST_COMMIT" -gt "$CONTAINER_START" ] && echo "STALE" || echo "FRESH"
+```
+
+- **STALE** — containers started before the last commit. Rebuild required. Proceed to **Detect What Changed**.
+- **FRESH** — containers are up to date. Skip to **Health Wait** to confirm the stack is healthy, then report success.
+- If containers are not running at all, proceed to **Detect What Changed**.
+
 ## Detect What Changed
 
 ```bash
@@ -36,14 +56,14 @@ git diff --name-only HEAD~1 HEAD 2>/dev/null || git status --short
 
 **Backend (if needed):**
 ```bash
-docker-compose -f docker-compose.review.yml build backend
+docker compose -f docker-compose.review.yml build backend
 ```
 If fails with compilation error in code you just wrote: fix the code, retry.
 If fails for any other reason: **STOP** and report the full error.
 
 **Frontend (if needed):**
 ```bash
-docker-compose -f docker-compose.review.yml build frontend
+docker compose -f docker-compose.review.yml build frontend
 ```
 If fails with TypeScript error in code you just wrote: fix, retry.
 If fails for any other reason: **STOP** and report the full error.
@@ -51,8 +71,8 @@ If fails for any other reason: **STOP** and report the full error.
 ## Start
 
 ```bash
-docker-compose -f docker-compose.review.yml down --remove-orphans
-docker-compose -f docker-compose.review.yml up -d
+docker compose -f docker-compose.review.yml down --remove-orphans
+docker compose -f docker-compose.review.yml up -d
 ```
 
 ## Health Wait (60s max)
@@ -69,8 +89,8 @@ done
 If health never returns after 60s:
 
 ```bash
-docker-compose -f docker-compose.review.yml logs --tail=50 backend
-docker-compose -f docker-compose.review.yml logs --tail=50 frontend
+docker compose -f docker-compose.review.yml logs --tail=50 backend
+docker compose -f docker-compose.review.yml logs --tail=50 frontend
 ```
 
 Classify and respond:

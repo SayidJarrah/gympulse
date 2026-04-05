@@ -17,6 +17,12 @@ Applies when: {situation where this rule kicks in}
 
 <!-- Add lessons below this line -->
 
+## Lesson 2 — Always check if running stack is stale before declaring it ready
+Date: 2026-04-05
+Correction: User pointed out the running stack was 22 hours old and therefore not running the latest code changes.
+Rule: When `/run` finds the stack already running, compare container start time against last git commit timestamp. If containers are older than the last commit, treat it as stale and rebuild before reporting success. Never report "stack is running" without confirming it reflects the current code.
+Applies when: `/run` finds ports already occupied by Docker containers.
+
 ## Lesson 1 — Update review doc when blockers are fixed
 Date: 2026-04-05
 Correction: User noticed the review doc still showed blockers as `[ ]` after they had been fixed, making the PR state look blocked when it was actually clear.
