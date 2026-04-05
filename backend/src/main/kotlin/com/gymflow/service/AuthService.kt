@@ -30,7 +30,7 @@ class AuthService(
 
     @Transactional
     fun register(email: String, password: String): RegisterResponse {
-        if (userRepository.findByEmail(email) != null) {
+        if (userRepository.findByEmailAndDeletedAtIsNull(email) != null) {
             throw EmailAlreadyExistsException("An account with email '$email' already exists")
         }
 
@@ -53,7 +53,7 @@ class AuthService(
 
     @Transactional
     fun login(email: String, password: String): LoginResponse {
-        val user = userRepository.findByEmail(email)
+        val user = userRepository.findByEmailAndDeletedAtIsNull(email)
             ?: throw InvalidCredentialsException("Invalid email or password")
 
         if (!passwordEncoder.matches(password, user.passwordHash)) {

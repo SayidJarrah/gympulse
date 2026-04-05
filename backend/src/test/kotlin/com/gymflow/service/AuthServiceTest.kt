@@ -45,7 +45,7 @@ class AuthServiceTest {
         val password = "secret99"
         val userSlot = slot<User>()
 
-        every { userRepository.findByEmail(email) } returns null
+        every { userRepository.findByEmailAndDeletedAtIsNull(email) } returns null
         every { userRepository.save(capture(userSlot)) } answers { userSlot.captured }
 
         val response = authService.register(email, password)
@@ -63,7 +63,7 @@ class AuthServiceTest {
         val email = "alice@example.com"
         val existingUser = buildUser(email = email)
 
-        every { userRepository.findByEmail(email) } returns existingUser
+        every { userRepository.findByEmailAndDeletedAtIsNull(email) } returns existingUser
 
         assertThrows<EmailAlreadyExistsException> {
             authService.register(email, "password1")
@@ -78,7 +78,7 @@ class AuthServiceTest {
         val password = "mypassw0rd"
         val userSlot = slot<User>()
 
-        every { userRepository.findByEmail(email) } returns null
+        every { userRepository.findByEmailAndDeletedAtIsNull(email) } returns null
         every { userRepository.save(capture(userSlot)) } answers { userSlot.captured }
 
         authService.register(email, password)
@@ -101,7 +101,7 @@ class AuthServiceTest {
         val password = "secret99"
         val user = buildUser(email = email, passwordHash = passwordEncoder.encode(password))
 
-        every { userRepository.findByEmail(email) } returns user
+        every { userRepository.findByEmailAndDeletedAtIsNull(email) } returns user
         every { jwtService.generateToken(user) } returns "mock.jwt.token"
         every { jwtService.getExpiresInSeconds() } returns 3600L
         every { refreshTokenRepository.save(any()) } answers { firstArg() }
@@ -116,7 +116,7 @@ class AuthServiceTest {
 
     @Test
     fun `login - email not found - throws InvalidCredentialsException`() {
-        every { userRepository.findByEmail(any()) } returns null
+        every { userRepository.findByEmailAndDeletedAtIsNull(any()) } returns null
 
         assertThrows<InvalidCredentialsException> {
             authService.login("unknown@example.com", "password1")
@@ -128,7 +128,7 @@ class AuthServiceTest {
         val email = "alice@example.com"
         val user = buildUser(email = email, passwordHash = passwordEncoder.encode("correctpass"))
 
-        every { userRepository.findByEmail(email) } returns user
+        every { userRepository.findByEmailAndDeletedAtIsNull(email) } returns user
 
         assertThrows<InvalidCredentialsException> {
             authService.login(email, "wrongpassword")
@@ -138,7 +138,7 @@ class AuthServiceTest {
     @Test
     fun `login - wrong password and email not found - both throw same exception type`() {
         // Verifies user enumeration is not possible (same exception type for both cases)
-        every { userRepository.findByEmail("no@example.com") } returns null
+        every { userRepository.findByEmailAndDeletedAtIsNull("no@example.com") } returns null
 
         val ex1 = assertThrows<InvalidCredentialsException> {
             authService.login("no@example.com", "anything")
@@ -146,7 +146,7 @@ class AuthServiceTest {
 
         val email = "alice@example.com"
         val user = buildUser(email = email, passwordHash = passwordEncoder.encode("correctpass"))
-        every { userRepository.findByEmail(email) } returns user
+        every { userRepository.findByEmailAndDeletedAtIsNull(email) } returns user
 
         val ex2 = assertThrows<InvalidCredentialsException> {
             authService.login(email, "wrongpass")

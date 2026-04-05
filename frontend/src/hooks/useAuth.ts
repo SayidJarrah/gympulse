@@ -29,19 +29,44 @@ interface UseAuthReturn {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  fieldErrors: Record<string, string> | null;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+}
+
+/**
+ * Parses a VALIDATION_ERROR message of the form "field: msg; field2: msg2"
+ * into a field-keyed record. Falls back to null if the format doesn't match.
+ */
+function parseValidationErrors(message: string): Record<string, string> | null {
+  const parts = message.split(';').map((p) => p.trim())
+  const result: Record<string, string> = {}
+  let parsed = false
+  for (const part of parts) {
+    const colonIdx = part.indexOf(':')
+    if (colonIdx > 0) {
+      const field = part.slice(0, colonIdx).trim()
+      const msg = part.slice(colonIdx + 1).trim()
+      if (field && msg) {
+        result[field] = msg
+        parsed = true
+      }
+    }
+  }
+  return parsed ? result : null
 }
 
 export function useAuth(): UseAuthReturn {
   const { user, isAuthenticated, setTokens, setUser, clearAuth, refreshToken } = useAuthStore()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string> | null>(null)
 
   const login = useCallback(async (email: string, password: string): Promise<void> => {
     setIsLoading(true)
     setError(null)
+    setFieldErrors(null)
     try {
       const response = await authApi.login({ email, password })
       setTokens(response.accessToken, response.refreshToken)
@@ -53,14 +78,22 @@ export function useAuth(): UseAuthReturn {
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>
       const code = axiosError.response?.data?.code
-      if (code === 'INVALID_CREDENTIALS') {
+      const message = axiosError.response?.data?.error ?? ''
+      if (code === 'VALIDATION_ERROR') {
+        const parsed = parseValidationErrors(message)
+        if (parsed) {
+          setFieldErrors(parsed)
+        } else {
+          setError(message || 'Validation error.')
+        }
+      } else if (code === 'INVALID_CREDENTIALS') {
         setError('Incorrect email or password. Please try again.')
       } else if (code === 'REFRESH_TOKEN_EXPIRED') {
         setError('Your session has expired. Please sign in again.')
       } else if (code === 'REFRESH_TOKEN_INVALID') {
         setError('Your session is invalid. Please sign in again.')
       } else {
-        setError(axiosError.response?.data?.error ?? 'An unexpected error occurred.')
+        setError(message || 'An unexpected error occurred.')
       }
       throw err
     } finally {
@@ -71,21 +104,25 @@ export function useAuth(): UseAuthReturn {
   const register = useCallback(async (email: string, password: string): Promise<void> => {
     setIsLoading(true)
     setError(null)
+    setFieldErrors(null)
     try {
       await authApi.register({ email, password })
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>
       const code = axiosError.response?.data?.code
+      const message = axiosError.response?.data?.error ?? ''
       if (code === 'EMAIL_ALREADY_EXISTS') {
         setError('An account with this email already exists. Please log in.')
       } else if (code === 'VALIDATION_ERROR') {
-        setError(axiosError.response?.data?.error ?? 'Validation error.')
-      } else if (code === 'REFRESH_TOKEN_EXPIRED') {
-        setError('Your session has expired. Please sign in again.')
-      } else if (code === 'REFRESH_TOKEN_INVALID') {
-        setError('Your session is invalid. Please sign in again.')
+        // Display field-level errors inline as the design spec requires (Flow 1 step 5c)
+        const parsed = parseValidationErrors(message)
+        if (parsed) {
+          setFieldErrors(parsed)
+        } else {
+          setError(message || 'Validation error.')
+        }
       } else {
-        setError(axiosError.response?.data?.error ?? 'An unexpected error occurred.')
+        setError(message || 'An unexpected error occurred.')
       }
       throw err
     } finally {
@@ -96,6 +133,7 @@ export function useAuth(): UseAuthReturn {
   const logout = useCallback(async (): Promise<void> => {
     setIsLoading(true)
     setError(null)
+    setFieldErrors(null)
     try {
       if (refreshToken) {
         await authApi.logout(refreshToken)
@@ -113,6 +151,7 @@ export function useAuth(): UseAuthReturn {
     isAuthenticated,
     isLoading,
     error,
+    fieldErrors,
     login,
     register,
     logout,

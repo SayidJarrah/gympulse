@@ -1,8 +1,10 @@
 import { test, expect, type APIRequestContext, type Page } from '@playwright/test';
 
 const API_BASE = process.env.E2E_API_BASE ?? 'http://localhost:8080/api/v1';
-const ADMIN_EMAIL = 'admin@gymflow.local';
-const ADMIN_PASSWORD = 'Admin@1234';
+const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL ?? 'admin@gymflow.local';
+// PRODUCTION NOTE: set E2E_ADMIN_PASSWORD env var; the default here is for local dev only.
+// Rotate the seed password before provisioning any non-local environment.
+const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD ?? 'Admin@1234';
 
 interface LoginResponse {
   accessToken: string;
@@ -270,6 +272,163 @@ test.describe('Auth', () => {
     expect(persistedAuth.accessToken).toBe(refreshedTokens.accessToken);
     expect(persistedAuth.refreshToken).toBe(refreshedTokens.refreshToken);
     expect(persistedAuth.refreshToken).not.toBe(session.refreshToken);
+  });
+
+  // -----------------------------------------------------------------------
+  // API-level tests: AC-2, AC-6, AC-8/9, AC-15/17, AC-19/20, AC-21, AC-24/25
+  // -----------------------------------------------------------------------
+
+  test('AUTH-API-01 (AC-2) register 201 response shape — role is always USER', async ({ request }) => {
+    const email = uniqueEmail('e2e-api-ac2');
+    const response = await request.post(`${API_BASE}/auth/register`, {
+      data: { email, password: 'ValidPass1' },
+    });
+
+    expect(response.status()).toBe(201);
+    const body = await response.json() as {
+      id: string;
+      email: string;
+      role: string;
+      createdAt: string;
+    };
+    expect(typeof body.id).toBe('string');
+    expect(body.email).toBe(email);
+    expect(body.role).toBe('USER');
+    expect(typeof body.createdAt).toBe('string');
+    // createdAt must be ISO 8601
+    expect(() => new Date(body.createdAt)).not.toThrow();
+  });
+
+  test('AUTH-API-02 (AC-6) role field in register body is silently ignored', async ({ request }) => {
+    const email = uniqueEmail('e2e-api-ac6');
+    const response = await request.post(`${API_BASE}/auth/register`, {
+      data: { email, password: 'ValidPass1', role: 'ADMIN' },
+    });
+
+    expect(response.status()).toBe(201);
+    const body = await response.json() as { role: string };
+    expect(body.role).toBe('USER');
+  });
+
+  test('AUTH-API-03 (AC-8/9) login response field types and JWT claims are correct', async ({ request }) => {
+    const email = uniqueEmail('e2e-api-ac8');
+    const password = 'ValidPass1';
+
+    await request.post(`${API_BASE}/auth/register`, { data: { email, password } });
+    const loginResponse = await request.post(`${API_BASE}/auth/login`, {
+      data: { email, password },
+    });
+
+    expect(loginResponse.status()).toBe(200);
+    const body = await loginResponse.json() as {
+      accessToken: string;
+      refreshToken: string;
+      tokenType: string;
+      expiresIn: number;
+    };
+
+    // AC-9: response field types
+    expect(typeof body.accessToken).toBe('string');
+    expect(typeof body.refreshToken).toBe('string');
+    expect(body.tokenType).toBe('Bearer');
+    expect(typeof body.expiresIn).toBe('number');
+    expect(body.expiresIn).toBeGreaterThan(0);
+
+    // AC-8: JWT claims
+    const payload = decodeJwtPayload(body.accessToken);
+    const fullPayload = payload as JwtPayload & { iat?: number; exp?: number };
+    expect(typeof fullPayload.sub).toBe('string');
+    expect(fullPayload.role).toBe('USER');
+    expect(typeof fullPayload.iat).toBe('number');
+    expect(typeof fullPayload.exp).toBe('number');
+    // exp must be after iat
+    expect((fullPayload.exp as number)).toBeGreaterThan((fullPayload.iat as number));
+  });
+
+  test('AUTH-API-04 (AC-15/17) token rotation — old refresh token is rejected after use', async ({ request }) => {
+    const email = uniqueEmail('e2e-api-ac15');
+    const password = 'ValidPass1';
+
+    await request.post(`${API_BASE}/auth/register`, { data: { email, password } });
+    const loginBody = await loginViaApi(request, email, password);
+
+    // AC-15: rotate the refresh token
+    const refreshResponse = await request.post(`${API_BASE}/auth/refresh`, {
+      data: { refreshToken: loginBody.refreshToken },
+    });
+    expect(refreshResponse.status()).toBe(200);
+    const newTokens = await refreshResponse.json() as LoginResponse;
+    expect(newTokens.refreshToken).not.toBe(loginBody.refreshToken);
+
+    // AC-17: re-using the old (now-invalidated) refresh token must return 401
+    const replayResponse = await request.post(`${API_BASE}/auth/refresh`, {
+      data: { refreshToken: loginBody.refreshToken },
+    });
+    expect(replayResponse.status()).toBe(401);
+    const replayBody = await replayResponse.json() as { code: string };
+    expect(replayBody.code).toBe('REFRESH_TOKEN_INVALID');
+  });
+
+  test('AUTH-API-05 (AC-19/20) logout invalidates the refresh token and is idempotent', async ({ request }) => {
+    const email = uniqueEmail('e2e-api-ac19');
+    const password = 'ValidPass1';
+
+    await request.post(`${API_BASE}/auth/register`, { data: { email, password } });
+    const session = await loginViaApi(request, email, password);
+
+    // AC-19: logout invalidates the refresh token
+    const logoutResponse = await request.post(`${API_BASE}/auth/logout`, {
+      headers: { Authorization: `Bearer ${session.accessToken}` },
+      data: { refreshToken: session.refreshToken },
+    });
+    expect(logoutResponse.status()).toBe(204);
+
+    // The invalidated refresh token can no longer be used
+    const refreshAfterLogout = await request.post(`${API_BASE}/auth/refresh`, {
+      data: { refreshToken: session.refreshToken },
+    });
+    expect(refreshAfterLogout.status()).toBe(401);
+
+    // AC-20: calling logout again with the same (already-invalidated) token returns 204 (idempotent)
+    const secondLogout = await request.post(`${API_BASE}/auth/logout`, {
+      headers: { Authorization: `Bearer ${session.accessToken}` },
+      data: { refreshToken: session.refreshToken },
+    });
+    expect(secondLogout.status()).toBe(204);
+  });
+
+  test('AUTH-API-06 (AC-21) admin JWT has role: ADMIN claim', async ({ request }) => {
+    const loginResponse = await request.post(`${API_BASE}/auth/login`, {
+      data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD },
+    });
+
+    expect(loginResponse.status()).toBe(200);
+    const body = await loginResponse.json() as LoginResponse;
+    const payload = decodeJwtPayload(body.accessToken);
+    expect(payload.role).toBe('ADMIN');
+  });
+
+  test('AUTH-API-07 (AC-24) auth endpoints are publicly accessible without a token', async ({ request }) => {
+    // Register with a fresh email must succeed (no auth header required)
+    const registerResponse = await request.post(`${API_BASE}/auth/register`, {
+      data: { email: uniqueEmail('e2e-api-ac24'), password: 'ValidPass1' },
+    });
+    expect(registerResponse.status()).toBe(201);
+
+    // Login must succeed (no auth header required)
+    const email = uniqueEmail('e2e-api-ac24-login');
+    await request.post(`${API_BASE}/auth/register`, { data: { email, password: 'ValidPass1' } });
+    const loginResponse = await request.post(`${API_BASE}/auth/login`, {
+      data: { email, password: 'ValidPass1' },
+    });
+    expect(loginResponse.status()).toBe(200);
+  });
+
+  test('AUTH-API-08 (AC-25) /logout returns 401 when called without an access token', async ({ request }) => {
+    const logoutResponse = await request.post(`${API_BASE}/auth/logout`, {
+      data: { refreshToken: 'any-token' },
+    });
+    expect(logoutResponse.status()).toBe(401);
   });
 
   test('AUTH-14 clears the session and redirects to /login when silent refresh fails', async ({ page, request }) => {
