@@ -62,6 +62,7 @@ import com.gymflow.service.ClassHasActiveBookingsException
 import com.gymflow.service.ClassNotBookableException
 import com.gymflow.service.ClassNotFoundException
 import com.gymflow.service.UserNotFoundException
+import com.gymflow.domain.ErrorCode
 import com.gymflow.exception.AlreadyFavoritedException
 import com.gymflow.exception.FavoriteNotFoundException
 import com.gymflow.exception.MembershipRequiredException
@@ -75,7 +76,14 @@ import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 
+/**
+ * Standard error response body returned by all exception handlers.
+ * [code] is always the name of an [ErrorCode] enum constant.
+ */
 data class ErrorResponse(val error: String, val code: String)
+
+/** Shorthand: resolves an [ErrorCode] to its string name for use in [ErrorResponse.code]. */
+private fun code(ec: ErrorCode): String = ec.name
 
 @RestControllerAdvice
 class GlobalExceptionHandler {
@@ -96,16 +104,16 @@ class GlobalExceptionHandler {
     fun handleValidationException(ex: MethodArgumentNotValidException): ResponseEntity<ErrorResponse> {
         val firstField = ex.bindingResult.fieldErrors.firstOrNull()?.field
         val (message, code) = when (firstField) {
-            "priceInCents" -> "Price must be greater than zero" to "INVALID_PRICE"
-            "durationDays" -> "Duration must be greater than zero" to "INVALID_DURATION"
-            "name" -> "Name must not be blank" to "INVALID_NAME"
-            "description" -> "Description must not be blank" to "INVALID_DESCRIPTION"
-            "planId" -> "A valid plan must be selected" to "INVALID_PLAN_ID"
+            "priceInCents" -> "Price must be greater than zero" to code(ErrorCode.INVALID_PRICE)
+            "durationDays" -> "Duration must be greater than zero" to code(ErrorCode.INVALID_DURATION)
+            "name" -> "Name must not be blank" to code(ErrorCode.INVALID_NAME)
+            "description" -> "Description must not be blank" to code(ErrorCode.INVALID_DESCRIPTION)
+            "planId" -> "A valid plan must be selected" to code(ErrorCode.INVALID_PLAN_ID)
             else -> {
                 val msg = ex.bindingResult.fieldErrors
                     .joinToString("; ") { "${it.field}: ${it.defaultMessage}" }
                     .ifBlank { "Validation failed" }
-                msg to "VALIDATION_ERROR"
+                msg to code(ErrorCode.VALIDATION_ERROR)
             }
         }
         return ResponseEntity
@@ -117,28 +125,28 @@ class GlobalExceptionHandler {
     fun handleEmailAlreadyExists(ex: EmailAlreadyExistsException): ResponseEntity<ErrorResponse> {
         return ResponseEntity
             .status(HttpStatus.CONFLICT)
-            .body(ErrorResponse(error = ex.message ?: "Email already exists", code = "EMAIL_ALREADY_EXISTS"))
+            .body(ErrorResponse(error = ex.message ?: "Email already exists", code = code(ErrorCode.EMAIL_ALREADY_EXISTS)))
     }
 
     @ExceptionHandler(InvalidCredentialsException::class)
     fun handleInvalidCredentials(ex: InvalidCredentialsException): ResponseEntity<ErrorResponse> {
         return ResponseEntity
             .status(HttpStatus.UNAUTHORIZED)
-            .body(ErrorResponse(error = ex.message ?: "Invalid credentials", code = "INVALID_CREDENTIALS"))
+            .body(ErrorResponse(error = ex.message ?: "Invalid credentials", code = code(ErrorCode.INVALID_CREDENTIALS)))
     }
 
     @ExceptionHandler(RefreshTokenInvalidException::class)
     fun handleRefreshTokenInvalid(ex: RefreshTokenInvalidException): ResponseEntity<ErrorResponse> {
         return ResponseEntity
             .status(HttpStatus.UNAUTHORIZED)
-            .body(ErrorResponse(error = ex.message ?: "Refresh token is invalid", code = "REFRESH_TOKEN_INVALID"))
+            .body(ErrorResponse(error = ex.message ?: "Refresh token is invalid", code = code(ErrorCode.REFRESH_TOKEN_INVALID)))
     }
 
     @ExceptionHandler(RefreshTokenExpiredException::class)
     fun handleRefreshTokenExpired(ex: RefreshTokenExpiredException): ResponseEntity<ErrorResponse> {
         return ResponseEntity
             .status(HttpStatus.UNAUTHORIZED)
-            .body(ErrorResponse(error = ex.message ?: "Refresh token has expired", code = "REFRESH_TOKEN_EXPIRED"))
+            .body(ErrorResponse(error = ex.message ?: "Refresh token has expired", code = code(ErrorCode.REFRESH_TOKEN_EXPIRED)))
     }
 
     // --- Membership plan exceptions ---
@@ -648,6 +656,6 @@ class GlobalExceptionHandler {
     fun handleUnexpectedException(ex: Exception): ResponseEntity<ErrorResponse> {
         return ResponseEntity
             .status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body(ErrorResponse(error = "An unexpected error occurred", code = "INTERNAL_ERROR"))
+            .body(ErrorResponse(error = "An unexpected error occurred", code = code(ErrorCode.INTERNAL_ERROR)))
     }
 }

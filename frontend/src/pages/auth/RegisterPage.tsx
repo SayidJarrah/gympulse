@@ -4,7 +4,7 @@ import { useAuth } from '../../hooks/useAuth'
 
 export function RegisterPage() {
   const navigate = useNavigate()
-  const { register, isLoading, error } = useAuth()
+  const { register, isLoading, error, fieldErrors } = useAuth()
 
   const handleSubmit = async (email: string, password: string): Promise<void> => {
     try {
@@ -54,6 +54,7 @@ export function RegisterPage() {
             onSubmit={handleSubmit}
             isLoading={isLoading}
             error={error}
+            fieldErrors={fieldErrors}
           />
         </div>
       </div>

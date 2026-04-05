@@ -22,6 +22,7 @@ export interface LoginResponse {
   refreshToken: string;
   tokenType: 'Bearer';
   expiresIn: number; // seconds
+  hasActiveMembership: boolean;
 }
 
 export interface RefreshRequest {

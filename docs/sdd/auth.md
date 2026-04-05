@@ -410,7 +410,7 @@ None for this feature. `SecurityConfig.kt` is new (not modifying an existing fil
 | Route | Component | Location | Purpose |
 |-------|-----------|----------|---------|
 | `/register` | `RegisterPage.tsx` | `src/pages/auth/` | Self-registration form |
-| `/login` | `LoginPage.tsx` | `src/pages/auth/` | Login form; redirects to `/classes` on success |
+| `/login` | `LoginPage.tsx` | `src/pages/auth/` | Login form; redirects to `/plans` on success (regular users), `/admin/plans` (admins) |
 
 ### New Components
 
@@ -552,7 +552,7 @@ Persistence: `accessToken` and `refreshToken` should be persisted to `localStora
 - [ ] Create `src/pages/auth/RegisterPage.tsx` — renders `AuthForm` in register mode; on success redirects to `/login` (or auto-logs in if preferred — document choice).
 - [ ] Create `src/pages/auth/LoginPage.tsx` — renders `AuthForm` in login mode; on success redirects to `/classes`.
 - [ ] Map all backend error codes to user-facing messages:
-  - `EMAIL_ALREADY_EXISTS` → "An account with this email already exists. Please log in."
+  - `EMAIL_ALREADY_EXISTS` → "An account with this email already exists. Please sign in instead."
   - `VALIDATION_ERROR` → display the specific field error returned by the backend.
   - `INVALID_CREDENTIALS` → "Incorrect email or password. Please try again."
   - `REFRESH_TOKEN_EXPIRED` / `REFRESH_TOKEN_INVALID` → silently redirect to `/login` from the Axios interceptor.
@@ -613,3 +613,60 @@ after N failed attempts, "log out all devices".
 XSS risk. The alternative (httpOnly cookies) would require backend changes to set
 cookies on login/refresh responses. The decision to use `localStorage` is taken for
 simplicity in this version; it must be re-evaluated before a production security review.
+
+---
+
+## 7. Implemented Behaviours (Code → Docs)
+
+The following behaviours exist in the implementation but were not originally documented
+in the SDD. They are recorded here for completeness.
+
+### Client-Side Route Guards
+
+Two React components guard routes in `src/components/layout/`:
+
+| Component | Location | Behaviour |
+|-----------|----------|-----------|
+| `AuthRoute` | `src/components/layout/AuthRoute.tsx` | Wraps any authenticated-only route. Reads `isAuthenticated` from `authStore`. Redirects unauthenticated users to `/login`. Admins pass through unchanged. |
+| `UserRoute` | `src/components/layout/UserRoute.tsx` | Like `AuthRoute` but also blocks admins: if `user.role !== 'USER'`, redirects to `/admin/plans`. Used for member-only pages (`/home`, `/schedule`). |
+
+Both guards are **UI-only conveniences**. Spring Security enforces the same access rules on the server side. The server is the authoritative access control layer.
+
+### Post-Login Redirect
+
+After a successful login `LoginPage.tsx` branches on role and membership state:
+
+| Condition | Destination |
+|-----------|-------------|
+| `role === 'ADMIN'` | `/admin/plans` |
+| Regular user, `hasActiveMembership: true` | `/home` |
+| Regular user, `hasActiveMembership: false` | `/plans` |
+
+`hasActiveMembership` is returned by `POST /api/v1/auth/login` in `LoginResponse`. `AuthService` populates it by calling `UserMembershipRepository.findAccessibleActiveMembership(userId, today)`, which checks `status = ACTIVE`, `end_date ≥ today`, and `deleted_at IS NULL`.
+
+This behaviour is exercised by E2E tests AUTH-04 (member → `/home`) and AUTH-05 (admin → `/admin/plans`).
+
+### `TestSupportController` and Its Production-Disable Mechanism
+
+`TestSupportController` (`src/main/kotlin/com/gymflow/controller/TestSupportController.kt`) exposes a single endpoint:
+
+```
+POST /api/v1/test-support/e2e/cleanup
+```
+
+This endpoint is used by the E2E test suite (`global-teardown.ts`) to delete test data by email/plan prefix. It is guarded by two mechanisms:
+
+1. **Spring `@ConditionalOnProperty`**: The controller bean is only created when `gymflow.test-support.enabled=true` is set in the application properties. In production this property must be absent or `false`.
+2. **`@PreAuthorize("hasRole('ADMIN')")`**: Even if the property is enabled, only authenticated admins can call the endpoint.
+
+In the `test` Spring profile (`application-test.properties`), `gymflow.test-support.enabled=true` is set to allow E2E cleanup. In `application.properties` (production/staging), the property is not set, so the controller does not exist.
+
+### `authStore` localStorage Persistence and Stale-Auth Flash
+
+`authStore` (`src/store/authStore.ts`) uses Zustand's `persist` middleware with `name: 'gymflow-auth'` to write the full auth state (`accessToken`, `refreshToken`, `user`, `isAuthenticated`) to `localStorage`.
+
+**Trade-off recorded here (not in the original SDD):**
+
+- **Benefit**: the session survives full page reloads without requiring a silent refresh on every navigation.
+- **Known issue**: on reload, `isAuthenticated` is immediately `true` (from `localStorage`) even if the stored `accessToken` has since expired. The Axios interceptor handles this transparently by attempting a silent refresh on the first protected request that returns 401, but there is a brief window where the UI renders as "authenticated" before the refresh completes. This is the "stale-auth flash".
+- **Production re-evaluation**: before a production security review, consider switching to httpOnly cookies (which require backend changes) or short-lived access tokens with immediate silent refresh on load.

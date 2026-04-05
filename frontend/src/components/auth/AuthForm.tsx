@@ -31,9 +31,11 @@ interface AuthFormProps {
   onSubmit: (email: string, password: string) => Promise<void>;
   isLoading: boolean;
   error: string | null;
+  /** Field-level errors from the backend (VALIDATION_ERROR). Keyed by field name. */
+  fieldErrors?: Record<string, string> | null;
 }
 
-export function AuthForm({ mode, onSubmit, isLoading, error }: AuthFormProps) {
+export function AuthForm({ mode, onSubmit, isLoading, error, fieldErrors }: AuthFormProps) {
   const schema = mode === 'register' ? registerSchema : loginSchema
 
   const {
@@ -52,11 +54,15 @@ export function AuthForm({ mode, onSubmit, isLoading, error }: AuthFormProps) {
 
   const isRegister = mode === 'register'
 
+  // Merge react-hook-form errors with backend field errors; client-side errors take precedence
+  const emailError = errors.email?.message ?? fieldErrors?.email ?? null
+  const passwordError = errors.password?.message ?? fieldErrors?.password ?? null
+
   return (
     <form
       onSubmit={handleSubmit(handleFormSubmit)}
       noValidate
-      aria-label={isRegister ? 'Register form' : 'Login form'}
+      aria-label={isRegister ? 'Create account' : 'Sign in'}
       className="flex flex-col gap-5"
     >
       {/* Email field */}
@@ -74,19 +80,19 @@ export function AuthForm({ mode, onSubmit, isLoading, error }: AuthFormProps) {
           disabled={isLoading}
           placeholder="you@example.com"
           {...register('email')}
-          aria-invalid={errors.email ? 'true' : undefined}
-          aria-describedby={errors.email ? 'email-error' : undefined}
+          aria-invalid={emailError ? 'true' : undefined}
+          aria-describedby={emailError ? 'email-error' : undefined}
           className={[
             'w-full rounded-md border bg-gray-900 px-3 py-2 text-sm text-white placeholder:text-gray-500 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-offset-gray-900 focus-visible:border-transparent',
-            errors.email
+            emailError
               ? 'border-red-500/60 focus-visible:ring-red-500'
               : 'border-gray-700 focus-visible:ring-green-500',
             isLoading ? 'cursor-not-allowed bg-gray-800 opacity-60' : '',
           ].join(' ')}
         />
-        {errors.email && (
+        {emailError && (
           <p id="email-error" role="alert" className="mt-1 text-xs text-red-400">
-            {errors.email.message}
+            {emailError}
           </p>
         )}
       </div>
@@ -107,7 +113,7 @@ export function AuthForm({ mode, onSubmit, isLoading, error }: AuthFormProps) {
               id="password"
               value={field.value}
               onChange={field.onChange}
-              error={errors.password?.message ?? null}
+              error={passwordError}
               autoComplete={isRegister ? 'new-password' : 'current-password'}
               disabled={isLoading}
             />
@@ -147,7 +153,7 @@ export function AuthForm({ mode, onSubmit, isLoading, error }: AuthFormProps) {
       ) : (
         <button
           type="submit"
-          className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-green-500 px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:bg-green-600 hover:shadow-lg hover:shadow-green-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0F0F0F]"
+          className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-green-500 px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:bg-green-600 hover:shadow-lg hover:shadow-green-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
         >
           {isRegister ? 'Create account' : 'Sign in'}
         </button>

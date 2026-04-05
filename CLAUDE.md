@@ -40,6 +40,9 @@ gympulse/
 └── docker-compose.review.yml
 ```
 
+## SDD Hygiene — Non-Negotiable
+Any behavioural decision made during a conversation — redirect targets, response shapes, error messages, routing logic, field additions — must be written into `docs/sdd/{feature}.md` before the conversation ends. If no SDD section exists for the decision, add one. Do not leave decisions only in commit messages, memory, or domain skill updates.
+
 ## Git Rules — Non-Negotiable
 - **Never commit directly to `main`** — all changes go through a feature branch and PR, no exceptions
 - Branch naming: `feature/{slug}`, `fix/{slug}`, `chore/{slug}`
