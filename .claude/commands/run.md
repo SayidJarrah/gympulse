@@ -1,4 +1,7 @@
-Start the GymPulse stack with full health diagnostics.
+Start the **review stack** (`docker-compose.review.yml`) with full health diagnostics.
+
+> **Review stack only** — ports 5432 / 8080 / 3000 — for manual testing and PR review.
+> For E2E tests use `/verify`, which manages its own dedicated E2E stack on ports 5433 / 8081 / 3001.
 
 ## Pre-flight Checks
 

@@ -36,7 +36,8 @@ export function LandingPage() {
       isAuthenticated,
       role: user?.role ?? 'GUEST',
     })
-  }, [isAuthenticated, user?.role])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     if (

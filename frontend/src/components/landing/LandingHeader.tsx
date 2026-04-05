@@ -16,8 +16,15 @@ export function LandingHeader({ isAuthenticated, primaryAction, onSignInClick }:
           to="/"
           className="flex items-center gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
         >
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-green-500 text-white shadow-lg shadow-green-500/20">
-            <span className="text-lg font-black">G</span>
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-green-500 shadow-lg shadow-green-500/20">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              className="h-6 w-6"
+              aria-hidden="true"
+            >
+              <path d="M13 2L4.5 13.5H11L9 22L19.5 9.5H13.5L16 2Z" fill="white" />
+            </svg>
           </div>
           <div>
             <p className="text-lg font-bold text-white">GymFlow</p>

@@ -120,7 +120,9 @@ export function PlansPreviewSection({
                     Monthly bookings
                   </dt>
                   <dd className="mt-2 text-sm font-medium text-white">
-                    {plan.maxBookingsPerMonth} class bookings
+                    {plan.maxBookingsPerMonth === 0
+                      ? 'Unlimited class bookings'
+                      : `${plan.maxBookingsPerMonth} class bookings`}
                   </dd>
                 </div>
               </dl>

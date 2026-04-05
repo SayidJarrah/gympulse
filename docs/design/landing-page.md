@@ -1,5 +1,14 @@
 # Design: Public Landing Page
 
+## Benchmark
+
+| Pattern | Reference | What we borrow |
+|---------|-----------|----------------|
+| Hero with dual CTA (primary action + secondary scroll anchor) | ClassPass public homepage | Guest receives one clear purchase CTA and one soft "learn more" anchor — no decision paralysis |
+| Auth-aware hero (CTA mutates for signed-in users) | Whoop.com | Returning members skip the sales pitch and jump straight to their dashboard action |
+| Plans-near-top layout (pricing visible before fold) | Peloton membership page | Guests can evaluate the offer without scrolling — reduces bounce on mobile |
+| "How it works" numbered steps below plans | CrossFit affiliate sites | Explains the membership-first booking rule in plain language after the price is already visible |
+
 ## Experience Goals
 
 - Make `/` feel like a clear first step, not a dense marketing page.
