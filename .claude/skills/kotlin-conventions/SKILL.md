@@ -49,3 +49,14 @@ Serve via a dedicated `GET /{entity}/{id}/photo` endpoint.
 ## Price Storage
 Prices stored as `Int` in cents (e.g. `priceInCents: Int`). Never use floating-point for money.
 Frontend must divide by 100 for display.
+
+## Unique Constraints / Concurrent Writes
+When a `save()` involves a unique constraint, always use a two-layer guard:
+1. Application-level pre-check (`existsBy…`) for the common sequential case.
+2. `try { repo.save(entity) } catch (e: DataIntegrityViolationException) { throw YourDomainException() }` for the race-condition case.
+An application-level check alone is not race-safe — two concurrent requests can both pass it and then collide at the DB.
+
+## Flyway Migrations
+Never edit a migration file (`V{N}__*.sql`) after it has been applied to any environment.
+Flyway stores the checksum on apply; editing the file causes a checksum mismatch that prevents the backend from starting.
+To fix a mistake: create a new migration `V{N+1}__fix_*.sql` instead.

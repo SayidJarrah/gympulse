@@ -25,10 +25,12 @@ class TrainerFavoriteService(
         requireActiveMembership(userId)
         val trainer = trainerRepository.findByIdAndDeletedAtIsNull(trainerId)
             ?: throw TrainerNotFoundException("Trainer with id '$trainerId' not found")
-        val favorite = UserTrainerFavorite(userId = userId, trainerId = trainerId)
+        if (userTrainerFavoriteRepository.existsByUserIdAndTrainerId(userId, trainerId)) {
+            throw AlreadyFavoritedException(trainerId)
+        }
         try {
-            userTrainerFavoriteRepository.save(favorite)
-        } catch (ex: DataIntegrityViolationException) {
+            userTrainerFavoriteRepository.save(UserTrainerFavorite(userId = userId, trainerId = trainerId))
+        } catch (e: DataIntegrityViolationException) {
             throw AlreadyFavoritedException(trainerId)
         }
         return TrainerFavoriteResponse(

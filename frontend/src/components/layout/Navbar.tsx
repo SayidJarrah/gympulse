@@ -3,11 +3,13 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
 import { useAuthStore } from '../../store/authStore'
 import { useProfileStore } from '../../store/profileStore'
+import { useMembershipStore } from '../../store/membershipStore'
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { isAuthenticated, user, clearAuth } = useAuthStore()
   const { avatarUrl, ensureProfileLoaded, resetProfile } = useProfileStore()
+  const { activeMembership } = useMembershipStore()
   const navigate = useNavigate()
 
   const handleLogout = () => {
@@ -33,7 +35,7 @@ export function Navbar() {
           { label: 'Home', href: '/home' },
           { label: 'Schedule', href: '/schedule' },
           { label: 'Trainers', href: '/trainers' },
-          { label: 'My Favorites', href: '/trainers/favorites' },
+          ...(activeMembership ? [{ label: 'My Favorites', href: '/trainers/favorites' }] : []),
           { label: 'Profile', href: '/profile' },
         ]
       : []

@@ -1,0 +1,27 @@
+# Review: Trainer Discovery — 2026-04-05
+
+## Blockers (must fix before PR)
+
+- [x] `backend/src/main/kotlin/com/gymflow/service/TrainerFavoriteService.kt:27` — `addFavorite` uses a pre-insert `existsByUserIdAndTrainerId` check instead of catching `DataIntegrityViolationException`. Under concurrent duplicate requests (two tabs, two network retries), both requests can pass the exists-check simultaneously, and the second INSERT will throw a raw `DataIntegrityViolationException`. The `GlobalExceptionHandler` has no handler for that exception class; it falls through to the catch-all `Exception::class` handler and returns 500 `INTERNAL_ERROR` instead of 409 `ALREADY_FAVORITED`. The SDD (Section 3, `addFavorite` business logic step 3) explicitly requires catching `DataIntegrityViolationException` and mapping it to `AlreadyFavoritedException`. Fix: remove the `if (existsByUserIdAndTrainerId...)` block; wrap the `save()` call in a try/catch for `DataIntegrityViolationException` as specified in the SDD. The pre-check can be kept as a fast path but cannot be the only guard. **Fixed: pre-check kept as fast-path; save() now wrapped in try/catch for DataIntegrityViolationException re-throwing AlreadyFavoritedException.**
+
+- [x] `frontend/src/components/trainers/discovery/FavoriteButton.tsx:29` — Guest-state button uses `disabled={!isMember || loading}`. An HTML `<button disabled>` suppresses the `title` attribute tooltip on touch devices and in several desktop browsers (Firefox, Safari). The design spec (Accessibility section) and gap report (AC 35) both require a tooltip reading "Membership required to save favorites" to appear reliably for Guests. The current implementation silently fails to show the tooltip on touch. Fix: for the Guest state, do not use `disabled`; instead omit the `onClick` handler and render the button with `aria-disabled="true"` plus a wrapping `<span title="...">` or use the `pointer-events-none cursor-not-allowed` pattern on the button itself (without the HTML `disabled` attribute). This allows the `title` to fire. **Fixed: removed disabled={!isMember}, added aria-disabled, pointer-events-none on guest button, wrapped in &lt;span title="Membership required to save favorites."&gt; for reliable tooltip.**
+
+## Suggestions (non-blocking)
+
+- `frontend/src/components/trainers/discovery/AvailabilityGrid.tsx:46-49` — Active cells are empty coloured blocks with no visible text label. The design spec states cells should convey time block information; color alone fails WCAG SC 1.4.1 (use of color). The `aria-label` attribute is present (correct), but a sighted user who cannot distinguish green from gray gets no information. Consider adding a short text label (e.g., a single letter "M", "A", "E") inside each active cell, or at minimum a visible icon. Row labels exist at the left but are hidden on small screens, removing the only textual cue. This was flagged in the original gap report (AC 33) and is still technically open.
+
+- `frontend/src/pages/trainers/TrainerFavoritesPage.tsx:114-117` — The `!isMember` fallback guard calls `navigate('/memberships')` and returns `null` synchronously. While the primary `useEffect` redirect (line 52-55) fires correctly for `NO_ACTIVE_MEMBERSHIP`, an intermediate render can still produce a blank page flash before the effect executes. This was noted in the gap report as "renders null on intermediate state". The skeleton loading state at lines 95-112 already covers the `membershipLoading || membershipStatusPending` case; the `!isMember` guard is only hit if membership state resolves to "not a member" without setting `membershipErrorCode`. Consider whether returning a loading skeleton here instead of `null` would produce a smoother transition.
+
+- `frontend/src/components/trainers/discovery/AvailabilityGrid.tsx` — The component uses `role="gridcell"` on individual cells but does not declare `role="grid"` on the container, and column headers do not have `role="columnheader"` or `scope="col"`. The accessibility spec requires `role="table"` with proper `scope` attributes. The ARIA role hierarchy is incomplete, which means screen readers may not announce the table structure correctly. This was flagged in the original gap report and was not resolved in this fix pass.
+
+- `frontend/src/pages/trainers/TrainerFavoritesPage.tsx` — No scroll-to-top on page change. The design spec (Flow 4, step 3) requires scrolling the grid area back to the top after clicking Next/Previous. Neither a `window.scrollTo(0, 0)` call nor a ref scroll is present on the page-change handlers (lines 204, 212). Low effort to add.
+
+- `docs/sdd/trainer-discovery.md` (Section 2 sample JSON) — The SDD sample response JSON still shows `"page": 0` but Section 7 documents that the actual field is `"number": 0` (Spring Data native). The sample JSON in Section 2 was not updated when Section 7 was added, leaving a contradiction within the SDD itself. Update the Section 2 sample JSON to use `"number"` so they agree.
+
+## Verdict
+
+APPROVED — all blockers resolved
+
+The two blockers were:
+1. A latent concurrency bug in `TrainerFavoriteService.addFavorite` that returns 500 instead of 409 on simultaneous duplicate favorite requests — **Fixed: DataIntegrityViolationException caught and re-thrown as AlreadyFavoritedException.**
+2. The Guest `FavoriteButton` tooltip is unreachable on touch devices due to the `disabled` attribute — **Fixed: button uses aria-disabled + pointer-events-none; tooltip delivered via wrapping span.**

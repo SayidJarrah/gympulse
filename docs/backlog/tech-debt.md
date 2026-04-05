@@ -150,3 +150,38 @@ Feature: membership-plans
 Added: 2026-04-05
 Effort: S
 `docs/sdd/membership-plans.md` AC7 row states "403 without ADMIN JWT". Spring Security returns 401 for a missing token and 403 for a valid non-admin token. PLAN-24 tests both correctly but without an SDD update. Add a note to the SDD AC7 section acknowledging the 401/403 distinction to prevent future reviewers from flagging the same ambiguity.
+
+## TD-020 — AvailabilityGrid active cells rely on color alone (no text label)
+Source: docs/reviews/trainer-discovery-20260405.md
+Feature: trainer-discovery
+Added: 2026-04-05
+Effort: S
+Active cells in `AvailabilityGrid.tsx` are empty coloured `<div>` blocks. Color is the sole indicator that a time block is active. This fails WCAG SC 1.4.1. The design spec states cells should show text content; the row labels that provide the textual cue are hidden on small screens. Add a short visible label (single letter or abbreviation) inside each active cell, ensuring the time block is communicated by text and not just background color.
+
+## TD-021 — AvailabilityGrid missing ARIA table role hierarchy
+Source: docs/reviews/trainer-discovery-20260405.md
+Feature: trainer-discovery
+Added: 2026-04-05
+Effort: S
+`AvailabilityGrid.tsx` uses `role="gridcell"` on cells but the container does not declare `role="grid"` (or `role="table"`), and column headers lack `role="columnheader"` / `scope="col"`. The accessibility spec requires a complete `role="table"` hierarchy with `scope` attributes. Screen readers cannot announce the grid structure correctly without it.
+
+## TD-022 — No scroll-to-top after pagination page change
+Source: docs/reviews/trainer-discovery-20260405.md
+Feature: trainer-discovery
+Added: 2026-04-05
+Effort: S
+Neither `TrainerListPage.tsx` nor `TrainerFavoritesPage.tsx` calls `window.scrollTo(0, 0)` (or equivalent) when the user clicks Next or Previous. The design spec (Flow 4, step 3) explicitly requires scrolling the grid area back to the top after a page change. Without this, the user lands mid-page after navigating to page 2+. One-line fix on the page-change handlers in both pages.
+
+## TD-023 — getDistinctSpecializations 200-trainer cap is a fragile client-side strategy
+Source: docs/reviews/trainer-discovery-20260405.md
+Feature: trainer-discovery
+Added: 2026-04-05
+Effort: M
+`getDistinctSpecializations()` in `frontend/src/api/trainerDiscovery.ts` fetches the first 200 trainers sorted A–Z and derives distinct specializations entirely client-side. If the gym grows beyond 200 trainers, specializations from later pages are silently omitted from the filter panel without any warning to the user. The correct fix is a dedicated `GET /api/v1/trainers/specializations` endpoint that queries `SELECT DISTINCT unnest(specialisations) FROM trainers WHERE deleted_at IS NULL` and returns a sorted string array.
+
+## TD-024 — SDD Section 2 sample JSON still shows "page" field, contradicts Section 7
+Source: docs/reviews/trainer-discovery-20260405.md
+Feature: trainer-discovery
+Added: 2026-04-05
+Effort: S
+The sample response JSON in SDD Section 2 (`GET /api/v1/trainers`) uses `"page": 0`, but Section 7 documents that the actual API field name is `"number": 0` (Spring Data's native serialization). The two sections now contradict each other within the same document. Update the Section 2 sample JSON to use `"number"` to match Section 7 and the actual API behavior.
