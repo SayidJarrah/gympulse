@@ -127,7 +127,7 @@ test.describe('Auth', () => {
 
     await expect(page).toHaveURL('/register');
     await expect(page.getByRole('alert')).toContainText(
-      'An account with this email already exists. Please log in.'
+      'An account with this email already exists. Please sign in instead.'
     );
   });
 

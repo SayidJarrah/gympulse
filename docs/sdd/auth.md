@@ -552,7 +552,7 @@ Persistence: `accessToken` and `refreshToken` should be persisted to `localStora
 - [ ] Create `src/pages/auth/RegisterPage.tsx` — renders `AuthForm` in register mode; on success redirects to `/login` (or auto-logs in if preferred — document choice).
 - [ ] Create `src/pages/auth/LoginPage.tsx` — renders `AuthForm` in login mode; on success redirects to `/classes`.
 - [ ] Map all backend error codes to user-facing messages:
-  - `EMAIL_ALREADY_EXISTS` → "An account with this email already exists. Please log in."
+  - `EMAIL_ALREADY_EXISTS` → "An account with this email already exists. Please sign in instead."
   - `VALIDATION_ERROR` → display the specific field error returned by the backend.
   - `INVALID_CREDENTIALS` → "Incorrect email or password. Please try again."
   - `REFRESH_TOKEN_EXPIRED` / `REFRESH_TOKEN_INVALID` → silently redirect to `/login` from the Axios interceptor.

@@ -112,7 +112,7 @@ export function useAuth(): UseAuthReturn {
       const code = axiosError.response?.data?.code
       const message = axiosError.response?.data?.error ?? ''
       if (code === 'EMAIL_ALREADY_EXISTS') {
-        setError('An account with this email already exists. Please log in.')
+        setError('An account with this email already exists. Please sign in instead.')
       } else if (code === 'VALIDATION_ERROR') {
         // Display field-level errors inline as the design spec requires (Flow 1 step 5c)
         const parsed = parseValidationErrors(message)
