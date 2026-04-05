@@ -38,6 +38,23 @@ If an artifact is missing, run the stage that produces it — do not skip ahead.
 If `docs/gaps/{feature}.md` exists (created by `/audit`), skip stages whose artifacts
 already exist. Start from the first stage where the gap report identifies missing work.
 
+## Branch Pre-Flight (run before dispatching the Developer)
+
+Before any developer work begins, verify the feature branch is up to date with `main`:
+
+```
+git fetch origin
+git log main..feature/{slug} --oneline   # commits ahead — should be 0 for a clean start
+git log feature/{slug}..main --oneline   # commits behind — must be 0 before proceeding
+```
+
+If the branch is behind `main`, rebase it first:
+```
+git rebase origin/main feature/{slug}
+```
+Resolve any conflicts, then continue. Never dispatch the developer onto a stale branch —
+the rebase may surface conflicts that invalidate the work, and the PR will be messy.
+
 ## Parallelism Rules
 
 **Safe to parallelise (run simultaneously):**
@@ -143,6 +160,11 @@ Create PR
 - Touches ≤ 3 files per session
 - Does not refactor, rename, or improve unrelated code
 - If fix genuinely requires > 3 files: stop and report, do not proceed
+
+**"Already done" verification rule:**
+Before reporting any fix as "already present" or "no change needed," the developer MUST
+read the specific file and confirm the exact line. Never infer from memory, variable names,
+or surrounding code. A false "already done" silently skips the fix and passes the review loop.
 
 ## PR Gate
 
