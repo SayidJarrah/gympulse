@@ -15,7 +15,7 @@ Read before writing new specs to identify regression risk.
 | class-schedule | `e2e/class-schedule.spec.ts` | all | — |
 | entity-image-management | `e2e/entity-image-management.spec.ts` | all | — |
 | user-profile-management | `e2e/user-profile-management.spec.ts` | all | — |
-| landing-page | `e2e/landing-page.spec.ts` | all | — |
+| landing-page | `e2e/landing-page.spec.ts` | 1,2,3,4,5,14,19,20 | — |
 | member-home | `e2e/member-home.spec.ts` | 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,18,19,20,21,22,23,24,25,26 | — |
 
 ## Regression Risk Map
