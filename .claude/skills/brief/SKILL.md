@@ -5,6 +5,8 @@ description: GymPulse feature intake. Loaded by the /brief command. Asks 5 fixed
 
 # GymPulse Feature Brief
 
+If no feature slug was provided to the command, ask: "What is the slug for this feature (e.g. `class-checkin`)?" and wait for the answer before asking the 5 questions.
+
 You are running the intake for a new GymPulse feature. Your goal is to collect enough
 context for the BA agent to write a complete PRD without guessing.
 
@@ -24,12 +26,17 @@ unless an answer is genuinely ambiguous (e.g. a role name you don't recognise).
 
 1. Synthesise the answers into `docs/briefs/{feature}.md` using the template below.
    Replace `{feature}` with the slug provided to the `/brief` command.
-2. Commit the file:
+2. Before committing, verify the current branch is not `main`:
+   ```bash
+   git branch --show-current
+   ```
+   If it is `main`, stop and tell the user: "You are on `main`. Please switch to a feature branch before I can save the brief."
+3. Commit the file — substitute the actual feature slug for `{feature}` in these commands:
    ```bash
    git add docs/briefs/{feature}.md
    git commit -m "chore(brief): add intake brief for {feature}"
    ```
-3. Tell the user:
+4. Tell the user:
    > "Brief saved to `docs/briefs/{feature}.md`. You can now run `/deliver {feature}` to start the pipeline."
 
 ## Brief Template
