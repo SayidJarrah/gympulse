@@ -9,9 +9,13 @@ export function LoginPage() {
 
   const handleSubmit = async (email: string, password: string): Promise<void> => {
     try {
-      await login(email, password)
+      const { hasActiveMembership } = await login(email, password)
       const role = useAuthStore.getState().user?.role
-      navigate(role === 'ADMIN' ? '/admin/plans' : '/plans')
+      if (role === 'ADMIN') {
+        navigate('/admin/plans')
+      } else {
+        navigate(hasActiveMembership ? '/home' : '/plans')
+      }
     } catch {
       // Error is displayed via the error state in useAuth — no navigation on failure
     }

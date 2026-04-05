@@ -5,6 +5,7 @@ import com.gymflow.domain.User
 import com.gymflow.dto.LoginResponse
 import com.gymflow.dto.RegisterResponse
 import com.gymflow.repository.RefreshTokenRepository
+import com.gymflow.repository.UserMembershipRepository
 import com.gymflow.repository.UserRepository
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.security.MessageDigest
 import java.security.SecureRandom
+import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.HexFormat
 
@@ -19,6 +21,7 @@ import java.util.HexFormat
 class AuthService(
     private val userRepository: UserRepository,
     private val refreshTokenRepository: RefreshTokenRepository,
+    private val userMembershipRepository: UserMembershipRepository,
     private val passwordEncoder: PasswordEncoder,
     private val jwtService: JwtService,
     @Value("\${REFRESH_TOKEN_EXPIRY_DAYS:30}") private val refreshTokenExpiryDays: Long
@@ -70,10 +73,14 @@ class AuthService(
         )
         refreshTokenRepository.save(refreshToken)
 
+        val hasActiveMembership = userMembershipRepository
+            .findAccessibleActiveMembership(user.id, LocalDate.now()) != null
+
         return LoginResponse(
             accessToken = accessToken,
             refreshToken = rawRefreshToken,
-            expiresIn = jwtService.getExpiresInSeconds()
+            expiresIn = jwtService.getExpiresInSeconds(),
+            hasActiveMembership = hasActiveMembership
         )
     }
 

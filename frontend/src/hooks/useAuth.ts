@@ -30,7 +30,7 @@ interface UseAuthReturn {
   isLoading: boolean;
   error: string | null;
   fieldErrors: Record<string, string> | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<{ hasActiveMembership: boolean }>;
   register: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -63,7 +63,7 @@ export function useAuth(): UseAuthReturn {
   const [error, setError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string> | null>(null)
 
-  const login = useCallback(async (email: string, password: string): Promise<void> => {
+  const login = useCallback(async (email: string, password: string): Promise<{ hasActiveMembership: boolean }> => {
     setIsLoading(true)
     setError(null)
     setFieldErrors(null)
@@ -75,6 +75,7 @@ export function useAuth(): UseAuthReturn {
         // email comes from the form since JWT may not carry it
         setUser({ ...decoded, email })
       }
+      return { hasActiveMembership: response.hasActiveMembership }
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>
       const code = axiosError.response?.data?.code

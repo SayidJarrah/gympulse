@@ -4,6 +4,7 @@ import com.gymflow.domain.RefreshToken
 import com.gymflow.domain.User
 import com.gymflow.dto.LoginResponse
 import com.gymflow.repository.RefreshTokenRepository
+import com.gymflow.repository.UserMembershipRepository
 import com.gymflow.repository.UserRepository
 import io.mockk.every
 import io.mockk.mockk
@@ -24,12 +25,14 @@ class AuthServiceTest {
 
     private val userRepository: UserRepository = mockk()
     private val refreshTokenRepository: RefreshTokenRepository = mockk()
+    private val userMembershipRepository: UserMembershipRepository = mockk()
     private val passwordEncoder: BCryptPasswordEncoder = BCryptPasswordEncoder(10)
     private val jwtService: JwtService = mockk()
 
     private val authService = AuthService(
         userRepository = userRepository,
         refreshTokenRepository = refreshTokenRepository,
+        userMembershipRepository = userMembershipRepository,
         passwordEncoder = passwordEncoder,
         jwtService = jwtService,
         refreshTokenExpiryDays = 30
@@ -105,6 +108,7 @@ class AuthServiceTest {
         every { jwtService.generateToken(user) } returns "mock.jwt.token"
         every { jwtService.getExpiresInSeconds() } returns 3600L
         every { refreshTokenRepository.save(any()) } answers { firstArg() }
+        every { userMembershipRepository.findAccessibleActiveMembership(user.id, any()) } returns null
 
         val response = authService.login(email, password)
 
@@ -112,6 +116,25 @@ class AuthServiceTest {
         assertNotNull(response.refreshToken)
         assertEquals("Bearer", response.tokenType)
         assertEquals(3600L, response.expiresIn)
+        assertFalse(response.hasActiveMembership)
+    }
+
+    @Test
+    fun `login - user with active membership - hasActiveMembership is true`() {
+        val email = "member@example.com"
+        val password = "secret99"
+        val user = buildUser(email = email, passwordHash = passwordEncoder.encode(password))
+        val membership = mockk<com.gymflow.domain.UserMembership>()
+
+        every { userRepository.findByEmailAndDeletedAtIsNull(email) } returns user
+        every { jwtService.generateToken(user) } returns "mock.jwt.token"
+        every { jwtService.getExpiresInSeconds() } returns 3600L
+        every { refreshTokenRepository.save(any()) } answers { firstArg() }
+        every { userMembershipRepository.findAccessibleActiveMembership(user.id, any()) } returns membership
+
+        val response = authService.login(email, password)
+
+        assertTrue(response.hasActiveMembership)
     }
 
     @Test

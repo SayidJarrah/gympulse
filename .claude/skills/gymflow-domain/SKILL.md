@@ -74,6 +74,20 @@ with a corresponding `photoMimeType: String?` field.
 UserProfile also stores a photo as `profilePhotoData: ByteArray?` / `profilePhotoMimeType: String?`.
 Served via dedicated `GET /{entity}/{id}/photo` endpoints.
 
+## Post-Login Routing (UX rule)
+
+After a successful login, redirect based on membership state — not a single fixed route:
+
+| User state | Redirect |
+|------------|----------|
+| `ADMIN` role | `/admin/plans` |
+| Regular user with ACTIVE membership | `/home` |
+| Regular user with no active membership (Guest) | `/plans` |
+
+This requires `hasActiveMembership: Boolean` in `LoginResponse` so the frontend can branch without an extra API call.
+
+**Why this matters:** A member who already purchased a plan should land on the app home, not the purchase page. Routing all users to `/plans` after login is disruptive for active members.
+
 ## Open Policy Questions (not yet implemented)
 
 - Cancellation window (minimum notice before class start)
