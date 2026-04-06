@@ -249,6 +249,27 @@ Added: 2026-04-05
 Effort: M
 `member-home.spec.ts` AC-09 expects the membership section to show "No plans available right now" but global-setup unconditionally seeds E2E plans after cleanup. The precondition (zero active plans) can never be satisfied by cleanup alone. Rewrite the test using test-local setup: seed a user with no plans, assert the empty state, then tear down in `afterEach`. Do not rely on global plan absence.
 
+## TD-036 — ProfileChipInput remove icon size deviates from design spec
+Source: docs/reviews/user-profile-management-20260406.md
+Feature: user-profile-management
+Added: 2026-04-06
+Effort: S
+`ProfileChipInput.tsx` renders the chip remove button's `XMarkIcon` at `h-3.5 w-3.5`. The design spec (`docs/design/user-profile-management.md`) specifies `h-3 w-3`. The deviation is cosmetically minor but breaks pixel-level spec fidelity. Change the icon class to `h-3 w-3` during any future touch of the component.
+
+## TD-037 — E2E profile spec missing coverage for AC8-AC14, AC18, AC19
+Source: docs/reviews/user-profile-management-20260406.md
+Feature: user-profile-management
+Added: 2026-04-06
+Effort: M
+The gap report identified ACs 8 through 14, 18, and 19 as untested by the E2E suite. The fix branch added tests for AC4, AC17, AC20, AC21, AC15, and AC16, but the remaining ACs (read-only field rejection, individual backend validation error codes, no-arbitrary-userId guard, and `updatedAt` advancement) still have no E2E or integration coverage. Address in a dedicated test sprint targeting `frontend/e2e/user-profile-management.spec.ts` and the backend service tests.
+
+## TD-038 — PROFILE-03 uses waitForTimeout anti-pattern
+Source: docs/reviews/user-profile-management-20260406.md
+Feature: user-profile-management
+Added: 2026-04-06
+Effort: S
+`user-profile-management.spec.ts` PROFILE-03 calls `page.waitForTimeout(250)` to confirm no PUT request was fired after a validation failure. The `waitForTimeout` API is a Playwright anti-pattern that adds unconditional latency and is brittle under load. Replace with a route-interception flag checked immediately after the button click (the interception callback already populates `putAttempted`), or use `expect.poll` with a short deadline.
+
 ## TD-035 — IMG-01 spec: waitForEvent('dialog') may never fire if remove button uses React modal
 Source: docs/bugs/20260405-205540-img01-remove-photo-native-dialog.md
 Feature: entity-image-management
