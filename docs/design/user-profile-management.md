@@ -6,6 +6,8 @@
 > Prototype: `docs/design/prototypes/user-profile-management.html`
 > Last updated: 2026-03-29
 
+**Benchmark:** Nike Training Club — account/profile screen: dark surface card layout with avatar, display name, and read-only account email in an aside panel alongside an editable fields form, using high-contrast action colours on near-black backgrounds.
+
 ---
 
 ## User Flows
