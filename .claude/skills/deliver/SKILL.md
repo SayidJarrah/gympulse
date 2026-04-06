@@ -72,6 +72,11 @@ the rebase may surface conflicts that invalidate the work, and the PR will be me
 **Safe to parallelise (run simultaneously):**
 - Reviewer + Tester — they read different sources, write to different paths, share no state
 
+**Agent types to use:**
+- Reviewer: `subagent_type: "reviewer"` — NOT `superpowers:code-reviewer`. The project reviewer loads gymflow-domain and design-standards, produces structured review docs with blockers/suggestions.
+- Tester: `subagent_type: "tester"`
+- Developer: general-purpose agent
+
 **Never parallelise:**
 - Any two sequential pipeline stages — each depends on the previous stage's output
 - Fix loop iterations — each must complete before the next starts

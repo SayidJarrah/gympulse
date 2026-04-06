@@ -7,7 +7,7 @@ Phase 1 produces a gap report. Phase 2 is driven by /deliver after you review.
 
 Spawn both agents simultaneously:
 
-**Reviewer:**
+**Reviewer** (`subagent_type: "reviewer"` — NOT `superpowers:code-reviewer`):
 > "You are in audit mode for: $ARGUMENTS
 > Load gymflow-domain and design-standards skills.
 > Read all available docs: docs/prd/$ARGUMENTS.md, docs/sdd/$ARGUMENTS.md,
