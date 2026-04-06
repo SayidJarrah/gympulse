@@ -53,6 +53,12 @@ export function ProfileChipInput({
     if (event.key === 'Enter' || event.key === ',') {
       event.preventDefault()
       addChip(draftValue)
+      return
+    }
+
+    if (event.key === 'Backspace' && draftValue === '' && value.length > 0) {
+      event.preventDefault()
+      onChange(value.slice(0, -1))
     }
   }
 
@@ -110,7 +116,7 @@ export function ProfileChipInput({
 
         {value.length >= maxItems && (
           <span className="self-center text-xs text-gray-500">
-            Maximum of {maxItems} items reached.
+            Maximum reached
           </span>
         )}
       </div>
