@@ -17,6 +17,12 @@ Applies when: {situation where this rule kicks in}
 
 <!-- Add lessons below this line -->
 
+## Lesson 7 — Rebuild E2E containers after code changes before re-running tests
+Date: 2026-04-06
+Correction: After fixing a source-code bug, PROFILE-01 and PROFILE-02 still failed because the E2E frontend container was serving a Vite bundle that predated the fix commit. The tests ran against stale compiled code and the "fix" appeared not to have taken effect.
+Rule: After any code change on a fix branch, rebuild the affected E2E container(s) before re-running the test suite. Frontend changes: `docker compose -f docker-compose.e2e.yml up -d --build frontend`. Backend changes: `docker compose -f docker-compose.e2e.yml up -d --build --force-recreate backend`. Confirm the container was recreated (not just "Running") in the compose output. Never declare a fix "didn't work" until the relevant container has been rebuilt with the new code.
+Applies when: Re-running E2E tests after making source-code changes during a fix loop. Extends Lesson 2 (stale stack check applies to the E2E stack, not just the review stack).
+
 ## Lesson 6 — Test preconditions that assume global DB emptiness are fragile
 Date: 2026-04-05
 Correction: After fixing the E2E cleanup endpoint, AC-09 ("when no active plans exist") still failed — not because of dirty DB state, but because global-setup unconditionally re-seeds plans after cleanup. The test assumed zero plans would exist at run time, which is structurally impossible given the seed.
