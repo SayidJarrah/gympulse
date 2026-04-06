@@ -66,7 +66,8 @@ Any behavioural decision made during a conversation — redirect targets, respon
 ## Commands
 | Command | When to use |
 |---------|-------------|
-| `/deliver {feature}` | New feature — full pipeline from current stage |
+| `/brief {feature}` | Start a new feature — interactive intake, saves brief to `docs/briefs/{feature}.md` |
+| `/deliver {feature}` | Run the delivery pipeline from the current stage (requires brief or audit gap report) |
 | `/redesign {page}` | Existing page needs visual/UX upgrade |
 | `/audit {feature}` | Feature is "done" but completeness is uncertain |
 | `/backlog` | View tech debt items; `/backlog {feature}` to filter; `/backlog close TD-N` to remove |
