@@ -241,6 +241,126 @@ by the existing DB trigger, and `created_at` is set only on first row creation.
 
 ---
 
+### POST /api/v1/profile/me/photo
+
+**Auth:** Required. `USER` role only (`@PreAuthorize("hasRole('USER')")`)
+
+**Request Body:** `multipart/form-data` with a single part named `file` containing the image bytes.
+
+**Success Response (200):**
+```json
+{
+  "userId": "550e8400-e29b-41d4-a716-446655440000",
+  "email": "alice@example.com",
+  "firstName": "Alice",
+  "lastName": "Brown",
+  "phone": "+48123123123",
+  "dateOfBirth": "1994-08-12",
+  "fitnessGoals": ["Build strength"],
+  "preferredClassTypes": ["Yoga"],
+  "createdAt": "2026-03-29T10:00:00Z",
+  "updatedAt": "2026-03-29T12:30:00Z",
+  "hasProfilePhoto": true,
+  "profilePhotoUrl": "/api/v1/profile/me/photo"
+}
+```
+
+**Error Responses:**
+
+| Status | Error Code | Condition |
+|--------|------------|-----------|
+| 400 | `IMAGE_REQUIRED` | No file part present in the request |
+| 400 | `INVALID_IMAGE_FORMAT` | MIME type is not an accepted image format |
+| 400 | `IMAGE_TOO_LARGE` | File exceeds the configured maximum upload size |
+| 401 | `UNAUTHORIZED` | Missing or invalid Bearer token |
+| 403 | `ACCESS_DENIED` | Authenticated caller does not have role `USER` |
+
+**Business Logic (executed in `UserProfileService.uploadMyProfilePhoto`):**
+1. Extract `userId` from `Authentication.name`.
+2. Validate the file via `PhotoValidationService` (presence, MIME type, size). Throw the appropriate typed exception on failure.
+3. Load or create the `UserProfile` row for the caller.
+4. Store the raw bytes in `profilePhotoData` and the detected/supplied MIME type in `profilePhotoMimeType`.
+5. Persist via `userProfileRepository.save(profile)`.
+6. Return 200 with a full `UserProfileResponse` including `hasProfilePhoto: true` and `profilePhotoUrl`.
+
+---
+
+### GET /api/v1/profile/me/photo
+
+**Auth:** Required. `USER` role only
+
+**Request Body:** None.
+
+**Success Response (200):** Raw image bytes with `Content-Type` set to the stored `profilePhotoMimeType`.
+
+**Error Responses:**
+
+| Status | Error Code | Condition |
+|--------|------------|-----------|
+| 404 | `IMAGE_NOT_FOUND` | The caller has no profile photo stored |
+| 401 | `UNAUTHORIZED` | Missing or invalid Bearer token |
+| 403 | `ACCESS_DENIED` | Authenticated caller does not have role `USER` |
+
+**Business Logic (executed in `UserProfileService.getMyProfilePhoto`):**
+1. Extract `userId` from `Authentication.name`.
+2. Load `UserProfile` by `userId`.
+3. If the profile row does not exist or `profilePhotoData` is null, throw `ImageNotFoundException`.
+4. Return the raw bytes as a `ResponseEntity<ByteArray>` with the stored MIME type.
+
+---
+
+### DELETE /api/v1/profile/me/photo
+
+**Auth:** Required. `USER` role only
+
+**Request Body:** None.
+
+**Success Response (204):** Empty body.
+
+**Error Responses:**
+
+| Status | Error Code | Condition |
+|--------|------------|-----------|
+| 401 | `UNAUTHORIZED` | Missing or invalid Bearer token |
+| 403 | `ACCESS_DENIED` | Authenticated caller does not have role `USER` |
+
+**Business Logic (executed in `UserProfileService.deleteMyProfilePhoto`):**
+1. Extract `userId` from `Authentication.name`.
+2. Load `UserProfile` by `userId`.
+3. If the profile row does not exist, or both `profilePhotoData` and `profilePhotoMimeType` are already null, return immediately without calling `save` (no-op).
+4. Otherwise, set both fields to null and persist via `userProfileRepository.save(profile)`.
+5. Return 204.
+
+---
+
+### GET /api/v1/admin/users/{userId}/photo
+
+**Auth:** Required. `ADMIN` role only (`@PreAuthorize("hasRole('ADMIN')")`)
+
+**Path Parameters:**
+- `userId` (UUID) — the target user's ID
+
+**Request Body:** None.
+
+**Success Response (200):** Raw image bytes with `Content-Type` set to the stored `profilePhotoMimeType`.
+
+**Error Responses:**
+
+| Status | Error Code | Condition |
+|--------|------------|-----------|
+| 404 | `IMAGE_NOT_FOUND` | The target user has no profile photo stored |
+| 401 | `UNAUTHORIZED` | Missing or invalid Bearer token |
+| 403 | `ACCESS_DENIED` | Authenticated caller does not have role `ADMIN` |
+
+**Business Logic (executed in `UserProfileService.getProfilePhotoForAdmin`):**
+1. Load `UserProfile` by the path `userId`.
+2. If the profile row does not exist or `profilePhotoData` is null, throw `ImageNotFoundException`.
+3. Return the raw bytes as a `ResponseEntity<ByteArray>` with the stored MIME type.
+
+Note: this endpoint is served by a separate `AdminUserProfilePhotoController` to keep admin routes and user-role routes in distinct controllers.
+
+---
+
 ## 3. Kotlin Classes to Create
 
 ### New Files
@@ -265,6 +385,8 @@ by the existing DB trigger, and `created_at` is set only on first row creation.
 | `dateOfBirth` | `LocalDate?` | Nullable |
 | `fitnessGoals` | `MutableList<String>` | `@JdbcTypeCode(SqlTypes.JSON)` backed by JSONB |
 | `preferredClassTypes` | `MutableList<String>` | `@JdbcTypeCode(SqlTypes.JSON)` backed by JSONB |
+| `profilePhotoData` | `ByteArray?` | `@JdbcTypeCode(SqlTypes.BINARY)` — nullable, stores raw image bytes |
+| `profilePhotoMimeType` | `String?` | Nullable, MIME type paired with `profilePhotoData` |
 | `createdAt` | `OffsetDateTime` | DB default `NOW()` |
 | `updatedAt` | `OffsetDateTime` | DB default `NOW()`, auto-updated by trigger |
 | `deletedAt` | `OffsetDateTime?` | Always null in this feature |
@@ -310,6 +432,8 @@ mapping stay deterministic.
 | `preferredClassTypes` | `List<String>` |
 | `createdAt` | `OffsetDateTime` |
 | `updatedAt` | `OffsetDateTime` |
+| `hasProfilePhoto` | `Boolean` |
+| `profilePhotoUrl` | `String?` |
 
 ### Repository Specification
 
@@ -334,10 +458,15 @@ No custom JPQL is required for v1. All access patterns are point lookups by prim
 Constructor dependencies:
 - `UserProfileRepository`
 - `UserRepository`
+- `PhotoValidationService`
 
 Public methods:
 - `@Transactional(readOnly = true) fun getMyProfile(userId: UUID): UserProfileResponse`
 - `@Transactional fun updateMyProfile(userId: UUID, request: UpdateUserProfileRequest): UserProfileResponse`
+- `@Transactional fun uploadMyProfilePhoto(userId: UUID, file: MultipartFile): UserProfileResponse`
+- `@Transactional(readOnly = true) fun getMyProfilePhoto(userId: UUID): ResponseEntity<ByteArray>`
+- `@Transactional(readOnly = true) fun getProfilePhotoForAdmin(userId: UUID): ResponseEntity<ByteArray>`
+- `@Transactional fun deleteMyProfilePhoto(userId: UUID)`
 
 Private helpers:
 - `validateReadOnlyFields(request)`
@@ -447,6 +576,8 @@ export interface UserProfile {
   preferredClassTypes: string[];
   createdAt: string;
   updatedAt: string;
+  hasProfilePhoto: boolean;
+  profilePhotoUrl: string | null;
 }
 
 export interface UpdateUserProfileRequest {
@@ -484,6 +615,7 @@ State shape:
 ```ts
 interface ProfileState {
   profile: UserProfile | null;
+  avatarUrl: string | null;
   isLoading: boolean;
   isSaving: boolean;
   error: string | null;
@@ -494,6 +626,11 @@ interface ProfileState {
   successMessage: string | null;
   fetchMyProfile: () => Promise<void>;
   saveMyProfile: (req: UpdateUserProfileRequest) => Promise<void>;
+  uploadPhoto: (file: File) => Promise<void>;
+  deletePhoto: () => Promise<void>;
+  ensureProfileLoaded: () => Promise<void>;
+  resetProfile: () => void;
+  setSuccessMessage: (message: string) => void;
   clearMessages: () => void;
 }
 ```
@@ -502,9 +639,43 @@ Store behaviour:
 - `fetchMyProfile` populates `profile` or `error`.
 - `saveMyProfile` clears prior messages, submits the request, updates `profile` with the
   server response, and sets a short success message such as "Profile updated."
+- `uploadPhoto` POSTs the file to `POST /api/v1/profile/me/photo`. On success it updates
+  `profile` and revokes any previous blob URL before setting `avatarUrl` to a new object
+  URL derived from the returned photo endpoint.
+- `deletePhoto` calls `DELETE /api/v1/profile/me/photo`, revokes the existing blob URL,
+  and sets `avatarUrl` to null.
+- `ensureProfileLoaded` is a lazy-load guard: if `profile` is already non-null it returns
+  immediately without making a network request; otherwise it calls `fetchMyProfile`. Used
+  by `Navbar` to eagerly populate the avatar on mount for `USER` accounts.
+- `resetProfile` sets `profile` and `avatarUrl` to null and revokes any outstanding blob
+  URL. Called on logout.
+- `setSuccessMessage` updates `successMessage` directly; used by the two-phase save to
+  set a composite success string after both text and photo saves complete.
 - Field-specific backend error codes map into `fieldErrors`.
 - Non-field errors (`READ_ONLY_FIELD`, `ACCESS_DENIED`, generic failures) map into the
   top-level `error` banner.
+
+### Component Props — `UserProfileForm`
+
+**`UserProfileFormProps`** (full interface including photo sub-feature):
+
+```ts
+interface UserProfileFormProps {
+  profile: UserProfile;
+  isSaving: boolean;
+  fieldErrors: Partial<Record<
+    'firstName' | 'lastName' | 'phone' | 'dateOfBirth' | 'fitnessGoals' | 'preferredClassTypes',
+    string
+  >>;
+  error: string | null;
+  successMessage: string | null;
+  onSubmit: (values: UpdateUserProfileRequest) => Promise<void>;
+  avatarUrl: string | null;
+  onUploadPhoto: (file: File) => Promise<void>;
+  onDeletePhoto: () => Promise<void>;
+  onSetSuccessMessage: (message: string) => void;
+}
+```
 
 ### Error Code to User Message Mapping (`src/utils/profileErrors.ts`)
 
@@ -520,6 +691,10 @@ export const PROFILE_ERROR_MESSAGES: Record<string, string> = {
   INVALID_FITNESS_GOALS: 'Fitness goals must contain up to 5 items, each 1 to 50 characters long.',
   INVALID_PREFERRED_CLASS_TYPES: 'Preferred class types must contain up to 5 items, each 1 to 50 characters long.',
   ACCESS_DENIED: 'You do not have permission to view this profile.',
+  IMAGE_REQUIRED: 'Please select an image to upload.',
+  INVALID_IMAGE_FORMAT: 'The selected file is not a supported image format.',
+  IMAGE_TOO_LARGE: 'The selected image exceeds the maximum allowed size.',
+  IMAGE_NOT_FOUND: 'No profile photo found.',
 }
 ```
 
@@ -643,3 +818,29 @@ The route can continue to use `AuthRoute` for simplicity. Even if an authenticat
 `ADMIN` navigates to `/profile`, the backend still returns the correct 403. If the UX
 team later wants cleaner role-based redirects, that can be handled in a shared
 `UserRoute` component without changing this backend design.
+
+### Undocumented Behaviours (added 2026-04-06, from audit gap report)
+
+These behaviours are implemented in the shipped code and were not covered in the original
+SDD. They are documented here for completeness.
+
+**Two-phase save:** When the user submits the profile form and a new photo is queued,
+the frontend first issues `PUT /api/v1/profile/me` to persist the text fields. Only if
+that request succeeds does it then issue `POST /api/v1/profile/me/photo`. Banner copy
+reflects the combined outcome:
+- Both succeed: `"Profile updated. Photo updated."`
+- Text succeeds, photo fails: `"Profile updated."` plus a separate photo-specific error
+  message.
+- Text fails: no photo request is sent; the text-field errors are surfaced normally.
+
+**Navbar eager profile load:** `Navbar` calls `profileStore.ensureProfileLoaded()` on
+mount for authenticated `USER` accounts. This populates the top-right avatar circle
+across all pages without requiring `UserProfilePage` to be visited first.
+`ensureProfileLoaded` is a no-op when `profile` is already non-null so subsequent
+mounts do not trigger redundant network requests.
+
+**`deleteMyProfilePhoto` no-op guard:** If `UserProfile.profilePhotoData` and
+`UserProfile.profilePhotoMimeType` are both already null when
+`deleteMyProfilePhoto` is called, the service returns immediately without calling
+`userProfileRepository.save`. This prevents spurious DB writes when there is no photo
+to delete.
