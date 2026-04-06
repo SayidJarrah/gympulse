@@ -285,11 +285,11 @@ export function UserProfileForm({
 
       {/* Read-only email field */}
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="email" className="text-sm font-medium text-gray-300">
+        <label htmlFor="profile-email" className="text-sm font-medium text-gray-300">
           Email address
         </label>
         <input
-          id="email"
+          id="profile-email"
           type="email"
           value={profile.email}
           readOnly
