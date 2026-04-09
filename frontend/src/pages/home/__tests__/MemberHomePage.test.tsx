@@ -161,7 +161,7 @@ describe('MemberHomePage', () => {
 
     expect(await screen.findByText('Membership activated')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Monthly Plus' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Explore classes' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Open schedule' })).toBeInTheDocument()
 
     await waitFor(() => {
       expect(screen.getByTestId('location')).toHaveTextContent('/home#membership')
@@ -174,7 +174,7 @@ describe('MemberHomePage', () => {
 
     renderPage()
 
-    expect(await screen.findByRole('heading', { name: 'No active membership' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Activate your access' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Compare all plans' })).toHaveAttribute(
       'href',
       '/plans?source=home'
@@ -193,7 +193,7 @@ describe('MemberHomePage', () => {
     renderPage()
 
     expect(
-      await screen.findByRole('heading', { name: 'No active membership' })
+      await screen.findByRole('heading', { name: 'Activate your access' })
     ).toBeInTheDocument()
     expect(screen.getByText('No plans available right now')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Browse trainers' })).toBeInTheDocument()

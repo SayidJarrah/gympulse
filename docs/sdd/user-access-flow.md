@@ -186,6 +186,23 @@ State rules:
   navigation so they do not reappear on normal in-app back/forward movement.
 - Highlight query params on `/plans` are presentation-only and may remain in the URL.
 
+### Home (`/home`) Render Order
+
+The DOM order of major content blocks on `/home` is:
+
+1. **`<section id="membership">`** — the membership access section is the first major content block
+   rendered on the page. It is the primary purpose of the `/home` route for authenticated users.
+2. **`<MemberHomeHero>`** — renders immediately after `<section id="membership">`, not before it.
+   It is visually subordinate: it provides introductory or motivational copy but must not compete
+   with membership as the opening peer block.
+3. **`<QuickActionsPanel>`** — renders between `<MemberHomeHero>` and the trainer carousel. It
+   provides a set of shortcut action tiles (e.g. browse schedule, find trainers) so members can
+   navigate to secondary surfaces without scrolling through the full page.
+4. **Trainer carousel** — renders after `<QuickActionsPanel>`.
+
+This order is non-negotiable: any refactor that moves `<MemberHomeHero>` above
+`<section id="membership">` violates the design intent of this feature.
+
 ### Home (`/home`) Behaviour
 1. `MemberHomePage` resolves current membership through `useMembershipStore`.
 2. The first major content block is the membership access section.

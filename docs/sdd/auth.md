@@ -634,15 +634,16 @@ Both guards are **UI-only conveniences**. Spring Security enforces the same acce
 
 ### Post-Login Redirect
 
-After a successful login `LoginPage.tsx` branches on role and membership state:
+After a successful login `LoginPage.tsx` branches on role:
 
 | Condition | Destination |
 |-----------|-------------|
 | `role === 'ADMIN'` | `/admin/plans` |
-| Regular user, `hasActiveMembership: true` | `/home` |
-| Regular user, `hasActiveMembership: false` | `/plans` |
+| `role === 'USER'` (any membership state) | `/home` |
 
-`hasActiveMembership` is returned by `POST /api/v1/auth/login` in `LoginResponse`. `AuthService` populates it by calling `UserMembershipRepository.findAccessibleActiveMembership(userId, today)`, which checks `status = ACTIVE`, `end_date ≥ today`, and `deleted_at IS NULL`.
+All authenticated `USER` accounts land on `/home` unconditionally. The membership section on `/home` then adapts its content based on the user's membership state — it does not affect the redirect target. This rule was established by `docs/sdd/user-access-flow.md` and supersedes any prior membership-conditional redirect logic.
+
+`hasActiveMembership` is returned by `POST /api/v1/auth/login` in `LoginResponse`. `AuthService` populates it by calling `UserMembershipRepository.findAccessibleActiveMembership(userId, today)`, which checks `status = ACTIVE`, `end_date ≥ today`, and `deleted_at IS NULL`. Its purpose is to allow the home page membership section to render without an extra API call — it does not drive the redirect destination.
 
 This behaviour is exercised by E2E tests AUTH-04 (member → `/home`) and AUTH-05 (admin → `/admin/plans`).
 

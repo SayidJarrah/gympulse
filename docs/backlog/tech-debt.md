@@ -277,6 +277,27 @@ Added: 2026-04-05
 Effort: S
 `entity-image-management.spec.ts` IMG-01 calls `page.waitForEvent('dialog')` before clicking Remove. If the remove confirmation uses a custom React modal rather than `window.confirm()`, no native dialog event fires and the test hangs for 30 s. Investigate whether the implementation uses a native `confirm()` or a React modal; if the latter, replace the dialog event listener with a `getByRole('dialog')` assertion targeting the custom modal.
 
+## TD-039 — No E2E coverage for user-access-flow ACs (login redirect, nav, plans gate)
+Source: docs/reviews/user-access-flow-20260409.md
+Feature: user-access-flow
+Added: 2026-04-09
+Effort: M
+No `user-access-flow.spec.ts` file exists. Fixed ACs (AC-1 login redirect to `/home`, AC-13 `My Favorites` unconditional, AC-4 membership section first, AC-14 active-member `/plans` redirect) have zero E2E regression coverage. Any future change to `LoginPage.tsx` or `Navbar.tsx` can silently re-introduce the reported bugs. Create `frontend/e2e/user-access-flow.spec.ts` covering at minimum: authenticated USER login form submit → URL is `/home`; authenticated nav does not contain a `Plans` link; `My Favorites` is present for a user with no active membership; active-member navigating to `/plans` is redirected to `/home?membershipBanner=already-active`.
+
+## TD-040 — Mobile bottom navigation bar not implemented (design spec requirement)
+Source: docs/reviews/user-access-flow-20260409.md
+Feature: user-access-flow
+Added: 2026-04-09
+Effort: M
+The design spec (Screen: Authenticated App Shell > Mobile shell) requires a sticky bottom navigation bar with five destinations for mobile viewports. `Navbar.tsx` provides a hamburger-triggered mobile drawer instead. The five-destination bottom bar is the spec-mandated pattern for the authenticated USER shell on mobile and is absent from the current implementation. This was pre-existing before this fix branch; address in a dedicated mobile-nav sprint.
+
+## TD-041 — `QuickActionsPanel` and `MemberHomeHero` position undocumented in SDD
+Source: docs/reviews/user-access-flow-20260409.md
+Feature: user-access-flow
+Added: 2026-04-09
+Effort: S
+`QuickActionsPanel` renders between `MemberHomeHero` and `TrainerPreviewCarousel` on `/home`. Neither its existence, its content, nor its position relative to the membership section is described in `docs/sdd/user-access-flow.md` or `docs/design/user-access-flow.md`. `MemberHomeHero`'s post-membership ordering is also undocumented in the SDD. Add a paragraph to SDD §4 (MemberHomePage) specifying the render order and each component's purpose so the layout is not implicit.
+
 ## TD-024 — SDD Section 2 sample JSON still shows "page" field, contradicts Section 7
 Source: docs/reviews/trainer-discovery-20260405.md
 Feature: trainer-discovery
