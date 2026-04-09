@@ -23,6 +23,14 @@ Spawn both agents simultaneously:
 > - Are there UI screens with no design spec?
 > - Are there behaviours not in any AC?
 >
+> Check CROSS-SDD CONTRADICTIONS:
+> - Read all other SDD files in docs/sdd/ and check whether any of them document
+>   the same behaviours (redirects, nav rules, auth logic, routing) differently.
+> - If a contradiction is found, determine which SDD is newer/authoritative and
+>   flag the stale one. Do not resolve by majority vote — reason about which spec
+>   reflects the current intended design.
+> - Report any stale SDD sections under "SDD Contradictions" in the gap report.
+>
 > Write DOCS→CODE findings to docs/gaps/$ARGUMENTS.md."
 
 **Tester:**
@@ -43,6 +51,10 @@ Spawn both agents simultaneously:
 ```markdown
 # Gap Report: $ARGUMENTS
 Date: {today}
+
+## SDD Contradictions
+
+- {stale SDD file + section}: documents X, but {authoritative SDD} supersedes it with Y — needs update
 
 ## DOCS → CODE Gaps
 

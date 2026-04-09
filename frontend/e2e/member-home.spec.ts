@@ -297,10 +297,10 @@ test.describe('Member Home', () => {
   });
 
   // -------------------------------------------------------------------------
-  // AC 5 (secondary CTA) — Active membership "Explore classes" CTA
+  // AC 5 (secondary CTA) — Active membership "Open schedule" CTA
   // -------------------------------------------------------------------------
 
-  test('AC-05 active membership card shows "Explore classes" as secondary CTA', async ({ page, request }) => {
+  test('AC-05 active membership card shows "Open schedule" as secondary CTA', async ({ page, request }) => {
     const { email, userId, accessToken, refreshToken } = await createUserSession(request);
     const plan = await getFirstActivePlan(request, accessToken);
     await purchaseMembershipViaApi(request, accessToken, plan.id);
@@ -308,32 +308,32 @@ test.describe('Member Home', () => {
     await seedPersistedAuth(page, buildAuthState(email, userId, accessToken, refreshToken));
     await page.goto('/home');
 
-    await expect(page.locator('#membership').getByRole('button', { name: 'Explore classes' })).toBeVisible();
+    await expect(page.locator('#membership').getByRole('button', { name: 'Open schedule' })).toBeVisible();
   });
 
   // -------------------------------------------------------------------------
   // AC 7 — No active membership: empty state headline
   // -------------------------------------------------------------------------
 
-  test('AC-07 no-active-membership state shows "No active membership" headline', async ({ page, request }) => {
+  test('AC-07 no-active-membership state shows "Activate your access" headline', async ({ page, request }) => {
     const { email, userId, accessToken, refreshToken } = await createUserSession(request);
     await seedPersistedAuth(page, buildAuthState(email, userId, accessToken, refreshToken));
     await page.goto('/home');
 
-    await expect(page.locator('#membership').getByRole('heading', { name: 'No active membership' })).toBeVisible();
+    await expect(page.locator('#membership').getByRole('heading', { name: 'Activate your access' })).toBeVisible();
   });
 
   // -------------------------------------------------------------------------
   // AC 7 secondary CTA — "See what's inside the club"
   // -------------------------------------------------------------------------
 
-  test('AC-07 no-active-membership state shows "See what\'s inside the club" CTA', async ({ page, request }) => {
+  test('AC-07 no-active-membership state shows "See schedule" CTA', async ({ page, request }) => {
     const { email, userId, accessToken, refreshToken } = await createUserSession(request);
     await seedPersistedAuth(page, buildAuthState(email, userId, accessToken, refreshToken));
     await page.goto('/home');
 
     await expect(
-      page.locator('#membership').getByRole('button', { name: "See what's inside the club" })
+      page.locator('#membership').getByRole('button', { name: "See schedule" })
     ).toBeVisible();
   });
 
@@ -633,7 +633,7 @@ test.describe('Member Home', () => {
 
     // Reload — should show no-active-membership state
     await page.reload();
-    await expect(page.locator('#membership').getByRole('heading', { name: 'No active membership' })).toBeVisible();
+    await expect(page.locator('#membership').getByRole('heading', { name: 'Activate your access' })).toBeVisible();
     await expect(page.getByRole('heading', { name: plan.name })).toHaveCount(0);
   });
 
