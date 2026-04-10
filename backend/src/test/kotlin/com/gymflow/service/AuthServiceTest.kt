@@ -197,6 +197,7 @@ class AuthServiceTest {
         every { jwtService.generateToken(user) } returns "new.jwt.token"
         every { jwtService.getExpiresInSeconds() } returns 3600L
         every { refreshTokenRepository.save(match { it.id != existingToken.id }) } answers { firstArg() }
+        every { userMembershipRepository.findAccessibleActiveMembership(userId, any()) } returns null
 
         val response = authService.refresh(rawToken)
 

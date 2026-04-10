@@ -6,6 +6,10 @@
 - Design System: `docs/design/system.md`
 - Date: 2026-03-30
 
+## Benchmark
+
+Peloton class schedule view — sticky toolbar with view-switcher tabs (weekly / list), period navigator with Previous / Today / Next controls, and class entry cards that show time, duration, and instructor at a glance without extra clicks. Chosen because the three-view model (week, day, list) directly matches the SDD-defined schedule API contract and the toolbar-pinning pattern keeps navigation accessible while scrolling long schedules.
+
 ## User Flows
 1. Member opens `/schedule` from the authenticated navbar, lands on Week view for the current week, sees loading skeletons instead of stale content, then sees the Monday-through-Sunday programme once `GET /api/v1/class-schedule?view=week&anchorDate={today}&timeZone={deviceTimeZone}` returns.
 2. Member uses the sticky schedule toolbar to switch between `Week`, `Day`, and `List`. The route updates to `/schedule?view={view}&date={anchorDate}` without changing the selected anchor date, then the page refetches with the same `anchorDate` and `timeZone`.
@@ -30,7 +34,7 @@ Entry points: Navbar link `Schedule`; direct navigation to `/schedule?view=week&
 Exit points: `/plans` from membership-required CTA; `/login` from unauthenticated redirect; in-page period navigation and view switching; class summary modal close returns to the same route state.
 
 #### Navbar update
-- Purpose: Add `Schedule` to the authenticated member navigation between `Plans` and `Profile`.
+- Purpose: `Schedule` is already defined as the second item in the authenticated primary navigation by `docs/design/user-access-flow.md` (`Home` | `Schedule` | `Trainers` | `My Favorites` | `Profile`). No additional nav insertion is required by this feature. `Plans` is not a top-level nav item for authenticated `USER` accounts.
 - Data shown: none beyond current route active state.
 - User actions: navigate to `/schedule`.
 - Validation: render only when `isAuthenticated === true` and `user.role === 'USER'`.

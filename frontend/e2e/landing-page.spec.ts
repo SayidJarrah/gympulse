@@ -167,7 +167,7 @@ test.describe('Landing Page', () => {
     );
   });
 
-  test('LAND-04 signed-in user with membership sees /membership as the primary action', async ({ page }) => {
+  test('LAND-04 signed-in user with membership sees /home as the primary action', async ({ page }) => {
     await mockLandingPlans(page, [samplePlan()]);
     await mockActiveMembership(page, sampleMembership());
     await seedPersistedAuth(page, {
@@ -183,9 +183,9 @@ test.describe('Landing Page', () => {
 
     await page.goto('/');
 
-    await expect(page.getByRole('link', { name: 'Open member area' })).toHaveAttribute(
+    await expect(page.getByRole('link', { name: 'Go to home' })).toHaveAttribute(
       'href',
-      '/membership'
+      '/home'
     );
   });
 

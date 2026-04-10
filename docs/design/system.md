@@ -45,9 +45,12 @@ The palette is dark-first — near-black surfaces, electric green primary, orang
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| Border Default | `border-gray-700` `#374151` | Default card and input borders |
+| Border Card | `border-gray-800` `#1F2937` | Default card, modal, and panel borders |
+| Border Input | `border-gray-700` `#374151` | Default input and select borders |
 | Border Strong | `border-gray-600` `#4B5563` | Dividers, table headers |
 | Border Focus | `ring-green-500` `#22C55E` | Focus ring on inputs and buttons |
+
+Note: `border-gray-700` is correct for form inputs (see §6B). `border-gray-800` is correct for cards and modal surfaces (see §6C, §6E). Always use the appropriate token for the element type — do not use `border-gray-700` on cards or `border-gray-800` on inputs.
 
 ### 2.4 Text Colors
 
@@ -754,10 +757,11 @@ Active link: adds `text-green-400 border-b-2 border-green-500` and removes `text
 ```jsx
 <nav className="hidden items-center gap-6 sm:flex">
   {[
-    { label: 'Dashboard', href: '/dashboard' },
-    { label: 'Classes', href: '/classes' },
-    { label: 'Memberships', href: '/memberships' },
+    { label: 'Home', href: '/home' },
+    { label: 'Schedule', href: '/schedule' },
     { label: 'Trainers', href: '/trainers' },
+    { label: 'My Favorites', href: '/trainers/favorites' },
+    { label: 'Profile', href: '/profile' },
   ].map(({ label, href }) => (
     <a
       key={href}

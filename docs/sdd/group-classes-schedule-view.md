@@ -26,7 +26,7 @@ None.
 ### Modified Tables
 
 ```sql
--- V15__add_class_instance_status_for_member_schedule.sql
+-- V18__add_class_instance_status_for_member_schedule.sql
 
 ALTER TABLE class_instances
   ADD COLUMN status VARCHAR(10);
@@ -67,14 +67,14 @@ Schema review conclusions used for this design:
 - Cascade / delete behaviour remains correct for this feature: `class_instance_trainers` cascades on class/trainer delete; `class_templates.room_id` and `class_instances.room_id` use `ON DELETE SET NULL`; membership and plan rows remain restrictive for audit/history safety.
 
 ### Flyway Migration
-`V15__add_class_instance_status_for_member_schedule.sql`
+`V18__add_class_instance_status_for_member_schedule.sql`
 
 ---
 
 ## 2. Backend API Contract
 
 ### GET /api/v1/class-schedule
-**Auth:** Required (`USER` role only, plus current ACTIVE membership)
+**Auth:** Required (`USER` role only)
 
 **Query Parameters:**
 - `view` required, one of `week`, `day`, `list`
@@ -140,31 +140,26 @@ Response rules:
 | 400 | `INVALID_TIME_ZONE` | `timeZone` missing or not a valid IANA timezone |
 | 401 | `UNAUTHORIZED` | No valid Bearer token after normal refresh handling |
 | 403 | `ACCESS_DENIED` | Authenticated caller is not a `USER` |
-| 404 | `NO_ACTIVE_MEMBERSHIP` | Caller has no membership row with `status = 'ACTIVE'` and `end_date >= current_date` |
 
 **Business Logic:**
 1. `@PreAuthorize("hasRole('USER')")` blocks unauthenticated callers and non-`USER` roles before any schedule data is queried.
 2. Parse and validate `view`, `anchorDate`, and `timeZone`. Invalid values throw feature-specific exceptions mapped by `GlobalExceptionHandler`.
-3. Determine `today = LocalDate.now()` using the existing membership day-granularity semantics already used by `UserMembershipService`.
-4. Verify membership access with a dedicated repository query:
-   `SELECT m FROM UserMembership m WHERE m.userId = :userId AND m.status = 'ACTIVE' AND m.endDate >= :today AND m.deletedAt IS NULL`.
-   If no row matches, throw `NoActiveMembershipException`.
-5. Build the requested local date range in the supplied timezone:
+3. Build the requested local date range in the supplied timezone:
    - `week`: Monday 00:00 local to next Monday 00:00 local
    - `day`: `anchorDate` 00:00 local to next day 00:00 local
    - `list`: `anchorDate` 00:00 local to `anchorDate.plusDays(14)` 00:00 local
-6. Convert the local range bounds to UTC `OffsetDateTime` values before querying PostgreSQL.
-7. Query `class_instances` with `LEFT JOIN FETCH ci.trainers` where:
+4. Convert the local range bounds to UTC `OffsetDateTime` values before querying PostgreSQL.
+5. Query `class_instances` with `LEFT JOIN FETCH ci.trainers` where:
    - `ci.deletedAt IS NULL`
    - `ci.type = 'GROUP'`
    - `ci.status = 'SCHEDULED'`
    - `ci.scheduledAt >= :startUtc`
    - `ci.scheduledAt < :endUtc`
-8. Sort instances in memory by `scheduledAt ASC`, then map each row to an entry DTO:
+6. Sort instances in memory by `scheduledAt ASC`, then map each row to an entry DTO:
    - `localDate = ci.scheduledAt.atZoneSameInstant(requestedZone).toLocalDate()`
    - `trainerNames = sorted full-name list`
-9. Return the response with `view`, `anchorDate`, `timeZone`, `week`, `rangeStartDate`, `rangeEndDateExclusive`, and `entries`.
-10. Transaction rule: `@Transactional(readOnly = true)`. This endpoint is idempotent and emits no events, writes, or cache invalidations.
+7. Return the response with `view`, `anchorDate`, `timeZone`, `week`, `rangeStartDate`, `rangeEndDateExclusive`, and `entries`.
+8. Transaction rule: `@Transactional(readOnly = true)`. This endpoint is idempotent and emits no events, writes, or cache invalidations.
 
 ---
 
@@ -173,7 +168,7 @@ Response rules:
 ### New Files
 | File | Type | Purpose |
 |------|------|---------|
-| `backend/src/main/resources/db/migration/V15__add_class_instance_status_for_member_schedule.sql` | Flyway migration | Adds `class_instances.status`, backfills existing rows, and adds supporting indexes |
+| `backend/src/main/resources/db/migration/V18__add_class_instance_status_for_member_schedule.sql` | Flyway migration | Adds `class_instances.status`, backfills existing rows, and adds supporting indexes |
 | `backend/src/main/kotlin/com/gymflow/controller/UserClassScheduleController.kt` | REST controller | Exposes `GET /api/v1/class-schedule` for authenticated Members |
 | `backend/src/main/kotlin/com/gymflow/service/UserClassScheduleService.kt` | Service | Validates query params, enforces membership access, computes timezone-aware ranges, and maps DTOs |
 | `backend/src/main/kotlin/com/gymflow/dto/UserClassScheduleResponse.kt` | DTO | Response root plus `UserClassScheduleEntryResponse` |
@@ -276,7 +271,7 @@ User-visible state handling:
 - Loading: show view-level skeletons; do not show previous grid/list as if it were current
 - Success: render entries in chronological order; if `trainerNames.length === 0`, show `Trainer TBA`
 - Empty: show a clear empty state when `entries.length === 0`
-- `NO_ACTIVE_MEMBERSHIP`: show membership-required state with CTA to `/plans`
+- `NO_ACTIVE_MEMBERSHIP` (legacy — gate removed; should not occur for authenticated USERs)
 - `INVALID_SCHEDULE_VIEW`, `INVALID_ANCHOR_DATE`, `INVALID_TIME_ZONE`: reset to the default current-week URL on Retry
 - Generic network / 5xx: show non-technical error copy plus Retry
 
@@ -297,7 +292,7 @@ Permissions / visibility:
 ## 5. Task List per Agent
 
 ### → backend-dev
-- Create `V15__add_class_instance_status_for_member_schedule.sql` with the exact DDL above.
+- Create `V18__add_class_instance_status_for_member_schedule.sql` with the exact DDL above.
 - Add `status` to `ClassInstance` and default all newly created/copied/imported rows to `SCHEDULED`.
 - Add `deletedAt` to `UserMembership` so repository queries can safely exclude soft-deleted rows.
 - Add `UserMembershipRepository.findAccessibleActiveMembership(userId, today)` with `status = 'ACTIVE'` and `endDate >= today`.
@@ -311,7 +306,6 @@ Permissions / visibility:
   - week/day/list range calculation
   - device timezone boundary handling around midnight
   - filtering out `CANCELLED`, `COMPLETED`, `PERSONAL`, and soft-deleted rows
-  - `NO_ACTIVE_MEMBERSHIP` when `endDate < today`
 - Write controller tests for 200/400/401/403/404 responses and payload shape.
 
 ### → frontend-dev

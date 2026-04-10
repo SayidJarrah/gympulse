@@ -15,7 +15,7 @@ Key design decisions:
 - Reuse `GET /api/v1/membership-plans` for up to 3 teaser plans when the user has no active membership.
 - Reuse `GET /api/v1/trainers` for the trainer carousel with fixed preview params.
 - Add `GET /api/v1/member-home/classes-preview` for the classes carousel so home can remain visible to authenticated users without an active membership while `/schedule` stays gated by active membership.
-- Reuse the existing `PurchaseConfirmModal` inline on `/home` for teaser-plan activation so a successful purchase updates Member Home to the ACTIVE state without forcing navigation away from the page.
+- Navigate to `/plans?source=home` for plan activation; after purchase the user is returned to `/home` with a `membershipBanner=activated` query param (see Section 5a).
 
 ---
 
@@ -364,7 +364,7 @@ UI rules:
 - Membership section modes:
   - `loading`: render skeleton card
   - `active`: render current plan summary and CTA buttons `Manage membership` (`/membership`) and `Explore classes` (`/schedule`)
-  - `empty`: render `No active membership`, up to 3 teaser plans, inline purchase trigger using existing `PurchaseConfirmModal`, primary CTA `Browse plans`
+  - `empty`: render `No active membership`, up to 3 teaser plan teasers, primary CTA `Browse plans` navigating to `/plans?source=home` (see Section 5a for the round-trip protocol)
   - `empty + no plans`: render unavailable copy, no inline activation button
   - `error`: render retryable membership error card only
 - Trainer section modes:
@@ -425,7 +425,7 @@ Form and interaction constraints:
   - `getMemberHomeTrainerPreview`
   - `getMemberHomePlanTeasers`
 - [ ] Add page-scoped hooks for membership section orchestration, trainer preview, and class preview. Reuse `useMembershipStore` instead of cloning membership state.
-- [ ] Reuse `PurchaseConfirmModal` inline from Member Home teaser plans so successful purchase updates the page to ACTIVE without navigation.
+- [ ] Implement the `accessFlowNavigation` round-trip: teaser plan CTAs navigate to `/plans?source=home`; after purchase the user returns to `/home?membershipBanner=activated` (see Section 5a).
 - [ ] Keep `/membership` as the detailed membership-management page; do not delete or replace it.
 - [ ] Update login success redirect for `USER` from `/plans` to `/home`.
 - [ ] Update authenticated-member landing CTAs from `/membership` to `/home`.

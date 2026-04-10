@@ -6,6 +6,10 @@
 - Design System: `docs/design/system.md`
 - Date: 2026-04-04
 
+## Benchmark
+
+Whoop home dashboard — membership/access status card is pinned at the top before any activity or discovery content. Horizontal carousels surface curated content (trainers, upcoming items) without requiring the user to navigate away from the home surface first. Chosen because it creates a clear information hierarchy: know your access state, then discover.
+
 ## User Flows
 1. Logged-in `USER` lands on `/home` immediately after login instead of `/plans`.
 2. Member Home loads the membership section first. If the user has an ACTIVE membership, the current plan summary is shown. If not, the hero card switches to a membership-required state with plan activation CTAs.
@@ -158,8 +162,8 @@ Layout: `min-h-screen bg-[#0F0F0F]`; sticky shared `Navbar`; page shell `mx-auto
 
 ##### `already-active` variant
 - Styling: blue informational banner.
-- Tailwind tokens used in implementation: `border-blue-500/30 bg-blue-500/10 text-blue-300`.
-- **Design system note:** this uses an ad-hoc blue that is outside the documented design system colour tokens. The design system defines no blue semantic token. This should be revisited and aligned with the system palette in a future design pass.
+- Tailwind tokens used in implementation: `border-blue-500/30 bg-blue-500/10 text-blue-400`.
+- **Design system note:** blue is used here as the `Info` status colour (`system.md` §2.5). The text token `text-blue-400` aligns with the system Info text token. Do not use `text-blue-300` or `text-blue-100` — those are not in the design system.
 - Copy: informs the user that their membership was already active when the activation was attempted.
 
 ## Component States

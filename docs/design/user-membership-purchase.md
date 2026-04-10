@@ -1,5 +1,9 @@
 # Design: User Membership Purchase
 
+## Benchmark
+
+Peloton membership activation flow — a compact confirmation modal summarises plan name, price, and duration before the user commits. No separate checkout page is needed for a single-step subscription. The modal pattern keeps context (the plan grid) visible behind the overlay. Chosen because the GymPulse plan purchase is similarly low-complexity and does not warrant a multi-step wizard.
+
 ## User Flows
 
 ### Flow 1 — User activates their first membership
@@ -9,7 +13,7 @@
 3. User clicks "Activate" on a plan card.
 4. `PurchaseConfirmModal` opens, showing the plan name, price, and duration. Two buttons: "Confirm" (primary) and "Cancel" (ghost).
 5. User clicks "Confirm". Button enters loading state. API call `POST /api/v1/memberships` is made.
-6. On success (201): modal closes, user is navigated to `/membership`. The `MembershipStatusCard` is displayed with status ACTIVE.
+6. On success (201): modal closes, user is navigated to `/home?membershipBanner=activated#membership`. The `MembershipAccessSection` re-renders in the ACTIVE state and a success banner confirms the change. This aligns with `docs/design/user-access-flow.md` Decision 8.
 
 ### Flow 2 — User views their active membership
 

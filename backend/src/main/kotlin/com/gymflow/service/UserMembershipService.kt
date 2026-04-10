@@ -83,7 +83,7 @@ class UserMembershipService(
 
     @Transactional(readOnly = true)
     fun getMyActiveMembership(userId: UUID): UserMembershipResponse {
-        val membership = userMembershipRepository.findByUserIdAndStatus(userId, "ACTIVE")
+        val membership = userMembershipRepository.findAccessibleActiveMembership(userId, LocalDate.now())
             ?: throw NoActiveMembershipException("No active membership found for the current user")
 
         val plan = membershipPlanRepository.findById(membership.planId)

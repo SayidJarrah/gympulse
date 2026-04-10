@@ -77,12 +77,7 @@ class TrainerDiscoveryService(
             ?: throw TrainerNotFoundException("Trainer with id '$trainerId' not found")
 
         val classCountMap = countScheduledClassesForTrainers(setOf(trainerId))
-        val isActiveMember = userMembershipRepository.existsByUserIdAndStatus(requestingUserId, "ACTIVE")
-        val isFavorited = if (isActiveMember) {
-            userTrainerFavoriteRepository.existsByUserIdAndTrainerId(requestingUserId, trainerId)
-        } else {
-            false
-        }
+        val isFavorited = userTrainerFavoriteRepository.existsByUserIdAndTrainerId(requestingUserId, trainerId)
         val availabilityPreview = getAvailabilityPreview(trainerId)
         val profilePhotoUrl = resolveProfilePhotoUrl(trainer.id, trainer.profilePhotoUrl, trainer.photoData != null)
 
@@ -108,11 +103,7 @@ class TrainerDiscoveryService(
         val trainerIds = trainersPage.content.map { it.id }
         val classCountMap = countScheduledClassesForTrainers(trainerIds.toSet())
         val favoritedTrainerIds = favoritedTrainerIdsOverride
-            ?: if (userMembershipRepository.existsByUserIdAndStatus(requestingUserId, "ACTIVE")) {
-                userTrainerFavoriteRepository.findFavoritedTrainerIds(requestingUserId, trainerIds)
-            } else {
-                emptySet()
-            }
+            ?: userTrainerFavoriteRepository.findFavoritedTrainerIds(requestingUserId, trainerIds)
 
         val content = trainersPage.content.map { trainer ->
             val profilePhotoUrl = resolveProfilePhotoUrl(trainer.id, trainer.profilePhotoUrl, trainer.photoData != null)

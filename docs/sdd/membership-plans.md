@@ -160,6 +160,7 @@ The file contains, in order:
       "description": "Unlimited gym access, weekdays only.",
       "priceInCents": 2999,
       "durationDays": 30,
+      "maxBookingsPerMonth": 10,
       "status": "ACTIVE",
       "createdAt": "2026-03-21T10:00:00Z",
       "updatedAt": "2026-03-21T10:00:00Z"
@@ -203,6 +204,7 @@ ADMIN role the inactive plan is still visible (see AC 5 inversion below).
   "description": "Unlimited gym access, weekdays only.",
   "priceInCents": 2999,
   "durationDays": 30,
+  "maxBookingsPerMonth": 10,
   "status": "ACTIVE",
   "createdAt": "2026-03-21T10:00:00Z",
   "updatedAt": "2026-03-21T10:00:00Z"
@@ -247,6 +249,7 @@ ADMIN role the inactive plan is still visible (see AC 5 inversion below).
   "description": "Full access including classes and personal training sessions.",
   "priceInCents": 89900,
   "durationDays": 365,
+  "maxBookingsPerMonth": 0,
   "status": "ACTIVE",
   "createdAt": "2026-03-21T10:00:00Z",
   "updatedAt": "2026-03-21T10:00:00Z"

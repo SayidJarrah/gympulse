@@ -222,15 +222,16 @@ therefore `V6`. The file contains, in order:
 
 **Business Logic:**
 1. Extract `userId` from Spring Security context.
-2. Query `userMembershipRepository.findByUserIdAndStatus(userId, "ACTIVE")`.
+2. Query `userMembershipRepository.findAccessibleActiveMembership(userId, today)`.
+   This checks `status = 'ACTIVE'` AND `endDate >= today` AND `deletedAt IS NULL`.
    If empty, throw `NoActiveMembershipException` (maps to 404 `NO_ACTIVE_MEMBERSHIP`).
 3. Map result to `UserMembershipResponse` (join with plan for `planName` and
    `maxBookingsPerMonth`) and return 200.
 
-Note: This endpoint returns exactly the current ACTIVE membership. The query uses
-`status = 'ACTIVE'` only — it does not check `endDate >= today`. The expiry scheduler
-(future feature) is responsible for transitioning status to `EXPIRED` when `endDate`
-passes.
+Note: Both `status = 'ACTIVE'` and `endDate >= today` are required. A membership whose
+`endDate` has passed but whose `status` has not yet been transitioned to `EXPIRED` (pending
+the expiry scheduler) must not be returned as accessible. The `findAccessibleActiveMembership`
+query enforces both conditions consistently with the class schedule and booking features.
 
 ---
 

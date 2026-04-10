@@ -159,7 +159,7 @@ class UserMembershipServiceTest {
         val userId = UUID.randomUUID()
         val membership = buildMembership(userId = userId, planId = plan.id, status = "ACTIVE")
 
-        every { userMembershipRepository.findByUserIdAndStatus(userId, "ACTIVE") } returns membership
+        every { userMembershipRepository.findAccessibleActiveMembership(userId, any()) } returns membership
         every { membershipPlanRepository.findById(plan.id) } returns Optional.of(plan)
 
         val result = service.getMyActiveMembership(userId)
@@ -178,7 +178,7 @@ class UserMembershipServiceTest {
     fun `getMyActiveMembership - no active membership - throws NoActiveMembershipException`() {
         val userId = UUID.randomUUID()
 
-        every { userMembershipRepository.findByUserIdAndStatus(userId, "ACTIVE") } returns null
+        every { userMembershipRepository.findAccessibleActiveMembership(userId, any()) } returns null
 
         assertThrows<NoActiveMembershipException> {
             service.getMyActiveMembership(userId)

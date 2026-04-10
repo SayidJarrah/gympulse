@@ -69,7 +69,7 @@
 3. If an authenticated non-`USER` account reaches `/profile` and receives
    `ACCESS_DENIED`, the page shows a non-editable access state with message:
    `You do not have permission to view this profile.`
-4. This state includes a ghost `Back to classes` link to `/classes`.
+4. This state includes a ghost `Back to schedule` link to `/schedule`.
 
 ---
 
@@ -459,10 +459,10 @@ Shown for authenticated callers who fail the server role check.
     You do not have permission to view this profile.
   </p>
   <a
-    href="/classes"
+    href="/schedule"
     className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-gray-400 transition-all duration-200 hover:bg-gray-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
   >
-    Back to classes
+    Back to schedule
   </a>
 </div>
 ```
@@ -472,7 +472,10 @@ Shown for authenticated callers who fail the server role check.
 Update `Navbar` to expose the new route for authenticated `USER` accounts.
 
 Desktop nav order:
-`Dashboard` | `Classes` | `Memberships` | `Trainers` | `Profile`
+`Home` | `Schedule` | `Trainers` | `My Favorites` | `Profile`
+
+This matches the authenticated primary navigation defined in `docs/design/user-access-flow.md`.
+`Plans` is not a top-level nav item for authenticated `USER` accounts.
 
 Active nav link styling uses the existing design-system rule:
 `text-green-400 border-b-2 border-green-500`

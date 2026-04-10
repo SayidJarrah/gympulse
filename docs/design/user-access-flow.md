@@ -10,6 +10,10 @@
   - `docs/design/user-membership-purchase.md`
 - Date: 2026-04-04
 
+## Benchmark
+
+Whoop app post-login shell — membership/access status is the first content block the user sees after login, placed above all discovery content. Navigation tabs never include a "Purchase" destination; purchasing is reached from within the status surface. Chosen because it removes the tension of sending a paying user to a sales page on every login.
+
 ## Design Decisions
 1. `Home` is the only primary post-login destination for authenticated `USER` accounts.
 2. The authenticated primary navigation removes `Plans` as a top-level tab and keeps `Home`, `Schedule`, `Trainers`, `My Favorites`, and `Profile`.
@@ -180,7 +184,7 @@ Layout:
 - Placement:
   - pinned above the membership card on the next `/home` render only
 - Tailwind structure:
-  - `rounded-2xl border border-green-500/30 bg-green-500/10 px-4 py-4 text-green-100`
+  - `rounded-2xl border border-green-500/30 bg-green-500/10 px-4 py-4 text-green-300`
 
 ##### MembershipInfoRedirectBanner
 - Trigger:
@@ -189,7 +193,7 @@ Layout:
 - Placement:
   - above the membership card
 - Tailwind structure:
-  - `rounded-2xl border border-blue-500/30 bg-blue-500/10 px-4 py-4 text-blue-100`
+  - `rounded-2xl border border-blue-500/30 bg-blue-500/10 px-4 py-4 text-blue-400`
 
 ### Screen: Authenticated Plans Comparison (`/plans`)
 Who sees it: authenticated `USER` accounts without an `ACTIVE` membership, or users opening a direct authenticated comparison link before purchasing.

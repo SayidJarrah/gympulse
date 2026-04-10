@@ -6,6 +6,10 @@
 - Design System: `docs/design/system.md`
 - Date: 2026-04-04
 
+## Benchmark
+
+Peloton class booking flow — booking state is embedded directly in each class card (available / booked / full) rather than behind a separate booking page. A compact confirmation modal appears in-context over the schedule. Booking status updates the card immediately after confirm. Chosen because it minimises navigation interruption for a high-frequency action and keeps the member oriented to the full schedule while confirming their spot.
+
 ## User Flows
 1. Member opens `/schedule`, sees upcoming classes with booking actions embedded in each card instead of a read-only experience.
 2. Available class card shows a primary `Book spot` CTA. Member clicks it, a compact confirmation modal opens, and on success the card switches to a booked state.

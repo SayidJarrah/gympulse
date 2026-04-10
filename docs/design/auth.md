@@ -6,6 +6,12 @@
 
 ---
 
+## Benchmark
+
+Vercel auth pages — centered single-card layout on a near-black background, minimal chrome, full-width primary submit button, inline field-level error text below each input, and a server-error banner rendered above the submit button rather than as a toast. Chosen because it keeps the user's attention on the single action without visual distraction, and the inline/banner error placement is already expected behavior in dark-surface auth forms.
+
+---
+
 ## User Flows
 
 ### Flow 1: Guest registers a new account

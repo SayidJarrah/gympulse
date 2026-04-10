@@ -1,5 +1,9 @@
 # Design: Membership Plans
 
+## Benchmark
+
+Peloton membership page — pricing cards are presented in a clean equal-height grid near the top of the page, each card shows price, duration, and one differentiating feature. A single prominent CTA per card removes comparison paralysis. Chosen because it lets the user evaluate and commit without needing a separate detail page for straightforward plans.
+
 ## User Flows
 
 ### Flow 1 — Guest browses and views a plan
@@ -200,13 +204,15 @@ for the plan. The `onActivate` handler takes precedence over `ctaMode`.
       </button>
       <button
         disabled={currentPage >= totalPages - 1}
-        className="rounded-md bg-green-500 px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-green-600 hover:shadow-lg hover:shadow-green-500/25 disabled:cursor-not-allowed disabled:bg-green-500/40"
+        className="rounded-md border border-gray-700 px-4 py-2 text-sm font-medium text-gray-300 transition-all duration-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-40"
       >
         Next
       </button>
     </div>
   </div>
   ```
+
+Note: Both `Previous` and `Next` use the same Ghost/bordered style. Do not make `Next` a primary green button — primary green is reserved for form submission and high-emphasis CTAs. Pagination is a navigation control, not a call to action.
 
 ---
 
@@ -383,7 +389,7 @@ Layout: Two-column admin shell. Left: `Sidebar` (from design system 6H). Right: 
       <button
         type="button"
         onClick={() => onToggleStatus(plan)}
-        className="rounded-md px-2 py-1 text-xs font-medium text-blue-400 transition-colors duration-150 hover:bg-blue-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        className="rounded-md border border-green-500 px-2 py-1 text-xs font-medium text-green-400 transition-colors duration-150 hover:bg-green-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
       >
         Activate
       </button>
