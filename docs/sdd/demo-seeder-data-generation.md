@@ -4,6 +4,8 @@
 - PRD: `docs/prd/demo-seeder-data-generation.md`
 - Date: 2026-04-11
 
+> **Implementation note:** This SDD documents the target state. The env-var requirements in Section 6 (DEMO_PASSWORD startup assertion, DB_PASSWORD fail-fast) are implemented in the same branch as this document — see `demo-seeder/src/server.ts` startup assertions and `demo-seeder/src/seeder.ts`.
+
 ## Architecture Overview
 
 The data-generation sub-feature is implemented entirely in:
