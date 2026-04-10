@@ -1,5 +1,9 @@
 # Design: Trainer Discovery
 
+## Benchmark
+
+Nike Training Club trainer roster — photo-led card grid with name, specialization tags, and a favorite/save action on each card. Filter panel on the left on desktop, collapsible on mobile. Profile page uses a large photo header with bio and availability block below. Chosen because NTC is the direct reference for fitness trainer discovery UX and its card density maps cleanly onto the GymFlow trainer data model.
+
 ## User Flows
 
 ### Flow 1 — Browse Trainer List (Guest or Member)
@@ -69,7 +73,7 @@
 1. Guest hovers or taps the heart icon on a trainer card.
 2. Tooltip appears: "Membership required to save favorites."
 3. Heart does not toggle; no API call is made.
-4. If the Guest navigates directly to `/trainers/favorites`, they are redirected to `/memberships`.
+4. If the Guest navigates directly to `/trainers/favorites`, they are redirected to `/plans`.
 
 ### Flow 10 — Error States
 
@@ -235,7 +239,7 @@
 
 ### Screen: My Favorites (`/trainers/favorites`)
 
-**Who sees it:** Member / Admin only (Guests redirected to `/memberships`)
+**Who sees it:** Member / Admin only (Guests redirected to `/plans`)
 **Layout:** Same as Trainer List page but without the `SpecializationFilterPanel`. Sort control remains. Page heading changes to "My Favorites".
 
 #### FavoritesEmptyState
@@ -270,7 +274,7 @@
 
 | Error Code | Message shown to user | Location | Behavior |
 |-----------|----------------------|----------|----------|
-| `MEMBERSHIP_REQUIRED` (403 on GET /favorites) | Redirect to `/memberships` | Full-page redirect | No error message; navigation handles the gate |
+| `MEMBERSHIP_REQUIRED` (403 on GET /favorites) | Redirect to `/plans` | Full-page redirect | No error message; navigation handles the gate |
 | `MEMBERSHIP_REQUIRED` (403 on POST/DELETE favorite) | "An active membership is required to save favorites." | Toast notification (bottom-center, `aria-live="polite"`) | Appears for 4 s then dismisses |
 | `TRAINER_NOT_FOUND` (404 on GET profile) | "Trainer not found." with link back to trainer list | Replaces page content | See `TrainerNotFound` component |
 | `TRAINER_NOT_FOUND` (404 on POST favorite) | "Trainer not found." | Toast notification | Appears for 4 s; button reverts |

@@ -7,6 +7,14 @@
 
 ---
 
+## Benchmark
+
+Linear admin tables — dense information layout with row-level action buttons (edit, delete), sortable columns, and filter/search above the table. Empty and skeleton states use the same row height as populated rows. Chosen for the trainer and room CRUD tables because the audience is admins who need to scan and act quickly, not discover visually.
+
+Weekly calendar: Google Calendar / Fantastical weekly grid pattern — fixed time column on the left, 7 day columns with 30-minute slot rows, drag-to-create and drag-to-move interactions on class instance cards. Chosen because the scheduler is the admin's primary composition surface and the weekly grid is the mental model admins already hold for timetable management.
+
+---
+
 ## User Flows
 
 ### Flow 1 — Trainer lifecycle (create → assign → delete)

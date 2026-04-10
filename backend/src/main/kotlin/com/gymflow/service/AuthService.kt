@@ -113,10 +113,14 @@ class AuthService(
         )
         refreshTokenRepository.save(newRefreshToken)
 
+        val hasActiveMembership = userMembershipRepository
+            .findAccessibleActiveMembership(user.id, LocalDate.now()) != null
+
         return LoginResponse(
             accessToken = newAccessToken,
             refreshToken = newRawToken,
-            expiresIn = jwtService.getExpiresInSeconds()
+            expiresIn = jwtService.getExpiresInSeconds(),
+            hasActiveMembership = hasActiveMembership
         )
     }
 

@@ -74,7 +74,7 @@ class UserClassScheduleServiceTest {
             trainers = mutableSetOf(trainerB, trainerA)
         )
 
-        every { userMembershipRepository.findAccessibleActiveMembership(userId, today) } returns membership
+        every { userMembershipRepository.findAccessibleActiveMembership(userId, any()) } returns membership
         every { classInstanceRepository.findVisibleGroupScheduleBetween(any(), any()) } returns listOf(instance)
         every { bookingService.countConfirmedBookings(any<Collection<UUID>>()) } returns mapOf(instance.id to 3L)
         every { bookingService.findConfirmedBookingsByUserAndClassIds(any(), any<Collection<UUID>>()) } returns emptyMap()
@@ -99,7 +99,7 @@ class UserClassScheduleServiceTest {
             response.entries[0].classPhotoUrl
         )
 
-        verify(exactly = 1) { userMembershipRepository.findAccessibleActiveMembership(userId, today) }
+        verify(exactly = 1) { userMembershipRepository.findAccessibleActiveMembership(userId, any()) }
         verify(exactly = 1) { classInstanceRepository.findVisibleGroupScheduleBetween(any(), any()) }
     }
 
@@ -121,7 +121,7 @@ class UserClassScheduleServiceTest {
             trainers = mutableSetOf()
         )
 
-        every { userMembershipRepository.findAccessibleActiveMembership(userId, today) } returns membership
+        every { userMembershipRepository.findAccessibleActiveMembership(userId, any()) } returns membership
         every { classInstanceRepository.findVisibleGroupScheduleBetween(any(), any()) } returns listOf(instance)
         every { bookingService.countConfirmedBookings(any<Collection<UUID>>()) } returns emptyMap()
         every { bookingService.findConfirmedBookingsByUserAndClassIds(any(), any<Collection<UUID>>()) } returns emptyMap()
@@ -156,7 +156,7 @@ class UserClassScheduleServiceTest {
         val personal = visible.copy(id = UUID.randomUUID(), type = "PERSONAL")
         val deleted = visible.copy(id = UUID.randomUUID(), deletedAt = OffsetDateTime.now(ZoneOffset.UTC))
 
-        every { userMembershipRepository.findAccessibleActiveMembership(userId, today) } returns membership
+        every { userMembershipRepository.findAccessibleActiveMembership(userId, any()) } returns membership
         every { classInstanceRepository.findVisibleGroupScheduleBetween(any(), any()) } returns listOf(
             visible,
             cancelled,
@@ -178,8 +178,7 @@ class UserClassScheduleServiceTest {
 
     @Test
     fun `schedule stays browsable without active membership`() {
-        val today = LocalDate.now()
-        every { userMembershipRepository.findAccessibleActiveMembership(userId, today) } returns null
+        every { userMembershipRepository.findAccessibleActiveMembership(userId, any()) } returns null
         every { classInstanceRepository.findVisibleGroupScheduleBetween(any(), any()) } returns emptyList()
         every { bookingService.countConfirmedBookings(any<Collection<UUID>>()) } returns emptyMap()
         every { bookingService.findConfirmedBookingsByUserAndClassIds(any(), any<Collection<UUID>>()) } returns emptyMap()

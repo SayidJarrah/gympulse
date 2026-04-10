@@ -220,7 +220,7 @@ Existing trainer read contracts remain, with one behavioral correction:
 - when an admin uploads a binary trainer photo through `POST /api/v1/admin/trainers/{id}/photo`,
   the service must set `profile_photo_url = NULL`
 - trainer response and discovery response continue to expose one resolved URL field
-  (`photoUrl` / `profilePhotoUrl`)
+  `profilePhotoUrl` (canonical name per trainer-discovery.md — do not use `photoUrl` for trainers)
 
 #### POST /api/v1/admin/trainers/{id}/photo
 

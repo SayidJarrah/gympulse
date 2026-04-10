@@ -6,6 +6,10 @@
 - Prototype: `docs/design/prototypes/entity-image-management.html`
 - Date: 2026-04-03
 
+## Benchmark
+
+Nike Training Club trainer and class profile screens — each entity has one primary photo with a consistent circular (person) or rectangular (class) crop. Upload is embedded inline in the edit form rather than a separate media manager. Fallback states (initials, category art) are styled and never leave an empty placeholder. Chosen because it keeps the upload interaction predictable across all four entity types and matches the GymFlow visual language.
+
 ## Scope
 This feature introduces one primary image per supported entity and defines where that image is uploaded, how it is previewed, and where it is displayed afterward.
 
@@ -55,7 +59,7 @@ Base shell:
 ```
 
 Empty dropzone:
-- `rounded-xl border-2 border-dashed border-gray-700 bg-gray-950/60 px-5 py-6 transition-colors duration-200 hover:border-gray-500`
+- `rounded-xl border-2 border-dashed border-gray-700 bg-[#0F0F0F]/60 px-5 py-6 transition-colors duration-200 hover:border-gray-500`
 - Icon:
   - avatar: `UserCircleIcon h-8 w-8 text-gray-500`
   - room/cover: `PhotoIcon h-8 w-8 text-gray-500`
@@ -225,7 +229,7 @@ This screen should follow the current implemented page shell in `frontend/src/pa
 
 ```jsx
 <div className="flex items-center gap-3">
-  <div className="h-10 w-12 overflow-hidden rounded-lg border border-gray-800 bg-gray-950">
+  <div className="h-10 w-12 overflow-hidden rounded-lg border border-gray-800 bg-gray-900">
     {/* room image or building fallback */}
   </div>
   <span className="font-medium text-white">{room.name}</span>

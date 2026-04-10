@@ -73,7 +73,7 @@ the rebase may surface conflicts that invalidate the work, and the PR will be me
 - Reviewer + Tester — they read different sources, write to different paths, share no state
 
 **Agent types to use:**
-- Reviewer: `subagent_type: "reviewer"` — NOT `superpowers:code-reviewer`. The project reviewer loads gymflow-domain and design-standards, produces structured review docs with blockers/suggestions.
+- Reviewer: `subagent_type: "reviewer"` — NOT `superpowers:code-reviewer`. The project reviewer loads design-standards, produces structured review docs with blockers/suggestions.
 - Tester: `subagent_type: "tester"`
 - Developer: general-purpose agent
 
@@ -138,7 +138,7 @@ If `docs/backlog/tech-debt.md` does not exist, create it first.
 **Blocker criteria:**
 - Broken UX flow (user cannot complete a primary action end-to-end)
 - Security issue (any OWASP top 10, auth bypass, data exposure)
-- Domain rule violated (contradicts gymflow-domain skill)
+- Domain rule violated (contradicts the feature's SDD)
 - Design structurally off-spec (layout diverges from design spec)
 - Missing required UI states (no loading state, no error handling)
 - Implementation behaviour not documented in the SDD (redirect targets, response fields, routing logic, error messages) — if the code does something the SDD does not describe, that is a blocker

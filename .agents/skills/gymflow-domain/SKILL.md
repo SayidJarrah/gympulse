@@ -1,34 +1,16 @@
 ---
 name: gymflow-domain
-description: Load GymFlow business domain vocabulary and rules. Activate when
-  discussing features, writing PRDs, SDDs, or any business logic.
+description: DEPRECATED — do not load. Domain knowledge is now maintained in the SDD files under docs/sdd/. Loading this skill will produce stale and contradictory information.
 ---
 
-# GymFlow Domain Model & Business Rules
+# DEPRECATED
 
-## Core Terms
-- **Member** — a registered user with an active membership plan
-- **Guest** — a registered user without an active membership
-- **Membership** — a UserMembership record linking a user to a plan, with start/end dates
-- **Plan** — a MembershipPlan defining price, duration, and booking limits
-- **Class** — a scheduled GymClass with a trainer, time, duration, and capacity
-- **Spot** — one available booking slot in a class (capacity - confirmed bookings)
-- **Booking** — a confirmed or cancelled reservation of a spot in a class
-- **Check-in** — marking attendance for a booking on the day of the class
+This skill is out of date and has been retired. The routing rules, entity statuses, and
+business rules it contained were inconsistent with the implemented codebase.
 
-## Key Business Rules
-- A user must have an ACTIVE membership (end_date > now) to book classes
-- A class is FULL when confirmed bookings >= capacity
-- Cancelling a booking immediately frees up one spot
-- A trainer can be linked to multiple classes but belongs to one user account
-- Admins can book classes on behalf of users (admin bypass membership check)
+Authoritative sources:
+- Business rules and entity status values: read the relevant SDD in `docs/sdd/`
+- Post-login routing: `docs/sdd/user-access-flow.md` and `docs/sdd/auth.md §7`
+- Entity shapes: `docs/sdd/{feature}.md` Section 2 (API Contract) and Section 3 (Kotlin Classes)
 
-## Status Values
-- Membership: `ACTIVE`, `EXPIRED`, `CANCELLED`
-- Booking: `CONFIRMED`, `CANCELLED`, `ATTENDED`
-- Class: `SCHEDULED`, `CANCELLED`, `COMPLETED`
-
-## Open Policy Questions (not yet implemented)
-- Cancellation window (minimum notice before class start)
-- Waitlist behaviour when a spot opens
-- Booking limits per membership plan per month
+Do not reference or load this skill.

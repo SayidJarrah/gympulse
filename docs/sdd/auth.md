@@ -380,7 +380,8 @@ data class LoginResponse(
   val accessToken: String,
   val refreshToken: String,
   val tokenType: String = "Bearer",
-  val expiresIn: Long   // seconds
+  val expiresIn: Long,  // seconds
+  val hasActiveMembership: Boolean
 )
 ```
 
@@ -410,7 +411,7 @@ None for this feature. `SecurityConfig.kt` is new (not modifying an existing fil
 | Route | Component | Location | Purpose |
 |-------|-----------|----------|---------|
 | `/register` | `RegisterPage.tsx` | `src/pages/auth/` | Self-registration form |
-| `/login` | `LoginPage.tsx` | `src/pages/auth/` | Login form; redirects to `/plans` on success (regular users), `/admin/plans` (admins) |
+| `/login` | `LoginPage.tsx` | `src/pages/auth/` | Login form; redirects to `/home` on success (regular users), `/admin/plans` (admins) |
 
 ### New Components
 
@@ -446,6 +447,7 @@ export interface LoginResponse {
   refreshToken: string;
   tokenType: 'Bearer';
   expiresIn: number; // seconds
+  hasActiveMembership: boolean;
 }
 
 export interface RefreshRequest {
@@ -550,7 +552,7 @@ Persistence: `accessToken` and `refreshToken` should be persisted to `localStora
 - [ ] Create `src/components/auth/PasswordInput.tsx` — controlled input with show/hide toggle, Tailwind styling only.
 - [ ] Create `src/components/auth/AuthForm.tsx` — reusable form used by both pages, accepts `mode` prop.
 - [ ] Create `src/pages/auth/RegisterPage.tsx` — renders `AuthForm` in register mode; on success redirects to `/login` (or auto-logs in if preferred — document choice).
-- [ ] Create `src/pages/auth/LoginPage.tsx` — renders `AuthForm` in login mode; on success redirects to `/classes`.
+- [ ] Create `src/pages/auth/LoginPage.tsx` — renders `AuthForm` in login mode; on success redirects to `/home`.
 - [ ] Map all backend error codes to user-facing messages:
   - `EMAIL_ALREADY_EXISTS` → "An account with this email already exists. Please sign in instead."
   - `VALIDATION_ERROR` → display the specific field error returned by the backend.

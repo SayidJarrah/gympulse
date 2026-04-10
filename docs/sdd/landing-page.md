@@ -155,7 +155,7 @@ type LandingPrimaryAction =
 Rules:
 - Guest: primary CTA -> `/register`; secondary CTA -> `#plans` or `#journey`
 - Authenticated USER without active membership: primary CTA -> `/plans`
-- Authenticated USER with active membership: primary CTA -> `/membership`
+- Authenticated USER with active membership: primary CTA -> `/home`
 - Authenticated ADMIN: primary CTA -> `/admin/plans`
 
 To determine membership status:
@@ -278,7 +278,7 @@ Evaluation order matters — conditions are checked top to bottom and the first 
 |-----------|------------------------|-------|
 | Not authenticated (guest) | `/register` | "Join GymFlow" / "Create account" |
 | Authenticated, role = `ADMIN` | `/admin/plans` | "Manage plans" |
-| Authenticated, `hasActiveMembership = true` | `/membership` | "Open member area" / "Go to portal" |
+| Authenticated, `hasActiveMembership = true` | `/home` | "Go to member home" |
 | Authenticated, `membershipLoading = true` | disabled | "Checking membership" |
 | Authenticated, `membershipLoading = false`, `membershipErrorCode = null` (silent error fallback) | `/register` | "Join GymFlow" / "Create account" |
 | Authenticated, `membershipErrorCode = 'NO_ACTIVE_MEMBERSHIP'` | `/plans` | "View membership plans" |

@@ -88,7 +88,6 @@ class TrainerDiscoveryServiceTest {
             arrayOf(trainerId2, 5L),
             arrayOf(trainerId3, 0L)
         )
-        every { userMembershipRepository.existsByUserIdAndStatus(userId, "ACTIVE") } returns true
         every { userTrainerFavoriteRepository.findFavoritedTrainerIds(userId, any()) } returns setOf(trainerId1)
 
         val result = trainerDiscoveryService.listTrainers(null, "lastName,asc", pageable, userId)
@@ -109,7 +108,7 @@ class TrainerDiscoveryServiceTest {
 
         verify(exactly = 1) { trainerRepository.findAllByDeletedAtIsNull(pageable) }
         verify(exactly = 1) { classInstanceRepository.countScheduledClassesForTrainers(setOf(trainerId3, trainerId1, trainerId2)) }
-        verify(exactly = 1) { userMembershipRepository.existsByUserIdAndStatus(userId, "ACTIVE") }
+        verify(exactly = 0) { userMembershipRepository.existsByUserIdAndStatus(any(), any()) }
         verify(exactly = 1) { userTrainerFavoriteRepository.findFavoritedTrainerIds(userId, any()) }
     }
 
@@ -126,8 +125,7 @@ class TrainerDiscoveryServiceTest {
         every { classInstanceRepository.countScheduledClassesForTrainers(any()) } returns listOf(
             arrayOf(trainerId1, 3L)
         )
-        every { userMembershipRepository.existsByUserIdAndStatus(userId, "ACTIVE") } returns false
-        // No favorites check if user not active member
+        every { userTrainerFavoriteRepository.findFavoritedTrainerIds(userId, any()) } returns emptySet()
 
         val result = trainerDiscoveryService.listTrainers(specializations, "lastName,asc", pageable, userId)
 
@@ -147,8 +145,8 @@ class TrainerDiscoveryServiceTest {
 
         verify(exactly = 1) { trainerRepository.findBySpecializations(lowerCaseSpecializations, any()) }
         verify(exactly = 1) { classInstanceRepository.countScheduledClassesForTrainers(setOf(trainerId1)) }
-        verify(exactly = 1) { userMembershipRepository.existsByUserIdAndStatus(userId, "ACTIVE") }
-        verify(exactly = 0) { userTrainerFavoriteRepository.findFavoritedTrainerIds(any(), any()) }
+        verify(exactly = 0) { userMembershipRepository.existsByUserIdAndStatus(any(), any()) }
+        verify(exactly = 1) { userTrainerFavoriteRepository.findFavoritedTrainerIds(userId, any()) }
     }
 
     @Test
@@ -158,7 +156,6 @@ class TrainerDiscoveryServiceTest {
         every { classInstanceRepository.countScheduledClassesForTrainers(setOf(trainerId1)) } returns listOf(
             arrayOf(trainerId1, 2L)
         )
-        every { userMembershipRepository.existsByUserIdAndStatus(userId, "ACTIVE") } returns true
         every { userTrainerFavoriteRepository.existsByUserIdAndTrainerId(userId, trainerId1) } returns true
         every { classInstanceRepository.findScheduledDayHoursByTrainer(trainerId1) } returns listOf(
             arrayOf(2, 7), // Tuesday MORNING
@@ -199,7 +196,6 @@ class TrainerDiscoveryServiceTest {
     fun getTrainerProfileEmptyAvailability() {
         every { trainerRepository.findByIdAndDeletedAtIsNull(trainerId1) } returns trainer1
         every { classInstanceRepository.countScheduledClassesForTrainers(setOf(trainerId1)) } returns listOf()
-        every { userMembershipRepository.existsByUserIdAndStatus(userId, "ACTIVE") } returns true
         every { userTrainerFavoriteRepository.existsByUserIdAndTrainerId(userId, trainerId1) } returns false
         every { classInstanceRepository.findScheduledDayHoursByTrainer(trainerId1) } returns listOf()
 
@@ -282,7 +278,6 @@ class TrainerDiscoveryServiceTest {
             arrayOf(0, 7) // Sunday MORNING (PostgreSQL DOW 0)
         )
         every { trainerRepository.findByIdAndDeletedAtIsNull(trainerId1) } returns trainer1 // Required for profile call
-        every { userMembershipRepository.existsByUserIdAndStatus(userId, "ACTIVE") } returns true
         every { userTrainerFavoriteRepository.existsByUserIdAndTrainerId(any(),any()) } returns false // Required for profile call
         every { classInstanceRepository.countScheduledClassesForTrainers(any()) } returns emptyList() // Required for profile call
 
@@ -304,7 +299,6 @@ class TrainerDiscoveryServiceTest {
             arrayOf(trainerId2, 5L),
             arrayOf(trainerId3, 0L)
         )
-        every { userMembershipRepository.existsByUserIdAndStatus(userId, "ACTIVE") } returns true
         every { userTrainerFavoriteRepository.findFavoritedTrainerIds(userId, any()) } returns setOf(trainerId1)
 
         val result = trainerDiscoveryService.listTrainers(null, "experienceYears,desc", pageable, userId)
@@ -326,7 +320,7 @@ class TrainerDiscoveryServiceTest {
 
         every { trainerRepository.findAllByDeletedAtIsNull(capture(pageableSlot)) } returns trainersPage
         every { classInstanceRepository.countScheduledClassesForTrainers(any()) } returns listOf()
-        every { userMembershipRepository.existsByUserIdAndStatus(userId, "ACTIVE") } returns false
+        every { userTrainerFavoriteRepository.findFavoritedTrainerIds(userId, any()) } returns emptySet()
 
         trainerDiscoveryService.listTrainers(null, "experienceYears,asc", pageable, userId)
 
@@ -344,16 +338,17 @@ class TrainerDiscoveryServiceTest {
     }
 
     @Test
-    @DisplayName("should not mark favorites for inactive members on profile")
-    fun getTrainerProfileInactiveMemberNotFavorited() {
+    @DisplayName("should always query DB for isFavorited regardless of membership status")
+    fun getTrainerProfileAlwaysQueriesIsFavorited() {
         every { trainerRepository.findByIdAndDeletedAtIsNull(trainerId1) } returns trainer1
         every { classInstanceRepository.countScheduledClassesForTrainers(setOf(trainerId1)) } returns listOf()
-        every { userMembershipRepository.existsByUserIdAndStatus(userId, "ACTIVE") } returns false
+        every { userTrainerFavoriteRepository.existsByUserIdAndTrainerId(userId, trainerId1) } returns false
         every { classInstanceRepository.findScheduledDayHoursByTrainer(trainerId1) } returns listOf()
 
         val result = trainerDiscoveryService.getTrainerProfile(trainerId1, userId)
 
         assertFalse(result.isFavorited)
-        verify(exactly = 0) { userTrainerFavoriteRepository.existsByUserIdAndTrainerId(any(), any()) }
+        verify(exactly = 1) { userTrainerFavoriteRepository.existsByUserIdAndTrainerId(userId, trainerId1) }
+        verify(exactly = 0) { userMembershipRepository.existsByUserIdAndStatus(any(), any()) }
     }
 }

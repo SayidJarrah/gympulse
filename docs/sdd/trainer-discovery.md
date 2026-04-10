@@ -32,8 +32,9 @@ Trainer Discovery is a read-heavy, user-facing feature layered on top of the exi
 **Schema note (from migration file inspection):**
 - The `trainers` table spells the array column `specialisations` (British spelling). All
   SQL and JPQL in this SDD must use `specialisations` to match.
-- The `class_instances` table has no `status` column. A "SCHEDULED" (active, future) class
-  instance is defined as: `deleted_at IS NULL AND scheduled_at > NOW()`.
+- The `class_instances` table has a `status` column (added in V18). A "SCHEDULED" class
+  instance is defined as: `deleted_at IS NULL AND status = 'SCHEDULED'`. The old proxy
+  `scheduled_at > NOW()` is no longer used.
 - The existing photo mechanism stores binary data in `photo_data BYTEA` and serves it at
   `/api/v1/trainers/{id}/photo`. The new `profile_photo_url TEXT` column is additive and
   nullable; it allows an admin to store an external URL instead of uploading a binary.
@@ -163,9 +164,10 @@ Field notes:
 - `specializations` — uses American spelling in the API (camelCase JSON key); maps to the
   `specialisations` DB column.
 - `classCount` — number of currently SCHEDULED class instances (defined as:
-  `deleted_at IS NULL AND scheduled_at > NOW()`).
-- `isFavorited` — `true` if the requesting user has this trainer in their favorites list.
-  Always `false` for users without an active membership (they cannot have favorites).
+  `deleted_at IS NULL AND status = 'SCHEDULED'`).
+- `isFavorited` — reflects the actual DB value from `user_trainer_favorites`. Returns
+  `true` if the requesting user has a row for this trainer, `false` otherwise. Does not
+  depend on membership state — the check is always performed against the favorites table.
 
 **Error Responses:**
 
@@ -181,7 +183,7 @@ Field notes:
    for each value, joined with OR.
 3. Fetch paginated list of trainers where `deleted_at IS NULL`.
 4. For each trainer in the result page, compute `classCount` via a single aggregating query
-   (see Section 3 — Service implementation note on N+1 avoidance).
+   filtered to `status = 'SCHEDULED'` (see Section 3 — Service implementation note on N+1 avoidance).
 5. Resolve `isFavorited` for the current user via a single batch query against
    `user_trainer_favorites` for the trainer IDs in the page.
 6. Resolve `profilePhotoUrl` per the field note above.
@@ -253,7 +255,7 @@ Field notes:
 - `phone` is explicitly NEVER included in this response.
 - `availabilityPreview` — all seven day keys are always present, even if the value is `[]`.
   A time block appears for a day if and only if the trainer has at least one SCHEDULED class
-  instance (defined as `deleted_at IS NULL AND scheduled_at > NOW()`) starting within that
+  instance (defined as `deleted_at IS NULL AND status = 'SCHEDULED'`) starting within that
   block's hour range on that day of the week. Blocks: MORNING = 06:00–11:59 UTC,
   AFTERNOON = 12:00–16:59 UTC, EVENING = 17:00–21:59 UTC. Classes outside 06:00–22:00 UTC
   are ignored for the preview (treated as no block).

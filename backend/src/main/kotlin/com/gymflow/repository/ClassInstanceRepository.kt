@@ -179,7 +179,7 @@ interface ClassInstanceRepository : JpaRepository<ClassInstance, UUID> {
         JOIN class_instances ci ON ci.id = cit.class_instance_id
         WHERE cit.trainer_id IN (:trainerIds)
           AND ci.deleted_at IS NULL
-          AND ci.scheduled_at > NOW()
+          AND ci.status = 'SCHEDULED'
         GROUP BY cit.trainer_id
         """,
         nativeQuery = true
@@ -197,7 +197,7 @@ interface ClassInstanceRepository : JpaRepository<ClassInstance, UUID> {
         JOIN class_instance_trainers cit ON cit.class_instance_id = ci.id
         WHERE cit.trainer_id = :trainerId
           AND ci.deleted_at IS NULL
-          AND ci.scheduled_at > NOW()
+          AND ci.status = 'SCHEDULED'
         """,
         nativeQuery = true
     )

@@ -63,7 +63,7 @@ Spawn both agents simultaneously:
 
 **Reviewer:**
 > "Review the $ARGUMENTS implementation.
-> Load gymflow-domain and design-standards skills.
+> Load design-standards skill.
 > Check: domain correctness, code quality, design fidelity.
 > Save review to docs/reviews/$ARGUMENTS-{today}.md with BLOCKED or APPROVED verdict."
 
