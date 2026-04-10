@@ -1,6 +1,8 @@
+import { CalendarDaysIcon } from '@heroicons/react/24/outline'
 import type { GroupClassScheduleEntry } from '../../types/groupClassSchedule'
 import { getTodayIsoDate, getWeekDates } from '../../utils/scheduleDates'
 import {
+  formatDayNumber,
   formatMonthDayLabel,
   formatWeekdayLabel,
 } from '../../utils/scheduleFormatters'
@@ -14,6 +16,23 @@ interface GroupScheduleWeekGridProps {
   onBookEntry?: (entry: GroupClassScheduleEntry) => void;
   onCancelEntry?: (entry: GroupClassScheduleEntry) => void;
   onBrowsePlans?: () => void;
+}
+
+// Change 6 — "Rest day" placeholder replacing bare "No classes" text
+function EmptyDayPlaceholder({ compact }: { compact?: boolean }) {
+  if (compact) {
+    return (
+      <div className="flex items-center justify-center py-6">
+        <CalendarDaysIcon className="h-5 w-5 text-gray-700" />
+      </div>
+    )
+  }
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-2 py-8">
+      <CalendarDaysIcon className="h-8 w-8 text-gray-700" />
+      <span className="text-xs text-gray-600">Rest day</span>
+    </div>
+  )
 }
 
 export function GroupScheduleWeekGrid({
@@ -36,13 +55,9 @@ export function GroupScheduleWeekGrid({
     {}
   )
 
-  const renderEntries = (dayEntries: GroupClassScheduleEntry[]) => {
+  const renderEntries = (dayEntries: GroupClassScheduleEntry[], compact = false) => {
     if (dayEntries.length === 0) {
-      return (
-        <div className="rounded-2xl border border-dashed border-gray-800 bg-[#0F0F0F]/60 px-4 py-6 text-sm text-gray-500">
-          No classes
-        </div>
-      )
+      return <EmptyDayPlaceholder compact={compact} />
     }
 
     return dayEntries.map((entry) => (
@@ -51,7 +66,7 @@ export function GroupScheduleWeekGrid({
         entry={entry}
         timeZone={timeZone}
         showDate={false}
-        density="compact"
+        density={compact ? 'compact' : 'comfortable'}
         onSelect={onSelectEntry}
         onBook={onBookEntry}
         onCancel={onCancelEntry}
@@ -62,6 +77,7 @@ export function GroupScheduleWeekGrid({
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Mobile stacked layout — unchanged per spec */}
       <div className="space-y-4 lg:hidden">
         {weekDates.map((date) => {
           const isToday = date === today
@@ -76,7 +92,8 @@ export function GroupScheduleWeekGrid({
               <div className="border-b border-gray-800 px-4 py-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-gray-300">
+                    {/* Change 7 — weekday in uppercase tracking for mobile too */}
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
                       {formatWeekdayLabel(date, timeZone)}
                     </p>
                     <p
@@ -87,27 +104,28 @@ export function GroupScheduleWeekGrid({
                       {formatMonthDayLabel(date, timeZone)}
                     </p>
                   </div>
+                  {/* Change 7 — class count: sentence case, no uppercase */}
                   <span className="rounded-full border border-gray-700 bg-[#0F0F0F] px-2.5 py-1 text-xs font-medium text-gray-300">
                     {dayEntries.length} {dayEntries.length === 1 ? 'class' : 'classes'}
                   </span>
                 </div>
-                {isToday ? (
-                  <p className="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-green-400">
-                    Today
-                  </p>
-                ) : null}
+                {/* Change 3 — remove separate Today text row on mobile (circle is desktop only, but keep the ring indicator) */}
               </div>
-              <div className="flex flex-col gap-3 p-4">{renderEntries(dayEntries)}</div>
+              <div className="flex flex-col gap-3 p-4">{renderEntries(dayEntries, true)}</div>
             </section>
           )
         })}
       </div>
 
+      {/* Desktop 7-column grid */}
       <div className="hidden lg:grid lg:grid-cols-7 lg:gap-4">
         {weekDates.map((date) => {
           const isToday = date === today
           const dayEntries = entriesByDate[date]
-          const bookingCount = dayEntries.filter((entry) => entry.currentUserBooking !== null).length
+          const bookedCount = dayEntries.filter((entry) => entry.currentUserBooking !== null).length
+
+          // Change 3 — dot indicators for booking density (up to 7 dots)
+          const totalDots = Math.min(dayEntries.length, 7)
 
           return (
             <section
@@ -117,37 +135,39 @@ export function GroupScheduleWeekGrid({
               }`}
             >
               <div className="border-b border-gray-800 px-4 py-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="text-sm font-semibold text-gray-300">
-                      {formatWeekdayLabel(date, timeZone)}
-                    </p>
-                    <p
-                      className={`mt-1 font-['Barlow_Condensed'] text-3xl font-bold uppercase leading-none ${
-                        isToday ? 'text-green-400' : 'text-white'
-                      }`}
-                    >
-                      {formatMonthDayLabel(date, timeZone)}
-                    </p>
-                  </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <span className="rounded-full border border-gray-700 bg-[#0F0F0F] px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-gray-300">
-                      {dayEntries.length} {dayEntries.length === 1 ? 'class' : 'classes'}
-                    </span>
-                    {bookingCount > 0 ? (
-                      <span className="rounded-full border border-green-500/30 bg-green-500/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-green-300">
-                        {bookingCount} booked
-                      </span>
-                    ) : null}
+                {/* Change 3 — weekday label */}
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
+                  {formatWeekdayLabel(date, timeZone)}
+                </p>
+
+                {/* Change 3 — date number in filled circle for today; no separate "Today" row */}
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <div
+                    className={`flex h-11 w-11 items-center justify-center rounded-full text-2xl font-bold leading-none ${
+                      isToday
+                        ? 'bg-green-500 text-white'
+                        : 'bg-transparent text-white'
+                    }`}
+                  >
+                    {formatDayNumber(date, timeZone)}
                   </div>
                 </div>
-                {isToday ? (
-                  <p className="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-green-400">
-                    Today
-                  </p>
+
+                {/* Change 3 — dot indicators for booking density */}
+                {totalDots > 0 ? (
+                  <div className="mt-2 flex items-center gap-1">
+                    {Array.from({ length: totalDots }).map((_, i) => (
+                      <div
+                        key={i}
+                        className={`h-1.5 w-1.5 rounded-full ${
+                          i < bookedCount ? 'bg-green-500' : 'bg-gray-600'
+                        }`}
+                      />
+                    ))}
+                  </div>
                 ) : null}
               </div>
-              <div className="flex flex-1 flex-col gap-3 p-4">{renderEntries(dayEntries)}</div>
+              <div className="flex flex-1 flex-col gap-2 p-3">{renderEntries(dayEntries, true)}</div>
             </section>
           )
         })}

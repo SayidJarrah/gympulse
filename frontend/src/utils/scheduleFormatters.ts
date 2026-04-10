@@ -28,6 +28,14 @@ export function formatMonthDayLabel(dateIso: string, timeZone: string): string {
   }).format(date)
 }
 
+export function formatDayNumber(dateIso: string, timeZone: string): string {
+  const date = parseIsoDate(dateIso, timeZone)
+  return new Intl.DateTimeFormat('en-US', {
+    day: 'numeric',
+    timeZone,
+  }).format(date)
+}
+
 export function formatLongDateLabel(dateIso: string, timeZone: string): string {
   const date = parseIsoDate(dateIso, timeZone)
   return new Intl.DateTimeFormat('en-US', {

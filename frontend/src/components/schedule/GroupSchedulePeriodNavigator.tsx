@@ -1,3 +1,4 @@
+import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import type { ScheduleView } from '../../types/groupClassSchedule'
 import {
   formatRangeLabel,
@@ -54,12 +55,9 @@ export function GroupSchedulePeriodNavigator({
           <div className="mt-2 h-3 w-20 rounded-full bg-gray-800 animate-pulse" />
         </div>
         <div className="inline-flex items-center gap-2 self-start">
-          {['Previous', 'Today', 'Next'].map((labelText) => (
-            <div
-              key={labelText}
-              className="h-9 w-20 rounded-md border border-gray-800 bg-gray-800/70 animate-pulse"
-            />
-          ))}
+          <div className="h-9 w-9 rounded-md border border-gray-800 bg-gray-800/70 animate-pulse" />
+          <div className="h-9 w-16 rounded-md border border-gray-800 bg-gray-800/70 animate-pulse" />
+          <div className="h-9 w-9 rounded-md border border-gray-800 bg-gray-800/70 animate-pulse" />
         </div>
       </div>
     )
@@ -81,9 +79,11 @@ export function GroupSchedulePeriodNavigator({
           type="button"
           onClick={onPrevious}
           disabled={disabled}
-          className="inline-flex items-center justify-center rounded-md border border-gray-700 bg-transparent px-3 py-2 text-sm font-medium text-gray-200 transition-all duration-200 hover:border-green-500/40 hover:bg-green-500/10 hover:text-green-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-600"
+          title="Previous week (← key)"
+          aria-label="Previous period"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-gray-700 bg-transparent text-gray-200 transition-all duration-200 hover:border-green-500/40 hover:bg-green-500/10 hover:text-green-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-600"
         >
-          Previous
+          <ChevronLeftIcon className="h-4 w-4" />
         </button>
         <button
           type="button"
@@ -97,9 +97,11 @@ export function GroupSchedulePeriodNavigator({
           type="button"
           onClick={onNext}
           disabled={disabled}
-          className="inline-flex items-center justify-center rounded-md border border-gray-700 bg-transparent px-3 py-2 text-sm font-medium text-gray-200 transition-all duration-200 hover:border-green-500/40 hover:bg-green-500/10 hover:text-green-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-600"
+          title="Next week (→ key)"
+          aria-label="Next period"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-gray-700 bg-transparent text-gray-200 transition-all duration-200 hover:border-green-500/40 hover:bg-green-500/10 hover:text-green-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-600"
         >
-          Next
+          <ChevronRightIcon className="h-4 w-4" />
         </button>
       </div>
     </div>
