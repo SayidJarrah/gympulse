@@ -6,7 +6,7 @@ import { FITNESS_GOALS, CLASS_TYPE_PREFERENCES, pickRandom, randomBetween } from
 import { buildSlotDates, SLOT_QUALIFIERS } from './data/schedule';
 
 const API_URL = process.env.GYMFLOW_API_URL ?? 'http://localhost:8080/api/v1';
-const DEMO_PASSWORD = 'Demo@12345';
+const DEMO_PASSWORD = process.env.DEMO_PASSWORD!;
 
 export interface SeederConfig {
   memberCount: number;
