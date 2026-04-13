@@ -9,7 +9,27 @@ import { seedReferenceData } from './referenceSeeder';
 const API_URL = process.env.GYMFLOW_API_URL ?? 'http://localhost:8080/api/v1';
 const DEMO_PASSWORD = process.env.DEMO_PASSWORD!;
 
+export type Preset = 'small' | 'medium' | 'large';
+
+export interface PresetConfig {
+  rooms: number;
+  trainers: number;
+  classTemplates: number;
+  membershipPlans: number;
+  memberCount: number;
+  weekCount: number;
+  membershipPct: number;
+  densityPct: number;
+}
+
+export const PRESET_CONFIG: Record<Preset, PresetConfig> = {
+  small:  { rooms: 2, trainers: 3, classTemplates: 5,  membershipPlans: 3,  memberCount: 10, weekCount: 1, membershipPct: 50, densityPct: 30 },
+  medium: { rooms: 4, trainers: 6, classTemplates: 10, membershipPlans: 6,  memberCount: 25, weekCount: 2, membershipPct: 80, densityPct: 60 },
+  large:  { rooms: 6, trainers: 10, classTemplates: 15, membershipPlans: 10, memberCount: 50, weekCount: 4, membershipPct: 90, densityPct: 90 },
+};
+
 export interface SeederConfig {
+  preset: Preset;
   memberCount: number;
   weekCount: number;
   membershipPct: number;
@@ -367,7 +387,7 @@ export async function runSeeder(config: SeederConfig, emit: EmitFn): Promise<voi
 
   // Reference phase — always-on. Must complete before loadReferenceData()
   // so that Phase 1+ have the prerequisites they require.
-  await seedReferenceData(emit);
+  await seedReferenceData(emit, PRESET_CONFIG[config.preset]);
 
   emit('log', { message: 'Loading reference data…' });
   const ref = await loadReferenceData();

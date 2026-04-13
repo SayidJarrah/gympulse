@@ -7,7 +7,7 @@ export interface TrainerRecord {
   bio: string;
   specialisations: string[];
   experienceYears: number;
-  profilePhotoUrl: string | null;
+  profilePhotoUrl: string;
 }
 
 export const TRAINERS: TrainerRecord[] = [
@@ -20,7 +20,7 @@ export const TRAINERS: TrainerRecord[] = [
     bio: 'Amelia leads high-energy strength sessions with a focus on sustainable progress, clean technique, and confidence under load.',
     specialisations: ['Strength Training', 'Functional Fitness', 'Mobility'],
     experienceYears: 12,
-    profilePhotoUrl: 'https://picsum.photos/seed/gymflow-trainer-amelia/600/800',
+    profilePhotoUrl: 'https://randomuser.me/api/portraits/women/44.jpg',
   },
   {
     id: '11111111-1111-1111-1111-111111111102',
@@ -31,7 +31,7 @@ export const TRAINERS: TrainerRecord[] = [
     bio: 'Marco blends boxing footwork, conditioning, and interval programming to help members build endurance without losing form.',
     specialisations: ['HIIT', 'Boxing Conditioning', 'Cardio'],
     experienceYears: 9,
-    profilePhotoUrl: 'https://picsum.photos/seed/gymflow-trainer-marco/600/800',
+    profilePhotoUrl: 'https://randomuser.me/api/portraits/men/32.jpg',
   },
   {
     id: '11111111-1111-1111-1111-111111111103',
@@ -42,7 +42,7 @@ export const TRAINERS: TrainerRecord[] = [
     bio: 'Priya coaches mindful movement and breath-led practice, specialising in mobility-focused yoga for busy professionals.',
     specialisations: ['Yoga', 'Mobility', 'Breathwork'],
     experienceYears: 11,
-    profilePhotoUrl: 'https://picsum.photos/seed/gymflow-trainer-priya/600/800',
+    profilePhotoUrl: 'https://randomuser.me/api/portraits/women/67.jpg',
   },
   {
     id: '11111111-1111-1111-1111-111111111104',
@@ -53,7 +53,7 @@ export const TRAINERS: TrainerRecord[] = [
     bio: 'Jordan designs athletic performance programs that combine explosive power, sprint mechanics, and injury-aware recovery work.',
     specialisations: ['Athletic Performance', 'Strength Training', 'Recovery'],
     experienceYears: 8,
-    profilePhotoUrl: null,
+    profilePhotoUrl: 'https://randomuser.me/api/portraits/women/52.jpg',
   },
   {
     id: '11111111-1111-1111-1111-111111111105',
@@ -64,7 +64,7 @@ export const TRAINERS: TrainerRecord[] = [
     bio: 'Sofia specialises in core control and posture-first coaching, making Pilates accessible for beginners and advanced members alike.',
     specialisations: ['Pilates', 'Core', 'Posture'],
     experienceYears: 7,
-    profilePhotoUrl: 'https://picsum.photos/seed/gymflow-trainer-sofia/600/800',
+    profilePhotoUrl: 'https://randomuser.me/api/portraits/women/28.jpg',
   },
   {
     id: '11111111-1111-1111-1111-111111111106',
@@ -75,7 +75,7 @@ export const TRAINERS: TrainerRecord[] = [
     bio: 'Ethan focuses on barbell fundamentals, movement quality, and progressive overload for members returning to structured training.',
     specialisations: ['Powerlifting', 'Strength Training', 'Technique'],
     experienceYears: 10,
-    profilePhotoUrl: 'https://picsum.photos/seed/gymflow-trainer-ethan/600/800',
+    profilePhotoUrl: 'https://randomuser.me/api/portraits/men/55.jpg',
   },
   {
     id: '11111111-1111-1111-1111-111111111107',
@@ -86,7 +86,7 @@ export const TRAINERS: TrainerRecord[] = [
     bio: 'Layla builds low-impact conditioning classes around stability, balance, and joint-friendly movement patterns.',
     specialisations: ['Low Impact', 'Mobility', 'Functional Fitness'],
     experienceYears: 6,
-    profilePhotoUrl: null,
+    profilePhotoUrl: 'https://randomuser.me/api/portraits/women/73.jpg',
   },
   {
     id: '11111111-1111-1111-1111-111111111108',
@@ -97,7 +97,7 @@ export const TRAINERS: TrainerRecord[] = [
     bio: 'Noah coaches indoor cycling and endurance blocks with data-informed pacing, cadence work, and clear progression cues.',
     specialisations: ['Cycling', 'Cardio', 'Endurance'],
     experienceYears: 5,
-    profilePhotoUrl: 'https://picsum.photos/seed/gymflow-trainer-noah/600/800',
+    profilePhotoUrl: 'https://randomuser.me/api/portraits/men/18.jpg',
   },
   {
     id: '11111111-1111-1111-1111-111111111109',
@@ -108,7 +108,7 @@ export const TRAINERS: TrainerRecord[] = [
     bio: 'Mina combines dance conditioning, flexibility work, and upbeat coaching to keep group sessions technical and welcoming.',
     specialisations: ['Dance Fitness', 'Flexibility', 'Cardio'],
     experienceYears: 4,
-    profilePhotoUrl: 'https://picsum.photos/seed/gymflow-trainer-mina/600/800',
+    profilePhotoUrl: 'https://randomuser.me/api/portraits/women/81.jpg',
   },
   {
     id: '11111111-1111-1111-1111-111111111110',
@@ -119,6 +119,6 @@ export const TRAINERS: TrainerRecord[] = [
     bio: 'Daniel works with members on kettlebell flow, unilateral strength, and practical conditioning for everyday resilience.',
     specialisations: ['Kettlebells', 'Functional Fitness', 'Conditioning'],
     experienceYears: 13,
-    profilePhotoUrl: null,
+    profilePhotoUrl: 'https://randomuser.me/api/portraits/men/76.jpg',
   },
 ];

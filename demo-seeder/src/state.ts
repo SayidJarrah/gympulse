@@ -7,6 +7,8 @@ export interface DemoState {
   classesThisWeek: number;
   totalClassInstances: number;
   hasData: boolean;
+  trainers: number;
+  rooms: number;
 }
 
 export async function getState(): Promise<DemoState> {
@@ -15,7 +17,7 @@ export async function getState(): Promise<DemoState> {
 
   const client = await pgPool.connect();
   try {
-    const [membershipsRes, weekClassesRes] = await Promise.all([
+    const [membershipsRes, weekClassesRes, trainersRes, roomsRes] = await Promise.all([
       client.query<{ cnt: string }>(
         `SELECT COUNT(*) AS cnt
          FROM user_memberships um
@@ -32,6 +34,16 @@ export async function getState(): Promise<DemoState> {
            AND scheduled_at >= date_trunc('week', NOW() AT TIME ZONE 'UTC')
            AND scheduled_at <  date_trunc('week', NOW() AT TIME ZONE 'UTC') + interval '7 days'`,
       ),
+      client.query<{ cnt: string }>(
+        `SELECT COUNT(*) AS cnt
+         FROM trainers
+         WHERE deleted_at IS NULL
+           AND email LIKE '%@gymflow.local'`,
+      ),
+      client.query<{ cnt: string }>(
+        `SELECT COUNT(*) AS cnt
+         FROM rooms`,
+      ),
     ]);
 
     return {
@@ -40,6 +52,8 @@ export async function getState(): Promise<DemoState> {
       classesThisWeek: parseInt(weekClassesRes.rows[0].cnt, 10),
       totalClassInstances: classInstanceIds.length,
       hasData: hasDemoData(),
+      trainers: parseInt(trainersRes.rows[0].cnt, 10),
+      rooms: parseInt(roomsRes.rows[0].cnt, 10),
     };
   } finally {
     client.release();
