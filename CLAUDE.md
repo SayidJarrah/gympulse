@@ -47,6 +47,23 @@ Any behavioural decision made during a conversation — redirect targets, respon
 - **Never commit directly to `main`** — all changes go through a feature branch and PR, no exceptions
 - Branch naming: `feature/{slug}`, `fix/{slug}`, `chore/{slug}`
 - When work doesn't belong to an open feature branch, create a new `chore/` branch for it
+- **Always use git worktrees for branch work** — never check out a branch in the main working directory. Create a worktree under `.worktrees/{branch-slug}` before making any changes. This prevents file bleed between parallel terminals.
+
+### Worktree Workflow
+```bash
+# Create worktree for a new branch
+git worktree add .worktrees/feature-auth -b feature/auth
+
+# Create worktree for an existing branch
+git worktree add .worktrees/fix-schedule fix/schedule
+
+# List active worktrees
+git worktree list
+
+# Remove when done (after PR merged)
+git worktree remove .worktrees/feature-auth
+```
+The `.worktrees/` directory is already in `.gitignore`.
 
 ## Security Rules — Non-Negotiable
 - **Never hardcode secrets** — use env vars: `@Value("\${...}")` in Spring, `import.meta.env` in Vite
