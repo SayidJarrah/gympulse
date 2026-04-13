@@ -105,7 +105,7 @@ async function upsertClassTemplatesV17(): Promise<number> {
               default_capacity, difficulty, room_id, is_seeded)
            SELECT $1::uuid, $2, $3, $4, $5, $6, $7, NULL, $8
            WHERE NOT EXISTS (
-             SELECT 1 FROM class_templates WHERE id = $1::uuid OR name = $2
+             SELECT 1 FROM class_templates WHERE id = $1::uuid OR name = $2::text
            )`,
           [
             tpl.id,
@@ -170,7 +170,7 @@ async function upsertTrainers(): Promise<number> {
               specialisations, experience_years, profile_photo_url)
            SELECT $1::uuid, $2, $3, $4, $5, $6, $7, $8, $9
            WHERE NOT EXISTS (
-             SELECT 1 FROM trainers WHERE id = $1::uuid OR email = $4
+             SELECT 1 FROM trainers WHERE id = $1::uuid OR email = $4::text
            )`,
           [
             t.id,
