@@ -20,7 +20,7 @@ export const V17_CLASS_TEMPLATES: ClassTemplateV17Record[] = [
     defaultCapacity: 18,
     difficulty: 'Beginner',
     isSeeded: true,
-    imageUrl: 'https://images.unsplash.com/photo-1506629082153-54e546b5a358?w=800&auto=format&fit=crop',
+    imageUrl: 'https://images.unsplash.com/photo-1552196563-55cd4e45efb3?w=800&auto=format&fit=crop',
   },
   {
     id: '33333333-3333-3333-3333-333333333302',
@@ -31,7 +31,7 @@ export const V17_CLASS_TEMPLATES: ClassTemplateV17Record[] = [
     defaultCapacity: 20,
     difficulty: 'Intermediate',
     isSeeded: true,
-    imageUrl: 'https://images.unsplash.com/photo-1506629082153-54e546b5a358?w=800&auto=format&fit=crop',
+    imageUrl: 'https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=800&auto=format&fit=crop',
   },
   {
     id: '33333333-3333-3333-3333-333333333303',
@@ -86,7 +86,7 @@ export const V17_CLASS_TEMPLATES: ClassTemplateV17Record[] = [
     defaultCapacity: 28,
     difficulty: 'Intermediate',
     isSeeded: true,
-    imageUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&auto=format&fit=crop',
+    imageUrl: 'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?w=800&auto=format&fit=crop',
   },
   {
     id: '33333333-3333-3333-3333-333333333308',
@@ -97,7 +97,7 @@ export const V17_CLASS_TEMPLATES: ClassTemplateV17Record[] = [
     defaultCapacity: 20,
     difficulty: 'All Levels',
     isSeeded: true,
-    imageUrl: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=800&auto=format&fit=crop',
+    imageUrl: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800&auto=format&fit=crop',
   },
   {
     id: '33333333-3333-3333-3333-333333333309',
@@ -119,6 +119,6 @@ export const V17_CLASS_TEMPLATES: ClassTemplateV17Record[] = [
     defaultCapacity: 18,
     difficulty: 'All Levels',
     isSeeded: true,
-    imageUrl: 'https://images.unsplash.com/photo-1506629082153-54e546b5a358?w=800&auto=format&fit=crop',
+    imageUrl: 'https://images.unsplash.com/photo-1517438476312-10437cf17e7e?w=800&auto=format&fit=crop',
   },
 ];

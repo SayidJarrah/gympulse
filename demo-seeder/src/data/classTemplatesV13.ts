@@ -58,6 +58,6 @@ export const V13_CLASS_TEMPLATES: ClassTemplateRecord[] = [
     defaultCapacity: 10,
     difficulty: 'Beginner',
     isSeeded: true,
-    imageUrl: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=800&auto=format&fit=crop',
+    imageUrl: 'https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=800&auto=format&fit=crop',
   },
 ];
