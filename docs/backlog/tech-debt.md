@@ -298,6 +298,27 @@ Added: 2026-04-09
 Effort: S
 `QuickActionsPanel` renders between `MemberHomeHero` and `TrainerPreviewCarousel` on `/home`. Neither its existence, its content, nor its position relative to the membership section is described in `docs/sdd/user-access-flow.md` or `docs/design/user-access-flow.md`. `MemberHomeHero`'s post-membership ordering is also undocumented in the SDD. Add a paragraph to SDD §4 (MemberHomePage) specifying the render order and each component's purpose so the layout is not implicit.
 
+## TD-042 — Stale "Ensure Flyway migrations have run" guard messages in seeder.ts
+Source: docs/reviews/seeding-consolidation-20260413.md
+Feature: seeding-consolidation
+Added: 2026-04-13
+Effort: S
+`demo-seeder/src/seeder.ts` lines 376 and 380 display "Ensure Flyway migrations have run" when `class_templates` or `trainers` are empty after `loadReferenceData()`. Since `seedReferenceData()` now runs unconditionally before this check, the message is misleading — a Flyway migration is no longer the source of that data. Replace the message with "Ensure `seedReferenceData()` completed successfully" so ops engineers diagnose against the correct code path.
+
+## TD-043 — V13 class templates receive a new UUID on each fresh-seed run
+Source: docs/reviews/seeding-consolidation-20260413.md
+Feature: seeding-consolidation
+Added: 2026-04-13
+Effort: S
+`referenceSeeder.ts` calls `gen_random_uuid()` as the `id` for V13 class templates on every INSERT attempt. On a re-run the `ON CONFLICT (name)` branch fires and discards the new UUID, so idempotence holds on existing rows. But if a V13 template row is manually deleted and the seeder re-runs, the row will be created with a new UUID, silently invalidating any class instances that referenced the old UUID. Either persist fixed UUIDs for the five V13 templates in the data file, or document this edge case explicitly in `docs/sdd/seeding-consolidation.md` §2.1.
+
+## TD-044 — `seedReferenceData()` has no outer transaction; partial failures leave a partially-seeded DB
+Source: docs/reviews/seeding-consolidation-20260413.md
+Feature: seeding-consolidation
+Added: 2026-04-13
+Effort: M
+`referenceSeeder.ts` acquires a separate connection per entity type (rooms, templates, trainers, plans, users). A failure mid-way (e.g., plans succeed but QA users throw) leaves the demo DB in a partially-seeded state with no rollback path. All six entity upserts are idempotent, so a re-run will recover, but the partial state can cause unexpected behaviour in a generation run that starts immediately after. Wrapping the six upsert calls in a single shared transaction would make `seedReferenceData()` atomic and simplify debugging.
+
 ## TD-024 — SDD Section 2 sample JSON still shows "page" field, contradicts Section 7
 Source: docs/reviews/trainer-discovery-20260405.md
 Feature: trainer-discovery
