@@ -83,8 +83,10 @@ If fails for any reason: **STOP** and report the full error.
 
 ```bash
 docker compose -f docker-compose.review.yml down --remove-orphans
-docker compose -f docker-compose.review.yml up -d
+docker compose -f docker-compose.review.yml up -d --build
 ```
+
+`--build` ensures no stale cached image is served. The FRESH path above never reaches this section, so this only runs when a rebuild was already determined to be necessary.
 
 ## Health Wait (60s max)
 
