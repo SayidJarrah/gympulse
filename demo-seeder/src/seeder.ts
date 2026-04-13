@@ -4,6 +4,7 @@ import fetch from 'node-fetch';
 import { pgPool, trackUser, trackMembership, trackClassInstance, updateUserPlan, setMeta } from './db';
 import { FITNESS_GOALS, CLASS_TYPE_PREFERENCES, pickRandom, randomBetween } from './data/personas';
 import { buildSlotDates, SLOT_QUALIFIERS } from './data/schedule';
+import { seedReferenceData } from './referenceSeeder';
 
 const API_URL = process.env.GYMFLOW_API_URL ?? 'http://localhost:8080/api/v1';
 const DEMO_PASSWORD = process.env.DEMO_PASSWORD!;
@@ -363,6 +364,10 @@ export async function runSeeder(config: SeederConfig, emit: EmitFn): Promise<voi
   setMeta('config', JSON.stringify(config));
 
   emit('start', { sessionId, config });
+
+  // Reference phase — always-on. Must complete before loadReferenceData()
+  // so that Phase 1+ have the prerequisites they require.
+  await seedReferenceData(emit);
 
   emit('log', { message: 'Loading reference data…' });
   const ref = await loadReferenceData();

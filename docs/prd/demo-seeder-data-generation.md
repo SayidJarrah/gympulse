@@ -15,7 +15,7 @@ The data generation sub-feature allows an operator (sales or devops) to populate
 
 ### Edge Cases
 - As an Operator, when I click Generate while a generation run is already in progress, I want to receive an error immediately, so that I cannot launch two concurrent runs that would corrupt the session state.
-- As an Operator, when the GymFlow database has not had the required Flyway migrations applied, I want to see a clear error message explaining what is missing, so that I can fix the prerequisite rather than getting a cryptic failure.
+- As an Operator, when the GymFlow database has not had the required schema migrations applied, I want to see a clear error message explaining what is missing, so that I can fix the prerequisite rather than getting a cryptic failure. (Reference data itself is seeded by the demo-seeder reference phase, not Flyway — see `docs/sdd/seeding-consolidation.md`.)
 - As an Operator, when I supply a parameter value outside the allowed range, I want the server to silently clamp it to the nearest valid bound, so that the run is never rejected due to a UI or scripting mistake.
 
 ## Acceptance Criteria
@@ -31,7 +31,7 @@ The data generation sub-feature allows an operator (sales or devops) to populate
 ## Out of Scope
 - Member-facing UI or any API surface accessible to gym members.
 - Booking class instances on behalf of demo users (no `class_bookings` rows are created).
-- Seeding trainer or room records — these must already exist via Flyway migrations.
+- Seeding trainer or room records as a separate operator-invoked step — these are now handled automatically by the demo-seeder reference phase at the start of every generation run (see `docs/sdd/seeding-consolidation.md`).
 - Any form of operator authentication or access control on the generate endpoint.
 - Automated or scheduled generation runs.
 - Test suite for the demo-seeder service itself.

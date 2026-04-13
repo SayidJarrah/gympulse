@@ -19,9 +19,9 @@ No new files or layers are needed. The seeder calls the GymFlow REST API for use
 
 ---
 
-## 1. Flyway Prerequisites
+## 1. Reference Data Prerequisites
 
-The seeder requires the following rows to exist before generation can proceed. These are populated by the standard Flyway seed migrations that run as part of all Docker Compose stacks.
+The seeder requires the following rows to exist before the data-generation phases (users, memberships, class instances) can proceed. As of 2026-04-13 (`chore/seeding-consolidation`), these rows are populated by the **demo-seeder reference phase**, which runs unconditionally at the start of every `GET /api/generate/stream` invocation — before the existing three-phase generation. Flyway migrations V13, V16, and V17 previously seeded this data; they have been deleted and their contents moved to `demo-seeder/src/data/*.ts`. See `docs/sdd/seeding-consolidation.md` for the detailed design.
 
 | Table | Filter | Purpose |
 |-------|--------|---------|

@@ -1,0 +1,124 @@
+export interface TrainerRecord {
+  id: string;           // fixed UUID — must not change
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  bio: string;
+  specialisations: string[];
+  experienceYears: number;
+  profilePhotoUrl: string | null;
+}
+
+export const TRAINERS: TrainerRecord[] = [
+  {
+    id: '11111111-1111-1111-1111-111111111101',
+    firstName: 'Amelia',
+    lastName: 'Stone',
+    email: 'amelia.stone@gymflow.local',
+    phone: '+14155550101',
+    bio: 'Amelia leads high-energy strength sessions with a focus on sustainable progress, clean technique, and confidence under load.',
+    specialisations: ['Strength Training', 'Functional Fitness', 'Mobility'],
+    experienceYears: 12,
+    profilePhotoUrl: 'https://picsum.photos/seed/gymflow-trainer-amelia/600/800',
+  },
+  {
+    id: '11111111-1111-1111-1111-111111111102',
+    firstName: 'Marco',
+    lastName: 'Alvarez',
+    email: 'marco.alvarez@gymflow.local',
+    phone: '+14155550102',
+    bio: 'Marco blends boxing footwork, conditioning, and interval programming to help members build endurance without losing form.',
+    specialisations: ['HIIT', 'Boxing Conditioning', 'Cardio'],
+    experienceYears: 9,
+    profilePhotoUrl: 'https://picsum.photos/seed/gymflow-trainer-marco/600/800',
+  },
+  {
+    id: '11111111-1111-1111-1111-111111111103',
+    firstName: 'Priya',
+    lastName: 'Nair',
+    email: 'priya.nair@gymflow.local',
+    phone: '+14155550103',
+    bio: 'Priya coaches mindful movement and breath-led practice, specialising in mobility-focused yoga for busy professionals.',
+    specialisations: ['Yoga', 'Mobility', 'Breathwork'],
+    experienceYears: 11,
+    profilePhotoUrl: 'https://picsum.photos/seed/gymflow-trainer-priya/600/800',
+  },
+  {
+    id: '11111111-1111-1111-1111-111111111104',
+    firstName: 'Jordan',
+    lastName: 'Kim',
+    email: 'jordan.kim@gymflow.local',
+    phone: '+14155550104',
+    bio: 'Jordan designs athletic performance programs that combine explosive power, sprint mechanics, and injury-aware recovery work.',
+    specialisations: ['Athletic Performance', 'Strength Training', 'Recovery'],
+    experienceYears: 8,
+    profilePhotoUrl: null,
+  },
+  {
+    id: '11111111-1111-1111-1111-111111111105',
+    firstName: 'Sofia',
+    lastName: 'Rossi',
+    email: 'sofia.rossi@gymflow.local',
+    phone: '+14155550105',
+    bio: 'Sofia specialises in core control and posture-first coaching, making Pilates accessible for beginners and advanced members alike.',
+    specialisations: ['Pilates', 'Core', 'Posture'],
+    experienceYears: 7,
+    profilePhotoUrl: 'https://picsum.photos/seed/gymflow-trainer-sofia/600/800',
+  },
+  {
+    id: '11111111-1111-1111-1111-111111111106',
+    firstName: 'Ethan',
+    lastName: 'Brooks',
+    email: 'ethan.brooks@gymflow.local',
+    phone: '+14155550106',
+    bio: 'Ethan focuses on barbell fundamentals, movement quality, and progressive overload for members returning to structured training.',
+    specialisations: ['Powerlifting', 'Strength Training', 'Technique'],
+    experienceYears: 10,
+    profilePhotoUrl: 'https://picsum.photos/seed/gymflow-trainer-ethan/600/800',
+  },
+  {
+    id: '11111111-1111-1111-1111-111111111107',
+    firstName: 'Layla',
+    lastName: 'Haddad',
+    email: 'layla.haddad@gymflow.local',
+    phone: '+14155550107',
+    bio: 'Layla builds low-impact conditioning classes around stability, balance, and joint-friendly movement patterns.',
+    specialisations: ['Low Impact', 'Mobility', 'Functional Fitness'],
+    experienceYears: 6,
+    profilePhotoUrl: null,
+  },
+  {
+    id: '11111111-1111-1111-1111-111111111108',
+    firstName: 'Noah',
+    lastName: 'Bennett',
+    email: 'noah.bennett@gymflow.local',
+    phone: '+14155550108',
+    bio: 'Noah coaches indoor cycling and endurance blocks with data-informed pacing, cadence work, and clear progression cues.',
+    specialisations: ['Cycling', 'Cardio', 'Endurance'],
+    experienceYears: 5,
+    profilePhotoUrl: 'https://picsum.photos/seed/gymflow-trainer-noah/600/800',
+  },
+  {
+    id: '11111111-1111-1111-1111-111111111109',
+    firstName: 'Mina',
+    lastName: 'Park',
+    email: 'mina.park@gymflow.local',
+    phone: '+14155550109',
+    bio: 'Mina combines dance conditioning, flexibility work, and upbeat coaching to keep group sessions technical and welcoming.',
+    specialisations: ['Dance Fitness', 'Flexibility', 'Cardio'],
+    experienceYears: 4,
+    profilePhotoUrl: 'https://picsum.photos/seed/gymflow-trainer-mina/600/800',
+  },
+  {
+    id: '11111111-1111-1111-1111-111111111110',
+    firstName: 'Daniel',
+    lastName: 'Okafor',
+    email: 'daniel.okafor@gymflow.local',
+    phone: '+14155550110',
+    bio: 'Daniel works with members on kettlebell flow, unilateral strength, and practical conditioning for everyday resilience.',
+    specialisations: ['Kettlebells', 'Functional Fitness', 'Conditioning'],
+    experienceYears: 13,
+    profilePhotoUrl: null,
+  },
+];
