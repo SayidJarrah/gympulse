@@ -67,30 +67,62 @@ async function upsertClassTemplatesV13(): Promise<number> {
 async function upsertClassTemplatesV17(): Promise<number> {
   const client = await pgPool.connect();
   try {
-    for (const tpl of V17_CLASS_TEMPLATES) {
-      await client.query(
-        `INSERT INTO class_templates
-           (id, name, description, category, default_duration_min,
-            default_capacity, difficulty, room_id, is_seeded)
-         VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, NULL, $8)
-         ON CONFLICT (name) DO UPDATE
-           SET description          = EXCLUDED.description,
-               category             = EXCLUDED.category,
-               default_duration_min = EXCLUDED.default_duration_min,
-               default_capacity     = EXCLUDED.default_capacity,
-               difficulty           = EXCLUDED.difficulty,
-               is_seeded            = TRUE`,
-        [
-          tpl.id,
-          tpl.name,
-          tpl.description,
-          tpl.category,
-          tpl.defaultDurationMin,
-          tpl.defaultCapacity,
-          tpl.difficulty,
-          tpl.isSeeded,
-        ],
-      );
+    await client.query('BEGIN');
+    try {
+      for (const tpl of V17_CLASS_TEMPLATES) {
+        // Both `id` and `name` are unique, so Postgres `ON CONFLICT` (which
+        // supports only one constraint target) cannot cover both. Per SDD §3.2
+        // the primary conflict key is `id` (fixed UUID), with `name` as
+        // fallback. Mirror the trainer pattern: UPDATE by id OR name, then
+        // INSERT only if neither exists.
+
+        // Step 1: update existing rows (match by id OR name)
+        await client.query(
+          `UPDATE class_templates
+             SET name                 = $2,
+                 description          = $3,
+                 category             = $4,
+                 default_duration_min = $5,
+                 default_capacity     = $6,
+                 difficulty           = $7,
+                 is_seeded            = TRUE
+           WHERE id = $1::uuid OR name = $2`,
+          [
+            tpl.id,
+            tpl.name,
+            tpl.description,
+            tpl.category,
+            tpl.defaultDurationMin,
+            tpl.defaultCapacity,
+            tpl.difficulty,
+          ],
+        );
+
+        // Step 2: insert if neither id nor name exists
+        await client.query(
+          `INSERT INTO class_templates
+             (id, name, description, category, default_duration_min,
+              default_capacity, difficulty, room_id, is_seeded)
+           SELECT $1::uuid, $2, $3, $4, $5, $6, $7, NULL, $8
+           WHERE NOT EXISTS (
+             SELECT 1 FROM class_templates WHERE id = $1::uuid OR name = $2
+           )`,
+          [
+            tpl.id,
+            tpl.name,
+            tpl.description,
+            tpl.category,
+            tpl.defaultDurationMin,
+            tpl.defaultCapacity,
+            tpl.difficulty,
+            tpl.isSeeded,
+          ],
+        );
+      }
+      await client.query('COMMIT');
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
     }
     return V17_CLASS_TEMPLATES.length;
   } finally {

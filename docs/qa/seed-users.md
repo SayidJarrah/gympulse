@@ -4,7 +4,7 @@ These accounts are seeded by the **demo-seeder reference phase**, not by Flyway.
 They are present on the demo and review stacks after a generation run has been triggered.
 They are NOT available on the E2E stack.
 
-Password for all users: `Admin@1234`
+Password for all users: see the QA fixture credential store (not recorded in committed docs).
 
 | Email | First Name | Last Name | Role |
 |-------|-----------|----------|------|
