@@ -52,6 +52,8 @@ services:
   demo-seeder:
     build:
       context: ./demo-seeder
+    ports:
+      - "3002:3001"
     environment:
       DB_HOST: postgres
       DB_PORT: "5432"
