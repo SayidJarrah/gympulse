@@ -1,6 +1,6 @@
 Start the **review stack** (`docker-compose.review.yml`) with full health diagnostics.
 
-> **Review stack only** — ports 5432 / 8080 / 3000 / 3001 — for manual testing and PR review.
+> **Review stack only** — ports 5432 / 8080 / 3000 / 3002 — for manual testing and PR review.
 > For E2E tests use `/verify`, which manages its own dedicated E2E stack on ports 5433 / 8081 / 3001.
 
 ## Pre-flight Checks
@@ -17,7 +17,7 @@ ls docker-compose.review.yml > /dev/null 2>&1 && echo "Compose file: ✅" || ech
 # Ports free?
 lsof -i :8080 | grep LISTEN && echo "Port 8080: ❌ IN USE" || echo "Port 8080: ✅ free"
 lsof -i :3000 | grep LISTEN && echo "Port 3000: ❌ IN USE" || echo "Port 3000: ✅ free"
-lsof -i :3001 | grep LISTEN && echo "Port 3001: ❌ IN USE" || echo "Port 3001: ✅ free"
+lsof -i :3002 | grep LISTEN && echo "Port 3002: ❌ IN USE" || echo "Port 3002: ✅ free"
 ```
 
 If Docker is not running: **STOP.** Tell user to start Docker Desktop.
@@ -99,7 +99,7 @@ done
 **Demo-seeder** (wait for backend to pass first):
 ```bash
 for i in $(seq 1 12); do
-  curl -sf http://localhost:3001/health && echo " ✅ Demo-seeder healthy" && break || \
+  curl -sf http://localhost:3002/health && echo " ✅ Demo-seeder healthy" && break || \
   (echo " ⏳ Demo-seeder not ready (attempt $i/12)..." && sleep 5)
 done
 ```
@@ -136,5 +136,5 @@ Report clearly and stop.
    Frontend:     http://localhost:3000
    Backend:      http://localhost:8080
    API docs:     http://localhost:8080/api/docs
-   Demo-seeder:  http://localhost:3001
+   Demo-seeder:  http://localhost:3002
 ```
