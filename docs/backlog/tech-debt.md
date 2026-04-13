@@ -325,3 +325,24 @@ Feature: trainer-discovery
 Added: 2026-04-05
 Effort: S
 The sample response JSON in SDD Section 2 (`GET /api/v1/trainers`) uses `"page": 0`, but Section 7 documents that the actual API field name is `"number": 0` (Spring Data's native serialization). The two sections now contradict each other within the same document. Update the Section 2 sample JSON to use `"number"` to match Section 7 and the actual API behavior.
+
+## TD-045 — Warning banner generate-lock condition excludes zero-user partial seeds
+Source: docs/reviews/seeder-presets-20260413.md
+Feature: seeder-presets
+Added: 2026-04-13
+Effort: S
+`public/index.html:181` disables the Generate button when `state.hasData && state.demoUsers > 0`. If a generation run seeds reference data but crashes before registering any demo users, `hasData` becomes true while `demoUsers` stays 0 — the button remains visually enabled even though the server-side 409 lock is active. The user can click Generate and will receive a confusing 409 error banner instead of a pre-emptive visual block. Change the condition to `if (state.hasData)` to match SDD §5 exactly.
+
+## TD-046 — Rooms DELETE in cleanup.ts has no safety-net for non-seeded-template class instances
+Source: docs/reviews/seeder-presets-20260413.md
+Feature: seeder-presets
+Added: 2026-04-13
+Effort: S
+`cleanup.ts` step 5 deletes class instances by seeded template ID. Class instances that reference a seeded room but a non-seeded template are not caught by this step. If such rows exist, the rooms DELETE at step 10 will fail with an FK constraint violation and roll back the entire cleanup transaction, leaving a partially-deleted database. Add a safety-net DELETE before step 10: `DELETE FROM class_instances WHERE room_id = ANY(SELECT id FROM rooms WHERE name = ANY($1))` using the `SEEDED_ROOM_NAMES` array.
+
+## TD-047 — upsertClassTemplatesV13 count argument is a magic literal
+Source: docs/reviews/seeder-presets-20260413.md
+Feature: seeder-presets
+Added: 2026-04-13
+Effort: S
+`referenceSeeder.ts:291` calls `upsertClassTemplatesV13(5)` with a hardcoded `5`. The value is correct (V13 always seeds in full) but the literal is an invisible coupling to the length of `V13_CLASS_TEMPLATES`. A future developer extending the V13 array would not see this call site as needing an update. Replace with `V13_CLASS_TEMPLATES.length` or a named constant `V13_TEMPLATE_COUNT` to make the invariant self-documenting.
