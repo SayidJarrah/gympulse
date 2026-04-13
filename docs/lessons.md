@@ -17,6 +17,12 @@ Applies when: {situation where this rule kicks in}
 
 <!-- Add lessons below this line -->
 
+## Lesson 8 — Never edit files in the main working directory when using worktrees
+Date: 2026-04-13
+Correction: Edited CLAUDE.md directly in the main working directory, then copied it into the worktree. After the PR merged, the main directory still showed CLAUDE.md as modified because the change was never committed there.
+Rule: Create the worktree FIRST. Make ALL edits inside the worktree directory. Never touch files in the main working directory as part of branch work — not even as a "quick edit before creating the worktree."
+Applies when: Any time branch work involves file changes, regardless of how small the change is.
+
 ## Lesson 7 — Rebuild E2E containers after code changes before re-running tests
 Date: 2026-04-06
 Correction: After fixing a source-code bug, PROFILE-01 and PROFILE-02 still failed because the E2E frontend container was serving a Vite bundle that predated the fix commit. The tests ran against stale compiled code and the "fix" appeared not to have taken effect.
