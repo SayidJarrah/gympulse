@@ -79,6 +79,20 @@ async function loadReferenceData(): Promise<RefData> {
   }
 }
 
+// ── Avatar helper ──────────────────────────────────────────────────────────
+
+async function fetchAvatar(seed: string): Promise<{ data: Buffer; mimeType: string } | null> {
+  try {
+    const url = `https://i.pravatar.cc/150?u=${encodeURIComponent(seed)}`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const arrayBuffer = await res.arrayBuffer();
+    return { data: Buffer.from(arrayBuffer), mimeType: 'image/jpeg' };
+  } catch {
+    return null;
+  }
+}
+
 // ── User registration ──────────────────────────────────────────────────────
 
 interface RegisteredUser {
@@ -150,16 +164,19 @@ async function registerUsers(count: number, emit: EmitFn): Promise<RegisteredUse
     const dob = faker.date.birthdate({ min: 22, max: 55, mode: 'age' });
     const goals = pickRandom(FITNESS_GOALS, 2, 4);
     const classTypes = pickRandom(CLASS_TYPE_PREFERENCES, 2, 3);
+    const avatar = await fetchAvatar(email);
 
     const client = await pgPool.connect();
     try {
       await client.query(
-        `INSERT INTO user_profiles (user_id, first_name, last_name, date_of_birth, fitness_goals, preferred_class_types)
-         VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb)
+        `INSERT INTO user_profiles (user_id, first_name, last_name, date_of_birth, fitness_goals, preferred_class_types, profile_photo_data, profile_photo_mime_type)
+         VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb, $7, $8)
          ON CONFLICT (user_id) DO UPDATE
-           SET first_name = EXCLUDED.first_name,
-               last_name  = EXCLUDED.last_name`,
-        [userId, firstName, lastName, dob.toISOString().slice(0, 10), JSON.stringify(goals), JSON.stringify(classTypes)],
+           SET first_name             = EXCLUDED.first_name,
+               last_name              = EXCLUDED.last_name,
+               profile_photo_data     = EXCLUDED.profile_photo_data,
+               profile_photo_mime_type = EXCLUDED.profile_photo_mime_type`,
+        [userId, firstName, lastName, dob.toISOString().slice(0, 10), JSON.stringify(goals), JSON.stringify(classTypes), avatar?.data ?? null, avatar?.mimeType ?? null],
       );
     } finally {
       client.release();

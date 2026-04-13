@@ -7,13 +7,13 @@ export interface RoomRecord {
 
 export const V13_ROOMS: RoomRecord[] = [
   {
-    name: 'Studio A',
+    name: 'Pulse Studio',
     capacity: 30,
     description: 'Main group fitness studio',
     imageUrl: 'https://images.unsplash.com/photo-1534438327535-0c01b3c3ea3a?w=800&auto=format&fit=crop',
   },
   {
-    name: 'Studio B',
+    name: 'Cycle Studio',
     capacity: 20,
     description: 'Spin and cycling studio',
     imageUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&auto=format&fit=crop',
@@ -22,7 +22,7 @@ export const V13_ROOMS: RoomRecord[] = [
     name: 'Weight Room',
     capacity: 15,
     description: 'Strength training area',
-    imageUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&auto=format&fit=crop',
+    imageUrl: 'https://images.unsplash.com/photo-1534367990453-3bcd4d4f8a9f?w=800&auto=format&fit=crop',
   },
   {
     name: 'Functional Space',

@@ -7,19 +7,39 @@ import { MEMBERSHIP_PLANS } from './data/membershipPlans';
 import { QA_USERS, QA_PROFILES } from './data/qaUsers';
 import type { EmitFn, PresetConfig } from './seeder';
 
+// ── Photo fetch helper ────────────────────────────────────────────────────────
+
+import fetch from 'node-fetch';
+
+async function fetchPhoto(url: string): Promise<{ data: Buffer; mimeType: string } | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const contentType = res.headers.get('content-type') ?? 'image/jpeg';
+    const mimeType = contentType.split(';')[0].trim();
+    const arrayBuffer = await res.arrayBuffer();
+    return { data: Buffer.from(arrayBuffer), mimeType };
+  } catch {
+    return null;
+  }
+}
+
 // ── Upsert helpers ────────────────────────────────────────────────────────────
 
 async function upsertRooms(count: number): Promise<number> {
   const client = await pgPool.connect();
   try {
     for (const room of V13_ROOMS.slice(0, count)) {
+      const photo = await fetchPhoto(room.imageUrl);
       await client.query(
-        `INSERT INTO rooms (name, capacity, description)
-         VALUES ($1, $2, $3)
+        `INSERT INTO rooms (name, capacity, description, photo_data, photo_mime_type)
+         VALUES ($1, $2, $3, $4, $5)
          ON CONFLICT (name) DO UPDATE
-           SET capacity    = EXCLUDED.capacity,
-               description = EXCLUDED.description`,
-        [room.name, room.capacity, room.description],
+           SET capacity        = EXCLUDED.capacity,
+               description     = EXCLUDED.description,
+               photo_data      = EXCLUDED.photo_data,
+               photo_mime_type = EXCLUDED.photo_mime_type`,
+        [room.name, room.capacity, room.description, photo?.data ?? null, photo?.mimeType ?? null],
       );
     }
     return count;
@@ -32,21 +52,25 @@ async function upsertClassTemplatesV13(count: number): Promise<number> {
   const client = await pgPool.connect();
   try {
     for (const tpl of V13_CLASS_TEMPLATES.slice(0, count)) {
+      const photo = await fetchPhoto(tpl.imageUrl);
       // V13 rows have no fixed UUID — let Postgres generate on insert;
       // on conflict the existing id is preserved (ON CONFLICT DO UPDATE
       // cannot update the conflict key).
       await client.query(
         `INSERT INTO class_templates
            (id, name, description, category, default_duration_min,
-            default_capacity, difficulty, room_id, is_seeded)
-         VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, NULL, $7)
+            default_capacity, difficulty, room_id, is_seeded,
+            photo_data, photo_mime_type)
+         VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, NULL, $7, $8, $9)
          ON CONFLICT (name) DO UPDATE
            SET description          = EXCLUDED.description,
                category             = EXCLUDED.category,
                default_duration_min = EXCLUDED.default_duration_min,
                default_capacity     = EXCLUDED.default_capacity,
                difficulty           = EXCLUDED.difficulty,
-               is_seeded            = TRUE`,
+               is_seeded            = TRUE,
+               photo_data           = EXCLUDED.photo_data,
+               photo_mime_type      = EXCLUDED.photo_mime_type`,
         [
           tpl.name,
           tpl.description,
@@ -55,6 +79,8 @@ async function upsertClassTemplatesV13(count: number): Promise<number> {
           tpl.defaultCapacity,
           tpl.difficulty,
           tpl.isSeeded,
+          photo?.data ?? null,
+          photo?.mimeType ?? null,
         ],
       );
     }
@@ -71,6 +97,8 @@ async function upsertClassTemplatesV17(count: number): Promise<number> {
     await client.query('BEGIN');
     try {
       for (const tpl of V17_CLASS_TEMPLATES.slice(0, count)) {
+        const photo = await fetchPhoto(tpl.imageUrl);
+
         // Both `id` and `name` are unique, so Postgres `ON CONFLICT` (which
         // supports only one constraint target) cannot cover both. Per SDD §3.2
         // the primary conflict key is `id` (fixed UUID), with `name` as
@@ -86,7 +114,9 @@ async function upsertClassTemplatesV17(count: number): Promise<number> {
                  default_duration_min = $5,
                  default_capacity     = $6,
                  difficulty           = $7,
-                 is_seeded            = TRUE
+                 is_seeded            = TRUE,
+                 photo_data           = $8,
+                 photo_mime_type      = $9
            WHERE id = $1::uuid OR name = $2`,
           [
             tpl.id,
@@ -96,6 +126,8 @@ async function upsertClassTemplatesV17(count: number): Promise<number> {
             tpl.defaultDurationMin,
             tpl.defaultCapacity,
             tpl.difficulty,
+            photo?.data ?? null,
+            photo?.mimeType ?? null,
           ],
         );
 
@@ -103,8 +135,9 @@ async function upsertClassTemplatesV17(count: number): Promise<number> {
         await client.query(
           `INSERT INTO class_templates
              (id, name, description, category, default_duration_min,
-              default_capacity, difficulty, room_id, is_seeded)
-           SELECT $1::uuid, $2, $3, $4, $5, $6, $7, NULL, $8
+              default_capacity, difficulty, room_id, is_seeded,
+              photo_data, photo_mime_type)
+           SELECT $1::uuid, $2, $3, $4, $5, $6, $7, NULL, $8, $9, $10
            WHERE NOT EXISTS (
              SELECT 1 FROM class_templates WHERE id = $1::uuid OR name = $2::varchar
            )`,
@@ -117,6 +150,8 @@ async function upsertClassTemplatesV17(count: number): Promise<number> {
             tpl.defaultCapacity,
             tpl.difficulty,
             tpl.isSeeded,
+            photo?.data ?? null,
+            photo?.mimeType ?? null,
           ],
         );
       }
