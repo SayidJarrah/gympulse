@@ -17,6 +17,12 @@ Applies when: {situation where this rule kicks in}
 
 <!-- Add lessons below this line -->
 
+## Lesson 9 — Subagents must create worktrees via the main repo, not from inside another worktree
+Date: 2026-04-13
+Correction: SA agent ran `git worktree add .worktrees/chore-seeder-presets` from inside `.worktrees/chore-seeder-presets-brief/`, creating a nested worktree at `.worktrees/chore-seeder-presets-brief/.worktrees/chore-seeder-presets` instead of `.worktrees/chore-seeder-presets`. Required manual removal and recreation.
+Rule: When instructing a subagent to create a worktree, always pass the absolute path: `git -C /abs/path/to/repo worktree add /abs/path/to/repo/.worktrees/{slug} -b {branch}`. Never use a relative path like `.worktrees/{slug}` in agent prompts — the agent's CWD may be inside an existing worktree, making the relative path resolve under that worktree instead of the repo root.
+Applies when: Any agent prompt that includes a `git worktree add` instruction.
+
 ## Lesson 8 — Never edit files in the main working directory when using worktrees
 Date: 2026-04-13
 Correction: Edited CLAUDE.md directly in the main working directory, then copied it into the worktree. After the PR merged, the main directory still showed CLAUDE.md as modified because the change was never committed there.
