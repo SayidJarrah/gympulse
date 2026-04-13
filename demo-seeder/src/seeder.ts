@@ -383,7 +383,8 @@ export async function runSeeder(config: SeederConfig, emit: EmitFn): Promise<voi
   setMeta('generated_at', new Date().toISOString());
   setMeta('config', JSON.stringify(config));
 
-  emit('start', { sessionId, config });
+  const presetConfig = PRESET_CONFIG[config.preset];
+  emit('start', { sessionId, config: { ...config, ...presetConfig } });
 
   // Reference phase — always-on. Must complete before loadReferenceData()
   // so that Phase 1+ have the prerequisites they require.
