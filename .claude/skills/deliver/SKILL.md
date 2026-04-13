@@ -38,6 +38,29 @@ If an artifact is missing, run the stage that produces it — do not skip ahead.
 If `docs/gaps/{feature}.md` exists (created by `/audit`), skip stages whose artifacts
 already exist. Start from the first stage where the gap report identifies missing work.
 
+## Infra / Chore Path (no UI, no user-facing feature)
+
+The default pipeline assumes a user-facing feature. When the work is a pure infra
+refactor, schema change, or cross-cutting cleanup (e.g. seeding consolidation,
+logging rework, error-handling sweep), collapse the pipeline:
+
+- **Brief & PRD:** not needed. A detailed gap report (from `/audit`) or an
+  explicit scope-agreement block in a gap/brief doc acts as both.
+- **Design stage:** skipped. No UI artifact.
+- **SDD:** still required. Produce `docs/sdd/{slug}.md` — this is the authoritative
+  technical contract.
+- **Developer:** runs backend phase only (skip the frontend phase in the two-phase block
+  below) unless the change touches TypeScript.
+- **Reviewer:** runs normally against the SDD (no design spec to check).
+- **Tester:** skip ONLY IF the scope-agreement explicitly accepts existing test
+  breakage (common for test-strategy-precursor work). Otherwise run as normal.
+  If tester is skipped, the PR description MUST call out accepted breakage.
+- **Branch naming:** `chore/{slug}` instead of `feature/{slug}`.
+- **PR title:** `chore({slug}): …` instead of `feat({slug}): …`.
+
+Do not invent a PRD or a design doc to satisfy the default pipeline. A fabricated
+artifact is worse than no artifact.
+
 ## Brief Detection (New Feature Path)
 
 When `docs/prd/{feature}.md` does not exist and no gap report is present:

@@ -5,7 +5,19 @@ Phase 1 produces a gap report. Phase 2 is driven by /deliver after you review.
 
 ## Phase 1 — Investigation (no code changes)
 
-Spawn both agents simultaneously:
+**Feature audit vs discovery audit — pick the right shape first.**
+
+- **Feature audit** (default): the slug names a user-facing feature with existing
+  PRD/SDD/design docs. Use the reviewer + tester dispatch below.
+- **Discovery audit**: the slug names an infra/cross-cutting concern with no PRD/SDD/design
+  (e.g. "seeding", "error-handling", "logging"). Skip the tester (no ACs to walk).
+  Dispatch ONE reviewer in discovery mode: instruct it to inventory every location in the
+  codebase where the concern is implemented and produce the gap report as a map of
+  "current state → target state", not a doc-vs-code diff. Do NOT use `subagent_type: Explore`
+  for this — Explore cannot write files. Use `subagent_type: "reviewer"` as normal and tell
+  it explicitly: "you are in discovery mode; write the gap report to docs/gaps/{slug}.md".
+
+Spawn both agents simultaneously (feature audit only):
 
 **Reviewer** (`subagent_type: "reviewer"` — NOT `superpowers:code-reviewer`):
 > "You are in audit mode for: $ARGUMENTS
