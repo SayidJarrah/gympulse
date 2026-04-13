@@ -2,7 +2,7 @@
 
 ## Blockers (must fix before PR)
 
-- [ ] `seeder.ts:386` — SSE `start` event config payload is missing `rooms`, `trainers`, `classTemplates`, and `membershipPlans` fields. `SeederConfig` only carries `{ preset, memberCount, weekCount, membershipPct, densityPct }`, so the emitted config object diverges from the SDD §2 start-event shape. Operators watching the SSE stream cannot confirm which reference-data slice was applied. Fix: either extend `SeederConfig` to carry all 8 fields (populate from `PRESET_CONFIG[preset]` in `server.ts` before calling `runSeeder`), or spread `presetConfig` into the emit call: `emit('start', { sessionId, config: { preset, ...presetConfig, memberCount: config.memberCount, weekCount: config.weekCount, membershipPct: config.membershipPct, densityPct: config.densityPct } })`.
+- [x] `seeder.ts:386` — SSE `start` event config payload is missing `rooms`, `trainers`, `classTemplates`, and `membershipPlans` fields. `SeederConfig` only carries `{ preset, memberCount, weekCount, membershipPct, densityPct }`, so the emitted config object diverges from the SDD §2 start-event shape. Operators watching the SSE stream cannot confirm which reference-data slice was applied. Fix: either extend `SeederConfig` to carry all 8 fields (populate from `PRESET_CONFIG[preset]` in `server.ts` before calling `runSeeder`), or spread `presetConfig` into the emit call: `emit('start', { sessionId, config: { preset, ...presetConfig, memberCount: config.memberCount, weekCount: config.weekCount, membershipPct: config.membershipPct, densityPct: config.densityPct } })`. — Fixed: added `const presetConfig = PRESET_CONFIG[config.preset]` and changed emit to `emit('start', { sessionId, config: { ...config, ...presetConfig } })`, producing all 9 SDD §2 fields.
 
 ## Suggestions (non-blocking)
 
@@ -16,4 +16,4 @@
 
 ## Verdict
 
-BLOCKED — 1 blocker
+APPROVED
