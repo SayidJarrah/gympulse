@@ -698,12 +698,12 @@ git commit -m "fix(demo-seeder): gate POST /api/cleanup with X-Admin-Token heade
 ## Task 7: docker-compose Updates
 
 **Files:**
-- Modify: `docker-compose.demo.yml`
+- Modify: `docker-compose.review.yml`
 - Modify: `docker-compose.review.yml`
 
-- [ ] **Step 1: Update docker-compose.demo.yml — add DEMO_PASSWORD and ADMIN_TOKEN**
+- [ ] **Step 1: Update docker-compose.review.yml — add DEMO_PASSWORD and ADMIN_TOKEN**
 
-In `docker-compose.demo.yml`, the `demo-seeder` service `environment` block currently has:
+In `docker-compose.review.yml`, the `demo-seeder` service `environment` block currently has:
 
 ```yaml
 environment:
@@ -796,7 +796,7 @@ demo-seeder:
 - [ ] **Step 3: Verify YAML is valid**
 
 ```bash
-docker compose -f docker-compose.demo.yml config --quiet && echo "demo OK"
+docker compose -f docker-compose.review.yml config --quiet && echo "demo OK"
 docker compose -f docker-compose.review.yml config --quiet && echo "review OK"
 # Expected: demo OK / review OK (no YAML errors)
 ```
@@ -804,7 +804,7 @@ docker compose -f docker-compose.review.yml config --quiet && echo "review OK"
 - [ ] **Step 4: Commit**
 
 ```bash
-git add docker-compose.demo.yml docker-compose.review.yml
+git add docker-compose.review.yml docker-compose.review.yml
 git commit -m "chore(demo-seeder): expose port 3001 in review stack, add DEMO_PASSWORD and ADMIN_TOKEN to both stacks"
 ```
 
@@ -824,8 +824,7 @@ In `CLAUDE.md`, the `## Stack` section ends with `- **Infra:** Docker Compose`. 
 
 | File | Purpose | Ports |
 |------|---------|-------|
-| `docker-compose.review.yml` | Local dev / code review — full stack including demo-seeder | backend: 8080, frontend: 3000, seeder: 3001 |
-| `docker-compose.demo.yml` | Sales demo environment — same services, separate named volumes. Run before a customer demo to populate the portal with synthetic data. Seeder UI at `http://localhost:3001`. | backend: 8080, frontend: 3000, seeder: 3001 |
+| `docker-compose.review.yml` | Local dev / code review / demo — full stack including demo-seeder. Seeder UI at `http://localhost:3002`. | backend: 8080, frontend: 3000, seeder: 3002 |
 | `docker-compose.e2e.yml` | E2E test stack — used by `/verify` command | internal only |
 ```
 
