@@ -5,14 +5,14 @@ import { V17_CLASS_TEMPLATES } from './data/classTemplatesV17';
 import { TRAINERS } from './data/trainers';
 import { MEMBERSHIP_PLANS } from './data/membershipPlans';
 import { QA_USERS, QA_PROFILES } from './data/qaUsers';
-import type { EmitFn } from './seeder';
+import type { EmitFn, PresetConfig } from './seeder';
 
 // ── Upsert helpers ────────────────────────────────────────────────────────────
 
-async function upsertRooms(): Promise<number> {
+async function upsertRooms(count: number): Promise<number> {
   const client = await pgPool.connect();
   try {
-    for (const room of V13_ROOMS) {
+    for (const room of V13_ROOMS.slice(0, count)) {
       await client.query(
         `INSERT INTO rooms (name, capacity, description)
          VALUES ($1, $2, $3)
@@ -22,16 +22,16 @@ async function upsertRooms(): Promise<number> {
         [room.name, room.capacity, room.description],
       );
     }
-    return V13_ROOMS.length;
+    return count;
   } finally {
     client.release();
   }
 }
 
-async function upsertClassTemplatesV13(): Promise<number> {
+async function upsertClassTemplatesV13(count: number): Promise<number> {
   const client = await pgPool.connect();
   try {
-    for (const tpl of V13_CLASS_TEMPLATES) {
+    for (const tpl of V13_CLASS_TEMPLATES.slice(0, count)) {
       // V13 rows have no fixed UUID — let Postgres generate on insert;
       // on conflict the existing id is preserved (ON CONFLICT DO UPDATE
       // cannot update the conflict key).
@@ -58,18 +58,19 @@ async function upsertClassTemplatesV13(): Promise<number> {
         ],
       );
     }
-    return V13_CLASS_TEMPLATES.length;
+    return count;
   } finally {
     client.release();
   }
 }
 
-async function upsertClassTemplatesV17(): Promise<number> {
+async function upsertClassTemplatesV17(count: number): Promise<number> {
+  if (count <= 0) return 0;
   const client = await pgPool.connect();
   try {
     await client.query('BEGIN');
     try {
-      for (const tpl of V17_CLASS_TEMPLATES) {
+      for (const tpl of V17_CLASS_TEMPLATES.slice(0, count)) {
         // Both `id` and `name` are unique, so Postgres `ON CONFLICT` (which
         // supports only one constraint target) cannot cover both. Per SDD §3.2
         // the primary conflict key is `id` (fixed UUID), with `name` as
@@ -124,18 +125,18 @@ async function upsertClassTemplatesV17(): Promise<number> {
       await client.query('ROLLBACK');
       throw err;
     }
-    return V17_CLASS_TEMPLATES.length;
+    return count;
   } finally {
     client.release();
   }
 }
 
-async function upsertTrainers(): Promise<number> {
+async function upsertTrainers(count: number): Promise<number> {
   const client = await pgPool.connect();
   try {
     await client.query('BEGIN');
     try {
-      for (const t of TRAINERS) {
+      for (const t of TRAINERS.slice(0, count)) {
         // Step 1: update existing rows (match by id OR email)
         await client.query(
           `UPDATE trainers
@@ -190,16 +191,16 @@ async function upsertTrainers(): Promise<number> {
       await client.query('ROLLBACK');
       throw err;
     }
-    return TRAINERS.length;
+    return count;
   } finally {
     client.release();
   }
 }
 
-async function upsertMembershipPlans(): Promise<number> {
+async function upsertMembershipPlans(count: number): Promise<number> {
   const client = await pgPool.connect();
   try {
-    for (const plan of MEMBERSHIP_PLANS) {
+    for (const plan of MEMBERSHIP_PLANS.slice(0, count)) {
       await client.query(
         `INSERT INTO membership_plans
            (id, name, description, price_in_cents, duration_days,
@@ -223,7 +224,7 @@ async function upsertMembershipPlans(): Promise<number> {
         ],
       );
     }
-    return MEMBERSHIP_PLANS.length;
+    return count;
   } finally {
     client.release();
   }
@@ -282,15 +283,15 @@ async function upsertQaUsersAndProfiles(): Promise<number> {
 
 // ── Orchestration ─────────────────────────────────────────────────────────────
 
-export async function seedReferenceData(emit: EmitFn): Promise<void> {
+export async function seedReferenceData(emit: EmitFn, presetConfig: PresetConfig): Promise<void> {
   emit('log', { message: 'Seeding reference data…' });
 
   try {
-    const rooms = await upsertRooms();
-    const v13 = await upsertClassTemplatesV13();
-    const v17 = await upsertClassTemplatesV17();
-    const trainers = await upsertTrainers();
-    const plans = await upsertMembershipPlans();
+    const rooms = await upsertRooms(presetConfig.rooms);
+    const v13 = await upsertClassTemplatesV13(5); // V13 always seeded in full
+    const v17 = await upsertClassTemplatesV17(Math.max(0, presetConfig.classTemplates - 5));
+    const trainers = await upsertTrainers(presetConfig.trainers);
+    const plans = await upsertMembershipPlans(presetConfig.membershipPlans);
     const qaUsers = await upsertQaUsersAndProfiles();
 
     const templates = v13 + v17;

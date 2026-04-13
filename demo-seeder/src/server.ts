@@ -3,7 +3,10 @@ import path from 'path';
 import { initSqlite, getDemoUsers, hasDemoData } from './db';
 import { getState } from './state';
 import { runCleanup } from './cleanup';
-import { runSeeder, SeederConfig } from './seeder';
+import { runSeeder, SeederConfig, Preset, PresetConfig, PRESET_CONFIG } from './seeder';
+
+export type { Preset, PresetConfig };
+export { PRESET_CONFIG };
 
 const app = express();
 const PORT = parseInt(process.env.PORT ?? '3001', 10);
@@ -61,12 +64,26 @@ app.get('/api/generate/stream', async (req: Request, res: Response) => {
     return;
   }
 
-  const members = Math.min(50, Math.max(10, parseInt(String(req.query.members ?? '20'), 10)));
-  const weeks = Math.min(4, Math.max(1, parseInt(String(req.query.weeks ?? '2'), 10)));
-  const membershipPct = Math.min(100, Math.max(0, parseInt(String(req.query.membershipPct ?? '80'), 10)));
-  const densityPct = Math.min(100, Math.max(10, parseInt(String(req.query.densityPct ?? '60'), 10)));
+  // One-seed lock: prevent seeding on top of existing data
+  if (hasDemoData()) {
+    res.status(409).json({
+      error: 'Demo data already exists. Run cleanup before seeding again.',
+      code: 'DEMO_DATA_EXISTS',
+    });
+    return;
+  }
 
-  const config: SeederConfig = { memberCount: members, weekCount: weeks, membershipPct, densityPct };
+  const presetParam = String(req.query.preset ?? 'medium');
+  const preset: Preset = (presetParam === 'small' || presetParam === 'large') ? presetParam : 'medium';
+  const presetConfig: PresetConfig = PRESET_CONFIG[preset];
+
+  const config: SeederConfig = {
+    preset,
+    memberCount: presetConfig.memberCount,
+    weekCount: presetConfig.weekCount,
+    membershipPct: presetConfig.membershipPct,
+    densityPct: presetConfig.densityPct,
+  };
 
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');

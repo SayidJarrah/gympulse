@@ -6,8 +6,6 @@
   <title>GymFlow Demo Seeder</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    .slider::-webkit-slider-thumb { appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #3b82f6; cursor: pointer; }
-    .slider::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #3b82f6; cursor: pointer; border: none; }
     #log { font-family: monospace; font-size: 12px; }
   </style>
 </head>
@@ -40,9 +38,6 @@
         <button onclick="handleCleanupFirst()" class="text-xs bg-amber-100 hover:bg-amber-200 text-amber-800 px-3 py-1 rounded font-medium">
           Clean up first
         </button>
-        <button onclick="dismissWarning()" class="text-xs text-amber-600 hover:text-amber-800 px-2 py-1">
-          Add on top anyway
-        </button>
       </div>
     </div>
   </div>
@@ -56,62 +51,21 @@
       <div class="bg-white rounded-xl border border-gray-200 p-5">
         <h2 class="text-sm font-semibold text-gray-700 mb-3">Scenario Presets</h2>
         <div class="flex gap-2">
-          <button onclick="applyPreset(10,1,50,30)"
+          <button onclick="applyPreset('small')"
             class="flex-1 text-center text-sm border border-gray-200 hover:border-blue-400 hover:bg-blue-50 rounded-lg px-3 py-2 transition-colors">
-            <div class="font-medium text-gray-800">New Gym</div>
-            <div class="text-xs text-gray-500">10 users · 1 wk · 30%</div>
+            <div class="font-medium text-gray-800">Small Gym</div>
+            <div class="text-xs text-gray-500">2 rooms · 3 trainers · 5 classes · 10 users</div>
           </button>
-          <button onclick="applyPreset(25,2,80,60)"
+          <button onclick="applyPreset('medium')"
             class="flex-1 text-center text-sm border border-blue-400 bg-blue-50 rounded-lg px-3 py-2">
-            <div class="font-medium text-blue-700">Growing Gym</div>
-            <div class="text-xs text-blue-500">25 users · 2 wk · 60% ✓</div>
+            <div class="font-medium text-blue-700">Medium Gym</div>
+            <div class="text-xs text-blue-500">4 rooms · 6 trainers · 10 classes · 25 users</div>
           </button>
-          <button onclick="applyPreset(50,4,90,90)"
+          <button onclick="applyPreset('large')"
             class="flex-1 text-center text-sm border border-gray-200 hover:border-blue-400 hover:bg-blue-50 rounded-lg px-3 py-2 transition-colors">
-            <div class="font-medium text-gray-800">Busy Gym</div>
-            <div class="text-xs text-gray-500">50 users · 4 wk · 90%</div>
+            <div class="font-medium text-gray-800">Large Gym</div>
+            <div class="text-xs text-gray-500">6 rooms · 10 trainers · 15 classes · 50 users</div>
           </button>
-        </div>
-      </div>
-
-      <!-- Sliders -->
-      <div class="bg-white rounded-xl border border-gray-200 p-5 space-y-5">
-        <h2 class="text-sm font-semibold text-gray-700">Configuration</h2>
-
-        <div>
-          <div class="flex justify-between text-sm mb-1">
-            <span class="text-gray-600">Members</span>
-            <span id="membersVal" class="font-semibold text-gray-900">25</span>
-          </div>
-          <input type="range" id="members" min="10" max="50" value="25" class="slider w-full h-1.5 bg-gray-200 rounded-full accent-blue-600 cursor-pointer" oninput="syncSlider('members','membersVal')"/>
-          <div class="flex justify-between text-xs text-gray-400 mt-1"><span>10</span><span>50</span></div>
-        </div>
-
-        <div>
-          <div class="flex justify-between text-sm mb-1">
-            <span class="text-gray-600">Schedule weeks</span>
-            <span id="weeksVal" class="font-semibold text-gray-900">2</span>
-          </div>
-          <input type="range" id="weeks" min="1" max="4" value="2" class="slider w-full h-1.5 bg-gray-200 rounded-full accent-blue-600 cursor-pointer" oninput="syncSlider('weeks','weeksVal')"/>
-          <div class="flex justify-between text-xs text-gray-400 mt-1"><span>1</span><span>4</span></div>
-        </div>
-
-        <div>
-          <div class="flex justify-between text-sm mb-1">
-            <span class="text-gray-600">Membership coverage</span>
-            <span id="membershipPctVal" class="font-semibold text-gray-900">80%</span>
-          </div>
-          <input type="range" id="membershipPct" min="0" max="100" value="80" class="slider w-full h-1.5 bg-gray-200 rounded-full accent-blue-600 cursor-pointer" oninput="syncSliderPct('membershipPct','membershipPctVal')"/>
-          <div class="flex justify-between text-xs text-gray-400 mt-1"><span>0%</span><span>100%</span></div>
-        </div>
-
-        <div>
-          <div class="flex justify-between text-sm mb-1">
-            <span class="text-gray-600">Schedule density</span>
-            <span id="densityPctVal" class="font-semibold text-gray-900">60%</span>
-          </div>
-          <input type="range" id="densityPct" min="10" max="100" value="60" class="slider w-full h-1.5 bg-gray-200 rounded-full accent-blue-600 cursor-pointer" oninput="syncSliderPct('densityPct','densityPctVal')"/>
-          <div class="flex justify-between text-xs text-gray-400 mt-1"><span>10%</span><span>100%</span></div>
         </div>
       </div>
 
@@ -162,6 +116,14 @@
           <div class="text-2xl font-bold text-gray-900" id="statTotalClasses">—</div>
           <div class="text-xs text-gray-500 mt-1">Total class sessions</div>
         </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-4">
+          <div class="text-2xl font-bold text-gray-900" id="statTrainers">—</div>
+          <div class="text-xs text-gray-500 mt-1">Trainers</div>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-4">
+          <div class="text-2xl font-bold text-gray-900" id="statRooms">—</div>
+          <div class="text-xs text-gray-500 mt-1">Rooms</div>
+        </div>
       </div>
 
       <!-- Credentials -->
@@ -179,48 +141,25 @@
   </main>
 
 <script>
-  // ── Slider sync ──────────────────────────────────────────────────────────
-  function syncSlider(id, valId) {
-    document.getElementById(valId).textContent = document.getElementById(id).value;
-    highlightPreset();
-  }
-  function syncSliderPct(id, valId) {
-    document.getElementById(valId).textContent = document.getElementById(id).value + '%';
-    highlightPreset();
-  }
+  // ── Preset state ─────────────────────────────────────────────────────────
+  let selectedPreset = 'medium';
 
-  function applyPreset(members, weeks, membershipPct, densityPct) {
-    setSlider('members', 'membersVal', members, false);
-    setSlider('weeks', 'weeksVal', weeks, false);
-    setSliderPct('membershipPct', 'membershipPctVal', membershipPct);
-    setSliderPct('densityPct', 'densityPctVal', densityPct);
-    highlightPreset();
-  }
-
-  function setSlider(id, valId, value, pct) {
-    document.getElementById(id).value = value;
-    document.getElementById(valId).textContent = pct ? value + '%' : value;
-  }
-  function setSliderPct(id, valId, value) { setSlider(id, valId, value, true); }
-
-  function highlightPreset() {
-    const presets = [
-      { btn: 0, m: 10, w: 1, mp: 50, d: 30 },
-      { btn: 1, m: 25, w: 2, mp: 80, d: 60 },
-      { btn: 2, m: 50, w: 4, mp: 90, d: 90 },
-    ];
-    const current = { m: +v('members'), w: +v('weeks'), mp: +v('membershipPct'), d: +v('densityPct') };
+  function applyPreset(preset) {
+    selectedPreset = preset;
     const btns = document.querySelectorAll('[onclick^="applyPreset"]');
-    btns.forEach((btn, i) => {
-      const p = presets[i];
-      const match = p.m === current.m && p.w === current.w && p.mp === current.mp && p.d === current.d;
-      btn.className = match
-        ? 'flex-1 text-center text-sm border border-blue-400 bg-blue-50 rounded-lg px-3 py-2'
-        : 'flex-1 text-center text-sm border border-gray-200 hover:border-blue-400 hover:bg-blue-50 rounded-lg px-3 py-2 transition-colors';
+    btns.forEach((btn) => {
+      const isActive = btn.getAttribute('onclick') === `applyPreset('${preset}')`;
+      if (isActive) {
+        btn.className = 'flex-1 text-center text-sm border border-blue-400 bg-blue-50 rounded-lg px-3 py-2';
+        btn.querySelector('.font-medium').className = 'font-medium text-blue-700';
+        btn.querySelector('.text-xs').className = 'text-xs text-blue-500';
+      } else {
+        btn.className = 'flex-1 text-center text-sm border border-gray-200 hover:border-blue-400 hover:bg-blue-50 rounded-lg px-3 py-2 transition-colors';
+        btn.querySelector('.font-medium').className = 'font-medium text-gray-800';
+        btn.querySelector('.text-xs').className = 'text-xs text-gray-500';
+      }
     });
   }
-
-  function v(id) { return document.getElementById(id).value; }
 
   // ── State ────────────────────────────────────────────────────────────────
   async function loadState() {
@@ -230,23 +169,24 @@
       document.getElementById('statMemberships').textContent = s.activeMemberships;
       document.getElementById('statWeekClasses').textContent = s.classesThisWeek;
       document.getElementById('statTotalClasses').textContent = s.totalClassInstances;
+      document.getElementById('statTrainers').textContent = s.trainers;
+      document.getElementById('statRooms').textContent = s.rooms;
       updateWarningBanner(s);
     } catch (e) { /* backend not ready */ }
   }
 
   function updateWarningBanner(state) {
     const banner = document.getElementById('warningBanner');
+    const generateBtn = document.getElementById('generateBtn');
     if (state.hasData && state.demoUsers > 0) {
       document.getElementById('warningText').textContent =
         `⚠ Demo data already exists: ${state.demoUsers} users, ${state.activeMemberships} memberships, ${state.totalClassInstances} class sessions.`;
       banner.classList.remove('hidden');
+      generateBtn.disabled = true;
     } else {
       banner.classList.add('hidden');
+      generateBtn.disabled = false;
     }
-  }
-
-  function dismissWarning() {
-    document.getElementById('warningBanner').classList.add('hidden');
   }
 
   async function handleCleanupFirst() {
@@ -308,17 +248,9 @@
     log.textContent = '';
     progressFill.style.width = '0%';
 
-    const params = new URLSearchParams({
-      members: v('members'),
-      weeks: v('weeks'),
-      membershipPct: v('membershipPct'),
-      densityPct: v('densityPct'),
-    });
+    const params = new URLSearchParams({ preset: selectedPreset });
 
     eventSource = new EventSource(`/api/generate/stream?${params}`);
-
-    let usersDone = 0, usersTotal = +v('members');
-    let membershipsDone = 0, membershipsTotal = Math.floor(usersTotal * +v('membershipPct') / 100);
 
     eventSource.onmessage = (e) => {
       const data = JSON.parse(e.data);
@@ -343,11 +275,9 @@
         appendLog('✕ ' + data.message);
       } else if (data.type === 'progress') {
         if (data.step === 'users') {
-          usersDone = data.current;
           appendLog(`Creating users… ${data.current}/${data.total}`);
           progressFill.style.width = Math.round((data.current / data.total) * 33) + '%';
         } else if (data.step === 'memberships') {
-          membershipsDone = data.current;
           appendLog(`Creating memberships… ${data.current}/${data.total}`);
           progressFill.style.width = (33 + Math.round((data.current / data.total) * 33)) + '%';
         } else if (data.step === 'classes') {
@@ -391,7 +321,7 @@
 
     try {
       const result = await fetch('/api/cleanup', { method: 'POST' }).then(r => r.json());
-      appendLog(`✓ Cleanup complete: ${result.deletedUsers} users, ${result.deletedMemberships} memberships, ${result.deletedClassInstances} class sessions removed.`);
+      appendLog(`✓ Cleanup complete: ${result.deletedUsers} users, ${result.deletedMemberships} memberships, ${result.deletedClassInstances} class sessions, ${result.deletedTrainers} trainers, ${result.deletedRooms} rooms, ${result.deletedClassTemplates} templates removed.`);
       document.getElementById('logSection').classList.remove('hidden');
     } catch (e) {
       alert('Cleanup failed: ' + e);

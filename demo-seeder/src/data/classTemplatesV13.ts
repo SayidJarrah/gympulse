@@ -6,6 +6,7 @@ export interface ClassTemplateRecord {
   defaultCapacity: number;
   difficulty: string;
   isSeeded: boolean;
+  imageUrl: string;
 }
 
 export const V13_CLASS_TEMPLATES: ClassTemplateRecord[] = [
@@ -17,6 +18,7 @@ export const V13_CLASS_TEMPLATES: ClassTemplateRecord[] = [
     defaultCapacity: 20,
     difficulty: 'All Levels',
     isSeeded: true,
+    imageUrl: 'https://images.unsplash.com/photo-1571019614242-e66b2ee5f68b?w=800&auto=format&fit=crop',
   },
   {
     name: 'Yoga Flow',
@@ -26,6 +28,7 @@ export const V13_CLASS_TEMPLATES: ClassTemplateRecord[] = [
     defaultCapacity: 15,
     difficulty: 'All Levels',
     isSeeded: true,
+    imageUrl: 'https://images.unsplash.com/photo-1506629082153-54e546b5a358?w=800&auto=format&fit=crop',
   },
   {
     name: 'Spin Cycle',
@@ -35,6 +38,7 @@ export const V13_CLASS_TEMPLATES: ClassTemplateRecord[] = [
     defaultCapacity: 25,
     difficulty: 'Intermediate',
     isSeeded: true,
+    imageUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&auto=format&fit=crop',
   },
   {
     name: 'Strength & Conditioning',
@@ -44,6 +48,7 @@ export const V13_CLASS_TEMPLATES: ClassTemplateRecord[] = [
     defaultCapacity: 12,
     difficulty: 'Intermediate',
     isSeeded: true,
+    imageUrl: 'https://images.unsplash.com/photo-1534367990453-3bcd4d4f8a9f?w=800&auto=format&fit=crop',
   },
   {
     name: 'Pilates Core',
@@ -53,5 +58,6 @@ export const V13_CLASS_TEMPLATES: ClassTemplateRecord[] = [
     defaultCapacity: 10,
     difficulty: 'Beginner',
     isSeeded: true,
+    imageUrl: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=800&auto=format&fit=crop',
   },
 ];
