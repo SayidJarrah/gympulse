@@ -9,7 +9,7 @@ export const pgPool = new Pool({
   port: parseInt(process.env.DB_PORT ?? '5432'),
   database: process.env.DB_NAME ?? 'gymflow',
   user: process.env.DB_USER ?? 'gymflow',
-  password: process.env.DB_PASSWORD ?? 'secret',
+  password: process.env.DB_PASSWORD,
   max: 10,
 });
 

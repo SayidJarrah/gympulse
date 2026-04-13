@@ -40,7 +40,7 @@ app.get('/api/credentials', (_req: Request, res: Response) => {
 
 app.get('/api/credentials.csv', (_req: Request, res: Response) => {
   const users = getDemoUsers();
-  const lines = ['email,password,membership_plan', ...users.map((u) => `${u.email},Demo@12345,${u.plan_name ?? ''}`)]
+  const lines = ['email,password,membership_plan', ...users.map((u) => `${u.email},${process.env.DEMO_PASSWORD},${u.plan_name ?? ''}`)]
     .join('\n');
   res.setHeader('Content-Type', 'text/csv');
   res.setHeader('Content-Disposition', 'attachment; filename="demo-credentials.csv"');
@@ -111,6 +111,16 @@ app.get('*', (_req: Request, res: Response) => {
 });
 
 // ── Start ────────────────────────────────────────────────────────────────────
+
+// ── Startup assertions ───────────────────────────────────────────────────────
+
+const REQUIRED_ENV = ['DEMO_PASSWORD', 'DB_PASSWORD', 'ADMIN_TOKEN'] as const;
+for (const key of REQUIRED_ENV) {
+  if (!process.env[key]) {
+    console.error(`Fatal: ${key} environment variable is required`);
+    process.exit(1);
+  }
+}
 
 initSqlite();
 

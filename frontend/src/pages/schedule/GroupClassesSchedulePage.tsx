@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 import { Navbar } from '../../components/layout/Navbar'
 import { BookingConfirmModal } from '../../components/schedule/BookingConfirmModal'
 import { BookingSummaryBar } from '../../components/schedule/BookingSummaryBar'
@@ -364,7 +365,7 @@ export function GroupClassesSchedulePage() {
     })
   }
 
-  const showToolbar = !isLoading && !isInvalidState && !isLoadError
+  const showToolbar = !isLoading && !isInvalidState && !isLoadError && Boolean(schedule?.hasActiveMembership)
   const showTimeZoneBadge = showToolbar && Boolean(schedule)
 
   const entries = schedule?.entries ?? []
@@ -374,6 +375,19 @@ export function GroupClassesSchedulePage() {
     [entries]
   )
 
+  // Change 5 — keyboard handlers for Previous/Next (← / → keys)
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement).tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+      if (e.key === 'ArrowLeft') handlePrevious()
+      if (e.key === 'ArrowRight') handleNext()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeView, activeAnchorDate, timeZone])
+
   return (
     <div
       className="min-h-screen bg-[#0F0F0F] text-white overflow-x-hidden"
@@ -381,20 +395,28 @@ export function GroupClassesSchedulePage() {
     >
       <Navbar />
       <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+        {/* Change 1 — compact 72px header strip replacing the full hero */}
         {isLoading ? (
           <ScheduleHeaderSkeleton />
         ) : (
           <SchedulePageHeader
             activeView={activeView}
             anchorDate={activeAnchorDate}
-            bookedCount={bookedEntries.length}
             hasActiveMembership={schedule?.hasActiveMembership ?? true}
             onOpenBookings={handleOpenBookingsDrawer}
             rangeEndDateExclusive={schedule?.rangeEndDateExclusive}
             rangeStartDate={schedule?.rangeStartDate}
             showBadge={showTimeZoneBadge}
             timeZone={schedule?.timeZone ?? timeZone}
-            totalCount={entries.length}
+          />
+        )}
+
+        {/* Change 2 — BookingSummaryBar above toolbar (active members only) */}
+        {!isLoading && !isInvalidState && !isLoadError && schedule && schedule.hasActiveMembership && (
+          <BookingSummaryBar
+            entries={bookedEntries}
+            timeZone={schedule.timeZone}
+            onOpenDrawer={handleOpenBookingsDrawer}
           />
         )}
 
@@ -434,13 +456,12 @@ export function GroupClassesSchedulePage() {
 
         {isLoading && <ScheduleViewSkeleton view={activeView} />}
 
-        {!isLoading && !isInvalidState && !isLoadError && schedule && (
+        {!isLoading && !isInvalidState && !isLoadError && schedule && !schedule.hasActiveMembership && (
+          <ScheduleMembershipGate onBrowsePlans={handleBrowsePlans} />
+        )}
+
+        {!isLoading && !isInvalidState && !isLoadError && schedule && schedule.hasActiveMembership && (
           <div className="flex flex-col gap-6">
-            <BookingSummaryBar
-              entries={bookedEntries}
-              timeZone={schedule.timeZone}
-              onOpenDrawer={handleOpenBookingsDrawer}
-            />
 
             {isEmpty && (
               <ScheduleEmptyState view={activeView} onToday={handleToday} />
@@ -579,26 +600,23 @@ export function GroupClassesSchedulePage() {
 interface SchedulePageHeaderProps {
   activeView: ScheduleView;
   anchorDate: string;
-  bookedCount: number;
   hasActiveMembership: boolean;
   onOpenBookings: () => void;
   rangeEndDateExclusive?: string;
   rangeStartDate?: string;
   timeZone: string;
-  totalCount: number;
   showBadge: boolean;
 }
 
+// Change 1 — compact ~72px header strip; hero banner removed
 function SchedulePageHeader({
   activeView,
   anchorDate,
-  bookedCount,
   hasActiveMembership,
   onOpenBookings,
   rangeEndDateExclusive,
   rangeStartDate,
   timeZone,
-  totalCount,
   showBadge,
 }: SchedulePageHeaderProps) {
   const rangeLabel =
@@ -609,106 +627,56 @@ function SchedulePageHeader({
         : formatShortDateLabel(anchorDate, timeZone)
 
   return (
-    <section className="relative overflow-hidden rounded-[28px] border border-gray-800 bg-gray-900 p-6 shadow-xl shadow-black/40 sm:p-8">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(34,197,94,0.22),_transparent_35%),radial-gradient(circle_at_bottom_left,_rgba(249,115,22,0.12),_transparent_28%)]" />
-      <div className="pointer-events-none absolute inset-0 opacity-20 [background-image:linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] [background-size:32px_32px]" />
+    <section className="flex min-h-[72px] flex-col gap-3 rounded-[20px] border border-gray-800 bg-gray-900 px-5 py-4 shadow-md shadow-black/30 sm:flex-row sm:items-center sm:justify-between">
+      {/* Left: page title */}
+      <h1 className="text-2xl font-bold text-white">Group Classes</h1>
 
-      <div className="relative grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-end">
-        <div className="space-y-5">
-          <div className="flex flex-wrap gap-2">
-            <span className="inline-flex items-center rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-green-300">
-              Class schedule
-            </span>
-            <span
-              className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
-                hasActiveMembership
-                  ? 'border border-gray-700 bg-[#0F0F0F] text-gray-300'
-                  : 'border border-orange-500/30 bg-orange-500/10 text-orange-300'
-              }`}
-            >
-              {hasActiveMembership ? 'Membership active' : 'Activation needed'}
-            </span>
-            {showBadge ? (
-              <span className="inline-flex items-center rounded-full border border-gray-700 bg-[#0F0F0F] px-3 py-1 text-xs font-medium text-gray-300">
-                Times shown in {timeZone}
-              </span>
-            ) : null}
-          </div>
-
-          <div className="space-y-3">
-            <p className="text-sm font-medium uppercase tracking-[0.22em] text-gray-400">
-              Live programme
-            </p>
-            <h1 className="font-['Barlow_Condensed'] text-5xl font-bold uppercase leading-none text-white sm:text-6xl">
-              Book your next session
-            </h1>
-            <p className="max-w-2xl text-base leading-normal text-gray-300">
-              Browse the live programme, reserve open spots, and keep your weekly training plan in one focused view.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-2 text-sm text-gray-300">
-            <span className="rounded-full border border-gray-700 bg-[#0F0F0F] px-3 py-1.5">
-              {rangeLabel}
-            </span>
-            <span className="rounded-full border border-gray-700 bg-[#0F0F0F] px-3 py-1.5">
-              {activeView === 'week' ? 'Weekly planning board' : activeView === 'day' ? 'Day agenda' : 'Rolling list'}
-            </span>
-            <span className="rounded-full border border-gray-700 bg-[#0F0F0F] px-3 py-1.5">
-              {totalCount} {totalCount === 1 ? 'class' : 'classes'} in range
-            </span>
-          </div>
-        </div>
-
-        <div className="grid gap-3">
-          <div className="rounded-2xl border border-gray-800 bg-[#0F0F0F]/90 px-4 py-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">
-              Booked in this view
-            </p>
-            <p className="mt-2 font-['Barlow_Condensed'] text-4xl font-bold uppercase leading-none text-white">
-              {bookedCount}
-            </p>
-          </div>
-          <div className="rounded-2xl border border-gray-800 bg-[#0F0F0F]/90 px-4 py-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">
-              Classes available
-            </p>
-            <p className="mt-2 text-xl font-semibold leading-tight text-white">
-              {totalCount} this range
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onOpenBookings}
-            className="inline-flex items-center justify-center rounded-md bg-green-500 px-4 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-green-600 hover:shadow-lg hover:shadow-green-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
-          >
-            Open booking hub
-          </button>
-        </div>
+      {/* Centre: status chips */}
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Change 7 — LIVE PROGRAMME overline stays uppercase (section label) */}
+        <span className="inline-flex items-center rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-green-300">
+          Live programme
+        </span>
+        {/* Change 7 — membership status chip: sentence case */}
+        <span
+          className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
+            hasActiveMembership
+              ? 'border border-gray-700 bg-[#0F0F0F] text-gray-300'
+              : 'border border-orange-500/30 bg-orange-500/10 text-orange-300'
+          }`}
+        >
+          {hasActiveMembership ? 'Membership active' : 'Activation needed'}
+        </span>
+        {showBadge ? (
+          <span className="inline-flex items-center rounded-full border border-gray-700 bg-[#0F0F0F] px-3 py-1 text-xs font-medium text-gray-300">
+            {rangeLabel} · {timeZone}
+          </span>
+        ) : null}
       </div>
+
+      {/* Right: CTA */}
+      <button
+        type="button"
+        onClick={onOpenBookings}
+        className="inline-flex items-center justify-center rounded-md bg-green-500 px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-green-600 hover:shadow-lg hover:shadow-green-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 sm:flex-shrink-0"
+      >
+        Open booking hub
+      </button>
     </section>
   )
 }
 
+// Change 1 — compact header skeleton matching the new strip height
 function ScheduleHeaderSkeleton() {
   return (
-    <section className="rounded-[28px] border border-gray-800 bg-gray-900 p-6 shadow-xl shadow-black/30 sm:p-8">
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="space-y-4">
-          <div className="flex gap-2">
-            <div className="h-7 w-28 rounded-full bg-gray-800 animate-pulse" />
-            <div className="h-7 w-32 rounded-full bg-gray-800 animate-pulse" />
-          </div>
-          <div className="h-4 w-28 rounded-full bg-gray-800 animate-pulse" />
-          <div className="h-16 w-80 rounded-xl bg-gray-800 animate-pulse" />
-          <div className="h-4 w-96 rounded-full bg-gray-800 animate-pulse" />
-        </div>
-        <div className="grid gap-3">
-          <div className="h-24 rounded-2xl bg-gray-800 animate-pulse" />
-          <div className="h-24 rounded-2xl bg-gray-800 animate-pulse" />
-          <div className="h-12 rounded-md bg-gray-800 animate-pulse" />
-        </div>
+    <section className="flex min-h-[72px] flex-col gap-3 rounded-[20px] border border-gray-800 bg-gray-900 px-5 py-4 shadow-md shadow-black/30 sm:flex-row sm:items-center sm:justify-between">
+      <div className="h-8 w-40 rounded-lg bg-gray-800 animate-pulse" />
+      <div className="flex gap-2">
+        <div className="h-6 w-28 rounded-full bg-gray-800 animate-pulse" />
+        <div className="h-6 w-32 rounded-full bg-gray-800 animate-pulse" />
+        <div className="h-6 w-40 rounded-full bg-gray-800 animate-pulse" />
       </div>
+      <div className="h-9 w-36 rounded-md bg-gray-800 animate-pulse" />
     </section>
   )
 }
@@ -822,6 +790,7 @@ interface ScheduleInvalidLinkStateProps {
 function ScheduleInvalidLinkState({ onReset }: ScheduleInvalidLinkStateProps) {
   return (
     <div className="flex flex-col items-center gap-4 rounded-2xl border border-orange-500/30 bg-orange-500/10 px-6 py-14 text-center">
+      <ExclamationTriangleIcon className="h-10 w-10 text-orange-400" aria-hidden="true" />
       <h2 className="text-xl font-semibold text-white">This schedule link is out of date</h2>
       <p className="text-sm text-gray-200">
         Reset to the current week to keep browsing the latest group classes.
@@ -844,6 +813,7 @@ interface ScheduleLoadErrorStateProps {
 function ScheduleLoadErrorState({ onRetry }: ScheduleLoadErrorStateProps) {
   return (
     <div className="flex flex-col items-center gap-4 rounded-2xl border border-red-500/30 bg-red-500/10 px-6 py-14 text-center">
+      <ExclamationTriangleIcon className="h-10 w-10 text-red-400" aria-hidden="true" />
       <h2 className="text-xl font-semibold text-white">Schedule unavailable</h2>
       <p className="text-sm text-gray-200">
         We couldn’t load the latest group classes. Please try again.
@@ -854,6 +824,29 @@ function ScheduleLoadErrorState({ onRetry }: ScheduleLoadErrorStateProps) {
         className="inline-flex items-center justify-center rounded-md bg-red-500 px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
       >
         Retry schedule
+      </button>
+    </div>
+  )
+}
+
+interface ScheduleMembershipGateProps {
+  onBrowsePlans: () => void;
+}
+
+function ScheduleMembershipGate({ onBrowsePlans }: ScheduleMembershipGateProps) {
+  return (
+    <div className="flex flex-col items-center gap-4 rounded-2xl border border-orange-500/30 bg-orange-500/10 px-6 py-16 text-center">
+      <ExclamationTriangleIcon className="h-10 w-10 text-orange-400" aria-hidden="true" />
+      <h2 className="text-xl font-semibold text-white">Membership required</h2>
+      <p className="max-w-md text-sm text-gray-200">
+        An active membership is required to view and book group classes. Browse our plans to get started.
+      </p>
+      <button
+        type="button"
+        onClick={onBrowsePlans}
+        className="inline-flex items-center justify-center rounded-md bg-green-500 px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-green-600 hover:shadow-lg hover:shadow-green-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
+      >
+        Browse plans
       </button>
     </div>
   )
