@@ -62,6 +62,12 @@ import com.gymflow.service.ClassHasActiveBookingsException
 import com.gymflow.service.ClassNotBookableException
 import com.gymflow.service.ClassNotFoundException
 import com.gymflow.service.UserNotFoundException
+import com.gymflow.service.PtLeadTimeViolationException
+import com.gymflow.service.PtTrainerOverlapException
+import com.gymflow.service.PtTrainerClassOverlapException
+import com.gymflow.service.PtOutsideGymHoursException
+import com.gymflow.service.PtBookingNotFoundException
+import com.gymflow.service.PtBookingNotActiveException
 import com.gymflow.domain.ErrorCode
 import com.gymflow.exception.AlreadyFavoritedException
 import com.gymflow.exception.FavoriteNotFoundException
@@ -650,6 +656,50 @@ class GlobalExceptionHandler {
         return ResponseEntity
             .status(HttpStatus.PAYLOAD_TOO_LARGE)
             .body(ErrorResponse(error = ex.message ?: "Import file too large", code = "IMPORT_FILE_TOO_LARGE"))
+    }
+
+    // ─── Personal Training Booking exceptions ────────────────────────────────
+
+    @ExceptionHandler(PtLeadTimeViolationException::class)
+    fun handlePtLeadTimeViolation(ex: PtLeadTimeViolationException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.UNPROCESSABLE_ENTITY)
+            .body(ErrorResponse(error = ex.message ?: "Booking must be at least 24 hours in advance", code = code(ErrorCode.PT_LEAD_TIME_VIOLATION)))
+    }
+
+    @ExceptionHandler(PtTrainerOverlapException::class)
+    fun handlePtTrainerOverlap(ex: PtTrainerOverlapException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(ErrorResponse(error = ex.message ?: "This slot is no longer available", code = code(ErrorCode.PT_TRAINER_OVERLAP)))
+    }
+
+    @ExceptionHandler(PtTrainerClassOverlapException::class)
+    fun handlePtTrainerClassOverlap(ex: PtTrainerClassOverlapException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(ErrorResponse(error = ex.message ?: "Trainer has a class at this time", code = code(ErrorCode.PT_TRAINER_CLASS_OVERLAP)))
+    }
+
+    @ExceptionHandler(PtOutsideGymHoursException::class)
+    fun handlePtOutsideGymHours(ex: PtOutsideGymHoursException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.UNPROCESSABLE_ENTITY)
+            .body(ErrorResponse(error = ex.message ?: "That time is outside gym hours", code = code(ErrorCode.PT_OUTSIDE_GYM_HOURS)))
+    }
+
+    @ExceptionHandler(PtBookingNotFoundException::class)
+    fun handlePtBookingNotFound(ex: PtBookingNotFoundException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(ErrorResponse(error = ex.message ?: "PT booking not found", code = code(ErrorCode.PT_BOOKING_NOT_FOUND)))
+    }
+
+    @ExceptionHandler(PtBookingNotActiveException::class)
+    fun handlePtBookingNotActive(ex: PtBookingNotActiveException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(ErrorResponse(error = ex.message ?: "PT booking is not active", code = code(ErrorCode.PT_BOOKING_NOT_ACTIVE)))
     }
 
     @ExceptionHandler(Exception::class)

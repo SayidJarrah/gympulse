@@ -98,6 +98,14 @@ enum class ErrorCode {
     // Membership requirement
     MEMBERSHIP_REQUIRED,
 
+    // Personal Training Bookings
+    PT_LEAD_TIME_VIOLATION,
+    PT_TRAINER_OVERLAP,
+    PT_TRAINER_CLASS_OVERLAP,
+    PT_OUTSIDE_GYM_HOURS,
+    PT_BOOKING_NOT_FOUND,
+    PT_BOOKING_NOT_ACTIVE,
+
     // Catch-all
     INTERNAL_ERROR,
 }

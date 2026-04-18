@@ -12,6 +12,7 @@ import com.gymflow.exception.MembershipRequiredException
 import com.gymflow.repository.BookingRepository
 import com.gymflow.repository.ClassInstanceRepository
 import com.gymflow.repository.UserMembershipRepository
+import com.gymflow.repository.UserProfileRepository
 import com.gymflow.repository.UserRepository
 import io.mockk.every
 import io.mockk.mockk
@@ -35,12 +36,14 @@ class BookingServiceTest {
     private val classInstanceRepository: ClassInstanceRepository = mockk()
     private val userMembershipRepository: UserMembershipRepository = mockk()
     private val userRepository: UserRepository = mockk()
+    private val userProfileRepository: UserProfileRepository = mockk()
+    private val activityEventService: ActivityEventService = mockk(relaxed = true)
 
     private lateinit var service: BookingService
 
     @BeforeEach
     fun setUp() {
-        service = BookingService(bookingRepository, classInstanceRepository, userMembershipRepository, userRepository)
+        service = BookingService(bookingRepository, classInstanceRepository, userMembershipRepository, userRepository, userProfileRepository, activityEventService)
     }
 
     // --- createBooking ---
