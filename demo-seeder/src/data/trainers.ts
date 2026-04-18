@@ -8,6 +8,8 @@ export interface TrainerRecord {
   specialisations: string[];
   experienceYears: number;
   profilePhotoUrl: string;
+  accentColor: string;  // hex, used by PT trainer card glow
+  defaultRoom: string;  // room name for PT sessions
 }
 
 export const TRAINERS: TrainerRecord[] = [
@@ -21,6 +23,8 @@ export const TRAINERS: TrainerRecord[] = [
     specialisations: ['Strength Training', 'Functional Fitness', 'Mobility'],
     experienceYears: 12,
     profilePhotoUrl: 'https://randomuser.me/api/portraits/women/44.jpg',
+    accentColor: '#4ADE80',
+    defaultRoom: 'Studio A',
   },
   {
     id: '11111111-1111-1111-1111-111111111102',
@@ -32,6 +36,8 @@ export const TRAINERS: TrainerRecord[] = [
     specialisations: ['HIIT', 'Boxing Conditioning', 'Cardio'],
     experienceYears: 9,
     profilePhotoUrl: 'https://randomuser.me/api/portraits/men/32.jpg',
+    accentColor: '#FB923C',
+    defaultRoom: 'Studio B',
   },
   {
     id: '11111111-1111-1111-1111-111111111103',
@@ -43,6 +49,8 @@ export const TRAINERS: TrainerRecord[] = [
     specialisations: ['Yoga', 'Mobility', 'Breathwork'],
     experienceYears: 11,
     profilePhotoUrl: 'https://randomuser.me/api/portraits/women/67.jpg',
+    accentColor: '#60A5FA',
+    defaultRoom: 'Studio C',
   },
   {
     id: '11111111-1111-1111-1111-111111111104',
@@ -54,6 +62,8 @@ export const TRAINERS: TrainerRecord[] = [
     specialisations: ['Athletic Performance', 'Strength Training', 'Recovery'],
     experienceYears: 8,
     profilePhotoUrl: 'https://randomuser.me/api/portraits/women/52.jpg',
+    accentColor: '#C084FC',
+    defaultRoom: 'Studio A',
   },
   {
     id: '11111111-1111-1111-1111-111111111105',
@@ -65,6 +75,8 @@ export const TRAINERS: TrainerRecord[] = [
     specialisations: ['Pilates', 'Core', 'Posture'],
     experienceYears: 7,
     profilePhotoUrl: 'https://randomuser.me/api/portraits/women/28.jpg',
+    accentColor: '#F472B6',
+    defaultRoom: 'Studio B',
   },
   {
     id: '11111111-1111-1111-1111-111111111106',
@@ -76,6 +88,8 @@ export const TRAINERS: TrainerRecord[] = [
     specialisations: ['Powerlifting', 'Strength Training', 'Technique'],
     experienceYears: 10,
     profilePhotoUrl: 'https://randomuser.me/api/portraits/men/55.jpg',
+    accentColor: '#FACC15',
+    defaultRoom: 'Studio C',
   },
   {
     id: '11111111-1111-1111-1111-111111111107',
@@ -87,6 +101,8 @@ export const TRAINERS: TrainerRecord[] = [
     specialisations: ['Low Impact', 'Mobility', 'Functional Fitness'],
     experienceYears: 6,
     profilePhotoUrl: 'https://randomuser.me/api/portraits/women/73.jpg',
+    accentColor: '#4ADE80',
+    defaultRoom: 'Studio A',
   },
   {
     id: '11111111-1111-1111-1111-111111111108',
@@ -98,6 +114,8 @@ export const TRAINERS: TrainerRecord[] = [
     specialisations: ['Cycling', 'Cardio', 'Endurance'],
     experienceYears: 5,
     profilePhotoUrl: 'https://randomuser.me/api/portraits/men/18.jpg',
+    accentColor: '#FB923C',
+    defaultRoom: 'Studio B',
   },
   {
     id: '11111111-1111-1111-1111-111111111109',
@@ -109,6 +127,8 @@ export const TRAINERS: TrainerRecord[] = [
     specialisations: ['Dance Fitness', 'Flexibility', 'Cardio'],
     experienceYears: 4,
     profilePhotoUrl: 'https://randomuser.me/api/portraits/women/81.jpg',
+    accentColor: '#60A5FA',
+    defaultRoom: 'Studio C',
   },
   {
     id: '11111111-1111-1111-1111-111111111110',
@@ -120,5 +140,7 @@ export const TRAINERS: TrainerRecord[] = [
     specialisations: ['Kettlebells', 'Functional Fitness', 'Conditioning'],
     experienceYears: 13,
     profilePhotoUrl: 'https://randomuser.me/api/portraits/men/76.jpg',
+    accentColor: '#C084FC',
+    defaultRoom: 'Studio A',
   },
 ];
