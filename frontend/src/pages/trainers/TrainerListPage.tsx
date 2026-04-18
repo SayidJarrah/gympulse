@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { AxiosError } from 'axios'
 import { addFavorite, removeFavorite } from '../../api/trainerDiscovery'
-import { Navbar } from '../../components/layout/Navbar'
+import { MemberNav } from '../../components/layout/MemberNav'
 import { TrainerCard } from '../../components/trainers/discovery/TrainerCard'
 import { TrainerCardSkeleton } from '../../components/trainers/discovery/TrainerCardSkeleton'
 import { SortDropdown } from '../../components/trainers/discovery/SortDropdown'
@@ -93,7 +93,7 @@ export function TrainerListPage() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
-      <Navbar />
+      <MemberNav />
       <main className="mx-auto max-w-7xl px-4 pb-16 pt-10 sm:px-6 lg:px-8">
         <div className="mb-8 flex flex-col gap-2">
           <h1 className="text-3xl font-bold">Trainer Discovery</h1>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { PulseNav } from '../../components/landing/PulseNav'
+import { MemberNav } from '../../components/layout/MemberNav'
 import { PulseFooter } from '../../components/landing/PulseFooter'
 import { AmbientWaveform } from '../../components/landing/AmbientWaveform'
 import { ActivityFeed } from '../../components/landing/ActivityFeed'
@@ -65,7 +65,7 @@ export function MemberHomePage() {
       className="flex min-h-screen flex-col bg-[#0F0F0F] text-white"
       data-testid="member-home-root"
     >
-      <PulseNav authed userName={firstName ?? undefined} />
+      <MemberNav />
 
       <main
         className="relative flex-1 overflow-hidden px-4 pb-12 pt-10 sm:px-6 lg:px-10"

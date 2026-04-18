@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import type { AxiosError } from 'axios'
 import { addFavorite, removeFavorite } from '../../api/trainerDiscovery'
-import { Navbar } from '../../components/layout/Navbar'
+import { MemberNav } from '../../components/layout/MemberNav'
 import { AvailabilityGrid } from '../../components/trainers/discovery/AvailabilityGrid'
 import { FavoriteButton } from '../../components/trainers/discovery/FavoriteButton'
 import { useTrainerProfile } from '../../hooks/useTrainerProfile'
@@ -63,7 +63,7 @@ export function TrainerProfilePage() {
   if (notFound) {
     return (
       <div className="min-h-screen bg-gray-950 text-white">
-        <Navbar />
+        <MemberNav />
         <main className="mx-auto max-w-3xl px-4 py-20 text-center">
           <h1 className="text-3xl font-bold">Trainer not found.</h1>
           <p className="mt-3 text-sm text-gray-400">
@@ -82,7 +82,7 @@ export function TrainerProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
-      <Navbar />
+      <MemberNav />
       <main className="mx-auto max-w-5xl px-4 pb-16 pt-10 sm:px-6 lg:px-8">
         {error && (
           <div className="mb-6 flex items-center justify-between rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { PulseNav } from '../../components/landing/PulseNav'
+import { MemberNav } from '../../components/layout/MemberNav'
 import { PulseFooter } from '../../components/landing/PulseFooter'
 import { TrainerDirectory } from '../../components/training/TrainerDirectory'
 import { SlotPicker } from '../../components/training/SlotPicker'
@@ -17,9 +17,6 @@ const PAGE_DESCRIPTION = 'Book a one-on-one personal training session with your 
 
 export function PersonalTrainingPage() {
   usePageMeta({ title: PAGE_TITLE, description: PAGE_DESCRIPTION })
-
-  const { user } = useAuthStore()
-  const firstName = user?.email?.split('@')[0] ?? undefined
 
   const [toast, setToast] = useState<{ kind: 'success' | 'error'; message: string } | null>(null)
   const { selectedTrainer, selectTrainer: storeSelectTrainer } = usePtBookingStore()
@@ -75,7 +72,7 @@ export function PersonalTrainingPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#0F0F0F] text-white">
-      <PulseNav authed userName={firstName} />
+      <MemberNav />
 
       <main className="relative flex-1 overflow-hidden px-10 pb-14 pt-10" style={{ maxWidth: 1320, margin: '0 auto', width: '100%' }}>
         {/* Ambient glows */}
