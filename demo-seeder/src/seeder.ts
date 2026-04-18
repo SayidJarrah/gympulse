@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { faker } from '@faker-js/faker';
 import fetch from 'node-fetch';
-import { pgPool, trackUser, trackMembership, trackClassInstance, updateUserPlan, setMeta } from './db';
+import { pgPool, trackUser, trackMembership, trackClassInstance, updateUserPlan, setMeta, getSqlite } from './db';
 import { FITNESS_GOALS, CLASS_TYPE_PREFERENCES, pickRandom, randomBetween } from './data/personas';
 import { buildSlotDates, SLOT_QUALIFIERS } from './data/schedule';
 import { seedReferenceData } from './referenceSeeder';
@@ -23,9 +23,9 @@ export interface PresetConfig {
 }
 
 export const PRESET_CONFIG: Record<Preset, PresetConfig> = {
-  small:  { rooms: 2, trainers: 3, classTemplates: 5,  membershipPlans: 3,  memberCount: 10, weekCount: 1, membershipPct: 50, densityPct: 30 },
-  medium: { rooms: 4, trainers: 6, classTemplates: 10, membershipPlans: 6,  memberCount: 25, weekCount: 2, membershipPct: 80, densityPct: 60 },
-  large:  { rooms: 6, trainers: 10, classTemplates: 15, membershipPlans: 10, memberCount: 50, weekCount: 4, membershipPct: 90, densityPct: 90 },
+  small:  { rooms: 2, trainers: 3, classTemplates: 5,  membershipPlans: 3, memberCount: 10, weekCount: 1, membershipPct: 50, densityPct: 30 },
+  medium: { rooms: 4, trainers: 6, classTemplates: 10, membershipPlans: 3, memberCount: 25, weekCount: 2, membershipPct: 80, densityPct: 60 },
+  large:  { rooms: 6, trainers: 10, classTemplates: 15, membershipPlans: 3, memberCount: 50, weekCount: 4, membershipPct: 90, densityPct: 90 },
 };
 
 export interface SeederConfig {
@@ -198,7 +198,8 @@ async function createMemberships(
   membershipPct: number,
   planIds: { id: string; name: string }[],
   emit: EmitFn,
-): Promise<void> {
+): Promise<Map<string, string>> {
+  const userPlanMap = new Map<string, string>(); // userId → planName
   const count = Math.floor(users.length * membershipPct / 100);
   const shuffled = [...users].sort(() => Math.random() - 0.5).slice(0, count);
 
@@ -207,7 +208,6 @@ async function createMemberships(
     const plan = planIds[Math.floor(Math.random() * planIds.length)];
 
     try {
-      // Login as this user to get USER JWT
       const loginRes = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -221,7 +221,6 @@ async function createMemberships(
 
       const { accessToken } = (await loginRes.json()) as { accessToken: string };
 
-      // Purchase membership
       const memberRes = await fetch(`${API_URL}/memberships`, {
         method: 'POST',
         headers: {
@@ -240,12 +239,15 @@ async function createMemberships(
       const membership = (await memberRes.json()) as { id: string };
       trackMembership(membership.id, user.id);
       updateUserPlan(user.id, plan.name);
+      userPlanMap.set(user.id, plan.name);
     } catch (err) {
       emit('warning', { message: `Error creating membership for ${user.email}: ${String(err)}` });
     }
 
     emit('progress', { step: 'memberships', current: i + 1, total: shuffled.length });
   }
+
+  return userPlanMap;
 }
 
 // ── Class instance creation ────────────────────────────────────────────────
@@ -392,6 +394,67 @@ async function createClassInstances(
   }
 }
 
+// ── Booking creation ───────────────────────────────────────────────────────
+
+const BOOKINGS_BY_PLAN: Record<string, { min: number; max: number }> = {
+  Trial:    { min: 1, max: 3 },
+  Monthly:  { min: 4, max: 10 },
+  Annually: { min: 8, max: 16 },
+};
+
+async function createBookings(
+  userPlanMap: Map<string, string>,
+  emit: EmitFn,
+): Promise<void> {
+  const instances = getSqlite()
+    .prepare('SELECT id, scheduled_at FROM demo_class_instances')
+    .all() as { id: string; scheduled_at: string }[];
+
+  if (instances.length === 0) return;
+
+  const now = Date.now();
+  const total = userPlanMap.size;
+  let done = 0;
+
+  for (const [userId, planName] of userPlanMap) {
+    const range = BOOKINGS_BY_PLAN[planName] ?? { min: 2, max: 6 };
+    const targetCount = randomBetween(range.min, range.max);
+
+    const shuffled = [...instances].sort(() => Math.random() - 0.5).slice(0, targetCount);
+
+    const rows = shuffled.map((inst) => {
+      const isPast = new Date(inst.scheduled_at).getTime() < now;
+      const status = isPast ? 'ATTENDED' : 'CONFIRMED';
+      const bookedAt = isPast
+        ? new Date(new Date(inst.scheduled_at).getTime() - randomBetween(1, 72) * 3_600_000).toISOString()
+        : new Date(now - randomBetween(1, 48) * 3_600_000).toISOString();
+      return { userId, classId: inst.id, status, bookedAt };
+    });
+
+    if (rows.length === 0) continue;
+
+    const client = await pgPool.connect();
+    try {
+      const placeholders = rows.map((_, j) => {
+        const b = j * 4;
+        return `($${b + 1}::uuid, $${b + 2}::uuid, $${b + 3}, $${b + 4}::timestamptz)`;
+      });
+      const values = rows.flatMap((r) => [r.userId, r.classId, r.status, r.bookedAt]);
+      await client.query(
+        `INSERT INTO bookings (user_id, class_id, status, booked_at)
+         VALUES ${placeholders.join(', ')}
+         ON CONFLICT DO NOTHING`,
+        values,
+      );
+    } finally {
+      client.release();
+    }
+
+    done++;
+    emit('progress', { step: 'bookings', current: done, total });
+  }
+}
+
 // ── Main entry ─────────────────────────────────────────────────────────────
 
 export async function runSeeder(config: SeederConfig, emit: EmitFn): Promise<void> {
@@ -424,10 +487,13 @@ export async function runSeeder(config: SeederConfig, emit: EmitFn): Promise<voi
 
   const membershipCount = Math.floor(users.length * config.membershipPct / 100);
   emit('log', { message: `Creating ${membershipCount} memberships…` });
-  await createMemberships(users, config.membershipPct, ref.planIds, emit);
+  const userPlanMap = await createMemberships(users, config.membershipPct, ref.planIds, emit);
 
   emit('log', { message: `Building ${config.weekCount}-week schedule at ${config.densityPct}% density…` });
   await createClassInstances(ref, config.weekCount, config.densityPct, emit);
+
+  emit('log', { message: `Creating bookings for ${userPlanMap.size} members…` });
+  await createBookings(userPlanMap, emit);
 
   emit('done', {
     users: users.length,

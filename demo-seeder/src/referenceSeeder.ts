@@ -245,9 +245,15 @@ async function upsertTrainers(count: number): Promise<number> {
 }
 
 async function upsertMembershipPlans(count: number): Promise<number> {
+  const plans = MEMBERSHIP_PLANS.slice(0, count);
+  const keepIds = plans.map((p) => p.id);
   const client = await pgPool.connect();
   try {
-    for (const plan of MEMBERSHIP_PLANS.slice(0, count)) {
+    await client.query(
+      `DELETE FROM membership_plans WHERE id != ALL($1::uuid[])`,
+      [keepIds],
+    );
+    for (const plan of plans) {
       await client.query(
         `INSERT INTO membership_plans
            (id, name, description, price_in_cents, duration_days,
