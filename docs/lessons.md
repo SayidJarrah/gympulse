@@ -17,6 +17,12 @@ Applies when: {situation where this rule kicks in}
 
 <!-- Add lessons below this line -->
 
+## Lesson 10 — Design is owned by the external Claude Design project, not authored in this repo
+Date: 2026-04-18
+Correction: Project switched to the Claude Design workflow. `docs/design/` (per-feature specs + `system.md` + `prototypes/`) was deleted. The `ui-ux-designer` agent was retired. Running `/deliver` or `/redesign` without a handoff now halts at the gate.
+Rule: Never author a design spec or HTML prototype locally. The canonical tokens, voice, and visual rules live in `docs/design-system/` (README.md, colors_and_type.css, tailwind.gymflow.cjs, assets/). Per-feature mocks land at `docs/design-system/handoffs/{slug}/` (HTML + spec.md) produced in the Claude Design project. If a handoff is missing when `/deliver` or `/redesign` runs, STOP and ask the user to produce it — do not fabricate one to unblock the pipeline. SA, developer, and reviewer all read the handoff + `docs/design-system/README.md` + `colors_and_type.css`.
+Applies when: Running `/deliver`, `/redesign`, or `/audit`; dispatching solution-architect, developer, or reviewer for UI work; any time a stale reference to `docs/design/` is encountered.
+
 ## Lesson 9 — Subagents must create worktrees via the main repo, not from inside another worktree
 Date: 2026-04-13
 Correction: SA agent ran `git worktree add .worktrees/chore-seeder-presets` from inside `.worktrees/chore-seeder-presets-brief/`, creating a nested worktree at `.worktrees/chore-seeder-presets-brief/.worktrees/chore-seeder-presets` instead of `.worktrees/chore-seeder-presets`. Required manual removal and recreation.

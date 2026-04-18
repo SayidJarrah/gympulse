@@ -20,9 +20,9 @@ For each feature slug, check:
 
 ```bash
 SLUG="{feature}"
-echo "PRD:    $(ls docs/prd/$SLUG.md 2>/dev/null && echo ✅ || echo ❌)"
-echo "Design: $(ls docs/design/$SLUG.md 2>/dev/null && echo ✅ || echo ❌)"
-echo "SDD:    $(ls docs/sdd/$SLUG.md 2>/dev/null && echo ✅ || echo ❌)"
+echo "PRD:     $(ls docs/prd/$SLUG.md 2>/dev/null && echo ✅ || echo ❌)"
+echo "Handoff: $(ls -d docs/design-system/handoffs/$SLUG 2>/dev/null && echo ✅ || echo ❌)"
+echo "SDD:     $(ls docs/sdd/$SLUG.md 2>/dev/null && echo ✅ || echo ❌)"
 echo "Tests:  $(ls frontend/e2e/$SLUG.spec.ts 2>/dev/null && echo ✅ || echo ❌)"
 echo "Gap:    $(ls docs/gaps/$SLUG.md 2>/dev/null && echo ⚠️  needs audit || echo —)"
 echo "Branch: $(git branch -a | grep "feature/$SLUG" | head -1 | xargs || echo no branch)"
@@ -35,10 +35,10 @@ Check open PRs via GitHub MCP for each branch.
 Present as a table:
 
 ```
-Feature              | PRD | Design | SDD | Tests | Status
----------------------|-----|--------|-----|-------|-------
-auth                 |  ✅  |   ✅   |  ✅  |  ✅   | shipped
-class-booking        |  ✅  |   ✅   |  ✅  |  ❌   | in progress (feature/class-booking)
+Feature              | PRD | Handoff | SDD | Tests | Status
+---------------------|-----|---------|-----|-------|-------
+auth                 |  ✅  |    ✅   |  ✅  |  ✅   | shipped
+class-booking        |  ✅  |    ✅   |  ✅  |  ❌   | in progress (feature/class-booking)
 ...
 ```
 
@@ -46,6 +46,6 @@ Status values:
 - `shipped` — all artifacts ✅, no open branch
 - `in progress` — open feature branch exists
 - `needs audit` — gap report exists at docs/gaps/
-- `design only` — PRD + design exist, SDD missing
-- `specced` — PRD + SDD + design exist, no implementation
+- `design only` — PRD + handoff exist, SDD missing
+- `specced` — PRD + SDD + handoff exist, no implementation
 - `partial` — some artifacts exist, no clear pattern

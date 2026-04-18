@@ -23,16 +23,18 @@ Spawn both agents simultaneously (feature audit only):
 > "You are in audit mode for: $ARGUMENTS
 > Load design-standards skill.
 > Read all available docs: docs/prd/$ARGUMENTS.md, docs/sdd/$ARGUMENTS.md,
-> docs/design/$ARGUMENTS.md. Then read the actual implementation code.
+> docs/design-system/handoffs/$ARGUMENTS/ (if present), plus
+> docs/design-system/README.md and colors_and_type.css for tokens and voice.
+> Then read the actual implementation code.
 >
 > Check DOCS → CODE:
 > - Is everything in the SDD actually implemented?
-> - Does the UI match the design spec?
+> - Does the UI match the handoff (docs/design-system/handoffs/$ARGUMENTS/)?
 > - Are all business rules from the PRD enforced?
 >
 > Check CODE → DOCS:
 > - Are there endpoints/services with no SDD coverage?
-> - Are there UI screens with no design spec?
+> - Are there UI screens with no handoff coverage?
 > - Are there behaviours not in any AC?
 >
 > Check CROSS-SDD CONTRADICTIONS:
@@ -77,7 +79,7 @@ Date: {today}
 - {flow that exists but does not work correctly}
 
 ### Design Divergence
-- {UI element that differs from design spec}
+- {UI element that differs from handoff at docs/design-system/handoffs/$ARGUMENTS/}
 
 ### Missing Test Coverage
 - AC {N}: {text} — no spec exists
@@ -88,7 +90,7 @@ Date: {today}
 - {endpoint or method with no SDD coverage}
 
 ### Undocumented UI
-- {screen or component with no design spec}
+- {screen or component with no handoff coverage in docs/design-system/handoffs/}
 
 ### Undocumented Behaviours
 - {user-visible behaviour not in any AC}

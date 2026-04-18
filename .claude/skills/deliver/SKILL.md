@@ -9,13 +9,13 @@ description: GymPulse delivery pipeline logic. Loaded by the /deliver command.
 ## Pipeline Order
 
 ```
-BA → Designer → SA → Developer → [Reviewer ∥ Tester] → PR
+BA → Design Handoff Gate → SA → Developer → [Reviewer ∥ Tester] → PR
 ```
 
 **Why this order:**
-- Designer works from user needs (PRD) — no technical context needed yet
-- SA reads PRD + design together — the API is shaped to match the actual UI
-- Developer has both SDD (technical contract) and design spec (exact screens) before writing a line
+- Design is authored in the external Claude Design project — we consume a handoff, not author one here
+- SA reads PRD + handoff together — the API is shaped to match the actual UI
+- Developer has both SDD (technical contract) and handoff (exact screens) before writing a line
 - Reviewer and Tester are independent — they read different artifacts and write to different paths
 
 ## Stage Gates
@@ -25,13 +25,15 @@ Before starting each stage, check for the required input artifact:
 | Stage | Required artifact | Output artifact |
 |-------|------------------|----------------|
 | BA | `docs/briefs/{feature}.md` (or gap report for post-audit path) | `docs/prd/{feature}.md` |
-| Designer | `docs/prd/{feature}.md` | `docs/design/{feature}.md` + prototype |
-| SA | `docs/prd/{feature}.md` + `docs/design/{feature}.md` | `docs/sdd/{feature}.md` |
-| Developer | `docs/sdd/{feature}.md` + `docs/design/{feature}.md` | implementation in git |
-| Reviewer | implementation + `docs/design/{feature}.md` | `docs/reviews/{feature}.md` |
+| Handoff Gate | `docs/design-system/handoffs/{feature}/` (HTML mock + spec.md, produced in Claude Design project) | (pass-through) |
+| SA | `docs/prd/{feature}.md` + `docs/design-system/handoffs/{feature}/spec.md` | `docs/sdd/{feature}.md` |
+| Developer | `docs/sdd/{feature}.md` + `docs/design-system/handoffs/{feature}/` + `docs/design-system/README.md` | implementation in git |
+| Reviewer | implementation + `docs/design-system/handoffs/{feature}/` + `docs/design-system/README.md` | `docs/reviews/{feature}.md` |
 | Tester | implementation + `docs/prd/{feature}.md` | passing specs or `docs/bugs/*.md` |
 
-If an artifact is missing, run the stage that produces it — do not skip ahead.
+If an artifact is missing, run the stage that produces it — do not skip ahead. The Handoff
+Gate is not a stage that produces output locally: if the handoff is missing, STOP and ask
+for it to be produced in the Claude Design project.
 
 ## Gap Report Detection
 
@@ -46,12 +48,12 @@ logging rework, error-handling sweep), collapse the pipeline:
 
 - **Brief & PRD:** not needed. A detailed gap report (from `/audit`) or an
   explicit scope-agreement block in a gap/brief doc acts as both.
-- **Design stage:** skipped. No UI artifact.
+- **Handoff Gate:** skipped. No UI artifact.
 - **SDD:** still required. Produce `docs/sdd/{slug}.md` — this is the authoritative
   technical contract.
 - **Developer:** runs backend phase only (skip the frontend phase in the two-phase block
   below) unless the change touches TypeScript.
-- **Reviewer:** runs normally against the SDD (no design spec to check).
+- **Reviewer:** runs normally against the SDD (no handoff to check).
 - **Tester:** skip ONLY IF the scope-agreement explicitly accepts existing test
   breakage (common for test-strategy-precursor work). Otherwise run as normal.
   If tester is skipped, the PR description MUST call out accepted breakage.

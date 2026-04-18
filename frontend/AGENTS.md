@@ -50,7 +50,9 @@ src/
 6. Add route in `App.tsx`
 
 ## Design System Quick Reference
-Full spec: `docs/design/system.md`
+Full spec: `docs/design-system/README.md` (voice, visual rules, component patterns)
+Tokens: `docs/design-system/colors_and_type.css` and `docs/design-system/tailwind.gymflow.cjs`
+Per-feature mocks + specs: `docs/design-system/handoffs/{feature}/`
 
 | Token | Value |
 |-------|-------|
