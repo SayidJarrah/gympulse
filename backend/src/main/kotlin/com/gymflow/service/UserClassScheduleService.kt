@@ -64,9 +64,8 @@ class UserClassScheduleService(
                 val remainingSpots = (instance.capacity.toLong() - confirmedBookings).coerceAtLeast(0).toInt()
                 val currentUserBooking = currentUserBookings[instance.id]
                 val cancellationAllowed = currentUserBooking != null &&
-                    now.isBefore(instance.scheduledAt.minusHours(3))
+                    now.isBefore(instance.scheduledAt.minusHours(2))
                 val bookingDeniedReason = when {
-                    currentUserBooking != null -> "ALREADY_BOOKED"
                     !instance.scheduledAt.isAfter(now) -> "CLASS_ALREADY_STARTED"
                     confirmedBookings >= instance.capacity.toLong() -> "CLASS_FULL"
                     !hasActiveMembership -> "MEMBERSHIP_REQUIRED"
