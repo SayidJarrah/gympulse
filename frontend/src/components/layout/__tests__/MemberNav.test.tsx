@@ -32,6 +32,8 @@ function renderNav() {
 describe('MemberNav', () => {
   beforeEach(() => {
     mockNavigate.mockReset()
+    mockUseAuthStore.mockClear()
+    mockUseProfileStore.mockClear()
     mockUseAuthStore.mockReturnValue({
       user: { id: 'u1', email: 'mike@example.com', role: 'USER' },
       clearAuth: vi.fn(),
@@ -90,17 +92,8 @@ describe('MemberNav', () => {
   })
 
   it('Log out clears auth and navigates to /login', async () => {
-    const clearAuth = vi.fn()
-    const resetProfile = vi.fn()
-    mockUseAuthStore.mockReturnValue({
-      user: { id: 'u1', email: 'mike@example.com', role: 'USER' },
-      clearAuth,
-    })
-    mockUseProfileStore.mockReturnValue({
-      avatarUrl: null,
-      ensureProfileLoaded: vi.fn().mockResolvedValue(undefined),
-      resetProfile,
-    })
+    const { clearAuth } = mockUseAuthStore()
+    const { resetProfile } = mockUseProfileStore()
     const user = userEvent.setup()
     renderNav()
     await user.click(screen.getByRole('button', { name: 'Account menu' }))
@@ -113,5 +106,23 @@ describe('MemberNav', () => {
   it('does not render a My Favorites link', () => {
     renderNav()
     expect(screen.queryByRole('link', { name: /favorites/i })).not.toBeInTheDocument()
+  })
+
+  it('opening avatar dropdown closes the Book dropdown', async () => {
+    const user = userEvent.setup()
+    renderNav()
+    await user.click(screen.getByRole('button', { name: /book/i }))
+    expect(screen.getByRole('link', { name: 'Group Classes' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Account menu' }))
+    expect(screen.queryByRole('link', { name: 'Group Classes' })).not.toBeInTheDocument()
+  })
+
+  it('opening Book dropdown closes the avatar dropdown', async () => {
+    const user = userEvent.setup()
+    renderNav()
+    await user.click(screen.getByRole('button', { name: 'Account menu' }))
+    expect(screen.getByRole('link', { name: 'Profile' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /book/i }))
+    expect(screen.queryByRole('link', { name: 'Profile' })).not.toBeInTheDocument()
   })
 })
