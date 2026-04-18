@@ -182,6 +182,7 @@ class PtBookingService(
         return booking.toResponse(
             trainerName = "${trainer.firstName} ${trainer.lastName}",
             trainerAccentColor = trainer.accentColor,
+            trainerPhotoUrl = resolveTrainerPhotoUrl(trainer),
             memberName = memberName
         )
     }
@@ -210,6 +211,7 @@ class PtBookingService(
         return saved.toResponse(
             trainerName = trainerName,
             trainerAccentColor = trainer?.accentColor,
+            trainerPhotoUrl = trainer?.let { resolveTrainerPhotoUrl(it) },
             memberName = memberName
         )
     }
@@ -231,6 +233,7 @@ class PtBookingService(
             booking.toResponse(
                 trainerName = trainer?.let { "${it.firstName} ${it.lastName}" } ?: "Unknown Trainer",
                 trainerAccentColor = trainer?.accentColor,
+                trainerPhotoUrl = trainer?.let { resolveTrainerPhotoUrl(it) },
                 memberName = memberName
             )
         }
@@ -264,6 +267,7 @@ class PtBookingService(
             booking.toResponse(
                 trainerName = "${trainer.firstName} ${trainer.lastName}",
                 trainerAccentColor = trainer.accentColor,
+                trainerPhotoUrl = resolveTrainerPhotoUrl(trainer),
                 memberName = memberName
             )
         }
@@ -436,6 +440,7 @@ class PtBookingService(
     private fun PtBooking.toResponse(
         trainerName: String,
         trainerAccentColor: String?,
+        trainerPhotoUrl: String?,
         memberName: String
     ): PtBookingResponse {
         return PtBookingResponse(
@@ -443,6 +448,7 @@ class PtBookingService(
             trainerId = trainerId,
             trainerName = trainerName,
             trainerAccentColor = trainerAccentColor,
+            trainerPhotoUrl = trainerPhotoUrl,
             memberId = memberId,
             memberName = memberName,
             startAt = startAt,

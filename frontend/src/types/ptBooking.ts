@@ -32,6 +32,7 @@ export interface PtBookingResponse {
   trainerId: string
   trainerName: string
   trainerAccentColor: string | null
+  trainerPhotoUrl: string | null
   memberId: string
   memberName: string
   startAt: string        // ISO datetime

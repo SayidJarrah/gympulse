@@ -8,6 +8,7 @@ data class PtBookingResponse(
     val trainerId: UUID,
     val trainerName: String,
     val trainerAccentColor: String?,
+    val trainerPhotoUrl: String?,
     val memberId: UUID,
     val memberName: String,
     val startAt: OffsetDateTime,
