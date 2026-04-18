@@ -320,8 +320,15 @@
     btn.textContent = 'Cleaning up…';
 
     try {
-      const result = await fetch('/api/cleanup', { method: 'POST' }).then(r => r.json());
-      appendLog(`✓ Cleanup complete: ${result.deletedUsers} users, ${result.deletedMemberships} memberships, ${result.deletedClassInstances} class sessions, ${result.deletedTrainers} trainers, ${result.deletedRooms} rooms, ${result.deletedClassTemplates} templates removed.`);
+      const res = await fetch('/api/cleanup', { method: 'POST' });
+      const body = await res.json();
+      if (!res.ok) {
+        appendLog(`✗ Cleanup failed (${res.status}): ${body.error ?? 'unknown error'}`);
+        document.getElementById('logSection').classList.remove('hidden');
+        alert(`Cleanup failed: ${body.error ?? res.statusText}`);
+        return;
+      }
+      appendLog(`✓ Cleanup complete: ${body.deletedUsers} users, ${body.deletedMemberships} memberships, ${body.deletedClassInstances} class sessions, ${body.deletedTrainers} trainers, ${body.deletedRooms} rooms, ${body.deletedClassTemplates} templates removed.`);
       document.getElementById('logSection').classList.remove('hidden');
     } catch (e) {
       alert('Cleanup failed: ' + e);

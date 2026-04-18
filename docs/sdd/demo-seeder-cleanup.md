@@ -54,11 +54,12 @@ All deletes run inside a single Postgres transaction (`BEGIN` / `COMMIT` / `ROLL
 
 **Execution order (FK-safe):**
 
+0. Clear `bookings` referencing any demo class_instance or demo/QA user. `bookings.class_id` and `bookings.user_id` are `ON DELETE RESTRICT`, so without this step any real member booking (tracked or untracked) against seeded class sessions blocks the whole transaction. The delete covers four sources in one statement: tracked class-instance IDs, any class_instance whose template is seeded, tracked user IDs, and users matching the demo/QA email patterns used below. Always runs.
 1. `DELETE FROM class_instances WHERE id = ANY($1::uuid[])` — cascades `class_instance_trainers` (FK with `ON DELETE CASCADE`)
 2. `DELETE FROM user_memberships WHERE id = ANY($1::uuid[])`
 3. `DELETE FROM users WHERE id = ANY($1::uuid[])` — cascades `user_profiles`, `user_trainer_favorites`
 
-Each delete only runs when the corresponding tracked ID list is non-empty.
+Step 0 always runs. Steps 1–3 only run when the corresponding tracked ID list is non-empty.
 
 **Safety-net sweep (step 4, always runs):**
 ```sql
