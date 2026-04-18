@@ -374,3 +374,10 @@ Feature: class-booking
 Added: 2026-04-18
 Effort: S
 `MyBookingsDrawer.tsx` renders a plain `No bookings yet.` text row for the empty state. The design spec (spec.md §MyBookingsDrawer states) requires a `CalendarIcon h-8 w-8 text-gray-600` illustration and the helper line `Book a class from the schedule above.`. Add the icon and helper text to match the spec's delight-quality empty state.
+
+## TD-052 — getClassAttendees over-fetches via findWithDetailsById
+Source: docs/reviews/class-booking-20260418.md
+Feature: class-booking
+Added: 2026-04-18
+Effort: S
+`BookingService.kt:163` resolves the class instance via `classInstanceRepository.findWithDetailsById(classId)` to populate the attendee list summary header, but only `id`, `name`, `scheduledAt`, and `capacity` are consumed. The join-fetch pulls trainer and room data on every admin attendee list open. Introduce a lighter projection query (or a dedicated `findSummaryById`) returning just the four fields used for the header.
