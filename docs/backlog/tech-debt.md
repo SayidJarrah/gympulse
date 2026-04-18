@@ -381,3 +381,59 @@ Feature: class-booking
 Added: 2026-04-18
 Effort: S
 `BookingService.kt:163` resolves the class instance via `classInstanceRepository.findWithDetailsById(classId)` to populate the attendee list summary header, but only `id`, `name`, `scheduledAt`, and `capacity` are consumed. The join-fetch pulls trainer and room data on every admin attendee list open. Introduce a lighter projection query (or a dedicated `findSummaryById`) returning just the four fields used for the header.
+
+## TD-053 — Home feed events not filtered to club kinds client-side
+Source: docs/reviews/home-page-redesign-2026-04-18.md
+Feature: home-page-redesign
+Added: 2026-04-18
+Effort: S
+`useHomePage.ts` passes all SSE events directly to `ActivityFeed` without filtering to `kind === "booking" | "class"`. PRD AC 14 and SDD §2 require the home feed to show only class-level events. If the backend ever emits `checkin` or `pr` events on the authenticated stream, personal member names will appear in the club feed. Add `.filter(e => e.kind === 'booking' || e.kind === 'class')` when updating `feedEvents` state.
+
+## TD-054 — CancelBookingDialog missing complete focus trap
+Source: docs/reviews/home-page-redesign-2026-04-18.md
+Feature: home-page-redesign
+Added: 2026-04-18
+Effort: S
+`CancelBookingDialog.tsx` calls `dialogRef.current?.focus()` once on mount but does not prevent Tab/Shift-Tab from escaping the dialog to background content. WCAG 2.4.3 requires a complete focus trap for modal dialogs. Wire a focus-trap utility (e.g. `focus-trap-react` or a small tabbable-elements query on keydown) to keep keyboard focus inside the dialog while it is open.
+
+## TD-055 — HomeHeroNoBoked function name typo
+Source: docs/reviews/home-page-redesign-2026-04-18.md
+Feature: home-page-redesign
+Added: 2026-04-18
+Effort: S
+`HomeHero.tsx` exports an internal function named `HomeHeroNoBoked` — "Boked" is misspelled. Rename to `HomeHeroNoBooked` to match the component's purpose and prevent IDE confusion.
+
+## TD-056 — useHomePage fetches size=10 bookings when size=4 suffices
+Source: docs/reviews/home-page-redesign-2026-04-18.md
+Feature: home-page-redesign
+Added: 2026-04-18
+Effort: S
+`useHomePage.ts:102` requests `size: 10` confirmed bookings but only the first 4 are retained (3 for display, 1 as buffer for the post-cancel next-up scenario). Reduce to `size: 4` to minimise payload per SDD §2 note on upcoming bookings fetch.
+
+## TD-057 — MembershipSection unlimited detection uses 0 instead of null
+Source: docs/reviews/home-page-redesign-2026-04-18.md
+Feature: home-page-redesign
+Added: 2026-04-18
+Effort: S
+`MembershipSection.tsx:64` sets `isUnlimited = bookingsMax === 0`. The SDD and PRD define unlimited as `bookingsMax === null`. The Zustand store initialises `bookingsMax` to `0` when `activeMembership?.maxBookingsPerMonth` is absent, making any plan with an actual cap of 0 incorrectly show "Unlimited". Align by passing `bookingsMax: number | null` from the hook (returning `null` when the field is falsy), and testing `isUnlimited = bookingsMax === null`.
+
+## TD-058 — ICS download missing DESCRIPTION field
+Source: docs/reviews/home-page-redesign-2026-04-18.md
+Feature: home-page-redesign
+Added: 2026-04-18
+Effort: S
+`HomeHero.tsx` generates a `.ics` file without a `DESCRIPTION` line. SDD §2 specifies `DESCRIPTION = "with {trainer.name} · {studio}"`. Once the studio data-gap blocker is resolved (studio added to `BookingResponse`), add a `DESCRIPTION:with {trainerName} · {studio}` line to the ICS string array.
+
+## TD-059 — No-booked hero is a bespoke variant instead of the shared HeroNoBooked component
+Source: docs/reviews/home-page-redesign-2026-04-18.md
+Feature: home-page-redesign
+Added: 2026-04-18
+Effort: M
+`HomeHero.tsx` renders an inline `HomeHeroNoBoked` component instead of importing `HeroNoBooked` from `components/landing/`. SDD §4 and PRD AC 4 both require reusing the shared component. Diverging variants will drift visually over time. Refactor: import `HeroNoBooked` from `../../components/landing/HeroNoBooked`, wire `nextOpenClass` from `viewer-state.nextOpenClass`, and delete the inline variant.
+
+## TD-060 — BigCountdown digit color deviates from handoff (green vs white)
+Source: docs/reviews/home-page-redesign-2026-04-18.md
+Feature: home-page-redesign
+Added: 2026-04-18
+Effort: S
+`BigCountdown.tsx:16` hard-codes `text-[#4ADE80]` (primary-light green) for the countdown digits. The handoff prototype (`home_sections.jsx`) renders digits in white (inherited page default) with muted separators and unit labels. The green-digit treatment is energetic but diverges from the spec. Get explicit design sign-off on the green digits; if not approved, change to `text-white`.
