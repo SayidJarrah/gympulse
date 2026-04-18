@@ -54,11 +54,12 @@ All deletes run inside a single Postgres transaction (`BEGIN` / `COMMIT` / `ROLL
 
 **Execution order (FK-safe):**
 
+0. Clear `bookings` referencing any demo class_instance or demo/QA user. `bookings.class_id` and `bookings.user_id` are `ON DELETE RESTRICT`, so without this step any real member booking (tracked or untracked) against seeded class sessions blocks the whole transaction. The delete covers four sources in one statement: tracked class-instance IDs, any class_instance whose template is seeded, tracked user IDs, and users matching the demo/QA email patterns used below. Always runs.
 1. `DELETE FROM class_instances WHERE id = ANY($1::uuid[])` — cascades `class_instance_trainers` (FK with `ON DELETE CASCADE`)
 2. `DELETE FROM user_memberships WHERE id = ANY($1::uuid[])`
 3. `DELETE FROM users WHERE id = ANY($1::uuid[])` — cascades `user_profiles`, `user_trainer_favorites`
 
-Each delete only runs when the corresponding tracked ID list is non-empty.
+Step 0 always runs. Steps 1–3 only run when the corresponding tracked ID list is non-empty.
 
 **Safety-net sweep (step 4, always runs):**
 ```sql
@@ -69,6 +70,8 @@ This sweep runs unconditionally after the tracked-ID deletes, even when SQLite h
 - Users from a previous run whose SQLite session was cleared manually
 
 The safety-net does not return a count in the response body (tracked deletes are sufficient for operator feedback).
+
+**Reference-data lists — single source of truth:** `SEEDED_ROOM_NAMES` in `cleanup.ts` is derived from `V13_ROOMS` (the list the reference seeder inserts). Cleanup must never hard-code a parallel list of room names, plan IDs, trainer emails, or class template names — use the same constants the seeder uses so renames in one file cannot leave orphaned rows.
 
 **On error:** The transaction rolls back entirely. `clearTracking()` is NOT called if the transaction fails — SQLite retains the tracked IDs so a retry is possible.
 

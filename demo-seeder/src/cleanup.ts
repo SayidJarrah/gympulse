@@ -1,5 +1,6 @@
 import { pgPool, getTrackedIds, clearTracking } from './db';
 import { MEMBERSHIP_PLANS } from './data/membershipPlans';
+import { V13_ROOMS } from './data/rooms';
 
 export interface CleanupResult {
   deletedClassInstances: number;
@@ -12,14 +13,9 @@ export interface CleanupResult {
   deletedQaUsers: number;
 }
 
-const SEEDED_ROOM_NAMES = [
-  'Studio A',
-  'Studio B',
-  'Weight Room',
-  'Functional Space',
-  'Outdoor Terrace',
-  'Recovery Suite',
-];
+// Derive room names from the seeder's source-of-truth list so a change
+// in one file does not leave rooms orphaned after cleanup.
+const SEEDED_ROOM_NAMES = V13_ROOMS.map((r) => r.name);
 
 const SEEDED_PLAN_IDS = MEMBERSHIP_PLANS.map((p) => p.id);
 
@@ -38,6 +34,25 @@ export async function runCleanup(): Promise<CleanupResult> {
 
   try {
     await client.query('BEGIN');
+
+    // 0. Delete bookings referencing any demo class_instance or demo/QA user.
+    //    bookings.class_id and bookings.user_id are ON DELETE RESTRICT, so they
+    //    must be cleared before deleting class_instances or users.
+    await client.query(
+      `DELETE FROM bookings
+        WHERE class_id = ANY($1::uuid[])
+           OR class_id IN (
+             SELECT id FROM class_instances
+              WHERE template_id IN (SELECT id FROM class_templates WHERE is_seeded = TRUE)
+           )
+           OR user_id = ANY($2::uuid[])
+           OR user_id IN (
+             SELECT id FROM users
+              WHERE email LIKE 'demo.%@gym.demo'
+                 OR (email LIKE '%@gymflow.local' AND email != 'admin@gymflow.local')
+           )`,
+      [classInstanceIds, userIds],
+    );
 
     // 1. Delete tracked demo class instances (cascades class_instance_trainers via ON DELETE CASCADE)
     if (classInstanceIds.length > 0) {
