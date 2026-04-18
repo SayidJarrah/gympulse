@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
+import java.time.Month
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -69,6 +70,8 @@ class UserMembershipService(
         return saved.toResponse(
             planName = plan.name,
             maxBookingsPerMonth = plan.maxBookingsPerMonth,
+            priceInCents = plan.priceInCents,
+            durationDays = plan.durationDays,
             userEmail = user?.email,
             userFirstName = profile?.firstName,
             userLastName = profile?.lastName,
@@ -95,6 +98,8 @@ class UserMembershipService(
         return membership.toResponse(
             planName = plan.name,
             maxBookingsPerMonth = plan.maxBookingsPerMonth,
+            priceInCents = plan.priceInCents,
+            durationDays = plan.durationDays,
             userEmail = user?.email,
             userFirstName = profile?.firstName,
             userLastName = profile?.lastName,
@@ -123,6 +128,8 @@ class UserMembershipService(
         return saved.toResponse(
             planName = plan.name,
             maxBookingsPerMonth = plan.maxBookingsPerMonth,
+            priceInCents = plan.priceInCents,
+            durationDays = plan.durationDays,
             userEmail = user?.email,
             userFirstName = profile?.firstName,
             userLastName = profile?.lastName,
@@ -190,6 +197,8 @@ class UserMembershipService(
             membership.toResponse(
                 planName = plan.name,
                 maxBookingsPerMonth = plan.maxBookingsPerMonth,
+                priceInCents = plan.priceInCents,
+                durationDays = plan.durationDays,
                 userEmail = user?.email,
                 userFirstName = profile?.firstName,
                 userLastName = profile?.lastName,
@@ -225,6 +234,8 @@ class UserMembershipService(
         return saved.toResponse(
             planName = plan.name,
             maxBookingsPerMonth = plan.maxBookingsPerMonth,
+            priceInCents = plan.priceInCents,
+            durationDays = plan.durationDays,
             userEmail = user?.email,
             userFirstName = profile?.firstName,
             userLastName = profile?.lastName,
@@ -242,6 +253,8 @@ class UserMembershipService(
     private fun UserMembership.toResponse(
         planName: String,
         maxBookingsPerMonth: Int,
+        priceInCents: Int,
+        durationDays: Int,
         userEmail: String?,
         userFirstName: String?,
         userLastName: String?,
@@ -251,8 +264,11 @@ class UserMembershipService(
         userPreferredClassTypes: List<String>,
         userHasProfilePhoto: Boolean,
         userProfilePhotoUrl: String?
-    ) =
-        UserMembershipResponse(
+    ): UserMembershipResponse {
+        val priceWhole = priceInCents / 100
+        val price = "\$$priceWhole / $durationDays days"
+        val nextChargeCopy = "\$$priceWhole on ${formatShortDate(endDate)}"
+        return UserMembershipResponse(
             id = id,
             userId = userId,
             userEmail = userEmail,
@@ -271,8 +287,19 @@ class UserMembershipService(
             status = status,
             bookingsUsedThisMonth = bookingsUsedThisMonth,
             maxBookingsPerMonth = maxBookingsPerMonth,
-            createdAt = createdAt
+            createdAt = createdAt,
+            price = price,
+            paymentMethod = null,
+            nextChargeCopy = nextChargeCopy,
+            autoRenew = status == "ACTIVE"
         )
+    }
+
+    /** Formats a LocalDate as "May 2" style (month name + day, no year). */
+    private fun formatShortDate(date: LocalDate): String {
+        val monthName = date.month.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.ENGLISH)
+        return "$monthName ${date.dayOfMonth}"
+    }
 }
 
 // --- Custom exceptions ---

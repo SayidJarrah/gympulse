@@ -1,5 +1,10 @@
 export type MembershipStatus = 'ACTIVE' | 'CANCELLED' | 'EXPIRED';
 
+export interface PaymentMethod {
+  brand: string;
+  last4: string;
+}
+
 export interface UserMembership {
   id: string;
   userId: string;
@@ -20,6 +25,11 @@ export interface UserMembership {
   bookingsUsedThisMonth: number;
   maxBookingsPerMonth: number;
   createdAt: string; // ISO 8601 datetime string
+  // Display fields for the Membership Control card (added in member-profile-redesign)
+  price: string;           // "$120 / 90 days" — server-formatted
+  paymentMethod: PaymentMethod | null; // null until payment integration is wired
+  nextChargeCopy: string;  // "$120 on May 2" — server-formatted
+  autoRenew: boolean;
 }
 
 export interface MembershipPurchaseRequest {
