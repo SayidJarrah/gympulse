@@ -2,11 +2,11 @@
 
 ## Blockers (must fix before PR)
 
-- [ ] `frontend/src/hooks/useBootstrap.ts:1` / `frontend/src/components/layout/UserRoute.tsx:1` — Missing bootstrap loading gate causes race-condition UX break. `useBootstrap` runs an async fetch of `GET /api/v1/profile/me` on mount but returns no loading state. Neither `UserRoute`, `AuthRoute`, nor `OnboardingRoute` is aware of whether the bootstrap fetch has completed. A user who has already finished onboarding will have `onboardingCompletedAt = null` in the Zustand store at the instant the route guards run (before the fetch returns), causing `UserRoute` and `AuthRoute` to redirect them to `/onboarding`, which then immediately redirects to `/home` via `OnboardingRoute`. This produces a page flash and potentially a redirect loop on slow connections. SDD §4.2 (Assumption A6) explicitly requires "authenticated routes show a loading spinner" until the bootstrap fetch resolves — that spinner is never rendered. Fix: add an `isBootstrapping: boolean` state to the auth store (or expose it from the hook), set it `true` before the fetch and `false` after, and have all three route guards render a loading spinner when `isAuthenticated && isBootstrapping`.
+- [x] `frontend/src/hooks/useBootstrap.ts:1` / `frontend/src/components/layout/UserRoute.tsx:1` — Missing bootstrap loading gate causes race-condition UX break. Fixed: added `bootstrapLoading: boolean` + `setBootstrapLoading` to `authStore` (not persisted; set to `true` on rehydration when `isAuthenticated`); `useBootstrap` now sets it `true` before fetch and `false` in `finally`; `UserRoute`, `AuthRoute`, and `OnboardingRoute` each render a spinner when `isAuthenticated && bootstrapLoading`.
 
-- [ ] `frontend/src/components/onboarding/steps/StepBooking.tsx:25,34` — Inline API calls violate react-conventions. `StepBooking` calls `axiosInstance.post('/bookings', ...)` and `axiosInstance.post('/pt-bookings', ...)` directly inside the component, bypassing the `src/api/` layer. The react-conventions rule requires all API calls to live in `src/api/` functions. The booking and PT booking API functions already exist (`src/api/bookings.ts` or equivalent); use them here instead of importing `axiosInstance` directly into a step component.
+- [x] `frontend/src/components/onboarding/steps/StepBooking.tsx:25,34` — Inline API calls violate react-conventions. Fixed: replaced `axiosInstance.post('/bookings', ...)` with `createBooking({ classId })` from `src/api/bookings.ts` and `axiosInstance.post('/pt-bookings', ...)` with `createPtBooking({ trainerId, startAt })` from `src/api/ptBookings.ts`; removed `axiosInstance` import.
 
-- [ ] `frontend/src/components/onboarding/steps/StepWelcome.tsx:5` — `StepWelcome` defines a `firstName` prop but is called without it at `OnboardingShell.tsx:245`. The personalized lede (`Hey ${firstName}`) always falls back to `"Hey there"` because the shell renders `<StepWelcome />` without passing the prop. The SDD and handoff both specify personalization using `firstName` if already present (for returning users). Fix: either read `firstName` from the onboarding store directly inside `StepWelcome` (consistent with how all other steps read store data), or pass `store.firstName` from the shell.
+- [x] `frontend/src/components/onboarding/steps/StepWelcome.tsx:5` — `StepWelcome` defines a `firstName` prop but is called without it at `OnboardingShell.tsx:245`. Fixed: `OnboardingShell` now passes `firstName={store.firstName || null}` through `StepContent` props down to `<StepWelcome firstName={firstName} />`; `StepWelcome.tsx` unchanged.
 
 ## Suggestions (non-blocking)
 
@@ -24,4 +24,4 @@
 
 ## Verdict
 
-BLOCKED — 3 blockers
+APPROVED — all 3 blockers resolved
