@@ -22,6 +22,10 @@ import { AuthRoute } from './components/layout/AuthRoute'
 import { UserRoute } from './components/layout/UserRoute'
 import { PulseLandingPage } from './pages/landing/PulseLandingPage'
 import { MemberHomePage } from './pages/home/MemberHomePage'
+import { PersonalTrainingPage } from './pages/training/PersonalTrainingPage'
+import { TrainerSessionsPage } from './pages/trainer/TrainerSessionsPage'
+import { AdminPtSessionsPage } from './pages/admin/AdminPtSessionsPage'
+import { TrainerRoute } from './components/layout/TrainerRoute'
 
 function App() {
   return (
@@ -155,6 +159,32 @@ function App() {
           element={
             <AdminRoute>
               <AdminUserDetailPage />
+            </AdminRoute>
+          }
+        />
+
+        {/* Personal training routes */}
+        <Route
+          path="/training"
+          element={
+            <UserRoute>
+              <PersonalTrainingPage />
+            </UserRoute>
+          }
+        />
+        <Route
+          path="/trainer/sessions"
+          element={
+            <TrainerRoute>
+              <TrainerSessionsPage />
+            </TrainerRoute>
+          }
+        />
+        <Route
+          path="/admin/pt-sessions"
+          element={
+            <AdminRoute>
+              <AdminPtSessionsPage />
             </AdminRoute>
           }
         />
