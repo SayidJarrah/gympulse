@@ -168,7 +168,7 @@ async function registerUsers(count: number, emit: EmitFn): Promise<RegisteredUse
     // ~60% of demo users have an emergency contact on file
     const hasEc = Math.random() < 0.6;
     const ecName  = hasEc ? faker.person.fullName().slice(0, 100) : null;
-    const ecPhone = hasEc ? faker.phone.number({ style: 'international' }).slice(0, 30) : null;
+    const ecPhone = hasEc ? faker.phone.number('+## ### ### ###').slice(0, 30) : null;
 
     const client = await pgPool.connect();
     try {

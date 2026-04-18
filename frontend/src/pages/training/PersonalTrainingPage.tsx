@@ -118,7 +118,7 @@ export function PersonalTrainingPage() {
               onBack={clearSelectedTrainer}
               onNextWeek={() => setWeekOffset(availabilityWeekOffset + 1)}
               onPrevWeek={() => setWeekOffset(availabilityWeekOffset - 1)}
-              onSlotClick={openConfirmModal}
+              onSlotClick={(trainerId, startAt) => openConfirmModal({ trainerId, startAt })}
             />
           ) : (
             <TrainerDirectory

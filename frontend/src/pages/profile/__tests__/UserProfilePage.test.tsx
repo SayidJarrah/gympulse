@@ -38,6 +38,7 @@ const populatedProfile: UserProfile = {
   preferredClassTypes: ['Yoga', 'HIIT'],
   hasProfilePhoto: false,
   profilePhotoUrl: null,
+  emergencyContact: null,
   createdAt: '2026-03-29T09:00:00Z',
   updatedAt: '2026-03-29T09:00:00Z',
 }
