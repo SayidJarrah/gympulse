@@ -12,7 +12,7 @@ interface UserRouteProps {
  * Note: this is a UI convenience only — the server enforces real authorization via Spring Security.
  */
 export function UserRoute({ children }: UserRouteProps) {
-  const { isAuthenticated, user } = useAuthStore()
+  const { isAuthenticated, user, onboardingCompletedAt } = useAuthStore()
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
@@ -20,6 +20,11 @@ export function UserRoute({ children }: UserRouteProps) {
 
   if (user?.role !== 'USER') {
     return <Navigate to="/admin/plans" replace />
+  }
+
+  // Gate: USER role must complete onboarding before accessing member routes
+  if (onboardingCompletedAt === null) {
+    return <Navigate to="/onboarding" replace />
   }
 
   return <>{children}</>

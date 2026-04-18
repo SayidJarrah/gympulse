@@ -173,15 +173,16 @@ async function registerUsers(count: number, emit: EmitFn): Promise<RegisteredUse
     const client = await pgPool.connect();
     try {
       await client.query(
-        `INSERT INTO user_profiles (user_id, first_name, last_name, date_of_birth, fitness_goals, preferred_class_types, profile_photo_data, profile_photo_mime_type, emergency_contact_name, emergency_contact_phone)
-         VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb, $7, $8, $9, $10)
+        `INSERT INTO user_profiles (user_id, first_name, last_name, date_of_birth, fitness_goals, preferred_class_types, profile_photo_data, profile_photo_mime_type, emergency_contact_name, emergency_contact_phone, onboarding_completed_at)
+         VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb, $7, $8, $9, $10, '2026-01-01T00:00:00Z'::timestamptz)
          ON CONFLICT (user_id) DO UPDATE
            SET first_name              = EXCLUDED.first_name,
                last_name               = EXCLUDED.last_name,
                profile_photo_data      = EXCLUDED.profile_photo_data,
                profile_photo_mime_type = EXCLUDED.profile_photo_mime_type,
                emergency_contact_name  = EXCLUDED.emergency_contact_name,
-               emergency_contact_phone = EXCLUDED.emergency_contact_phone`,
+               emergency_contact_phone = EXCLUDED.emergency_contact_phone,
+               onboarding_completed_at = EXCLUDED.onboarding_completed_at`,
         [userId, firstName, lastName, dob.toISOString().slice(0, 10), JSON.stringify(goals), JSON.stringify(classTypes), avatar?.data ?? null, avatar?.mimeType ?? null, ecName, ecPhone],
       );
     } finally {

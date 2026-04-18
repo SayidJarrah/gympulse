@@ -2,10 +2,11 @@ package com.gymflow.service
 
 import com.gymflow.domain.RefreshToken
 import com.gymflow.domain.User
+import com.gymflow.domain.UserProfile
 import com.gymflow.dto.LoginResponse
-import com.gymflow.dto.RegisterResponse
 import com.gymflow.repository.RefreshTokenRepository
 import com.gymflow.repository.UserMembershipRepository
+import com.gymflow.repository.UserProfileRepository
 import com.gymflow.repository.UserRepository
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -22,6 +23,7 @@ class AuthService(
     private val userRepository: UserRepository,
     private val refreshTokenRepository: RefreshTokenRepository,
     private val userMembershipRepository: UserMembershipRepository,
+    private val userProfileRepository: UserProfileRepository,
     private val passwordEncoder: PasswordEncoder,
     private val jwtService: JwtService,
     @Value("\${REFRESH_TOKEN_EXPIRY_DAYS:30}") private val refreshTokenExpiryDays: Long
@@ -32,7 +34,7 @@ class AuthService(
     // --- Register ---
 
     @Transactional
-    fun register(email: String, password: String): RegisterResponse {
+    fun register(email: String, password: String): LoginResponse {
         if (userRepository.findByEmailAndDeletedAtIsNull(email) != null) {
             throw EmailAlreadyExistsException("An account with email '$email' already exists")
         }
@@ -44,11 +46,25 @@ class AuthService(
         )
         val saved = userRepository.save(user)
 
-        return RegisterResponse(
-            id = saved.id,
-            email = saved.email,
-            role = saved.role,
-            createdAt = saved.createdAt
+        // Create an empty user_profiles row so the onboarding gate can check onboarding_completed_at
+        val profile = UserProfile(userId = saved.id)
+        userProfileRepository.save(profile)
+
+        val accessToken = jwtService.generateToken(saved)
+        val (rawRefreshToken, tokenHash) = generateRefreshTokenPair()
+
+        val refreshToken = RefreshToken(
+            userId = saved.id,
+            tokenHash = tokenHash,
+            expiresAt = OffsetDateTime.now().plusDays(refreshTokenExpiryDays)
+        )
+        refreshTokenRepository.save(refreshToken)
+
+        return LoginResponse(
+            accessToken = accessToken,
+            refreshToken = rawRefreshToken,
+            expiresIn = jwtService.getExpiresInSeconds(),
+            hasActiveMembership = false
         )
     }
 

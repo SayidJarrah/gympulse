@@ -12,10 +12,16 @@ interface AuthRouteProps {
  * Note: this is a UI convenience only — the server enforces real authorization via Spring Security.
  */
 export function AuthRoute({ children }: AuthRouteProps) {
-  const { isAuthenticated } = useAuthStore()
+  const { isAuthenticated, user, onboardingCompletedAt } = useAuthStore()
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
+  }
+
+  // Gate: USER role must complete onboarding before accessing member routes
+  // TRAINER and ADMIN roles bypass the onboarding gate (SDD Assumption A5)
+  if (user?.role === 'USER' && onboardingCompletedAt === null) {
+    return <Navigate to="/onboarding" replace />
   }
 
   return <>{children}</>

@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
+import org.springframework.transaction.annotation.Transactional
 import jakarta.persistence.LockModeType
 import java.time.LocalDate
 import java.util.UUID
@@ -35,6 +36,11 @@ interface UserMembershipRepository : JpaRepository<UserMembership, UUID> {
         status: String,
         pageable: Pageable
     ): Page<UserMembership>
+
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM UserMembership um WHERE um.userId = :userId AND um.status = :status")
+    fun deleteByUserIdAndStatus(@Param("userId") userId: UUID, @Param("status") status: String)
 
     @Modifying
     @Query("DELETE FROM UserMembership m WHERE m.userId IN :userIds")

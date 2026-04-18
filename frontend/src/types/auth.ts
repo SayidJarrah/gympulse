@@ -5,12 +5,8 @@ export interface RegisterRequest {
   password: string;
 }
 
-export interface RegisterResponse {
-  id: string;
-  email: string;
-  role: UserRole;
-  createdAt: string; // ISO 8601
-}
+// RegisterResponse is now identical to LoginResponse — register returns tokens directly
+export type RegisterResponse = LoginResponse;
 
 export interface LoginRequest {
   email: string;

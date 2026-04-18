@@ -131,8 +131,10 @@ class UserProfileControllerIntegrationTest {
         dateOfBirth = LocalDate.of(1994, 8, 12),
         fitnessGoals = listOf("Build strength", "Improve mobility"),
         preferredClassTypes = listOf("Yoga", "HIIT"),
+        emergencyContact = null,
         hasProfilePhoto = true,
         profilePhotoUrl = "/api/v1/profile/me/photo",
+        onboardingCompletedAt = null,
         createdAt = OffsetDateTime.parse("2026-03-29T10:00:00Z"),
         updatedAt = OffsetDateTime.parse("2026-03-29T12:30:00Z")
     )

@@ -43,6 +43,9 @@ data class UserProfile(
     @Column(name = "emergency_contact_phone")
     var emergencyContactPhone: String? = null,
 
+    @Column(name = "onboarding_completed_at")
+    var onboardingCompletedAt: OffsetDateTime? = null,
+
     @JdbcTypeCode(SqlTypes.BINARY)
     @Column(name = "profile_photo_data")
     var profilePhotoData: ByteArray? = null,

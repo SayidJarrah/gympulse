@@ -1,4 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { useBootstrap } from './hooks/useBootstrap'
+import { OnboardingRoute } from './components/layout/OnboardingRoute'
+import { OnboardingPage } from './pages/onboarding/OnboardingPage'
 import { RegisterPage } from './pages/auth/RegisterPage'
 import { LoginPage } from './pages/auth/LoginPage'
 import { PlansPage } from './pages/plans/PlansPage'
@@ -27,9 +30,21 @@ import { AdminPtSessionsPage } from './pages/admin/AdminPtSessionsPage'
 import { TrainerRoute } from './components/layout/TrainerRoute'
 
 function App() {
+  useBootstrap()
+
   return (
     <BrowserRouter>
       <Routes>
+        {/* Onboarding route */}
+        <Route
+          path="/onboarding"
+          element={
+            <OnboardingRoute>
+              <OnboardingPage />
+            </OnboardingRoute>
+          }
+        />
+
         {/* Auth routes */}
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/login" element={<LoginPage />} />
