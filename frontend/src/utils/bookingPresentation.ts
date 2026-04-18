@@ -37,7 +37,7 @@ export function getEntrySupportingCopy(entry: GroupClassScheduleEntry): string {
     case 'booked':
       return 'Your place is reserved.'
     case 'cancellation-locked':
-      return 'Cancellation closes 3 hours before class start.'
+      return 'Cancellation closed — class starts in less than 2 hours.'
     case 'full':
       return 'No spots left in this class.'
     case 'membership-required':

@@ -65,8 +65,8 @@ class UserClassScheduleControllerTest {
                         status = "CONFIRMED",
                         bookedAt = OffsetDateTime.parse("2026-03-29T12:00:00Z")
                     ),
-                    bookingAllowed = false,
-                    bookingDeniedReason = "ALREADY_BOOKED",
+                    bookingAllowed = true,
+                    bookingDeniedReason = null,
                     cancellationAllowed = true
                 )
             )
@@ -94,7 +94,8 @@ class UserClassScheduleControllerTest {
             .andExpect(jsonPath("$.hasActiveMembership").value(true))
             .andExpect(jsonPath("$.timeZone").value("Europe/Warsaw"))
             .andExpect(jsonPath("$.entries[0].name").value("Yoga Flow"))
-            .andExpect(jsonPath("$.entries[0].bookingDeniedReason").value("ALREADY_BOOKED"))
+            .andExpect(jsonPath("$.entries[0].bookingAllowed").value(true))
+            .andExpect(jsonPath("$.entries[0].cancellationAllowed").value(true))
     }
 
     @Test

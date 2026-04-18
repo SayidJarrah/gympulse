@@ -4,8 +4,11 @@ import com.gymflow.domain.Booking
 import com.gymflow.domain.ClassInstance
 import com.gymflow.domain.Trainer
 import com.gymflow.domain.UserMembership
+import com.gymflow.dto.AdminAttendeeItemResponse
+import com.gymflow.dto.AdminAttendeeListResponse
 import com.gymflow.dto.AdminBookingMemberSummaryResponse
 import com.gymflow.dto.AdminBookingRequest
+import com.gymflow.dto.AdminUserBookingHistoryItemResponse
 import com.gymflow.dto.BookingRequest
 import com.gymflow.dto.BookingResponse
 import com.gymflow.exception.MembershipRequiredException
@@ -13,7 +16,6 @@ import com.gymflow.repository.BookingRepository
 import com.gymflow.repository.ClassInstanceRepository
 import com.gymflow.repository.UserMembershipRepository
 import com.gymflow.repository.UserRepository
-import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
@@ -134,7 +136,46 @@ class BookingService(
             return emptyMap()
         }
 
-        return bookingRepository.findConfirmedByUserIdAndClassIds(userId, classIds).associateBy { it.classId }
+        return bookingRepository.findConfirmedByUserIdAndClassIds(userId, classIds)
+            .groupBy { it.classId }
+            .mapValues { (_, bookings) -> bookings.maxByOrNull { it.bookedAt }!! }
+    }
+
+    @Transactional(readOnly = true)
+    fun getAdminUserBookings(
+        targetUserId: UUID,
+        status: String?,
+        pageable: Pageable
+    ): Page<AdminUserBookingHistoryItemResponse> {
+        userRepository.findByIdAndRoleAndDeletedAtIsNull(targetUserId, "USER")
+            ?: throw UserNotFoundException("User not found")
+
+        val normalizedStatus = status?.let(::normalizeStatus)
+        return bookingRepository.findAdminUserBookingHistory(targetUserId, normalizedStatus, pageable)
+    }
+
+    @Transactional(readOnly = true)
+    fun getClassAttendees(
+        classId: UUID,
+        status: String?,
+        pageable: Pageable
+    ): AdminAttendeeListResponse {
+        val classInstance = classInstanceRepository.findWithDetailsById(classId)
+            ?.takeIf { it.deletedAt == null }
+            ?: throw ClassInstanceNotFoundException("Class instance not found")
+
+        val confirmedCount = bookingRepository.countConfirmedByClassId(classId)
+        val normalizedStatus = normalizeAttendeeStatus(status)
+        val attendees = bookingRepository.findAttendeesByClassId(classId, normalizedStatus, pageable)
+
+        return AdminAttendeeListResponse(
+            classInstanceId = classInstance.id,
+            className = classInstance.name,
+            scheduledAt = classInstance.scheduledAt,
+            capacity = classInstance.capacity,
+            confirmedCount = confirmedCount,
+            attendees = attendees
+        )
     }
 
     @Transactional(readOnly = true)
@@ -150,10 +191,6 @@ class BookingService(
 
         validateBookableClass(classInstance)
 
-        if (bookingRepository.findConfirmedByUserIdAndClassId(targetUserId, classId) != null) {
-            throw AlreadyBookedException("Already booked")
-        }
-
         val confirmedCount = bookingRepository.countConfirmedByClassId(classId)
         if (confirmedCount >= classInstance.capacity.toLong()) {
             throw ClassFullException("Class is full")
@@ -168,11 +205,7 @@ class BookingService(
             updatedAt = now
         )
 
-        val saved = try {
-            bookingRepository.save(booking)
-        } catch (ex: DataIntegrityViolationException) {
-            throw AlreadyBookedException("Already booked")
-        }
+        val saved = bookingRepository.save(booking)
 
         membershipToIncrement?.let {
             it.bookingsUsedThisMonth = it.bookingsUsedThisMonth + 1
@@ -239,8 +272,26 @@ class BookingService(
         return normalized
     }
 
+    /**
+     * Normalizes the optional status filter for the admin attendee list query.
+     * Default (null or blank): CONFIRMED only.
+     * "ALL": no status filter (returns null so the query skips the predicate).
+     * Otherwise: delegates to [normalizeStatus] which validates against [BOOKING_STATUSES].
+     */
+    private fun normalizeAttendeeStatus(status: String?): String? {
+        val trimmed = status?.trim().orEmpty()
+        if (trimmed.isEmpty()) {
+            return BOOKING_STATUS_CONFIRMED
+        }
+        val upper = trimmed.uppercase(Locale.ROOT)
+        if (upper == "ALL") {
+            return null
+        }
+        return normalizeStatus(trimmed)
+    }
+
     companion object {
-        private const val CANCELLATION_CUTOFF_HOURS = 3L
+        private const val CANCELLATION_CUTOFF_HOURS = 2L
         private const val BOOKING_STATUS_CONFIRMED = "CONFIRMED"
         private const val BOOKING_STATUS_CANCELLED = "CANCELLED"
         private val BOOKING_STATUSES = setOf("CONFIRMED", "CANCELLED", "ATTENDED")

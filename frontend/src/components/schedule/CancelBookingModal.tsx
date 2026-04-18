@@ -89,7 +89,7 @@ export function CancelBookingModal({
               {formatTimeRange(booking.scheduledAt, booking.durationMin, timeZone)}
             </div>
             <div className="mt-3 text-sm text-gray-400">
-              Cancellation closes 3 hours before class start.
+              Cancellation closes 2 hours before class start.
             </div>
           </div>
 

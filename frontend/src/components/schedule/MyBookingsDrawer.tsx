@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import type { BookingResponse } from '../../types/booking'
 import { formatLongDateLabel, formatTimeRange } from '../../utils/scheduleFormatters'
@@ -175,6 +176,16 @@ export function MyBookingsDrawer({
             </div>
           ) : null}
         </div>
+
+        <div className="border-t border-gray-800 px-5 py-4">
+          <Link
+            to="/profile/bookings"
+            onClick={onClose}
+            className="inline-flex items-center text-sm font-semibold text-green-400 hover:text-green-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 rounded-md"
+          >
+            See all my bookings →
+          </Link>
+        </div>
       </aside>
     </div>
   )
@@ -247,14 +258,26 @@ function BookingGroup({
                   >
                     Show class
                   </button>
-                  <button
-                    type="button"
-                    disabled={!booking.isCancellable}
-                    onClick={() => onCancelBooking(booking)}
-                    className="inline-flex rounded-md border border-red-500/30 px-3 py-2 text-sm font-semibold text-red-200 transition-colors duration-200 hover:bg-red-500/10 disabled:cursor-not-allowed disabled:border-gray-800 disabled:bg-transparent disabled:text-gray-600"
+                  <span
+                    title={
+                      !booking.isCancellable
+                        ? 'Cancellation closes 2 hours before class start'
+                        : undefined
+                    }
                   >
-                    Cancel booking
-                  </button>
+                    <button
+                      type="button"
+                      aria-disabled={!booking.isCancellable}
+                      onClick={booking.isCancellable ? () => onCancelBooking(booking) : undefined}
+                      className={`inline-flex rounded-md border border-red-500/30 px-3 py-2 text-sm font-semibold text-red-200 transition-colors duration-200 hover:bg-red-500/10 ${
+                        !booking.isCancellable
+                          ? 'pointer-events-none cursor-not-allowed border-gray-800 bg-transparent text-gray-600'
+                          : ''
+                      }`}
+                    >
+                      Cancel booking
+                    </button>
+                  </span>
                 </div>
               ) : null}
             </article>

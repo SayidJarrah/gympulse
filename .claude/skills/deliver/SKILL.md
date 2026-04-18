@@ -92,6 +92,22 @@ git rebase origin/main feature/{slug}
 Resolve any conflicts, then continue. Never dispatch the developer onto a stale branch —
 the rebase may surface conflicts that invalidate the work, and the PR will be messy.
 
+**Empty-stale-branch case (commits ahead = 0, commits behind > 0):** the branch has no
+unique work but `main` has moved past its tip — typically because a prior PR on this same
+branch name was merged through a fork, so the local/origin branch still points at
+pre-merge commits. Fast-forward the local ref instead of rebasing:
+```
+git branch -f feature/{slug} main
+```
+This is equivalent to a rebase onto main but avoids conflict-handling noise. Before
+pushing, verify that origin's tip is reachable from the new local tip:
+```
+git merge-base --is-ancestor origin/feature/{slug} feature/{slug}
+```
+Exit 0 → plain `git push -u origin feature/{slug}` works. Exit 1 → origin has diverged;
+stop and confirm with the user before using `--force-with-lease`. Never force-push without
+explicit user approval.
+
 ## Parallelism Rules
 
 **Safe to parallelise (run simultaneously):**

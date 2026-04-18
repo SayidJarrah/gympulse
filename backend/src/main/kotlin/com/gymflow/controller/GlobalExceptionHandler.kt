@@ -524,7 +524,7 @@ class GlobalExceptionHandler {
             .status(HttpStatus.CONFLICT)
             .body(
                 ErrorResponse(
-                    error = "You can no longer cancel within 3 hours of class start",
+                    error = "You can no longer cancel within 2 hours of class start",
                     code = "CANCELLATION_WINDOW_CLOSED"
                 )
             )

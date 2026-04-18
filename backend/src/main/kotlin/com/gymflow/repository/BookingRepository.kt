@@ -118,4 +118,76 @@ interface BookingRepository : JpaRepository<Booking, UUID> {
         @Param("status") status: String?,
         pageable: Pageable
     ): Page<UUID>
+
+    @Query(
+        """
+        SELECT new com.gymflow.dto.AdminUserBookingHistoryItemResponse(
+            b.id,
+            ci.id,
+            ci.name,
+            ci.scheduledAt,
+            b.status,
+            b.bookedAt,
+            b.cancelledAt
+        )
+        FROM Booking b
+        JOIN ClassInstance ci ON ci.id = b.classId
+        WHERE b.userId = :userId
+          AND b.deletedAt IS NULL
+          AND (:status IS NULL OR b.status = :status)
+        """,
+        countQuery = """
+        SELECT COUNT(b)
+        FROM Booking b
+        JOIN ClassInstance ci ON ci.id = b.classId
+        WHERE b.userId = :userId
+          AND b.deletedAt IS NULL
+          AND (:status IS NULL OR b.status = :status)
+        """
+    )
+    fun findAdminUserBookingHistory(
+        @Param("userId") userId: UUID,
+        @Param("status") status: String?,
+        pageable: Pageable
+    ): Page<com.gymflow.dto.AdminUserBookingHistoryItemResponse>
+
+    @Query(
+        """
+        SELECT new com.gymflow.dto.AdminAttendeeItemResponse(
+            b.id,
+            b.userId,
+            CASE
+                WHEN LENGTH(TRIM(CONCAT(COALESCE(p.firstName, ''), ' ', COALESCE(p.lastName, '')))) > 0
+                    THEN TRIM(CONCAT(COALESCE(p.firstName, ''), ' ', COALESCE(p.lastName, '')))
+                ELSE u.email
+            END,
+            b.status,
+            b.bookedAt
+        )
+        FROM Booking b
+        JOIN User u ON u.id = b.userId
+        LEFT JOIN UserProfile p
+          ON p.userId = b.userId
+         AND p.deletedAt IS NULL
+        WHERE b.classId = :classId
+          AND b.deletedAt IS NULL
+          AND (:status IS NULL OR b.status = :status)
+        """,
+        countQuery = """
+        SELECT COUNT(b)
+        FROM Booking b
+        JOIN User u ON u.id = b.userId
+        LEFT JOIN UserProfile p
+          ON p.userId = b.userId
+         AND p.deletedAt IS NULL
+        WHERE b.classId = :classId
+          AND b.deletedAt IS NULL
+          AND (:status IS NULL OR b.status = :status)
+        """
+    )
+    fun findAttendeesByClassId(
+        @Param("classId") classId: UUID,
+        @Param("status") status: String?,
+        pageable: Pageable
+    ): Page<com.gymflow.dto.AdminAttendeeItemResponse>
 }

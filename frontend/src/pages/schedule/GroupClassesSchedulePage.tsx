@@ -48,7 +48,7 @@ interface ToastState {
 }
 
 function getCancellationCutoffAt(scheduledAt: string): string {
-  return new Date(new Date(scheduledAt).getTime() - 3 * 60 * 60 * 1000).toISOString()
+  return new Date(new Date(scheduledAt).getTime() - 2 * 60 * 60 * 1000).toISOString()
 }
 
 function buildBookingFromEntry(
@@ -80,10 +80,9 @@ function patchEntryAfterBooking(
   entry: GroupClassScheduleEntry,
   booking: BookingResponse
 ): GroupClassScheduleEntry {
-  const hadBooking = entry.currentUserBooking !== null
-  const nextConfirmedBookings = hadBooking
-    ? entry.confirmedBookings
-    : Math.min(entry.capacity, entry.confirmedBookings + 1)
+  // Duplicates are allowed — always increment the confirmed count.
+  const nextConfirmedBookings = Math.min(entry.capacity, entry.confirmedBookings + 1)
+  const capacityReached = nextConfirmedBookings >= entry.capacity
 
   return {
     ...entry,
@@ -94,8 +93,9 @@ function patchEntryAfterBooking(
       status: booking.status,
       bookedAt: booking.bookedAt,
     },
-    bookingAllowed: false,
-    bookingDeniedReason: 'ALREADY_BOOKED',
+    // The Book spot CTA remains active if capacity allows; full blocks it.
+    bookingAllowed: !capacityReached,
+    bookingDeniedReason: capacityReached ? 'CLASS_FULL' : null,
     cancellationAllowed: booking.isCancellable,
   }
 }

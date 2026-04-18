@@ -3,8 +3,7 @@ export type BookingStatus = 'CONFIRMED' | 'CANCELLED' | 'ATTENDED';
 export type BookingDeniedReason =
   | 'MEMBERSHIP_REQUIRED'
   | 'CLASS_ALREADY_STARTED'
-  | 'CLASS_FULL'
-  | 'ALREADY_BOOKED';
+  | 'CLASS_FULL';
 
 export interface ScheduleEntryBookingSummary {
   id: string;
@@ -58,4 +57,47 @@ export interface SearchBookingMembersParams {
   query?: string;
   page?: number;
   size?: number;
+}
+
+// --- Admin read endpoints ---
+
+export interface AdminUserBookingHistoryItem {
+  bookingId: string;
+  classInstanceId: string;
+  className: string;
+  scheduledAt: string;
+  status: BookingStatus;
+  bookedAt: string;
+  cancelledAt: string | null;
+}
+
+export interface PaginatedAdminUserBookingHistoryResponse {
+  content: AdminUserBookingHistoryItem[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+}
+
+export interface AdminAttendeeItem {
+  bookingId: string;
+  memberId: string;
+  displayName: string;
+  status: BookingStatus;
+  bookedAt: string;
+}
+
+export interface AdminAttendeeListResponse {
+  classInstanceId: string;
+  className: string;
+  scheduledAt: string;
+  capacity: number;
+  confirmedCount: number;
+  attendees: {
+    content: AdminAttendeeItem[];
+    totalElements: number;
+    totalPages: number;
+    number: number;
+    size: number;
+  };
 }
