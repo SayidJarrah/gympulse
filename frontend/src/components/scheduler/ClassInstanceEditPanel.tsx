@@ -11,7 +11,10 @@ import type {
   TrainerResponse,
 } from '../../types/scheduler'
 import { RoomPicker } from './RoomPicker'
+import { AdminAttendeeListPanel } from './AdminAttendeeListPanel'
 import { formatUtcTime } from '../../utils/week'
+
+type EditPanelTab = 'details' | 'attendees'
 
 interface ClassInstanceEditPanelProps {
   instance: ClassInstanceResponse | null;
@@ -45,6 +48,7 @@ export function ClassInstanceEditPanel({
   const [selectedTrainerIds, setSelectedTrainerIds] = useState<string[]>([])
   const [trainerError, setTrainerError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [activeTab, setActiveTab] = useState<EditPanelTab>('details')
 
   useEffect(() => {
     if (instance) {
@@ -54,6 +58,7 @@ export function ClassInstanceEditPanel({
       setRoomId(instance.room?.id ?? null)
       setSelectedTrainerIds(instance.trainers.map((trainer) => trainer.id))
       setTrainerError(null)
+      setActiveTab('details')
     }
   }, [instance])
 
@@ -131,12 +136,45 @@ export function ClassInstanceEditPanel({
         </button>
       </div>
 
+      <div className="flex border-b border-gray-800">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'details'}
+          onClick={() => setActiveTab('details')}
+          className={`cursor-pointer border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === 'details'
+              ? 'border-green-500 text-green-400'
+              : 'border-transparent text-gray-500 hover:text-gray-300'
+          }`}
+        >
+          Details
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'attendees'}
+          onClick={() => setActiveTab('attendees')}
+          className={`cursor-pointer border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === 'attendees'
+              ? 'border-green-500 text-green-400'
+              : 'border-transparent text-gray-500 hover:text-gray-300'
+          }`}
+        >
+          Attendees
+        </button>
+      </div>
+
       <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4">
         <div>
           <div className="text-base font-semibold text-white">{instance.name}</div>
           <div className="text-sm text-gray-400">{dateLabel}</div>
         </div>
 
+        {activeTab === 'attendees' ? (
+          <AdminAttendeeListPanel classId={instance.id} />
+        ) : (
+          <>
         <button
           type="button"
           onClick={onOpenBookingPanel}
@@ -276,35 +314,39 @@ export function ClassInstanceEditPanel({
             </p>
           )}
         </div>
+          </>
+        )}
       </div>
 
-      <div className="flex items-center justify-between border-t border-gray-800 px-6 py-4">
-        <button
-          type="button"
-          onClick={onDelete}
-          className="inline-flex items-center gap-2 text-sm text-red-400 hover:text-red-300"
-        >
-          <TrashIcon className="h-4 w-4" />
-          Delete
-        </button>
-        <div className="flex items-center gap-3">
+      {activeTab === 'details' && (
+        <div className="flex items-center justify-between border-t border-gray-800 px-6 py-4">
           <button
             type="button"
-            onClick={onClose}
-            className="rounded-md px-4 py-2 text-sm text-gray-400 hover:bg-gray-800 hover:text-white"
+            onClick={onDelete}
+            className="inline-flex items-center gap-2 text-sm text-red-400 hover:text-red-300"
           >
-            Cancel
+            <TrashIcon className="h-4 w-4" />
+            Delete
           </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={isSaving}
-            className="rounded-md bg-green-500 px-4 py-2 text-sm font-medium text-white hover:bg-green-600 disabled:cursor-not-allowed disabled:bg-green-500/40"
-          >
-            {isSaving ? 'Saving...' : 'Save Changes'}
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-md px-4 py-2 text-sm text-gray-400 hover:bg-gray-800 hover:text-white"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={isSaving}
+              className="rounded-md bg-green-500 px-4 py-2 text-sm font-medium text-white hover:bg-green-600 disabled:cursor-not-allowed disabled:bg-green-500/40"
+            >
+              {isSaving ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

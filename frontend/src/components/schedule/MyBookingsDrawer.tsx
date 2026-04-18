@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import type { BookingResponse } from '../../types/booking'
 import { formatLongDateLabel, formatTimeRange } from '../../utils/scheduleFormatters'
@@ -174,6 +175,16 @@ export function MyBookingsDrawer({
               />
             </div>
           ) : null}
+        </div>
+
+        <div className="border-t border-gray-800 px-5 py-4">
+          <Link
+            to="/profile/bookings"
+            onClick={onClose}
+            className="inline-flex items-center text-sm font-semibold text-green-400 hover:text-green-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 rounded-md"
+          >
+            See all my bookings →
+          </Link>
         </div>
       </aside>
     </div>

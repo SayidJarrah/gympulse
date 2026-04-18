@@ -9,8 +9,10 @@ import { AdminTrainersPage } from './pages/admin/AdminTrainersPage'
 import { AdminRoomsPage } from './pages/admin/AdminRoomsPage'
 import { AdminClassTemplatesPage } from './pages/admin/AdminClassTemplatesPage'
 import { AdminSchedulerPage } from './pages/admin/AdminSchedulerPage'
+import { AdminUserDetailPage } from './pages/admin/AdminUserDetailPage'
 import { MyMembershipPage } from './pages/membership/MyMembershipPage'
 import { UserProfilePage } from './pages/profile/UserProfilePage'
+import { MyBookingsPage } from './pages/profile/MyBookingsPage'
 import { TrainerListPage } from './pages/trainers/TrainerListPage'
 import { TrainerFavoritesPage } from './pages/trainers/TrainerFavoritesPage'
 import { TrainerProfilePage } from './pages/trainers/TrainerProfilePage'
@@ -56,6 +58,14 @@ function App() {
             <AuthRoute>
               <UserProfilePage />
             </AuthRoute>
+          }
+        />
+        <Route
+          path="/profile/bookings"
+          element={
+            <UserRoute>
+              <MyBookingsPage />
+            </UserRoute>
           }
         />
         <Route
@@ -137,6 +147,14 @@ function App() {
           element={
             <AdminRoute>
               <AdminSchedulerPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/users/:id"
+          element={
+            <AdminRoute>
+              <AdminUserDetailPage />
             </AdminRoute>
           }
         />

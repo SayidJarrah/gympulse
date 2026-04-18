@@ -1,10 +1,12 @@
 import axiosInstance from './axiosInstance'
 import type {
+  AdminAttendeeListResponse,
   AdminBookingMemberSummaryResponse,
   AdminBookingRequest,
   BookingRequest,
   BookingResponse,
   BookingStatus,
+  PaginatedAdminUserBookingHistoryResponse,
   PaginatedBookingsResponse,
   SearchBookingMembersParams,
 } from '../types/booking'
@@ -63,5 +65,39 @@ export async function searchBookingMembers(
       size: params.size ?? 10,
     },
   })
+  return response.data
+}
+
+export async function getAdminUserBookings(
+  userId: string,
+  params: { status?: BookingStatus | 'ALL'; page?: number; size?: number } = {}
+): Promise<PaginatedAdminUserBookingHistoryResponse> {
+  const response = await axiosInstance.get<PaginatedAdminUserBookingHistoryResponse>(
+    `/admin/users/${userId}/bookings`,
+    {
+      params: {
+        ...(params.status && params.status !== 'ALL' ? { status: params.status } : {}),
+        page: params.page ?? 0,
+        size: params.size ?? 20,
+      },
+    }
+  )
+  return response.data
+}
+
+export async function getClassAttendees(
+  classId: string,
+  params: { status?: BookingStatus | 'ALL'; page?: number; size?: number } = {}
+): Promise<AdminAttendeeListResponse> {
+  const response = await axiosInstance.get<AdminAttendeeListResponse>(
+    `/admin/classes/${classId}/attendees`,
+    {
+      params: {
+        ...(params.status ? { status: params.status } : {}),
+        page: params.page ?? 0,
+        size: params.size ?? 50,
+      },
+    }
+  )
   return response.data
 }

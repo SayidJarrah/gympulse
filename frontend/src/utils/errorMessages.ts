@@ -15,13 +15,15 @@ export const ERROR_MESSAGES: Record<string, string> = {
 export const BOOKING_ERROR_MESSAGES: Record<string, string> = {
   MEMBERSHIP_REQUIRED: 'Active membership required to book.',
   CLASS_FULL: 'This class is fully booked.',
-  ALREADY_BOOKED: 'You already booked this class.',
-  CLASS_ALREADY_STARTED:
-    'Booking is no longer available because this class has already started.',
+  CLASS_ALREADY_STARTED: 'Booking is closed — this class has already started.',
   CLASS_NOT_BOOKABLE: 'This class is no longer open for booking.',
-  CANCELLATION_WINDOW_CLOSED: 'You can no longer cancel within 3 hours of class start.',
+  CANCELLATION_WINDOW_CLOSED: 'You can no longer cancel within 2 hours of class start.',
   BOOKING_NOT_ACTIVE: 'This booking can no longer be cancelled.',
-  ACCESS_DENIED: 'Only admins can book on behalf of a member.',
+  BOOKING_NOT_FOUND: 'Booking not found. Please refresh.',
+  NOT_FOUND: 'Booking not found. Please refresh.',
+  ACCESS_DENIED: 'You do not have permission to perform this action.',
+  USER_NOT_FOUND: 'Member not found. They may have been removed.',
+  CLASS_INSTANCE_NOT_FOUND: 'This class instance no longer exists.',
 }
 
 export function getErrorMessage(code?: string, fallback?: string): string {
