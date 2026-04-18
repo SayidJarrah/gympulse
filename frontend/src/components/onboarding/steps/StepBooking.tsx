@@ -2,7 +2,8 @@ import { useState, forwardRef, useImperativeHandle } from 'react'
 import { useOnboardingStore } from '../../../store/onboardingStore'
 import { GroupClassList } from '../booking/GroupClassList'
 import { TrainerList } from '../booking/TrainerList'
-import axiosInstance from '../../../api/axiosInstance'
+import { createBooking } from '../../../api/bookings'
+import { createPtBooking } from '../../../api/ptBookings'
 
 export interface StepBookingHandle {
   submit: () => Promise<boolean>
@@ -22,20 +23,20 @@ export const StepBooking = forwardRef<StepBookingHandle, object>((_props, ref) =
 
       if (mode === 'class' && selectedClassId) {
         try {
-          const res = await axiosInstance.post('/bookings', { classInstanceId: selectedClassId })
+          const booking = await createBooking({ classId: selectedClassId })
           store.setBookingSelection('class', selectedClassId, null, null)
-          store.setCompletedBooking(res.data.id)
+          store.setCompletedBooking(booking.id)
         } catch {
           setError('Unable to create booking. You can skip and book later.')
         }
       } else if (mode === 'trainer' && selectedTrainerId && selectedSlot) {
         try {
-          const res = await axiosInstance.post('/pt-bookings', {
+          const booking = await createPtBooking({
             trainerId: selectedTrainerId,
-            startTime: selectedSlot,
+            startAt: selectedSlot,
           })
           store.setBookingSelection('trainer', null, selectedTrainerId, selectedSlot)
-          store.setCompletedBooking(res.data.id)
+          store.setCompletedBooking(booking.id)
         } catch {
           setError('Unable to create PT booking. You can skip and book later.')
         }

@@ -12,10 +12,20 @@ interface OnboardingRouteProps {
  * - Authenticated and onboarding already completed → redirect to /home
  * - Authenticated and onboarding not complete → render children
  */
+const BootstrapSpinner = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="animate-spin rounded-full h-8 w-8 border-2 border-[var(--color-primary)] border-t-transparent" />
+  </div>
+)
+
 export function OnboardingRoute({ children }: OnboardingRouteProps) {
-  const { isAuthenticated, onboardingCompletedAt } = useAuthStore()
+  const { isAuthenticated, onboardingCompletedAt, bootstrapLoading } = useAuthStore()
 
   if (!isAuthenticated) return <Navigate to="/login" replace />
+
+  // Wait for bootstrap fetch to resolve before making redirect decisions
+  if (bootstrapLoading) return <BootstrapSpinner />
+
   if (onboardingCompletedAt !== null) return <Navigate to="/home" replace />
 
   return <>{children}</>

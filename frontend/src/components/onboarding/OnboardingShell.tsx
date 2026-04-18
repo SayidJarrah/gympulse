@@ -199,6 +199,7 @@ export function OnboardingShell() {
         <main className="flex-1 overflow-y-auto px-8 lg:px-16 py-12">
           <StepContent
             currentStep={currentStep}
+            firstName={store.firstName || null}
             profileRef={profileRef}
             preferencesRef={preferencesRef}
             membershipRef={membershipRef}
@@ -225,6 +226,7 @@ export function OnboardingShell() {
 
 interface StepContentProps {
   currentStep: StepKey
+  firstName: string | null
   profileRef: React.RefObject<StepProfileHandle>
   preferencesRef: React.RefObject<StepPreferencesHandle>
   membershipRef: React.RefObject<StepMembershipHandle>
@@ -234,6 +236,7 @@ interface StepContentProps {
 
 function StepContent({
   currentStep,
+  firstName,
   profileRef,
   preferencesRef,
   membershipRef,
@@ -242,7 +245,7 @@ function StepContent({
 }: StepContentProps) {
   switch (currentStep) {
     case 'welcome':
-      return <StepWelcome />
+      return <StepWelcome firstName={firstName} />
     case 'profile':
       return <StepProfile ref={profileRef} />
     case 'preferences':
