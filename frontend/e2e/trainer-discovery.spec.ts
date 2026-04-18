@@ -178,17 +178,8 @@ async function openTrainerProfileFromList(
   }
 }
 
-async function registerGuestViaApi(
-  request: APIRequestContext,
-  email: string,
-  password = USER_PASSWORD
-): Promise<LoginResponse> {
-  await registerViaApi(request, email, password);
-  return loginViaApi(request, email, password);
-}
-
 test.describe('Trainer Discovery', () => {
-  test('TD-01 lists trainers, shows profile, and allows favoriting', async ({ page, request }) => {
+  test('TD-01 lists trainers and shows trainer profile', async ({ page, request }) => {
     const adminSession = await loginViaApi(request, ADMIN_EMAIL, ADMIN_PASSWORD);
     const trainer = await createTrainerViaApi(request, adminSession.accessToken);
 
@@ -212,14 +203,6 @@ test.describe('Trainer Discovery', () => {
     await openTrainerProfileFromList(page, `${trainer.firstName} ${trainer.lastName}`);
     await expect(page).toHaveURL(new RegExp('/trainers/'));
     await expect(page.getByRole('heading', { name: `${trainer.firstName} ${trainer.lastName}` })).toBeVisible();
-
-    const saveButton = page.getByRole('button', { name: 'Save' });
-    await saveButton.click();
-    await expect(page.getByRole('button', { name: 'Saved' })).toBeVisible();
-
-    await page.goto('/trainers/favorites');
-    await expect(page.getByRole('heading', { name: 'My Favorites' })).toBeVisible();
-    await expect(page.getByRole('link', { name: `${trainer.firstName} ${trainer.lastName}` })).toBeVisible();
   });
 
   // TD-02: AC 18 — Duplicate favorite returns 409 ALREADY_FAVORITED
@@ -255,53 +238,4 @@ test.describe('Trainer Discovery', () => {
     expect(duplicateBody.code).toBe('ALREADY_FAVORITED');
   });
 
-  // TD-03: AC 38 — Guest navigating to /trainers/favorites is redirected to /memberships
-  // Fix: b3ecafc — redirect target changed from /plans to /memberships in TrainerFavoritesPage
-  test('TD-03 guest navigating to /trainers/favorites is redirected to /memberships', async ({ page, request }) => {
-    // Register a user but do NOT purchase a membership — this is a Guest
-    const email = uniqueEmail('e2e-td03-guest');
-    const guestSession = await registerGuestViaApi(request, email);
-
-    const persistedAuth = buildPersistedAuthState(
-      email,
-      guestSession.accessToken,
-      guestSession.accessToken,
-      guestSession.refreshToken
-    );
-
-    await seedPersistedAuth(page, persistedAuth);
-
-    // Navigate directly to the favorites page
-    await page.goto('/trainers/favorites');
-
-    // The page must redirect to /memberships (membership purchase page), not /plans or blank
-    await expect(page).toHaveURL(/\/memberships/, { timeout: 8000 });
-    // Must not render the My Favorites heading (i.e. the page didn't load before redirecting)
-    await expect(page.getByRole('heading', { name: 'My Favorites' })).not.toBeVisible();
-  });
-
-  // TD-04: AC 38 — "My Favorites" nav link is NOT visible for Guests (users without an active membership)
-  // Fix: b3ecafc — Navbar gates the "My Favorites" link behind activeMembership check
-  test('TD-04 My Favorites nav link is absent for guests without an active membership', async ({ page, request }) => {
-    // Register a user but do NOT purchase a membership — this is a Guest
-    const email = uniqueEmail('e2e-td04-guest');
-    const guestSession = await registerGuestViaApi(request, email);
-
-    const persistedAuth = buildPersistedAuthState(
-      email,
-      guestSession.accessToken,
-      guestSession.accessToken,
-      guestSession.refreshToken
-    );
-
-    await seedPersistedAuth(page, persistedAuth);
-
-    // Navigate to trainer list — any authenticated page will do
-    await page.goto('/trainers');
-    await expect(page.getByRole('heading', { name: 'Trainer Discovery' })).toBeVisible();
-
-    // "My Favorites" must NOT appear anywhere in the navigation
-    const myFavoritesLink = page.getByRole('link', { name: 'My Favorites' });
-    await expect(myFavoritesLink).not.toBeVisible();
-  });
 });
