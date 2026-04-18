@@ -32,21 +32,20 @@ export function PulseNav({ authed, userName }: Props) {
 
       {/* Right side */}
       <div className="flex items-center gap-7">
-        <Link
-          to="/schedule"
-          className="text-[13px] font-medium tracking-[0.02em] text-[#D1D5DB] transition-colors duration-200 hover:text-white"
-        >
-          Schedule
-        </Link>
-        <Link
-          to="/trainers"
-          className="text-[13px] font-medium tracking-[0.02em] text-[#D1D5DB] transition-colors duration-200 hover:text-white"
-        >
-          Trainers
-        </Link>
-
         {authed ? (
           <>
+            <Link
+              to="/schedule"
+              className="text-[13px] font-medium tracking-[0.02em] text-[#D1D5DB] transition-colors duration-200 hover:text-white"
+            >
+              Schedule
+            </Link>
+            <Link
+              to="/trainers"
+              className="text-[13px] font-medium tracking-[0.02em] text-[#D1D5DB] transition-colors duration-200 hover:text-white"
+            >
+              Trainers
+            </Link>
             <Link
               to="/membership"
               className="text-[13px] font-medium tracking-[0.02em] text-[#D1D5DB] transition-colors duration-200 hover:text-white"
@@ -64,12 +63,6 @@ export function PulseNav({ authed, userName }: Props) {
           </>
         ) : (
           <>
-            <a
-              href="#pricing"
-              className="text-[13px] font-medium tracking-[0.02em] text-[#D1D5DB] transition-colors duration-200 hover:text-white"
-            >
-              Pricing
-            </a>
             <Link
               to="/login"
               className="text-[13px] font-medium tracking-[0.02em] text-[#4ADE80] transition-colors duration-[160ms] hover:brightness-[1.15]"
