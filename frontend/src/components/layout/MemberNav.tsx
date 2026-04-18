@@ -9,7 +9,7 @@ export function MemberNav() {
   const bookRef = useRef<HTMLDivElement>(null)
   const avatarRef = useRef<HTMLDivElement>(null)
   const { user, clearAuth } = useAuthStore()
-  const { avatarUrl, ensureProfileLoaded, resetProfile } = useProfileStore()
+  const { profile, avatarUrl, ensureProfileLoaded, resetProfile } = useProfileStore()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -31,7 +31,8 @@ export function MemberNav() {
     navigate('/login')
   }
 
-  const initial = user?.email.slice(0, 2).toUpperCase() ?? 'ME'
+  const fullName = [profile?.firstName, profile?.lastName].filter(Boolean).join(' ') || user?.email.split('@')[0] || ''
+  const initial = (profile?.firstName?.charAt(0) ?? user?.email.charAt(0) ?? 'M').toUpperCase() + (profile?.lastName?.charAt(0) ?? '').toUpperCase() || 'ME'
 
   return (
     <nav className="relative z-10 flex items-center justify-between border-b border-[#1F2937] px-10 py-5" aria-label="Main">
@@ -135,7 +136,7 @@ export function MemberNav() {
               </div>
             )}
             <span className="text-[13px] font-medium text-white">
-              {user?.email.split('@')[0]}
+              {fullName}
             </span>
           </button>
 
