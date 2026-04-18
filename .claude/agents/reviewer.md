@@ -65,6 +65,23 @@ Do NOT block for:
 - Refactoring opportunities unrelated to the feature
 - Speculative future improvements
 
+## Suggestion → Backlog Count Assertion (required before returning)
+
+Every bullet under `## Suggestions (non-blocking)` in the review doc MUST have a matching
+`## TD-N — ...` entry in `docs/backlog/tech-debt.md` tagged with this feature. Before you
+return to the caller:
+
+1. Count the bullets under `## Suggestions (non-blocking)` in the review you just wrote.
+2. Count the TD entries you just appended that reference this feature in that session —
+   a reliable way is `grep -c "Feature: {feature}$" docs/backlog/tech-debt.md` after vs
+   before, or simply re-read the tail of the backlog and count the new entries for this
+   feature.
+3. The counts MUST match. If they differ, append the missing TD entries until they do,
+   then re-verify.
+
+Do this check even if you think every suggestion was logged — the assertion is what makes
+the guarantee reliable. A dropped suggestion silently loses tech-debt the team needs to track.
+
 ## Escalation
 
 If a bug requires understanding > 3 files to diagnose, or suggests the SDD
