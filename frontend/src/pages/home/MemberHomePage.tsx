@@ -21,6 +21,7 @@ export function MemberHomePage() {
     firstName,
     onTheFloor,
     nextBookedClass,
+    nextClassStudio,
     upcomingBookings,
     upcomingLoading,
     bookingsUsed,
@@ -30,10 +31,12 @@ export function MemberHomePage() {
     planName,
     membershipStatus,
     membershipLoading,
+    savedCoachesCount,
     feedEvents,
     feedActiveIndex,
     cancelNextBooking,
     cancellingBooking,
+    bookingsUsedOverride,
   } = useHomePage()
 
   const [showCancelDialog, setShowCancelDialog] = useState(false)
@@ -65,7 +68,7 @@ export function MemberHomePage() {
       <PulseNav authed userName={firstName ?? undefined} />
 
       <main
-        className="relative flex-1 overflow-hidden px-10 pb-12 pt-10"
+        className="relative flex-1 overflow-hidden px-4 pb-12 pt-10 sm:px-6 lg:px-10"
         style={{ position: 'relative' }}
       >
         {/* Ambient radial green glow — top-left */}
@@ -102,6 +105,7 @@ export function MemberHomePage() {
               <HomeHero
                 firstName={firstName}
                 nextBookedClass={nextBookedClass}
+                nextClassStudio={nextClassStudio}
                 onTheFloor={onTheFloor}
                 onCancelBooking={handleCancelRequest}
                 cancellingBooking={cancellingBooking}
@@ -124,6 +128,8 @@ export function MemberHomePage() {
               renewsAt={renewsAt}
               renewsInDays={renewsInDays}
               loading={membershipLoading}
+              savedCoachesCount={savedCoachesCount}
+              bookingsUsedOverride={bookingsUsedOverride}
             />
           </div>
 

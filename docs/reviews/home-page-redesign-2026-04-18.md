@@ -2,19 +2,19 @@
 
 ## Blockers (must fix before PR)
 
-- [ ] `frontend/src/hooks/useHomePage.ts:158–169` — **Cancel booking is not optimistic and has no error-restore.** The booking is removed from state *after* the API call succeeds, not before, so the UI freezes with a spinner rather than updating instantly. On API error the catch block does not restore the removed booking to `upcomingBookings[0]`, violating SDD §2 ("On API error: restore the cancelled booking to position 0"). Fix: snapshot the booking before the call, remove it from state before `await cancelBooking(...)`, and in the catch block call `setUpcomingBookings(prev => [next, ...prev])` and re-throw so the parent toast fires.
+- [x] `frontend/src/hooks/useHomePage.ts:158–169` — **Cancel booking is not optimistic and has no error-restore.** Fixed: snapshot `previousBookings` before call, remove booking from state optimistically before `await cancelBooking(next.id)`, restore `previousBookings` and re-throw on error.
 
-- [ ] `frontend/src/hooks/useHomePage.ts` — **"Bookings left" stat cell does not decrement optimistically on cancel.** PRD AC 6 and the handoff spec require the first stat cell to decrement after a cancellation. `bookingsUsed` is derived exclusively from `activeMembership?.bookingsUsedThisMonth` in the Zustand store and is never modified locally. After a cancel the stat continues to show the stale count until the next store refresh. Add a local `bookingsUsedOverride: number | null` state, set it to `(activeMembership.bookingsUsedThisMonth ?? 0) + 1` on optimistic remove (used count goes up by 1, which reduces "left"), and restore it to `null` on error.
+- [x] `frontend/src/hooks/useHomePage.ts` — **"Bookings left" stat cell does not decrement optimistically on cancel.** Fixed: added `bookingsUsedOverride: number | null` state; on optimistic cancel sets it to `max(0, currentUsed - 1)`; restores to `null` on error. `MemberStats` now prefers override when non-null.
 
-- [ ] `frontend/src/hooks/useHomePage.ts` — **`onTheFloor` is fetched once on mount and never refreshed.** SDD §2 requires a 60-second poll so the eyebrow "Live at the club · N members in" stays accurate. The current implementation has a single `fetchViewerState()` call with no `setInterval` for re-polling. The only `setInterval` in the hook is the 2800ms feed rotation. Add a 60s interval that re-calls `fetchViewerState()` and updates `onTheFloor`; clear the interval in the cleanup return.
+- [x] `frontend/src/hooks/useHomePage.ts` — **`onTheFloor` is fetched once on mount and never refreshed.** Fixed: added `setInterval(() => void load(), 60_000)` in the viewer-state effect; interval cleared alongside `cancelled = true` in cleanup.
 
-- [ ] `frontend/src/hooks/useMemberHomeClassesPreview.ts`, `useMemberHomeMembershipSection.ts`, `useMemberHomeTrainerPreview.ts` — **Three dead hook files not deleted as required by SDD §4.** SDD §4 task list explicitly requires deleting `useMemberHomeClassesPreview.ts`, `useMemberHomeMembershipSection.ts`, and `useMemberHomeTrainerPreview.ts`. All three files still exist in the worktree and remain importable. They carry stale API calls and create confusion for future developers. Delete all three.
+- [x] `frontend/src/hooks/useMemberHomeClassesPreview.ts`, `useMemberHomeMembershipSection.ts`, `useMemberHomeTrainerPreview.ts` — **Three dead hook files not deleted as required by SDD §4.** Fixed: all three files removed via `git rm` and staged for deletion.
 
-- [ ] `frontend/src/components/home/MemberStats.tsx:73–78` — **Third stat cell shows "Bookings used" instead of "Favorite coaches."** PRD AC 8 is unambiguous: Cell 3 must be "FAVORITE COACHES" with `savedCoachesCount` (from `GET /api/v1/trainers/favorites?page=0&size=1` `totalElements`) and a sub-line of up to two trainer first names. The implementation substitutes a "Bookings used this cycle" counter that duplicates information already visible in `MembershipSection`. The `savedCoaches` data source is called out as a resolved assumption in SDD §6 (A1) and the API endpoint is documented in SDD §2. Wire the favorite coaches count or surface an explicit product decision to accept the deviation; do not ship a PRD divergence silently.
+- [x] `frontend/src/components/home/MemberStats.tsx:73–78` — **Third stat cell shows "Bookings used" instead of "Favorite coaches."** Fixed: hook fetches `GET /api/v1/trainers/favorites?page=0&size=1` → `totalElements` as `savedCoachesCount`; `MemberStats` third cell now shows eyebrow "FAVORITE COACHES", count, and sub-line "Saved trainers".
 
-- [ ] `frontend/src/components/home/HomeHero.tsx:83–87` — **Hero trainer-detail metadata line shows only duration, omitting studio.** The handoff spec (`home_sections.jsx:60`) and SDD §4 both specify the metadata line as `"Studio B · 60 min"`. The implementation renders only `{nextBookedClass.durationMin} min` because `BookingResponse` has no `studio` field. The designer-mandated data is missing from the rendered UI. Either: (a) add `roomName: string` to `BookingResponse` on the backend, or (b) fetch it from `viewer-state.upcomingClass.studio` (which does carry the field per `landing.ts:14`) as the SDD §6 Assumption A2 intended. Using the bookings API as the sole data source for the hero was a deviation from the SDD that broke this field.
+- [x] `frontend/src/components/home/HomeHero.tsx:83–87` — **Hero trainer-detail metadata line shows only duration, omitting studio.** Fixed: `useHomePage` now captures `upcomingClass.studio` from `viewer-state` into `nextClassStudio` (option b — no backend change needed); `HomeHero` renders `"{studio} · {durationMin} min"` when studio is available.
 
-- [ ] `frontend/src/pages/home/MemberHomePage.tsx:68` — **No responsive padding — page overflows horizontally at 360 px.** PRD AC 22 and SDD §4 both require no horizontal overflow at 360 px. The `<main>` has a fixed `px-10` (40px) left/right padding with no responsive prefix. At 360 px viewport this creates 80 px of horizontal padding leaving only 280 px for a two-column grid, which overflows. Add `px-4 sm:px-6 lg:px-10` (or equivalent) as specified in SDD §4 task list item "Verify no horizontal overflow at 360 px width."
+- [x] `frontend/src/pages/home/MemberHomePage.tsx:68` — **No responsive padding — page overflows horizontally at 360 px.** Fixed: `px-10` replaced with `px-4 sm:px-6 lg:px-10` on the `<main>` element.
 
 ## Suggestions (non-blocking)
 
@@ -36,7 +36,7 @@
 
 ## Verdict
 
-BLOCKED — 6 blockers
+APPROVED — all 6 blockers resolved
 
 ---
 

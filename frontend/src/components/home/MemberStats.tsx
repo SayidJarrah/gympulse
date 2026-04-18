@@ -32,6 +32,8 @@ interface Props {
   renewsAt: string | null;
   renewsInDays: number | null;
   loading: boolean;
+  savedCoachesCount: number;
+  bookingsUsedOverride: number | null;
 }
 
 function formatDate(isoDate: string): string {
@@ -42,7 +44,7 @@ function formatDate(isoDate: string): string {
   })
 }
 
-export function MemberStats({ bookingsUsed, bookingsMax, renewsAt, renewsInDays, loading }: Props) {
+export function MemberStats({ bookingsUsed, bookingsMax, renewsAt, renewsInDays, loading, savedCoachesCount, bookingsUsedOverride }: Props) {
   if (loading) {
     return (
       <div className="grid grid-cols-3 gap-[14px]">
@@ -53,7 +55,9 @@ export function MemberStats({ bookingsUsed, bookingsMax, renewsAt, renewsInDays,
     )
   }
 
-  const bookingsLeft = Math.max(0, bookingsMax - bookingsUsed)
+  // Prefer the optimistic override when set (e.g. after an optimistic cancel)
+  const effectiveBookingsUsed = bookingsUsedOverride !== null ? bookingsUsedOverride : bookingsUsed
+  const bookingsLeft = Math.max(0, bookingsMax - effectiveBookingsUsed)
   const renewalDateStr = renewsAt ? formatDate(renewsAt) : '—'
 
   return (
@@ -71,9 +75,9 @@ export function MemberStats({ bookingsUsed, bookingsMax, renewsAt, renewsInDays,
         sub={renewalDateStr}
       />
       <StatCell
-        eyebrow="Bookings used"
-        value={bookingsUsed}
-        sub="this cycle"
+        eyebrow="Favorite coaches"
+        value={savedCoachesCount}
+        sub="Saved trainers"
       />
     </div>
   )

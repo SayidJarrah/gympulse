@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { getMyBookings, cancelBooking } from '../api/bookings'
 import { createActivityStream, fetchActivityFeed, fetchViewerState } from '../api/landing'
+import { getMyFavoriteTrainers } from '../api/trainerDiscovery'
 import { useMembershipStore } from '../store/membershipStore'
 import type { BookingResponse } from '../types/booking'
 import type { ActivityEvent } from '../types/landing'
 
 const MAX_FEED_ITEMS = 20
 const ROTATION_INTERVAL_MS = 2800
+const VIEWER_STATE_POLL_MS = 60_000
 
 export interface HomePageData {
   // User
@@ -18,6 +20,8 @@ export interface HomePageData {
   // Hero: next booked class (null → no-booked variant)
   nextBookedClass: BookingResponse | null;
   nextBookedLoading: boolean;
+  // Studio for the next booked class (sourced from viewer-state, not BookingResponse)
+  nextClassStudio: string | null;
 
   // Upcoming: next 3 confirmed bookings
   upcomingBookings: BookingResponse[];
@@ -32,6 +36,9 @@ export interface HomePageData {
   membershipStatus: string | null;
   membershipLoading: boolean;
 
+  // Favorite coaches count
+  savedCoachesCount: number;
+
   // Activity feed (club-level — same SSE used by landing)
   feedEvents: ActivityEvent[];
   feedActiveIndex: number;
@@ -39,6 +46,9 @@ export interface HomePageData {
   // Actions
   cancelNextBooking: () => Promise<void>;
   cancellingBooking: boolean;
+
+  // Optimistic override for bookings-used (set on cancel, cleared on error)
+  bookingsUsedOverride: number | null;
 }
 
 function daysUntil(isoDate: string): number {
@@ -56,12 +66,21 @@ export function useHomePage(): HomePageData {
   // Club stats (onTheFloor)
   const [onTheFloor, setOnTheFloor] = useState(0)
 
+  // Studio name for the next booked class (sourced from viewer-state, not BookingResponse)
+  const [nextClassStudio, setNextClassStudio] = useState<string | null>(null)
+
   // Bookings
   const [upcomingBookings, setUpcomingBookings] = useState<BookingResponse[]>([])
   const [upcomingLoading, setUpcomingLoading] = useState(true)
 
   // Cancel
   const [cancellingBooking, setCancellingBooking] = useState(false)
+
+  // Optimistic bookings-used override (null = use store value)
+  const [bookingsUsedOverride, setBookingsUsedOverride] = useState<number | null>(null)
+
+  // Favorite coaches count
+  const [savedCoachesCount, setSavedCoachesCount] = useState(0)
 
   // Activity feed
   const [feedEvents, setFeedEvents] = useState<ActivityEvent[]>([])
@@ -75,7 +94,7 @@ export function useHomePage(): HomePageData {
     }
   }, [activeMembership, membershipLoading, fetchMyMembership])
 
-  // Fetch viewer state for onTheFloor count
+  // Fetch viewer state for onTheFloor count + 60s poll
   useEffect(() => {
     let cancelled = false
     const load = async () => {
@@ -85,12 +104,19 @@ export function useHomePage(): HomePageData {
         if (vs.state === 'booked' || vs.state === 'nobooked') {
           setOnTheFloor(vs.onTheFloor)
         }
+        if (vs.state === 'booked') {
+          setNextClassStudio(vs.upcomingClass.studio)
+        }
       } catch {
         // Non-blocking: 0 members in is acceptable fallback
       }
     }
     void load()
-    return () => { cancelled = true }
+    const pollId = setInterval(() => { void load() }, VIEWER_STATE_POLL_MS)
+    return () => {
+      cancelled = true
+      clearInterval(pollId)
+    }
   }, [])
 
   // Fetch upcoming confirmed bookings
@@ -112,6 +138,22 @@ export function useHomePage(): HomePageData {
         // Non-blocking: page renders without upcoming
       } finally {
         if (!cancelled) setUpcomingLoading(false)
+      }
+    }
+    void load()
+    return () => { cancelled = true }
+  }, [])
+
+  // Fetch saved coaches count
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      try {
+        const res = await getMyFavoriteTrainers({ page: 0, size: 1 })
+        if (cancelled) return
+        setSavedCoachesCount(res.totalElements)
+      } catch {
+        // Non-blocking: 0 is acceptable fallback
       }
     }
     void load()
@@ -154,15 +196,31 @@ export function useHomePage(): HomePageData {
     return () => clearInterval(id)
   }, [feedEvents.length])
 
-  // Cancel the next booked class (index 0 of upcoming)
+  // Cancel the next booked class (index 0 of upcoming) — optimistic
   const cancelNextBooking = async () => {
     const next = upcomingBookings[0]
     if (!next) return
     setCancellingBooking(true)
+
+    // Snapshot previous state for error restore
+    const previousBookings = upcomingBookings
+
+    // Optimistic removal before the API call
+    setUpcomingBookings((prev) => prev.filter((b) => b.id !== next.id))
+
+    // Optimistic decrement of bookingsUsed (used count goes up by 1 after a booking is made;
+    // when we cancel, used count decreases by 1 — "left" increases)
+    const currentUsed = activeMembership?.bookingsUsedThisMonth ?? 0
+    setBookingsUsedOverride(Math.max(0, currentUsed - 1))
+
     try {
       await cancelBooking(next.id)
-      // Optimistic removal
-      setUpcomingBookings((prev) => prev.filter((b) => b.id !== next.id))
+      // Success: optimistic state stays; override stays until next store refresh
+    } catch (err) {
+      // Restore previous state on error
+      setUpcomingBookings(previousBookings)
+      setBookingsUsedOverride(null)
+      throw err
     } finally {
       setCancellingBooking(false)
     }
@@ -179,6 +237,7 @@ export function useHomePage(): HomePageData {
     onTheFloor,
     nextBookedClass,
     nextBookedLoading: upcomingLoading,
+    nextClassStudio,
     upcomingBookings: upcomingBookings.slice(0, 3),
     upcomingLoading,
     bookingsUsed: activeMembership?.bookingsUsedThisMonth ?? 0,
@@ -188,9 +247,11 @@ export function useHomePage(): HomePageData {
     planName: activeMembership?.planName ?? null,
     membershipStatus: activeMembership?.status ?? null,
     membershipLoading,
+    savedCoachesCount,
     feedEvents,
     feedActiveIndex,
     cancelNextBooking,
     cancellingBooking,
+    bookingsUsedOverride,
   }
 }

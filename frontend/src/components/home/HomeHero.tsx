@@ -7,6 +7,7 @@ import { useReducedMotion } from '../../hooks/useReducedMotion'
 interface Props {
   firstName: string | null;
   nextBookedClass: BookingResponse | null;
+  nextClassStudio: string | null;
   onTheFloor: number;
   onCancelBooking: () => void;
   cancellingBooking: boolean;
@@ -15,12 +16,14 @@ interface Props {
 function HomeHeroBooked({
   firstName,
   nextBookedClass,
+  nextClassStudio,
   onTheFloor,
   onCancelBooking,
   cancellingBooking,
 }: {
   firstName: string | null;
   nextBookedClass: BookingResponse;
+  nextClassStudio: string | null;
   onTheFloor: number;
   onCancelBooking: () => void;
   cancellingBooking: boolean;
@@ -83,7 +86,7 @@ function HomeHeroBooked({
             <p className="text-[13px] text-[#9CA3AF]">with</p>
             <p className="mt-0.5 text-[17px] font-semibold text-white">{trainerName}</p>
             <p className="mt-0.5 text-xs text-[#6B7280]">
-              {nextBookedClass.durationMin} min
+              {nextClassStudio ? `${nextClassStudio} · ` : ''}{nextBookedClass.durationMin} min
             </p>
           </div>
         )}
@@ -128,7 +131,7 @@ function generateIcsDownload(booking: BookingResponse): string {
   return `data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}`
 }
 
-export function HomeHero({ firstName, nextBookedClass, onTheFloor, onCancelBooking, cancellingBooking }: Props) {
+export function HomeHero({ firstName, nextBookedClass, nextClassStudio, onTheFloor, onCancelBooking, cancellingBooking }: Props) {
   if (!nextBookedClass) {
     // No booked class: show "Get on a mat" variant
     // We adapt the landing HeroNoBooked but since we don't have nextOpenClass data in this context,
@@ -140,6 +143,7 @@ export function HomeHero({ firstName, nextBookedClass, onTheFloor, onCancelBooki
     <HomeHeroBooked
       firstName={firstName}
       nextBookedClass={nextBookedClass}
+      nextClassStudio={nextClassStudio}
       onTheFloor={onTheFloor}
       onCancelBooking={onCancelBooking}
       cancellingBooking={cancellingBooking}
