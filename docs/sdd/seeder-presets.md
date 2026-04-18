@@ -258,6 +258,8 @@ New rooms to append (positions 3–5):
 
 All image URLs are deterministic, stable, and require no API key.
 
+> **Fetch failures are not silent.** `fetchPhoto` in `referenceSeeder.ts` emits a `warning` SSE event when the URL returns non-2xx or throws. The row is still inserted with a NULL `photo_data`, but the operator sees the failure in the generation log and can patch the URL list. This rule applies to room images, V13/V17 class-template images, and any future image sources added to the reference seeder.
+
 ### Trainer Photos
 
 Pattern: `https://randomuser.me/api/portraits/{men|women}/{N}.jpg`

@@ -18,7 +18,7 @@ export const V13_CLASS_TEMPLATES: ClassTemplateRecord[] = [
     defaultCapacity: 20,
     difficulty: 'All Levels',
     isSeeded: true,
-    imageUrl: 'https://images.unsplash.com/photo-1571019614242-e66b2ee5f68b?w=800&auto=format&fit=crop',
+    imageUrl: 'https://images.unsplash.com/photo-1576678927484-cc907957088c?w=800&auto=format&fit=crop',
   },
   {
     name: 'Yoga Flow',
@@ -28,7 +28,7 @@ export const V13_CLASS_TEMPLATES: ClassTemplateRecord[] = [
     defaultCapacity: 15,
     difficulty: 'All Levels',
     isSeeded: true,
-    imageUrl: 'https://images.unsplash.com/photo-1506629082153-54e546b5a358?w=800&auto=format&fit=crop',
+    imageUrl: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=800&auto=format&fit=crop',
   },
   {
     name: 'Spin Cycle',
@@ -48,7 +48,7 @@ export const V13_CLASS_TEMPLATES: ClassTemplateRecord[] = [
     defaultCapacity: 12,
     difficulty: 'Intermediate',
     isSeeded: true,
-    imageUrl: 'https://images.unsplash.com/photo-1534367990453-3bcd4d4f8a9f?w=800&auto=format&fit=crop',
+    imageUrl: 'https://images.unsplash.com/photo-1599058917212-d750089bc07e?w=800&auto=format&fit=crop',
   },
   {
     name: 'Pilates Core',

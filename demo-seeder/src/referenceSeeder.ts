@@ -11,26 +11,38 @@ import type { EmitFn, PresetConfig } from './seeder';
 
 import fetch from 'node-fetch';
 
-async function fetchPhoto(url: string): Promise<{ data: Buffer; mimeType: string } | null> {
+async function fetchPhoto(
+  url: string,
+  label: string,
+  emit: EmitFn,
+): Promise<{ data: Buffer; mimeType: string } | null> {
   try {
     const res = await fetch(url);
-    if (!res.ok) return null;
+    if (!res.ok) {
+      emit('warning', {
+        message: `Photo fetch failed for ${label}: HTTP ${res.status} (${url})`,
+      });
+      return null;
+    }
     const contentType = res.headers.get('content-type') ?? 'image/jpeg';
     const mimeType = contentType.split(';')[0].trim();
     const arrayBuffer = await res.arrayBuffer();
     return { data: Buffer.from(arrayBuffer), mimeType };
-  } catch {
+  } catch (err) {
+    emit('warning', {
+      message: `Photo fetch error for ${label}: ${String(err)} (${url})`,
+    });
     return null;
   }
 }
 
 // ── Upsert helpers ────────────────────────────────────────────────────────────
 
-async function upsertRooms(count: number): Promise<number> {
+async function upsertRooms(count: number, emit: EmitFn): Promise<number> {
   const client = await pgPool.connect();
   try {
     for (const room of V13_ROOMS.slice(0, count)) {
-      const photo = await fetchPhoto(room.imageUrl);
+      const photo = await fetchPhoto(room.imageUrl, `room "${room.name}"`, emit);
       await client.query(
         `INSERT INTO rooms (name, capacity, description, photo_data, photo_mime_type)
          VALUES ($1, $2, $3, $4, $5)
@@ -48,11 +60,11 @@ async function upsertRooms(count: number): Promise<number> {
   }
 }
 
-async function upsertClassTemplatesV13(count: number): Promise<number> {
+async function upsertClassTemplatesV13(count: number, emit: EmitFn): Promise<number> {
   const client = await pgPool.connect();
   try {
     for (const tpl of V13_CLASS_TEMPLATES.slice(0, count)) {
-      const photo = await fetchPhoto(tpl.imageUrl);
+      const photo = await fetchPhoto(tpl.imageUrl, `class template "${tpl.name}"`, emit);
       // V13 rows have no fixed UUID — let Postgres generate on insert;
       // on conflict the existing id is preserved (ON CONFLICT DO UPDATE
       // cannot update the conflict key).
@@ -90,14 +102,14 @@ async function upsertClassTemplatesV13(count: number): Promise<number> {
   }
 }
 
-async function upsertClassTemplatesV17(count: number): Promise<number> {
+async function upsertClassTemplatesV17(count: number, emit: EmitFn): Promise<number> {
   if (count <= 0) return 0;
   const client = await pgPool.connect();
   try {
     await client.query('BEGIN');
     try {
       for (const tpl of V17_CLASS_TEMPLATES.slice(0, count)) {
-        const photo = await fetchPhoto(tpl.imageUrl);
+        const photo = await fetchPhoto(tpl.imageUrl, `class template "${tpl.name}"`, emit);
 
         // Both `id` and `name` are unique, so Postgres `ON CONFLICT` (which
         // supports only one constraint target) cannot cover both. Per SDD §3.2
@@ -322,9 +334,9 @@ export async function seedReferenceData(emit: EmitFn, presetConfig: PresetConfig
   emit('log', { message: 'Seeding reference data…' });
 
   try {
-    const rooms = await upsertRooms(presetConfig.rooms);
-    const v13 = await upsertClassTemplatesV13(5); // V13 always seeded in full
-    const v17 = await upsertClassTemplatesV17(Math.max(0, presetConfig.classTemplates - 5));
+    const rooms = await upsertRooms(presetConfig.rooms, emit);
+    const v13 = await upsertClassTemplatesV13(5, emit); // V13 always seeded in full
+    const v17 = await upsertClassTemplatesV17(Math.max(0, presetConfig.classTemplates - 5), emit);
     const trainers = await upsertTrainers(presetConfig.trainers);
     const plans = await upsertMembershipPlans(presetConfig.membershipPlans);
     const qaUsers = await upsertQaUsersAndProfiles();

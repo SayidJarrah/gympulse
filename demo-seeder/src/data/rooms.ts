@@ -10,7 +10,7 @@ export const V13_ROOMS: RoomRecord[] = [
     name: 'Pulse Studio',
     capacity: 30,
     description: 'Main group fitness studio',
-    imageUrl: 'https://images.unsplash.com/photo-1534438327535-0c01b3c3ea3a?w=800&auto=format&fit=crop',
+    imageUrl: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=800&auto=format&fit=crop',
   },
   {
     name: 'Cycle Studio',
@@ -22,19 +22,19 @@ export const V13_ROOMS: RoomRecord[] = [
     name: 'Weight Room',
     capacity: 15,
     description: 'Strength training area',
-    imageUrl: 'https://images.unsplash.com/photo-1534367990453-3bcd4d4f8a9f?w=800&auto=format&fit=crop',
+    imageUrl: 'https://images.unsplash.com/photo-1594882645126-14020914d58d?w=800&auto=format&fit=crop',
   },
   {
     name: 'Functional Space',
     capacity: 18,
     description: 'Open functional training area with rigs and sleds',
-    imageUrl: 'https://images.unsplash.com/photo-1601422407176-00bd94c73b7f?w=800&auto=format&fit=crop',
+    imageUrl: 'https://images.unsplash.com/photo-1540496905036-5937c10647cc?w=800&auto=format&fit=crop',
   },
   {
     name: 'Outdoor Terrace',
     capacity: 25,
     description: 'Covered outdoor training terrace',
-    imageUrl: 'https://images.unsplash.com/photo-1571731956672-f9e7ffe66da7?w=800&auto=format&fit=crop',
+    imageUrl: 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=800&auto=format&fit=crop',
   },
   {
     name: 'Recovery Suite',

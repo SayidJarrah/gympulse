@@ -53,7 +53,7 @@ export const V17_CLASS_TEMPLATES: ClassTemplateV17Record[] = [
     defaultCapacity: 22,
     difficulty: 'Beginner',
     isSeeded: true,
-    imageUrl: 'https://images.unsplash.com/photo-1549824846-7a83ffc5b7da?w=800&auto=format&fit=crop',
+    imageUrl: 'https://images.unsplash.com/photo-1591741535018-d042766c62eb?w=800&auto=format&fit=crop',
   },
   {
     id: '33333333-3333-3333-3333-333333333305',
@@ -75,7 +75,7 @@ export const V17_CLASS_TEMPLATES: ClassTemplateV17Record[] = [
     defaultCapacity: 16,
     difficulty: 'Beginner',
     isSeeded: true,
-    imageUrl: 'https://images.unsplash.com/photo-1571019613975-0b56b2bcf1f8?w=800&auto=format&fit=crop',
+    imageUrl: 'https://images.unsplash.com/photo-1584735935682-2f2b69dff9d2?w=800&auto=format&fit=crop',
   },
   {
     id: '33333333-3333-3333-3333-333333333307',
@@ -119,6 +119,6 @@ export const V17_CLASS_TEMPLATES: ClassTemplateV17Record[] = [
     defaultCapacity: 18,
     difficulty: 'All Levels',
     isSeeded: true,
-    imageUrl: 'https://images.unsplash.com/photo-1517438476312-10437cf17e7e?w=800&auto=format&fit=crop',
+    imageUrl: 'https://images.unsplash.com/photo-1593164842264-854604db2260?w=800&auto=format&fit=crop',
   },
 ];
