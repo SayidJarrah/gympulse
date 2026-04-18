@@ -78,7 +78,7 @@ export function MemberNav() {
             onClick={() => { setBookOpen(o => !o); setAvatarOpen(false) }}
             className="flex items-center gap-1 text-[13px] font-medium tracking-[0.02em] text-[#D1D5DB] transition-colors duration-200 hover:text-white"
           >
-            Book
+            Classes
             <svg
               className={`h-3.5 w-3.5 transition-transform duration-150 ${bookOpen ? 'rotate-180' : ''}`}
               fill="none"

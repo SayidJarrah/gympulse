@@ -50,21 +50,21 @@ describe('MemberNav', () => {
     expect(screen.getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/home')
   })
 
-  it('renders Book button', () => {
+  it('renders Classes button', () => {
     renderNav()
-    expect(screen.getByRole('button', { name: /book/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /classes/i })).toBeInTheDocument()
   })
 
-  it('Book dropdown is hidden by default', () => {
+  it('Classes dropdown is hidden by default', () => {
     renderNav()
     expect(screen.queryByRole('link', { name: 'Group Classes' })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Personal Training' })).not.toBeInTheDocument()
   })
 
-  it('Book dropdown opens and shows Group Classes and Personal Training', async () => {
+  it('Classes dropdown opens and shows Group Classes and Personal Training', async () => {
     const user = userEvent.setup()
     renderNav()
-    await user.click(screen.getByRole('button', { name: /book/i }))
+    await user.click(screen.getByRole('button', { name: /classes/i }))
     expect(screen.getByRole('link', { name: 'Group Classes' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Personal Training' })).toBeInTheDocument()
   })
@@ -72,14 +72,14 @@ describe('MemberNav', () => {
   it('Group Classes link points to /schedule', async () => {
     const user = userEvent.setup()
     renderNav()
-    await user.click(screen.getByRole('button', { name: /book/i }))
+    await user.click(screen.getByRole('button', { name: /classes/i }))
     expect(screen.getByRole('link', { name: 'Group Classes' })).toHaveAttribute('href', '/schedule')
   })
 
   it('Personal Training link points to /training', async () => {
     const user = userEvent.setup()
     renderNav()
-    await user.click(screen.getByRole('button', { name: /book/i }))
+    await user.click(screen.getByRole('button', { name: /classes/i }))
     expect(screen.getByRole('link', { name: 'Personal Training' })).toHaveAttribute('href', '/training')
   })
 
@@ -108,21 +108,21 @@ describe('MemberNav', () => {
     expect(screen.queryByRole('link', { name: /favorites/i })).not.toBeInTheDocument()
   })
 
-  it('opening avatar dropdown closes the Book dropdown', async () => {
+  it('opening avatar dropdown closes the Classes dropdown', async () => {
     const user = userEvent.setup()
     renderNav()
-    await user.click(screen.getByRole('button', { name: /book/i }))
+    await user.click(screen.getByRole('button', { name: /classes/i }))
     expect(screen.getByRole('link', { name: 'Group Classes' })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Account menu' }))
     expect(screen.queryByRole('link', { name: 'Group Classes' })).not.toBeInTheDocument()
   })
 
-  it('opening Book dropdown closes the avatar dropdown', async () => {
+  it('opening Classes dropdown closes the avatar dropdown', async () => {
     const user = userEvent.setup()
     renderNav()
     await user.click(screen.getByRole('button', { name: 'Account menu' }))
     expect(screen.getByRole('link', { name: 'Profile' })).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: /book/i }))
+    await user.click(screen.getByRole('button', { name: /classes/i }))
     expect(screen.queryByRole('link', { name: 'Profile' })).not.toBeInTheDocument()
   })
 })
