@@ -9,14 +9,14 @@ description: GymPulse delivery pipeline logic. Loaded by the /deliver command.
 ## Pipeline Order
 
 ```
-BA → Design Handoff Gate → SA → Developer → [Reviewer ∥ Tester] → PR
+BA → Design Handoff Gate → SA → Developer → Reviewer → PR
 ```
 
 **Why this order:**
 - Design is authored in the external Claude Design project — we consume a handoff, not author one here
 - SA reads PRD + handoff together — the API is shaped to match the actual UI
 - Developer has both SDD (technical contract) and handoff (exact screens) before writing a line
-- Reviewer and Tester are independent — they read different artifacts and write to different paths
+- Reviewer reads the implementation against the design handoff and SDD
 
 ## Stage Gates
 
@@ -29,7 +29,6 @@ Before starting each stage, check for the required input artifact:
 | SA | `docs/prd/{feature}.md` + `docs/design-system/handoffs/{feature}/spec.md` | `docs/sdd/{feature}.md` |
 | Developer | `docs/sdd/{feature}.md` + `docs/design-system/handoffs/{feature}/` + `docs/design-system/README.md` | implementation in git |
 | Reviewer | implementation + `docs/design-system/handoffs/{feature}/` + `docs/design-system/README.md` | `docs/reviews/{feature}.md` |
-| Tester | implementation + `docs/prd/{feature}.md` | passing specs or `docs/bugs/*.md` |
 
 If an artifact is missing, run the stage that produces it — do not skip ahead. The Handoff
 Gate is not a stage that produces output locally: if the handoff is missing, STOP and ask
@@ -54,9 +53,6 @@ logging rework, error-handling sweep), collapse the pipeline:
 - **Developer:** runs backend phase only (skip the frontend phase in the two-phase block
   below) unless the change touches TypeScript.
 - **Reviewer:** runs normally against the SDD (no handoff to check).
-- **Tester:** skip ONLY IF the scope-agreement explicitly accepts existing test
-  breakage (common for test-strategy-precursor work). Otherwise run as normal.
-  If tester is skipped, the PR description MUST call out accepted breakage.
 - **Branch naming:** `chore/{slug}` instead of `feature/{slug}`.
 - **PR title:** `chore({slug}): …` instead of `feat({slug}): …`.
 
@@ -110,12 +106,8 @@ explicit user approval.
 
 ## Parallelism Rules
 
-**Safe to parallelise (run simultaneously):**
-- Reviewer + Tester — they read different sources, write to different paths, share no state
-
 **Agent types to use:**
 - Reviewer: `subagent_type: "reviewer"` — NOT `superpowers:code-reviewer`. The project reviewer loads design-standards, produces structured review docs with blockers/suggestions.
-- Tester: `subagent_type: "tester"`
 - Developer: general-purpose agent
 
 **Never parallelise:**
@@ -189,22 +181,16 @@ If `docs/backlog/tech-debt.md` does not exist, create it first.
 - Refactoring opportunities unrelated to the feature
 - Speculative improvements
 
-## Tester Output
-
-Critical failure → `docs/bugs/YYYYMMDD-HHMMSS-{feature}.md`
-Regression → `docs/bugs/YYYYMMDD-HHMMSS-regression-{feature}.md`
-Both categories block the PR.
-
 ## Fix Loop
 
-Runs after Reviewer + Tester complete. Owned by /deliver — user never invokes agents manually.
+Runs after Reviewer completes. Owned by /deliver — user never invokes agents manually.
 
 ```
-Reviewer blockers > 0 OR tester critical/regression failures > 0?
+Reviewer blockers > 0?
         ↓ yes
-Developer reads brief/review → fix mode (≤3 files per session)
+Developer reads review → fix mode (≤3 files per session)
         ↓
-Re-run Reviewer + Tester in parallel
+Re-run Reviewer
         ↓
 Repeat up to 3 total iterations
         ↓ still failing after iteration 3
@@ -228,8 +214,6 @@ or surrounding code. A false "already done" silently skips the fix and passes th
 
 PR is created only when ALL are true:
 - Reviewer doc shows 0 blockers
-- Tester shows 0 critical failures
-- Tester shows 0 regressions (previously passing specs still pass)
 
 PR format:
 - Title: `feat({feature}): {one-line description from SDD}`
