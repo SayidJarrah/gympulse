@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ExclamationTriangleIcon, LockClosedIcon } from '@heroicons/react/24/outline'
-import { Navbar } from '../../components/layout/Navbar'
+import { MemberNav } from '../../components/layout/MemberNav'
 import { PersonalInfoCard } from '../../components/profile/PersonalInfoCard'
 import { AccountActionsCard } from '../../components/profile/AccountActionsCard'
 import { Toast } from '../../components/profile/Toast'
@@ -73,7 +73,7 @@ export function UserProfilePage() {
 
   return (
     <div className="min-h-screen text-white" style={{ background: '#0F0F0F' }}>
-      <Navbar />
+      <MemberNav />
 
       <main
         className="relative overflow-hidden"

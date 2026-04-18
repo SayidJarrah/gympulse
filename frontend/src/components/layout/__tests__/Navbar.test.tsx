@@ -60,13 +60,11 @@ describe('Navbar', () => {
     expect(screen.getByRole('link', { name: 'Home' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Schedule' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Trainers' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'My Favorites' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Profile' })).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Toggle menu' }))
 
     expect(screen.queryByRole('link', { name: 'Plans' })).not.toBeInTheDocument()
     expect(screen.getAllByRole('link', { name: 'Home' }).length).toBeGreaterThan(1)
-    expect(screen.getAllByRole('link', { name: 'My Favorites' }).length).toBeGreaterThan(1)
   })
 })

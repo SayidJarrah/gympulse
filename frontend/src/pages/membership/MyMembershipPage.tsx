@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { CreditCardIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
-import { Navbar } from '../../components/layout/Navbar'
+import { MemberNav } from '../../components/layout/MemberNav'
 import {
   MembershipStatusCard,
   MembershipStatusCardSkeleton,
@@ -32,7 +32,7 @@ export function MyMembershipPage() {
 
   return (
     <div className="min-h-screen bg-[#0F0F0F]">
-      <Navbar />
+      <MemberNav />
 
       <main>
         <div className="max-w-2xl mx-auto px-4 py-12">

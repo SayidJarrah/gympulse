@@ -33,7 +33,6 @@ export function Navbar() {
           { label: 'Home', href: '/home' },
           { label: 'Schedule', href: '/schedule' },
           { label: 'Trainers', href: '/trainers' },
-          { label: 'My Favorites', href: '/trainers/favorites' },
           { label: 'Profile', href: '/profile' },
         ]
       : []

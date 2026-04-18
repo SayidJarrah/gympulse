@@ -14,7 +14,6 @@ import { MyMembershipPage } from './pages/membership/MyMembershipPage'
 import { UserProfilePage } from './pages/profile/UserProfilePage'
 import { MyBookingsPage } from './pages/profile/MyBookingsPage'
 import { TrainerListPage } from './pages/trainers/TrainerListPage'
-import { TrainerFavoritesPage } from './pages/trainers/TrainerFavoritesPage'
 import { TrainerProfilePage } from './pages/trainers/TrainerProfilePage'
 import { GroupClassesSchedulePage } from './pages/schedule/GroupClassesSchedulePage'
 import { AdminRoute } from './components/layout/AdminRoute'
@@ -77,14 +76,6 @@ function App() {
           element={
             <AuthRoute>
               <TrainerListPage />
-            </AuthRoute>
-          }
-        />
-        <Route
-          path="/trainers/favorites"
-          element={
-            <AuthRoute>
-              <TrainerFavoritesPage />
             </AuthRoute>
           }
         />

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline'
-import { Navbar } from '../../components/layout/Navbar'
+import { MemberNav } from '../../components/layout/MemberNav'
 import { BookingConfirmModal } from '../../components/schedule/BookingConfirmModal'
 import { BookingSummaryBar } from '../../components/schedule/BookingSummaryBar'
 import { BookingToast } from '../../components/schedule/BookingToast'
@@ -393,7 +393,7 @@ export function GroupClassesSchedulePage() {
       className="min-h-screen bg-[#0F0F0F] text-white overflow-x-hidden"
       data-testid="schedule-root"
     >
-      <Navbar />
+      <MemberNav />
       <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
         {/* Change 1 — compact 72px header strip replacing the full hero */}
         {isLoading ? (

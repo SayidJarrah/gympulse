@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CalendarDaysIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
-import { Navbar } from '../../components/layout/Navbar'
+import { MemberNav } from '../../components/layout/MemberNav'
 import { CancelBookingModal } from '../../components/schedule/CancelBookingModal'
 import { useBookingStore } from '../../store/bookingStore'
 import { useScheduleTimeZone } from '../../hooks/useScheduleTimeZone'
@@ -101,7 +101,7 @@ export function MyBookingsPage() {
 
   return (
     <div className="min-h-screen bg-[#0F0F0F] text-white">
-      <Navbar />
+      <MemberNav />
       <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-6">
           <h1 className="text-3xl font-bold leading-tight text-white">My Bookings</h1>
