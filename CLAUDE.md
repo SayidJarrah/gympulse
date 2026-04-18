@@ -56,9 +56,10 @@ UI/UX design is owned by the external **Claude Design** project, not this repo. 
 
 **Layer 2 — Per-feature handoffs (fast-moving, dropped in per feature):**
 - For each feature or redesign, a handoff package lands at `docs/design-system/handoffs/{feature-slug}/`:
-  - `{feature-slug}.html` — interactive mock, self-contained (Tailwind CDN), open directly in browser
-  - `spec.md` — component list, states, copy, edge cases, error messages
+  - `README.md` — the spec (overview, screens, states, interactions, data contracts, tokens, deferred items)
+  - `design_reference/` — prototype bundle: HTML/JSX entry, `colors_and_type.css`, supporting modules
 - Handoffs are authored in the Claude Design project, not here. They are the input to `/deliver` Stage 2 and `/redesign`.
+- Prototypes are reference-only — they use CDN React + inline styles for convenience. Implement against the project stack (Vite, TS, Tailwind, Zustand). Port tokens verbatim.
 
 **Before any UI change (implementation or review):**
 1. Read `docs/design-system/README.md` for voice + visual rules.
