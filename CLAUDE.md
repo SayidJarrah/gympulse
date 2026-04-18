@@ -43,6 +43,33 @@ gympulse/
 ## SDD Hygiene — Non-Negotiable
 Any behavioural decision made during a conversation — redirect targets, response shapes, error messages, routing logic, field additions — must be written into `docs/sdd/{feature}.md` before the conversation ends. If no SDD section exists for the decision, add one. Do not leave decisions only in commit messages, memory, or domain skill updates.
 
+## Demo Seeder — Non-Negotiable
+
+The demo seeder lives at `demo-seeder/src/` and populates realistic data for manual testing and demos. It must stay in sync with the DB schema at all times.
+
+**Seeded tables and their owner files:**
+
+| Table | Owner file | Notes |
+|-------|-----------|-------|
+| `users` | `referenceSeeder.ts` → `upsertQaUsersAndProfiles()` | QA fixed UUIDs |
+| `user_profiles` | `referenceSeeder.ts` + `seeder.ts` → `registerUsers()` | Both paths must match |
+| `trainers` | `referenceSeeder.ts` → `upsertTrainers()` | Fixed UUIDs in `data/trainers.ts` |
+| `membership_plans` | `referenceSeeder.ts` → `upsertMembershipPlans()` | Fixed in `data/membershipPlans.ts` |
+| `rooms` | `referenceSeeder.ts` → `upsertRooms()` | Fixed in `data/rooms.ts` |
+| `class_instances` | `seeder.ts` → `createClassInstances()` | Dynamic per preset |
+| `bookings` | `seeder.ts` → `createBookings()` | Dynamic per preset |
+| `pt_bookings` | `seeder.ts` → `createPtBookings()` | Dynamic per preset |
+
+**Rules:**
+
+1. **Any Flyway migration that adds or renames a column on a seeded table requires a seeder update in the same PR.** Check the table list above to find the owner file. Do not open a PR with a migration that leaves the seeder out of sync.
+
+2. **Any new entity type that needs demo data requires a new seeder function** wired into `runSeeder()`. Add the table to the list above in `CLAUDE.md` at the same time.
+
+3. **Fixed reference data** (trainers, rooms, QA users, plans) lives in `demo-seeder/src/data/*.ts`. Add fields there first, then reference them in the upsert function. Fixed UUIDs must never change — they are referenced by E2E tests and QA docs.
+
+4. **Dynamic demo data** (members, class instances, bookings, PT bookings) is generated in `seeder.ts`. Keep quantity proportional to preset size (`small`/`medium`/`large`).
+
 ## Design System — Source of Truth
 
 UI/UX design is owned by the external **Claude Design** project, not this repo. We no longer generate design specs or HTML prototypes locally — `ui-ux-designer` is retired. Work flows in two layers:
