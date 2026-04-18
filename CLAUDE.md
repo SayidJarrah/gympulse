@@ -29,19 +29,43 @@ gympulse/
 │   └── types/         # TypeScript types
 │   └── e2e/           # Playwright specs
 ├── docs/
-│   ├── prd/           # Per-feature requirements
-│   ├── sdd/           # Per-feature technical design
-│   ├── design/        # UI/UX specs + prototypes
-│   ├── gaps/          # Audit gap reports
-│   ├── reviews/       # Post-deliver review docs
-│   ├── backlog/       # Tech debt (auto-populated by /deliver reviewer)
-│   ├── qa/            # Test manifest
-│   └── lessons.md     # Self-improvement lessons
+│   ├── prd/             # Per-feature requirements
+│   ├── sdd/             # Per-feature technical design
+│   ├── design-system/   # Tokens, voice, assets + per-feature handoffs from the Claude Design project
+│   ├── gaps/            # Audit gap reports
+│   ├── reviews/         # Post-deliver review docs
+│   ├── backlog/         # Tech debt (auto-populated by /deliver reviewer)
+│   ├── qa/              # Test manifest
+│   └── lessons.md       # Self-improvement lessons
 └── docker-compose.review.yml
 ```
 
 ## SDD Hygiene — Non-Negotiable
 Any behavioural decision made during a conversation — redirect targets, response shapes, error messages, routing logic, field additions — must be written into `docs/sdd/{feature}.md` before the conversation ends. If no SDD section exists for the decision, add one. Do not leave decisions only in commit messages, memory, or domain skill updates.
+
+## Design System — Source of Truth
+
+UI/UX design is owned by the external **Claude Design** project, not this repo. We no longer generate design specs or HTML prototypes locally — `ui-ux-designer` is retired. Work flows in two layers:
+
+**Layer 1 — Design system (slow-moving, living in this repo):**
+- `docs/design-system/README.md` — voice, visual rules, component patterns (canonical)
+- `docs/design-system/colors_and_type.css` — token values (CSS custom properties)
+- `docs/design-system/tailwind.gymflow.cjs` — Tailwind config extract
+- `docs/design-system/assets/` — logo marks, favicon
+- Update these together when tokens change; commit once and let the rest of the repo pick them up.
+
+**Layer 2 — Per-feature handoffs (fast-moving, dropped in per feature):**
+- For each feature or redesign, a handoff package lands at `docs/design-system/handoffs/{feature-slug}/`:
+  - `{feature-slug}.html` — interactive mock, self-contained (Tailwind CDN), open directly in browser
+  - `spec.md` — component list, states, copy, edge cases, error messages
+- Handoffs are authored in the Claude Design project, not here. They are the input to `/deliver` Stage 2 and `/redesign`.
+
+**Before any UI change (implementation or review):**
+1. Read `docs/design-system/README.md` for voice + visual rules.
+2. Read the feature handoff at `docs/design-system/handoffs/{slug}/`.
+3. Implement against existing React components in `frontend/src/components/`. Do not fabricate a design spec locally when the handoff is missing — halt and ask for it to be produced in the Claude Design project.
+
+**When tokens change in the Claude Design project:** pull the updated `colors_and_type.css` + `tailwind.gymflow.cjs` + assets into `docs/design-system/` as one commit. No per-feature follow-up required.
 
 ## Git Rules — Non-Negotiable
 - **Never commit directly to `main`** — all changes go through a feature branch and PR, no exceptions

@@ -7,10 +7,10 @@ A dark-first fitness brand design system distilled from the **GymPulse** codebas
 ## Sources
 
 - **Repo:** `SayidJarrah/gympulse` (branch `main`)
-- **Live design spec:** `docs/design/system.md` — the canonical tokens document
+- **Canonical tokens:** `docs/design-system/colors_and_type.css` and `docs/design-system/tailwind.gymflow.cjs`
+- **Voice + visual rules:** this README (the canonical document)
 - **Quality bar:** `.claude/skills/design-standards/SKILL.md` — defines what "good" looks like
-- **Per-feature design specs:** `docs/design/{landing-page, member-home, scheduler, trainer-discovery, ...}.md`
-- **Working HTML prototypes:** `docs/design/prototypes/*.html`
+- **Per-feature handoffs:** `docs/design-system/handoffs/{feature-slug}/` — each contains an HTML mock and a `spec.md`, produced in the Claude Design project
 - **Stack:** Kotlin/Spring backend + React 18 + TypeScript + Vite + TailwindCSS frontend
 
 > The user may not have given you repo access. If needed, browse it with `github_get_tree`/`github_read_file` on `SayidJarrah/gympulse@main`.
@@ -30,7 +30,7 @@ There is no native mobile app in this repo — the member app is the mobile expe
 
 ## CONTENT FUNDAMENTALS
 
-**Voice:** Operational, calm, direct. GymFlow speaks like a well-run studio front desk, not a hype-y influencer brand. It favors clarity over cleverness — a design principle from `docs/design/system.md` ("Clear over clever. Every element earns its place on screen").
+**Voice:** Operational, calm, direct. GymFlow speaks like a well-run studio front desk, not a hype-y influencer brand. It favors clarity over cleverness ("Clear over clever. Every element earns its place on screen").
 
 **Pronoun:** "You" to the member. Never "we" for the brand in UI copy — the brand name appears by itself ("GymFlow keeps the first move simple"). First person ("I") is never used in UI.
 

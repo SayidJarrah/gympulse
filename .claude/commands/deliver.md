@@ -8,7 +8,7 @@ Determine the starting stage by checking which artifacts exist:
 
 ```bash
 ls docs/prd/$ARGUMENTS.md 2>/dev/null && echo "PRD exists" || echo "PRD missing"
-ls docs/design/$ARGUMENTS.md 2>/dev/null && echo "Design exists" || echo "Design missing"
+ls -d docs/design-system/handoffs/$ARGUMENTS 2>/dev/null && echo "Design handoff exists" || echo "Design handoff missing"
 ls docs/sdd/$ARGUMENTS.md 2>/dev/null && echo "SDD exists" || echo "SDD missing"
 ls docs/gaps/$ARGUMENTS.md 2>/dev/null && echo "Gap report exists — use as starting point" || echo "No gap report"
 ```
@@ -25,21 +25,32 @@ Invoke the business-analyst agent:
 
 Confirm PRD exists before continuing.
 
-## Stage 2 — Designer (if design missing)
+## Stage 2 — Design Handoff Gate (if handoff missing)
 
-Invoke the ui-ux-designer agent:
-> "Read docs/prd/$ARGUMENTS.md and docs/design/system.md.
-> Design every screen for the $ARGUMENTS feature.
-> Load the design-standards skill. Include benchmark citations for every screen.
-> All 5 states required per screen (populated, loading, empty, error, delight detail).
-> Save spec to docs/design/$ARGUMENTS.md and prototype to docs/design/prototypes/$ARGUMENTS.html."
+**Design is owned by the external Claude Design project, not this repo.** We do not
+generate design specs or HTML prototypes locally.
 
-Confirm design spec exists before continuing.
+Check for a handoff directory at `docs/design-system/handoffs/$ARGUMENTS/`. It must contain at
+minimum:
+- `$ARGUMENTS.html` — interactive mock (self-contained HTML, Tailwind CDN)
+- `spec.md` — screens, states, components, copy, error messages
+
+If missing, STOP immediately with:
+> "No design handoff found for `$ARGUMENTS`. Produce it in the Claude Design project, then drop
+> the package into `docs/design-system/handoffs/$ARGUMENTS/` and re-run `/deliver $ARGUMENTS`."
+
+Do not fabricate a design spec locally to unblock the pipeline. A fabricated spec is worse than
+no spec.
+
+If present, verify it aligns with the PRD scope (all user-facing screens covered). If there is
+a gap, stop and ask for an updated handoff rather than filling it in.
 
 ## Stage 3 — SA (if SDD missing)
 
 Invoke the solution-architect agent:
-> "Read docs/prd/$ARGUMENTS.md AND docs/design/$ARGUMENTS.md before writing anything.
+> "Read docs/prd/$ARGUMENTS.md AND docs/design-system/handoffs/$ARGUMENTS/spec.md before writing anything.
+> Also read docs/design-system/README.md for voice and component patterns, and
+> docs/design-system/colors_and_type.css for token values.
 > Write the SDD at docs/sdd/$ARGUMENTS.md.
 > Use the Postgres MCP to inspect the current schema before defining any DB changes.
 > Every DTO must be fully specified. Every error code must map to an AC."
@@ -49,11 +60,15 @@ Confirm SDD exists before continuing.
 ## Stage 4 — Developer
 
 Invoke the developer agent:
-> "Read docs/sdd/$ARGUMENTS.md and docs/design/$ARGUMENTS.md fully before starting.
+> "Read docs/sdd/$ARGUMENTS.md and docs/design-system/handoffs/$ARGUMENTS/ fully before starting.
+> Also read docs/design-system/README.md for voice and component patterns, and
+> docs/design-system/colors_and_type.css for token values.
 > Load kotlin-conventions and react-conventions skills.
 > Execute backend phase first (migration → entities → repos → service → controller → unit tests).
 > Run ./gradlew test before starting frontend phase.
-> Then execute frontend phase (types → API → store → hooks → pages → routes)."
+> Then execute frontend phase (types → API → store → hooks → pages → routes).
+> Implement against existing React components in frontend/src/components/. Do not copy the
+> handoff HTML verbatim — translate it into the real component set."
 
 Confirm implementation is complete before continuing.
 
@@ -64,7 +79,8 @@ Spawn both agents simultaneously:
 **Reviewer:**
 > "Review the $ARGUMENTS implementation.
 > Load design-standards skill.
-> Check: domain correctness, code quality, design fidelity.
+> Read docs/design-system/handoffs/$ARGUMENTS/ (HTML mock + spec) and docs/design-system/README.md.
+> Check: domain correctness, code quality, design fidelity against the handoff.
 > Save review to docs/reviews/$ARGUMENTS-{today}.md with BLOCKED or APPROVED verdict."
 
 **Tester:**

@@ -28,7 +28,8 @@ You review three dimensions simultaneously:
 - Is the implementation unnecessarily complex for what it does?
 
 **3. Design fidelity + UX quality**
-- Does the implemented UI match the design spec at `docs/design/{feature}.md`?
+- Does the implemented UI match the handoff at `docs/design-system/handoffs/{feature}/`?
+- Does it honour voice and patterns in `docs/design-system/README.md` and tokens in `docs/design-system/colors_and_type.css`?
 - Does it meet the quality bar from design-standards? (all 5 states, benchmark pattern applied)
 - Would a Peloton/Whoop user find this experience embarrassing?
 - Are loading, empty, and error states all implemented and visible?
@@ -56,11 +57,11 @@ Block the PR for:
 - Broken UX flow (user cannot complete a primary action end-to-end)
 - Security issue (any OWASP top 10, missing auth check, sensitive data exposed)
 - Domain rule violated (contradicts the feature's SDD)
-- Design structurally off-spec (layout diverges from design spec, not minor styling)
+- Design structurally off-spec (layout diverges from the handoff, not minor styling)
 - Missing required UI states (no loading state, no error handling displayed to user)
 
 Do NOT block for:
-- Minor styling preferences not specified in the design spec
+- Minor styling preferences not specified in the handoff
 - Refactoring opportunities unrelated to the feature
 - Speculative future improvements
 
