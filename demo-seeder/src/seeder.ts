@@ -461,6 +461,130 @@ async function createBookings(
   }
 }
 
+// ── PT booking creation ────────────────────────────────────────────────────
+
+const GYM_OPEN_HOUR  = 6;   // first bookable hour (inclusive)
+const GYM_CLOSE_HOUR = 21;  // last bookable start hour (slot ends at close+1=22)
+
+/** Returns whole-hour UTC Date candidates spread evenly across `weekCount` weeks. */
+function buildPtSlotDates(weekCount: number): Date[] {
+  const slots: Date[] = [];
+  const now = Date.now();
+  const msPerWeek = 7 * 24 * 3_600_000;
+  // Spread from (weekCount) weeks ago to (weekCount) weeks ahead
+  const start = now - weekCount * msPerWeek;
+  const end   = now + weekCount * msPerWeek;
+
+  const cursor = new Date(start);
+  cursor.setUTCMinutes(0, 0, 0);
+  while (cursor.getTime() < end) {
+    const hour = cursor.getUTCHours();
+    if (hour >= GYM_OPEN_HOUR && hour <= GYM_CLOSE_HOUR) {
+      slots.push(new Date(cursor));
+    }
+    cursor.setUTCHours(cursor.getUTCHours() + 1);
+  }
+  return slots;
+}
+
+async function createPtBookings(
+  memberIds: string[],
+  weekCount: number,
+  emit: EmitFn,
+): Promise<void> {
+  if (memberIds.length === 0) return;
+
+  const client = await pgPool.connect();
+  let trainers: { id: string; room: string }[];
+  let classBusyMap: Map<string, Set<number>>; // trainerId → Set of start timestamps (ms)
+
+  try {
+    // Load trainers with their default room
+    const trainerRows = await client.query<{ id: string; default_room: string | null }>(
+      `SELECT id, default_room FROM trainers WHERE deleted_at IS NULL AND email LIKE '%@gymflow.local' ORDER BY last_name`,
+    );
+    trainers = trainerRows.rows.map((r) => ({ id: r.id, room: r.default_room ?? 'Studio A' }));
+
+    // Build trainer occupancy from group class instances (rounded to hour)
+    classBusyMap = new Map();
+    const classRows = await client.query<{ trainer_id: string; scheduled_at: string; duration_min: number }>(
+      `SELECT cit.trainer_id, ci.scheduled_at, ci.duration_min
+       FROM class_instances ci
+       JOIN class_instance_trainers cit ON cit.class_instance_id = ci.id`,
+    );
+    for (const row of classRows.rows) {
+      const classStart = new Date(row.scheduled_at).getTime();
+      const classEnd   = classStart + row.duration_min * 60_000;
+      const set = classBusyMap.get(row.trainer_id) ?? new Set<number>();
+      // Mark every hour slot covered by this class as busy
+      for (let t = classStart; t < classEnd; t += 3_600_000) {
+        const hourMs = t - (t % 3_600_000);
+        set.add(hourMs);
+      }
+      classBusyMap.set(row.trainer_id, set);
+    }
+  } finally {
+    client.release();
+  }
+
+  if (trainers.length === 0) return;
+
+  const allSlots = buildPtSlotDates(weekCount);
+  // Track PT bookings per trainer to avoid double-booking within this seeder run
+  const ptBusyMap = new Map<string, Set<number>>(trainers.map((t) => [t.id, new Set()]));
+
+  const rows: { memberId: string; trainerId: string; startAt: Date; room: string; status: string }[] = [];
+
+  for (const memberId of memberIds) {
+    const targetCount = randomBetween(1, 4);
+    let booked = 0;
+
+    const shuffledSlots = [...allSlots].sort(() => Math.random() - 0.5);
+
+    for (const slot of shuffledSlots) {
+      if (booked >= targetCount) break;
+
+      const slotMs = slot.getTime();
+      // Pick a random trainer who is free at this slot
+      const shuffledTrainers = [...trainers].sort(() => Math.random() - 0.5);
+      const trainer = shuffledTrainers.find((tr) => {
+        const classBusy = classBusyMap.get(tr.id);
+        const ptBusy    = ptBusyMap.get(tr.id);
+        return !classBusy?.has(slotMs) && !ptBusy?.has(slotMs);
+      });
+
+      if (!trainer) continue;
+
+      const isPast   = slotMs < Date.now();
+      const isCancelled = Math.random() < 0.10;
+      const status   = isCancelled ? 'CANCELLED' : 'CONFIRMED';
+      const cancelledAt = isCancelled ? new Date(slotMs + randomBetween(1, 12) * 3_600_000).toISOString() : null;
+
+      rows.push({ memberId, trainerId: trainer.id, startAt: slot, room: trainer.room, status });
+      ptBusyMap.get(trainer.id)!.add(slotMs);
+      booked++;
+
+      // Insert immediately (we need the row to exist for the next overlap check to be accurate)
+      const insertClient = await pgPool.connect();
+      try {
+        const endAt = new Date(slotMs + 3_600_000);
+        await insertClient.query(
+          `INSERT INTO pt_bookings (trainer_id, member_id, start_at, end_at, room, status, cancelled_at)
+           VALUES ($1::uuid, $2::uuid, $3::timestamptz, $4::timestamptz, $5, $6, $7::timestamptz)
+           ON CONFLICT DO NOTHING`,
+          [trainer.id, memberId, slot.toISOString(), endAt.toISOString(), trainer.room, status, cancelledAt],
+        );
+      } finally {
+        insertClient.release();
+      }
+    }
+
+    emit('progress', { step: 'pt_bookings', current: rows.length, total: memberIds.length * 2 });
+  }
+
+  emit('log', { message: `Created ${rows.length} PT bookings across ${memberIds.length} members.` });
+}
+
 // ── Main entry ─────────────────────────────────────────────────────────────
 
 export async function runSeeder(config: SeederConfig, emit: EmitFn): Promise<void> {
@@ -500,6 +624,10 @@ export async function runSeeder(config: SeederConfig, emit: EmitFn): Promise<voi
 
   emit('log', { message: `Creating bookings for ${userPlanMap.size} members…` });
   await createBookings(userPlanMap, emit);
+
+  const memberIdsWithPlan = [...userPlanMap.keys()];
+  emit('log', { message: `Creating PT bookings for ${memberIdsWithPlan.length} members…` });
+  await createPtBookings(memberIdsWithPlan, config.weekCount, emit);
 
   emit('done', {
     users: users.length,

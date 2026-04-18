@@ -54,5 +54,11 @@ data class Trainer(
     var experienceYears: Int? = null,
 
     @Column(name = "profile_photo_url")
-    var profilePhotoUrl: String? = null
+    var profilePhotoUrl: String? = null,
+
+    @Column(name = "accent_color")
+    var accentColor: String? = null,
+
+    @Column(name = "default_room")
+    var defaultRoom: String? = null
 )

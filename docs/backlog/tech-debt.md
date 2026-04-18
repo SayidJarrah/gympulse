@@ -437,3 +437,52 @@ Feature: home-page-redesign
 Added: 2026-04-18
 Effort: S
 `BigCountdown.tsx:16` hard-codes `text-[#4ADE80]` (primary-light green) for the countdown digits. The handoff prototype (`home_sections.jsx`) renders digits in white (inherited page default) with muted separators and unit labels. The green-digit treatment is energetic but diverges from the spec. Get explicit design sign-off on the green digits; if not approved, change to `text-white`.
+
+## TD-061 — listPtTrainers computes availability for every trainer on every request
+Source: docs/reviews/personal-training-booking-2026-04-18.md
+Feature: personal-training-booking
+Added: 2026-04-18
+Effort: M
+`PtBookingService.listPtTrainers` runs the full 14-day availability algorithm for each trainer on every `GET /api/v1/trainers/pt` call. For a gym with many trainers this is O(n × 14 × 16) slot evaluations per request. SDD §4 documents this as a future materialized-view candidate. Add a scheduled job or on-demand cache (Redis or DB) that pre-computes `nextOpenAt` and `weekOpenCount` per trainer once per hour so the trainer-list endpoint is a single fast query.
+
+## TD-062 — SlotPicker isoDateTime constructs local time, silently breaks for non-UTC users
+Source: docs/reviews/personal-training-booking-2026-04-18.md
+Feature: personal-training-booking
+Added: 2026-04-18
+Effort: M
+`SlotPicker.tsx:28-30` calls `new Date(\`\${dateStr}T\${hour}:00:00\`)` (no timezone suffix), which parses as local browser time. `.toISOString()` then converts to UTC. For a user in UTC+3 booking the 9am slot, the server receives `06:00Z`, which is outside the 6am gym-open UTC boundary and fails validation. Requires a decision on the time-zone model (SDD §8 defers this). At minimum, add a code comment documenting the assumption so the bug is visible. Full fix: construct the datetime string with an explicit `+00:00` suffix if the server always operates in UTC, or resolve the member's club time zone from the server and apply it during construction.
+
+## TD-063 — TrainerSchedule has no empty state when both ptSessions and groupClasses are empty
+Source: docs/reviews/personal-training-booking-2026-04-18.md
+Feature: personal-training-booking
+Added: 2026-04-18
+Effort: S
+`TrainerSchedule.tsx` renders stat tiles (all zeros) and then nothing when both session arrays are empty. The design-standards skill requires a quality empty state for every screen. Add a "No sessions this week" message (with a calendar icon or brief copy) below the stat tiles so a trainer with no upcoming schedule sees clear feedback rather than empty space.
+
+## TD-064 — AdminPtSessions missing Trainer filter SelectPill
+Source: docs/reviews/personal-training-booking-2026-04-18.md
+Feature: personal-training-booking
+Added: 2026-04-18
+Effort: S
+`AdminPtSessions.tsx` filter bar implements only the Status SelectPill. The handoff spec specifies a second Trainer SelectPill populated from the trainer list. The backend `GET /api/v1/admin/pt-sessions?trainerId=` param is already implemented. Add a trainer `<select>` populated from `GET /api/v1/trainers/pt?size=200` (or a dedicated lightweight endpoint) to complete the filter bar per spec.
+
+## TD-065 — SlotPicker fragment in hour-row loop missing key prop
+Source: docs/reviews/personal-training-booking-2026-04-18.md
+Feature: personal-training-booking
+Added: 2026-04-18
+Effort: S
+`SlotPicker.tsx:246` renders hour rows using `<>…</>` fragments inside a `.map()` without a `key` prop on the fragment. React will log a key-warning for each row. Replace `<>` with `<React.Fragment key={hour}>` to silence the warning and avoid potential reconciliation issues if hours change.
+
+## TD-066 — ConfirmBookingModal does not return focus to triggering slot button on close
+Source: docs/reviews/personal-training-booking-2026-04-18.md
+Feature: personal-training-booking
+Added: 2026-04-18
+Effort: S
+The handoff accessibility spec says "return focus to the slot button on close." `ConfirmBookingModal.tsx` focuses `focusable[0]` (the "Not yet" button) on open but does not restore focus to the calendar slot button that triggered the modal. A keyboard user loses their position in the availability grid when the modal closes. Accept an optional `triggerRef?: React.RefObject<HTMLElement>` prop in the modal and call `triggerRef.current?.focus()` on close.
+
+## TD-067 — PtBookingServiceTest missing coverage for MEMBERSHIP_REQUIRED path
+Source: docs/reviews/personal-training-booking-2026-04-18.md
+Feature: personal-training-booking
+Added: 2026-04-18
+Effort: S
+`PtBookingServiceTest` covers 8 paths but has no test for the `MEMBERSHIP_REQUIRED` (403) branch in `createBooking`. Add a test that mocks an inactive membership state and asserts `MembershipRequiredException` is thrown and `ptBookingRepository.save` is never called.

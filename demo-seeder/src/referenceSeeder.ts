@@ -195,6 +195,8 @@ async function upsertTrainers(count: number): Promise<number> {
                  specialisations   = $7,
                  experience_years  = $8,
                  profile_photo_url = $9,
+                 accent_color      = $10,
+                 default_room      = $11,
                  deleted_at        = NULL,
                  updated_at        = NOW()
            WHERE id = $1::uuid OR email = $4`,
@@ -208,6 +210,8 @@ async function upsertTrainers(count: number): Promise<number> {
             t.specialisations,
             t.experienceYears,
             t.profilePhotoUrl,
+            t.accentColor,
+            t.defaultRoom,
           ],
         );
 
@@ -215,8 +219,9 @@ async function upsertTrainers(count: number): Promise<number> {
         await client.query(
           `INSERT INTO trainers
              (id, first_name, last_name, email, phone, bio,
-              specialisations, experience_years, profile_photo_url)
-           SELECT $1::uuid, $2, $3, $4, $5, $6, $7, $8, $9
+              specialisations, experience_years, profile_photo_url,
+              accent_color, default_room)
+           SELECT $1::uuid, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
            WHERE NOT EXISTS (
              SELECT 1 FROM trainers WHERE id = $1::uuid OR email = $4::varchar
            )`,
@@ -230,6 +235,8 @@ async function upsertTrainers(count: number): Promise<number> {
             t.specialisations,
             t.experienceYears,
             t.profilePhotoUrl,
+            t.accentColor,
+            t.defaultRoom,
           ],
         );
       }

@@ -35,3 +35,19 @@ export function getBookingErrorMessage(code?: string, fallback?: string): string
   if (!code) return fallback ?? 'Something went wrong. Please try again.'
   return BOOKING_ERROR_MESSAGES[code] ?? fallback ?? 'Something went wrong. Please try again.'
 }
+
+export const PT_BOOKING_ERROR_MESSAGES: Record<string, string> = {
+  PT_LEAD_TIME_VIOLATION: 'This slot is too soon. Book at least 24 hours in advance.',
+  PT_TRAINER_OVERLAP: 'This slot is no longer available.',
+  PT_TRAINER_CLASS_OVERLAP: 'The trainer has a class at this time.',
+  PT_OUTSIDE_GYM_HOURS: 'That time is outside gym hours.',
+  PT_BOOKING_NOT_FOUND: 'Booking not found. Please refresh.',
+  PT_BOOKING_NOT_ACTIVE: 'This booking has already been cancelled.',
+  MEMBERSHIP_REQUIRED: 'An active membership is required to book personal training.',
+  TRAINER_NOT_FOUND: 'Trainer not found.',
+}
+
+export function getPtBookingErrorMessage(code?: string, fallback?: string): string {
+  if (!code) return fallback ?? 'Something went wrong. Please try again.'
+  return PT_BOOKING_ERROR_MESSAGES[code] ?? fallback ?? 'Something went wrong. Please try again.'
+}
