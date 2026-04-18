@@ -15,6 +15,7 @@ import com.gymflow.exception.MembershipRequiredException
 import com.gymflow.repository.BookingRepository
 import com.gymflow.repository.ClassInstanceRepository
 import com.gymflow.repository.UserMembershipRepository
+import com.gymflow.repository.UserProfileRepository
 import com.gymflow.repository.UserRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
@@ -33,7 +34,9 @@ class BookingService(
     private val bookingRepository: BookingRepository,
     private val classInstanceRepository: ClassInstanceRepository,
     private val userMembershipRepository: UserMembershipRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val userProfileRepository: UserProfileRepository,
+    private val activityEventService: ActivityEventService
 ) {
 
     @Transactional
@@ -211,6 +214,21 @@ class BookingService(
             it.bookingsUsedThisMonth = it.bookingsUsedThisMonth + 1
         }
 
+        // Record a booking event for the landing-page activity feed
+        runCatching {
+            val user = userRepository.findById(targetUserId).orElse(null)
+            val profile = userProfileRepository.findById(targetUserId).orElse(null)
+            val displayName = buildDisplayName(profile?.firstName, profile?.lastName, user?.email)
+            val shortName = buildShortName(profile?.firstName, profile?.lastName, user?.email)
+            activityEventService.recordEvent(
+                kind = "booking",
+                actor = user,
+                actorName = shortName,
+                text = "booked ${classInstance.name}",
+                textPublic = "booked a class"
+            )
+        }
+
         val detailedClass = classInstanceRepository.findWithDetailsById(classId)
             ?: classInstance
         return saved.toResponse(detailedClass, now)
@@ -288,6 +306,29 @@ class BookingService(
             return null
         }
         return normalizeStatus(trimmed)
+    }
+
+    private fun buildShortName(firstName: String?, lastName: String?, email: String?): String {
+        val first = firstName?.trim()
+        val last = lastName?.trim()
+        return when {
+            !first.isNullOrBlank() && !last.isNullOrBlank() ->
+                "$first ${last[0]}."
+            !first.isNullOrBlank() -> first
+            !last.isNullOrBlank() -> last
+            else -> email?.substringBefore("@") ?: "Member"
+        }
+    }
+
+    private fun buildDisplayName(firstName: String?, lastName: String?, email: String?): String {
+        val first = firstName?.trim()
+        val last = lastName?.trim()
+        return when {
+            !first.isNullOrBlank() && !last.isNullOrBlank() -> "$first $last"
+            !first.isNullOrBlank() -> first
+            !last.isNullOrBlank() -> last
+            else -> email?.substringBefore("@") ?: "Member"
+        }
     }
 
     companion object {

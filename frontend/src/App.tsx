@@ -20,7 +20,7 @@ import { GroupClassesSchedulePage } from './pages/schedule/GroupClassesScheduleP
 import { AdminRoute } from './components/layout/AdminRoute'
 import { AuthRoute } from './components/layout/AuthRoute'
 import { UserRoute } from './components/layout/UserRoute'
-import { LandingPage } from './pages/landing/LandingPage'
+import { PulseLandingPage } from './pages/landing/PulseLandingPage'
 import { MemberHomePage } from './pages/home/MemberHomePage'
 
 function App() {
@@ -159,7 +159,7 @@ function App() {
           }
         />
 
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<PulseLandingPage />} />
       </Routes>
     </BrowserRouter>
   )

@@ -36,6 +36,7 @@ class SecurityConfig(
                     .requestMatchers("/api/v1/auth/refresh").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/membership-plans").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/membership-plans/*").permitAll()
+                    .requestMatchers("/api/v1/landing/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/trainers/*/photo").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/rooms/*/photo").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/class-templates/*/photo").permitAll()
