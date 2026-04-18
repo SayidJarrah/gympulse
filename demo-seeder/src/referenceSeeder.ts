@@ -304,18 +304,21 @@ async function upsertQaUsersAndProfiles(): Promise<number> {
       await client.query(
         `INSERT INTO user_profiles
            (user_id, first_name, last_name, phone,
-            date_of_birth, fitness_goals, preferred_class_types)
-         SELECT u.id, $2, $3, $4, $5::date, $6::jsonb, $7::jsonb
+            date_of_birth, fitness_goals, preferred_class_types,
+            emergency_contact_name, emergency_contact_phone)
+         SELECT u.id, $2, $3, $4, $5::date, $6::jsonb, $7::jsonb, $8, $9
          FROM users u
          WHERE u.email = $1
          ON CONFLICT (user_id) DO UPDATE
-           SET first_name            = EXCLUDED.first_name,
-               last_name             = EXCLUDED.last_name,
-               phone                 = EXCLUDED.phone,
-               date_of_birth         = EXCLUDED.date_of_birth,
-               fitness_goals         = EXCLUDED.fitness_goals,
-               preferred_class_types = EXCLUDED.preferred_class_types,
-               deleted_at            = NULL`,
+           SET first_name              = EXCLUDED.first_name,
+               last_name               = EXCLUDED.last_name,
+               phone                   = EXCLUDED.phone,
+               date_of_birth           = EXCLUDED.date_of_birth,
+               fitness_goals           = EXCLUDED.fitness_goals,
+               preferred_class_types   = EXCLUDED.preferred_class_types,
+               emergency_contact_name  = EXCLUDED.emergency_contact_name,
+               emergency_contact_phone = EXCLUDED.emergency_contact_phone,
+               deleted_at              = NULL`,
         [
           p.email,
           p.firstName,
@@ -324,6 +327,8 @@ async function upsertQaUsersAndProfiles(): Promise<number> {
           p.dateOfBirth,
           JSON.stringify(p.fitnessGoals),
           JSON.stringify(p.preferredClassTypes),
+          p.emergencyContactName ?? null,
+          p.emergencyContactPhone ?? null,
         ],
       );
     }

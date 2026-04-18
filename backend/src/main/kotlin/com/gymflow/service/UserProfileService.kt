@@ -2,6 +2,8 @@ package com.gymflow.service
 
 import com.gymflow.domain.User
 import com.gymflow.domain.UserProfile
+import com.gymflow.dto.EmergencyContactDto
+import com.gymflow.dto.EmergencyContactInput
 import com.gymflow.dto.UpdateUserProfileRequest
 import com.gymflow.dto.UserProfileResponse
 import com.gymflow.repository.UserProfileRepository
@@ -45,6 +47,7 @@ class UserProfileService(
         val preferredClassTypes = normalizeOrderedList(request.preferredClassTypes) {
             InvalidPreferredClassTypesException("Preferred class types are invalid")
         }
+        val (ecName, ecPhone) = validateEmergencyContact(request.emergencyContact)
 
         val profile = userProfileRepository.findById(userId).orElse(
             UserProfile(userId = userId)
@@ -56,6 +59,8 @@ class UserProfileService(
         profile.dateOfBirth = dateOfBirth
         profile.fitnessGoals = fitnessGoals.toMutableList()
         profile.preferredClassTypes = preferredClassTypes.toMutableList()
+        profile.emergencyContactName = ecName
+        profile.emergencyContactPhone = ecPhone
 
         val saved = userProfileRepository.save(profile)
         return toResponse(user, saved)
@@ -132,6 +137,34 @@ class UserProfileService(
         ) {
             throw ReadOnlyFieldException("Read-only fields cannot be updated")
         }
+    }
+
+    /**
+     * Validates the emergency contact input and returns a Pair<name?, phone?>.
+     * - null input → Pair(null, null) → clears the field
+     * - non-null input → both name and phone must be non-blank, name ≤ 100 chars, phone ≤ 30 chars
+     */
+    private fun validateEmergencyContact(input: EmergencyContactInput?): Pair<String?, String?> {
+        if (input == null) {
+            return Pair(null, null)
+        }
+
+        val name = input.name?.trim()
+        val phone = input.phone?.trim()
+
+        if (name.isNullOrBlank() || phone.isNullOrBlank()) {
+            throw InvalidEmergencyContactException("Emergency contact requires both name and phone")
+        }
+
+        if (name.length > 100) {
+            throw InvalidEmergencyContactException("Emergency contact name must be 100 characters or fewer")
+        }
+
+        if (phone.length > 30) {
+            throw InvalidEmergencyContactException("Emergency contact phone must be 30 characters or fewer")
+        }
+
+        return Pair(name, phone)
     }
 
     private fun normalizeOptionalName(
@@ -227,6 +260,7 @@ class UserProfileService(
                 dateOfBirth = null,
                 fitnessGoals = emptyList(),
                 preferredClassTypes = emptyList(),
+                emergencyContact = null,
                 hasProfilePhoto = false,
                 profilePhotoUrl = null,
                 createdAt = user.createdAt,
@@ -235,6 +269,15 @@ class UserProfileService(
         }
 
         val hasProfilePhoto = profile.profilePhotoData != null
+        val emergencyContact = if (profile.emergencyContactName != null && profile.emergencyContactPhone != null) {
+            EmergencyContactDto(
+                name = profile.emergencyContactName!!,
+                phone = profile.emergencyContactPhone!!
+            )
+        } else {
+            null
+        }
+
         return UserProfileResponse(
             userId = user.id,
             email = user.email,
@@ -244,6 +287,7 @@ class UserProfileService(
             dateOfBirth = profile.dateOfBirth,
             fitnessGoals = profile.fitnessGoals.toList(),
             preferredClassTypes = profile.preferredClassTypes.toList(),
+            emergencyContact = emergencyContact,
             hasProfilePhoto = hasProfilePhoto,
             profilePhotoUrl = if (hasProfilePhoto) "/api/v1/profile/me/photo" else null,
             createdAt = profile.createdAt,
@@ -269,3 +313,4 @@ class InvalidPhoneException(message: String) : RuntimeException(message)
 class InvalidDateOfBirthException(message: String) : RuntimeException(message)
 class InvalidFitnessGoalsException(message: String) : RuntimeException(message)
 class InvalidPreferredClassTypesException(message: String) : RuntimeException(message)
+class InvalidEmergencyContactException(message: String) : RuntimeException(message)

@@ -37,6 +37,12 @@ data class UserProfile(
     @Column(name = "preferred_class_types", nullable = false)
     var preferredClassTypes: MutableList<String> = mutableListOf(),
 
+    @Column(name = "emergency_contact_name")
+    var emergencyContactName: String? = null,
+
+    @Column(name = "emergency_contact_phone")
+    var emergencyContactPhone: String? = null,
+
     @JdbcTypeCode(SqlTypes.BINARY)
     @Column(name = "profile_photo_data")
     var profilePhotoData: ByteArray? = null,

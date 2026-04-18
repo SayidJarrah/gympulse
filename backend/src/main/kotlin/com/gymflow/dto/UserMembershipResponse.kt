@@ -4,6 +4,11 @@ import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.UUID
 
+data class PaymentMethodDto(
+    val brand: String,
+    val last4: String
+)
+
 data class UserMembershipResponse(
     val id: UUID,
     val userId: UUID,
@@ -23,5 +28,10 @@ data class UserMembershipResponse(
     val status: String,
     val bookingsUsedThisMonth: Int,
     val maxBookingsPerMonth: Int,
-    val createdAt: OffsetDateTime
+    val createdAt: OffsetDateTime,
+    // Display fields derived for the Membership Control card on the profile page
+    val price: String,
+    val paymentMethod: PaymentMethodDto?,
+    val nextChargeCopy: String,
+    val autoRenew: Boolean
 )

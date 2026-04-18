@@ -19,6 +19,7 @@ export type ProfileFieldName =
   | 'dateOfBirth'
   | 'fitnessGoals'
   | 'preferredClassTypes'
+  | 'emergencyContact'
 
 type ProfileFieldErrors = Partial<Record<ProfileFieldName, string>>
 
@@ -30,6 +31,7 @@ interface ProfileState {
   error: string | null;
   fieldErrors: ProfileFieldErrors;
   successMessage: string | null;
+  toastMessage: string | null;
   fetchMyProfile: () => Promise<void>;
   saveMyProfile: (req: UpdateUserProfileRequest) => Promise<void>;
   uploadPhoto: (file: File) => Promise<void>;
@@ -37,6 +39,7 @@ interface ProfileState {
   ensureProfileLoaded: () => Promise<void>;
   resetProfile: () => void;
   setSuccessMessage: (message: string | null) => void;
+  setToastMessage: (message: string | null) => void;
   clearMessages: () => void;
 }
 
@@ -47,6 +50,7 @@ const FIELD_ERROR_CODES: Partial<Record<string, ProfileFieldName>> = {
   INVALID_DATE_OF_BIRTH: 'dateOfBirth',
   INVALID_FITNESS_GOALS: 'fitnessGoals',
   INVALID_PREFERRED_CLASS_TYPES: 'preferredClassTypes',
+  INVALID_EMERGENCY_CONTACT: 'emergencyContact',
 }
 
 export const useProfileStore = create<ProfileState>((set) => ({
@@ -57,6 +61,7 @@ export const useProfileStore = create<ProfileState>((set) => ({
   error: null,
   fieldErrors: {},
   successMessage: null,
+  toastMessage: null,
 
   fetchMyProfile: async () => {
     set({ isLoading: true, error: null, fieldErrors: {}, successMessage: null })
@@ -93,6 +98,7 @@ export const useProfileStore = create<ProfileState>((set) => ({
         avatarUrl: nextAvatar,
         isSaving: false,
         successMessage: 'Profile updated.',
+        toastMessage: 'Profile updated.',
       })
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>
@@ -129,6 +135,7 @@ export const useProfileStore = create<ProfileState>((set) => ({
         avatarUrl: nextAvatar,
         isSaving: false,
         successMessage: 'Photo updated.',
+        toastMessage: 'Photo updated.',
       })
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>
@@ -153,6 +160,7 @@ export const useProfileStore = create<ProfileState>((set) => ({
         avatarUrl: null,
         isSaving: false,
         successMessage: 'Photo removed.',
+        toastMessage: 'Photo removed.',
       })
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>
@@ -183,12 +191,15 @@ export const useProfileStore = create<ProfileState>((set) => ({
       error: null,
       fieldErrors: {},
       successMessage: null,
+      toastMessage: null,
     })
   },
 
   setSuccessMessage: (message) => set({ successMessage: message }),
 
-  clearMessages: () => set({ error: null, fieldErrors: {}, successMessage: null }),
+  setToastMessage: (message) => set({ toastMessage: message }),
+
+  clearMessages: () => set({ error: null, fieldErrors: {}, successMessage: null, toastMessage: null }),
 }))
 
 async function loadAvatarUrl(profile: UserProfile, currentAvatar: string | null): Promise<string | null> {

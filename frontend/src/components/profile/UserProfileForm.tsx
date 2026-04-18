@@ -58,6 +58,8 @@ const userProfileFormSchema = z.object({
   dateOfBirth: dateSchema,
   fitnessGoals: chipListSchema,
   preferredClassTypes: chipListSchema,
+  emergencyContactName: z.string(),
+  emergencyContactPhone: z.string(),
 })
 
 type UserProfileFormValues = z.infer<typeof userProfileFormSchema>
@@ -87,6 +89,8 @@ function defaultValuesFromProfile(profile: UserProfile): UserProfileFormValues {
     dateOfBirth: profile.dateOfBirth ?? '',
     fitnessGoals: profile.fitnessGoals,
     preferredClassTypes: profile.preferredClassTypes,
+    emergencyContactName: profile.emergencyContact?.name ?? '',
+    emergencyContactPhone: profile.emergencyContact?.phone ?? '',
   }
 }
 
@@ -205,6 +209,9 @@ export function UserProfileForm({
       setPhotoStatus(null)
       setPhotoStatusTone('default')
 
+      const ecName = normalizeOptionalText(values.emergencyContactName)
+      const ecPhone = normalizeOptionalText(values.emergencyContactPhone)
+      const emergencyContact = ecName && ecPhone ? { name: ecName, phone: ecPhone } : null
       await onSubmit({
         firstName: normalizeOptionalText(values.firstName),
         lastName: normalizeOptionalText(values.lastName),
@@ -212,6 +219,7 @@ export function UserProfileForm({
         dateOfBirth: normalizeOptionalText(values.dateOfBirth),
         fitnessGoals: values.fitnessGoals,
         preferredClassTypes: values.preferredClassTypes,
+        emergencyContact,
       })
 
       if (!queuedPhoto) {
@@ -420,6 +428,42 @@ export function UserProfileForm({
               {errors.dateOfBirth.message}
             </p>
           )}
+        </div>
+      </div>
+
+      {/* Emergency contact */}
+      <div className="flex flex-col gap-3">
+        <div>
+          <p className="text-sm font-semibold text-gray-200">Emergency contact <span className="font-normal text-gray-500">(optional)</span></p>
+          <p className="mt-0.5 text-xs text-gray-400">Both name and phone are required if you enter an emergency contact.</p>
+          {fieldErrors.emergencyContact && (
+            <p className="mt-1 text-xs text-red-400" role="alert">{fieldErrors.emergencyContact}</p>
+          )}
+        </div>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="flex flex-col gap-2">
+            <label htmlFor="profile-ec-name" className="text-sm text-gray-300">Name</label>
+            <input
+              id="profile-ec-name"
+              type="text"
+              placeholder="e.g. Sam Reyes"
+              disabled={isSaving}
+              className="w-full rounded-xl border border-gray-700 bg-gray-950/70 px-4 py-3 text-sm text-white placeholder:text-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-green-500 disabled:cursor-not-allowed disabled:opacity-70"
+              {...register('emergencyContactName')}
+            />
+          </div>
+          <div className="flex flex-col gap-2">
+            <label htmlFor="profile-ec-phone" className="text-sm text-gray-300">Phone</label>
+            <input
+              id="profile-ec-phone"
+              type="tel"
+              inputMode="tel"
+              placeholder="e.g. (347) 555-0122"
+              disabled={isSaving}
+              className="w-full rounded-xl border border-gray-700 bg-gray-950/70 px-4 py-3 text-sm text-white placeholder:text-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-green-500 disabled:cursor-not-allowed disabled:opacity-70"
+              {...register('emergencyContactPhone')}
+            />
+          </div>
         </div>
       </div>
 

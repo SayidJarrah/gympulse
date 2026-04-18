@@ -26,6 +26,7 @@ import com.gymflow.service.InvalidImageFormatException
 import com.gymflow.service.InvalidLastNameException
 import com.gymflow.service.InvalidPhoneException
 import com.gymflow.service.InvalidPreferredClassTypesException
+import com.gymflow.service.InvalidEmergencyContactException
 import com.gymflow.service.InvalidScheduleViewException
 import com.gymflow.service.InvalidSlotException
 import com.gymflow.service.InvalidStatusFilterException
@@ -323,6 +324,18 @@ class GlobalExceptionHandler {
                 ErrorResponse(
                     error = "Preferred class types must contain up to 5 items, each 1 to 50 characters long.",
                     code = "INVALID_PREFERRED_CLASS_TYPES"
+                )
+            )
+    }
+
+    @ExceptionHandler(InvalidEmergencyContactException::class)
+    fun handleInvalidEmergencyContact(ex: InvalidEmergencyContactException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(
+                ErrorResponse(
+                    error = "Emergency contact requires a valid name (up to 100 characters) and phone (up to 30 characters).",
+                    code = "INVALID_EMERGENCY_CONTACT"
                 )
             )
     }

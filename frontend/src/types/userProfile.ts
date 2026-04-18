@@ -1,3 +1,8 @@
+export interface EmergencyContact {
+  name: string;
+  phone: string;
+}
+
 export interface UserProfile {
   userId: string;
   email: string;
@@ -7,6 +12,7 @@ export interface UserProfile {
   dateOfBirth: string | null;
   fitnessGoals: string[];
   preferredClassTypes: string[];
+  emergencyContact: EmergencyContact | null;
   hasProfilePhoto: boolean;
   profilePhotoUrl: string | null;
   createdAt: string;
@@ -20,4 +26,5 @@ export interface UpdateUserProfileRequest {
   dateOfBirth: string | null;
   fitnessGoals: string[];
   preferredClassTypes: string[];
+  emergencyContact: EmergencyContact | null;
 }
