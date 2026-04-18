@@ -29,3 +29,7 @@ frontend/playwright-report/
 
 # Git worktrees
 .worktrees/
+
+#demo-seeder
+demo-seeder/dist
+demo-seeder/node_modules
