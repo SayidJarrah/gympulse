@@ -2,7 +2,7 @@
 
 ## Blockers (must fix before PR)
 
-- [ ] `frontend/src/components/schedule/MyBookingsDrawer.tsx:263` — `disabled={!booking.isCancellable}` on the Cancel booking button uses the HTML `disabled` attribute. The design spec (spec.md §Accessibility) explicitly forbids this: "Disabled cancel button sets `aria-disabled='true'` and `title='Cancellation closes 2 hours before class start'` — not `disabled` attribute, so tooltip is accessible to keyboard users." The react-conventions skill also documents this as a hard rule. Replace with `aria-disabled="true"` on the button, a wrapping `<span title="Cancellation closes 2 hours before class start">`, and an `onClick` guard (`onClick={booking.isCancellable ? () => onCancelBooking(booking) : undefined}`) plus `pointer-events-none` when locked. The `MyBookingsPage.tsx` implementation correctly uses conditional rendering with no disabled attribute — the drawer must match.
+- [x] `frontend/src/components/schedule/MyBookingsDrawer.tsx:263` — `disabled={!booking.isCancellable}` on the Cancel booking button uses the HTML `disabled` attribute. The design spec (spec.md §Accessibility) explicitly forbids this: "Disabled cancel button sets `aria-disabled='true'` and `title='Cancellation closes 2 hours before class start'` — not `disabled` attribute, so tooltip is accessible to keyboard users." The react-conventions skill also documents this as a hard rule. Replace with `aria-disabled="true"` on the button, a wrapping `<span title="Cancellation closes 2 hours before class start">`, and an `onClick` guard (`onClick={booking.isCancellable ? () => onCancelBooking(booking) : undefined}`) plus `pointer-events-none` when locked. The `MyBookingsPage.tsx` implementation correctly uses conditional rendering with no disabled attribute — the drawer must match. — FIXED: replaced `disabled` with `aria-disabled`, wrapped button in `<span>` with conditional `title` tooltip, guarded `onClick`, and added `pointer-events-none` + muted styling when locked.
 
 ## Suggestions (non-blocking)
 
@@ -18,4 +18,4 @@
 
 ## Verdict
 
-BLOCKED — 1 blocker
+APPROVED
