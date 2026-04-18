@@ -346,3 +346,31 @@ Feature: seeder-presets
 Added: 2026-04-13
 Effort: S
 `referenceSeeder.ts:291` calls `upsertClassTemplatesV13(5)` with a hardcoded `5`. The value is correct (V13 always seeds in full) but the literal is an invisible coupling to the length of `V13_CLASS_TEMPLATES`. A future developer extending the V13 array would not see this call site as needing an update. Replace with `V13_CLASS_TEMPLATES.length` or a named constant `V13_TEMPLATE_COUNT` to make the invariant self-documenting.
+
+## TD-048 — MyBookingsPage fetches all bookings client-side with size=100
+Source: docs/reviews/class-booking-20260418.md
+Feature: class-booking
+Added: 2026-04-18
+Effort: M
+`MyBookingsPage.tsx:37` calls `fetchMyBookings({ page: 0, size: 100 })` and performs grouping and status filtering entirely in memory. For members with large booking histories this will grow unbounded and degrade on slow connections. Switch to server-side pagination: two separate `GET /api/v1/bookings/me` calls with `status=CONFIRMED` (sorted asc) and `status=CANCELLED` (sorted desc), each with a small page size and a `< Prev / Next >` control per section.
+
+## TD-049 — formatDateTime duplicated across AdminUserBookingHistoryPanel and AdminAttendeeListPanel
+Source: docs/reviews/class-booking-20260418.md
+Feature: class-booking
+Added: 2026-04-18
+Effort: S
+`formatDateTime` is defined identically in both `frontend/src/components/admin/AdminUserBookingHistoryPanel.tsx` and `frontend/src/components/scheduler/AdminAttendeeListPanel.tsx`. Extract to `frontend/src/utils/scheduleFormatters.ts` (or a new `adminFormatters.ts`) to ensure the two admin surfaces stay in sync and to avoid a silent divergence if one is ever updated.
+
+## TD-050 — AdminAttendeeListPanel status parameter comment missing
+Source: docs/reviews/class-booking-20260418.md
+Feature: class-booking
+Added: 2026-04-18
+Effort: S
+`AdminAttendeeListPanel.tsx:11` hard-codes `status: 'CONFIRMED'`, which is correct per SDD scope but is invisible to maintainers. Add a brief inline comment — "SDD §2: admin attendee list defaults to CONFIRMED only; filter control is out of scope for this delivery" — to prevent a future developer from treating the hard-coded value as an accidental omission.
+
+## TD-051 — MyBookingsDrawer empty state is missing illustration and helper copy
+Source: docs/reviews/class-booking-20260418.md
+Feature: class-booking
+Added: 2026-04-18
+Effort: S
+`MyBookingsDrawer.tsx` renders a plain `No bookings yet.` text row for the empty state. The design spec (spec.md §MyBookingsDrawer states) requires a `CalendarIcon h-8 w-8 text-gray-600` illustration and the helper line `Book a class from the schedule above.`. Add the icon and helper text to match the spec's delight-quality empty state.
