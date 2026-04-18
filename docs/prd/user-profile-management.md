@@ -26,16 +26,19 @@ profile.
 - `dateOfBirth` - editable
 - `fitnessGoals` - editable list of short free-text goals
 - `preferredClassTypes` - editable list of short free-text preferences
+- `emergencyContact` - optional object with `name` and `phone` (added in member-profile-redesign, 2026-04-18)
 
 ## Goals
 - Allow authenticated users to view and update their own personal profile without
   admin or front-desk intervention.
 - Capture the minimum set of profile data that fitness users reasonably expect in a
-  gym portal: name, contact details, and lightweight goals/preferences.
+  gym portal: name, contact details, lightweight goals/preferences, and an emergency contact.
 - Keep authentication identity stable by making `email` visible but read-only in this
   feature.
 - Avoid collecting unnecessary sensitive data while still creating a foundation for
   later personalization features.
+- Surface membership status, booking usage, and renewal information on the profile page
+  so members have a single destination for account management (added 2026-04-18).
 
 ## User Roles Involved
 - **User** (authenticated `USER` role) - can view and edit only their own profile.
@@ -54,8 +57,13 @@ profile.
   reflect my intent and support future personalization.
 - As an authenticated user, I want to add my preferred class types so that my profile
   better matches the activities I am interested in.
+- As an authenticated user, I want to record an emergency contact name and phone so
+  that the gym has someone to call if needed.
 - As an authenticated user, I want my changes to be saved and visible the next time I
   visit the profile page so that I trust the system.
+- As an authenticated user, I want to see my membership plan, booking usage, and renewal
+  date on my profile page so that I do not have to navigate to a separate page for that
+  information (added 2026-04-18).
 
 ### Edge Case Stories
 - As an unauthenticated visitor, I want to be prevented from viewing profile data so
@@ -127,15 +135,26 @@ profile.
     as `null`, the field is stored as `null`.
 21. If a user clears an optional list field (`fitnessGoals`, `preferredClassTypes`) by
     submitting an empty array, the field is stored as an empty array.
+22. `emergencyContact` is optional. If provided, both `name` and `phone` must be non-blank
+    strings (name ≤ 100 chars, phone ≤ 30 chars); otherwise the server returns HTTP 400
+    with error code `INVALID_EMERGENCY_CONTACT`. Submitting `null` clears the field.
+    (Added 2026-04-18)
+23. The profile page at `/profile` displays the member's active membership plan name,
+    booking usage bar, renewal date, and price in a Membership Control card alongside
+    the Personal Information card. (Added 2026-04-18)
+24. The profile page includes Account Actions — sign out, change password, cancel
+    membership — in a full-width row below the two-column grid. Cancel membership
+    opens a confirmation dialog before firing the mutation. (Added 2026-04-18)
 
 ## Out of Scope (for this version)
 - Changing login identity fields such as `email` or `password` - that belongs to the
   Auth/account-management space.
-- Profile photo or avatar upload.
-- Address, emergency contact, medical history, injury notes, waiver data, or other
-  high-sensitivity PII.
-- Membership status widgets, renewal actions, or purchase flows - covered by the User
-  Access Flow and Membership features.
+- Profile photo or avatar upload — shipped as part of original feature; change photo
+  button on profile page is wired.
+- Medical history, injury notes, waiver data, or other high-sensitivity PII.
+- Membership pause flow — deferred (stub toast only in this iteration).
+- Change plan flow — navigates to `/pricing?intent=change` (existing pricing page).
+- Update payment method — deferred (stub toast only; Stripe integration out of scope).
 - Attendance history, booking history, or activity timeline.
 - Favorites, saved trainers, or recommendation logic based on goals/preferences.
 - Admin viewing or editing user profiles.
