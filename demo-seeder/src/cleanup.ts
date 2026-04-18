@@ -1,5 +1,6 @@
 import { pgPool, getTrackedIds, clearTracking } from './db';
 import { MEMBERSHIP_PLANS } from './data/membershipPlans';
+import { V13_ROOMS } from './data/rooms';
 
 export interface CleanupResult {
   deletedClassInstances: number;
@@ -12,14 +13,9 @@ export interface CleanupResult {
   deletedQaUsers: number;
 }
 
-const SEEDED_ROOM_NAMES = [
-  'Studio A',
-  'Studio B',
-  'Weight Room',
-  'Functional Space',
-  'Outdoor Terrace',
-  'Recovery Suite',
-];
+// Derive room names from the seeder's source-of-truth list so a change
+// in one file does not leave rooms orphaned after cleanup.
+const SEEDED_ROOM_NAMES = V13_ROOMS.map((r) => r.name);
 
 const SEEDED_PLAN_IDS = MEMBERSHIP_PLANS.map((p) => p.id);
 

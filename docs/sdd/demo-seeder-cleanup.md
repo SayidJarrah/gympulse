@@ -71,6 +71,8 @@ This sweep runs unconditionally after the tracked-ID deletes, even when SQLite h
 
 The safety-net does not return a count in the response body (tracked deletes are sufficient for operator feedback).
 
+**Reference-data lists — single source of truth:** `SEEDED_ROOM_NAMES` in `cleanup.ts` is derived from `V13_ROOMS` (the list the reference seeder inserts). Cleanup must never hard-code a parallel list of room names, plan IDs, trainer emails, or class template names — use the same constants the seeder uses so renames in one file cannot leave orphaned rows.
+
 **On error:** The transaction rolls back entirely. `clearTracking()` is NOT called if the transaction fails — SQLite retains the tracked IDs so a retry is possible.
 
 ---
