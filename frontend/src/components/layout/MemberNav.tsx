@@ -34,7 +34,7 @@ export function MemberNav() {
   const initial = user?.email.slice(0, 2).toUpperCase() ?? 'ME'
 
   return (
-    <nav className="relative z-10 flex items-center justify-between border-b border-[#1F2937] px-10 py-5">
+    <nav className="relative z-10 flex items-center justify-between border-b border-[#1F2937] px-10 py-5" aria-label="Main">
       {/* Logo */}
       <Link
         to="/home"
@@ -73,7 +73,7 @@ export function MemberNav() {
           <button
             type="button"
             aria-expanded={bookOpen}
-            aria-haspopup="true"
+            aria-haspopup="menu"
             onClick={() => { setBookOpen(o => !o); setAvatarOpen(false) }}
             className="flex items-center gap-1 text-[13px] font-medium tracking-[0.02em] text-[#D1D5DB] transition-colors duration-200 hover:text-white"
           >
@@ -123,7 +123,7 @@ export function MemberNav() {
             type="button"
             aria-label="Account menu"
             aria-expanded={avatarOpen}
-            aria-haspopup="true"
+            aria-haspopup="menu"
             onClick={() => { setAvatarOpen(o => !o); setBookOpen(false) }}
             className="inline-flex items-center gap-2.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 pl-1.5 transition-colors duration-150 hover:bg-white/[0.08]"
           >
