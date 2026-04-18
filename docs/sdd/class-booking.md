@@ -2,7 +2,7 @@
 
 ## Reference
 - PRD: `docs/prd/class-booking.md`
-- Design: `docs/design/class-booking.md`
+- Design: `docs/design-system/handoffs/class-booking/` (spec + prototype)
 - Date: 2026-04-18
 - Supersedes: `docs/sdd/class-booking-cancellation.md` (all sections of that document are superseded by this one and must not be used as implementation guidance)
 
