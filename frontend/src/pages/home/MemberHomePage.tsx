@@ -1,167 +1,174 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
-import { Navbar } from '../../components/layout/Navbar'
-import { ClassPreviewCarousel } from '../../components/home/ClassPreviewCarousel'
-import { MemberHomeHero } from '../../components/home/MemberHomeHero'
-import { MembershipAccessBanner } from '../../components/home/MembershipAccessBanner'
-import { MembershipPrimaryCard } from '../../components/home/MembershipPrimaryCard'
-import { QuickActionsPanel } from '../../components/home/QuickActionsPanel'
-import { TrainerPreviewCarousel } from '../../components/home/TrainerPreviewCarousel'
-import { useMemberHomeClassesPreview } from '../../hooks/useMemberHomeClassesPreview'
-import { useMemberHomeMembershipSection } from '../../hooks/useMemberHomeMembershipSection'
-import { useMemberHomeTrainerPreview } from '../../hooks/useMemberHomeTrainerPreview'
+import { useState } from 'react'
+import { PulseNav } from '../../components/landing/PulseNav'
+import { PulseFooter } from '../../components/landing/PulseFooter'
+import { AmbientWaveform } from '../../components/landing/AmbientWaveform'
+import { ActivityFeed } from '../../components/landing/ActivityFeed'
+import { HomeHero } from '../../components/home/HomeHero'
+import { MemberStats } from '../../components/home/MemberStats'
+import { UpcomingSection } from '../../components/home/UpcomingSection'
+import { MembershipSection } from '../../components/home/MembershipSection'
+import { CancelBookingDialog } from '../../components/home/CancelBookingDialog'
+import { BookingToast } from '../../components/schedule/BookingToast'
+import { useHomePage } from '../../hooks/useHomePage'
 import { usePageMeta } from '../../hooks/usePageMeta'
-import {
-  buildPlansPath,
-  getMembershipBanner,
-  withoutMembershipBanner,
-  type MembershipBanner,
-} from '../../utils/accessFlowNavigation'
 
-const PAGE_TITLE = 'GymFlow | Member Home'
+const PAGE_TITLE = 'GymFlow | Home'
 const PAGE_DESCRIPTION =
-  'Review your membership status, browse trainers, and preview the next group classes from one member-focused home surface.'
+  "Your member home — next booked class, upcoming sessions, membership status, and what's happening at the club right now."
 
 export function MemberHomePage() {
-  const navigate = useNavigate()
-  const location = useLocation()
-  const classesSectionRef = useRef<HTMLElement | null>(null)
-  const [banner, setBanner] = useState<MembershipBanner | null>(null)
-
   const {
-    membership,
-    availablePlans,
-    mode,
-    error,
-    planTeasersError,
-    planTeasersLoading,
-    retry: retryMembership,
-  } = useMemberHomeMembershipSection()
-  const trainerPreview = useMemberHomeTrainerPreview()
-  const classesPreview = useMemberHomeClassesPreview()
+    firstName,
+    onTheFloor,
+    nextBookedClass,
+    upcomingBookings,
+    upcomingLoading,
+    bookingsUsed,
+    bookingsMax,
+    renewsAt,
+    renewsInDays,
+    planName,
+    membershipStatus,
+    membershipLoading,
+    feedEvents,
+    feedActiveIndex,
+    cancelNextBooking,
+    cancellingBooking,
+  } = useHomePage()
 
-  usePageMeta({
-    title: PAGE_TITLE,
-    description: PAGE_DESCRIPTION,
-  })
+  const [showCancelDialog, setShowCancelDialog] = useState(false)
+  const [toast, setToast] = useState<{ kind: 'success' | 'error'; message: string } | null>(null)
 
-  useEffect(() => {
-    const searchParams = new URLSearchParams(location.search)
-    const membershipBanner = getMembershipBanner(searchParams)
+  usePageMeta({ title: PAGE_TITLE, description: PAGE_DESCRIPTION })
 
-    if (!membershipBanner) {
-      return
+  const handleCancelRequest = () => {
+    setShowCancelDialog(true)
+  }
+
+  const handleCancelConfirm = async () => {
+    const className = nextBookedClass?.className ?? 'class'
+    try {
+      await cancelNextBooking()
+      setShowCancelDialog(false)
+      setToast({ kind: 'success', message: `Cancelled ${className}` })
+    } catch {
+      setShowCancelDialog(false)
+      setToast({ kind: 'error', message: 'Failed to cancel. Please try again.' })
     }
-
-    setBanner(membershipBanner)
-
-    const nextSearchParams = withoutMembershipBanner(searchParams)
-    const search = nextSearchParams.toString()
-
-    navigate(
-      {
-        pathname: location.pathname,
-        search: search ? `?${search}` : '',
-        hash: location.hash,
-      },
-      { replace: true }
-    )
-  }, [location.hash, location.pathname, location.search, navigate])
-
-  const heroStats = useMemo(() => {
-    if (membership) {
-      return [
-        { label: 'Status', value: 'Active member' },
-        {
-          label: 'Bookings left',
-          value: `${Math.max(membership.maxBookingsPerMonth - membership.bookingsUsedThisMonth, 0)} this month`,
-        },
-      ]
-    }
-
-    if (mode === 'loading') {
-      return [
-        { label: 'Portal', value: 'Loading status' },
-        { label: 'Access', value: 'Checking membership' },
-      ]
-    }
-
-    return [
-      { label: 'Portal', value: 'Membership activation ready' },
-      { label: 'Access', value: 'Browse before you commit' },
-    ]
-  }, [membership, mode])
-
-  const firstName = membership?.userFirstName ?? null
+  }
 
   return (
     <div
-      className="min-h-screen overflow-x-hidden bg-[#0F0F0F] text-white"
+      className="flex min-h-screen flex-col bg-[#0F0F0F] text-white"
       data-testid="member-home-root"
     >
-      <Navbar />
+      <PulseNav authed userName={firstName ?? undefined} />
 
-      <main className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 sm:px-6 lg:px-8">
-        <section id="membership" className="scroll-mt-24">
-          <div className="flex flex-col gap-4">
-            {banner ? <MembershipAccessBanner banner={banner} /> : null}
-            <MembershipPrimaryCard
-              membership={membership}
-              availablePlans={availablePlans}
-              mode={mode}
-              errorMessage={error}
-              planTeasersLoading={planTeasersLoading}
-              planTeasersError={planTeasersError}
-              onRetryMembership={() => {
-                void retryMembership()
-              }}
-              onManageMembership={() => navigate('/membership')}
-              onExploreClasses={() => navigate('/schedule')}
-              onBrowseTrainers={() => navigate('/trainers')}
-              browsePlansHref={buildPlansPath({ source: 'home' })}
-              getPlanHref={(planId) => buildPlansPath({ source: 'home', highlight: planId })}
+      <main
+        className="relative flex-1 overflow-hidden px-10 pb-12 pt-10"
+        style={{ position: 'relative' }}
+      >
+        {/* Ambient radial green glow — top-left */}
+        <div
+          className="pointer-events-none absolute -left-[5%] -top-[10%] h-[600px] w-[800px]"
+          style={{
+            background: 'radial-gradient(circle, rgba(34,197,94,0.13), transparent 60%)',
+            filter: 'blur(40px)',
+            zIndex: 0,
+          }}
+          aria-hidden="true"
+        />
+
+        {/* Ambient waveform SVG */}
+        <div
+          className="pointer-events-none absolute left-0 right-0 overflow-hidden"
+          style={{ top: 60, height: 400, zIndex: 1 }}
+          aria-hidden="true"
+        >
+          <AmbientWaveform />
+        </div>
+
+        {/* Page content */}
+        <div
+          className="relative mx-auto w-full max-w-[1440px]"
+          style={{ zIndex: 2 }}
+        >
+          {/* Hero row: left=countdown, right=activity feed */}
+          <div
+            className="grid min-h-[440px] items-stretch"
+            style={{ gridTemplateColumns: '1.3fr 1fr', gap: 40 }}
+          >
+            <div className="flex flex-col justify-center">
+              <HomeHero
+                firstName={firstName}
+                nextBookedClass={nextBookedClass}
+                onTheFloor={onTheFloor}
+                onCancelBooking={handleCancelRequest}
+                cancellingBooking={cancellingBooking}
+              />
+            </div>
+            <div className="flex flex-col justify-center">
+              <ActivityFeed
+                events={feedEvents}
+                activeIndex={feedActiveIndex}
+                mode="club"
+              />
+            </div>
+          </div>
+
+          {/* Stats strip */}
+          <div className="mt-9">
+            <MemberStats
+              bookingsUsed={bookingsUsed}
+              bookingsMax={bookingsMax}
+              renewsAt={renewsAt}
+              renewsInDays={renewsInDays}
+              loading={membershipLoading}
             />
           </div>
-        </section>
 
-        <MemberHomeHero
-          firstName={firstName}
-          hasActiveMembership={membership !== null}
-          activePlanName={membership?.planName ?? null}
-          stats={heroStats}
-        />
-
-        <QuickActionsPanel
-          hasActiveMembership={membership !== null}
-          onScrollToClasses={() => {
-            classesSectionRef.current?.scrollIntoView({
-              behavior: 'smooth',
-              block: 'start',
-            })
-          }}
-        />
-
-        <TrainerPreviewCarousel
-          trainers={trainerPreview.data}
-          loading={trainerPreview.loading}
-          errorMessage={trainerPreview.error}
-          onRetry={() => {
-            void trainerPreview.retry()
-          }}
-        />
-
-        <section ref={classesSectionRef}>
-          <ClassPreviewCarousel
-            entries={classesPreview.data?.entries ?? []}
-            timeZone={classesPreview.data?.timeZone ?? classesPreview.timeZone}
-            loading={classesPreview.loading}
-            errorMessage={classesPreview.error}
-            onRetry={() => {
-              void classesPreview.retry()
-            }}
-          />
-        </section>
+          {/* Bottom row: upcoming + membership */}
+          <div
+            className="mt-6 grid"
+            style={{ gridTemplateColumns: '1.4fr 1fr', gap: 20 }}
+          >
+            <UpcomingSection
+              bookings={upcomingBookings}
+              loading={upcomingLoading}
+            />
+            <MembershipSection
+              planName={planName}
+              status={membershipStatus}
+              bookingsUsed={bookingsUsed}
+              bookingsMax={bookingsMax}
+              renewsAt={renewsAt}
+              renewsInDays={renewsInDays}
+              loading={membershipLoading}
+            />
+          </div>
+        </div>
       </main>
+
+      <PulseFooter />
+
+      {/* Cancel booking confirm dialog */}
+      {showCancelDialog && nextBookedClass && (
+        <CancelBookingDialog
+          className={nextBookedClass.className}
+          onConfirm={() => { void handleCancelConfirm() }}
+          onCancel={() => setShowCancelDialog(false)}
+          loading={cancellingBooking}
+        />
+      )}
+
+      {/* Toast notification */}
+      {toast && (
+        <BookingToast
+          kind={toast.kind}
+          message={toast.message}
+          onDismiss={() => setToast(null)}
+        />
+      )}
     </div>
   )
 }

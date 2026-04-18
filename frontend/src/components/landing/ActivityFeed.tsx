@@ -37,15 +37,27 @@ function formatRelative(isoAt: string): string {
 interface Props {
   events: ActivityEvent[];
   activeIndex: number;
+  /** "loggedOut" → "Live at the club", "club" → "At the club", default → "Activity" */
+  mode?: 'loggedOut' | 'club' | 'authed';
+  /** @deprecated Use mode="loggedOut" instead */
   isLoggedOut?: boolean;
 }
 
-export function ActivityFeed({ events, activeIndex, isLoggedOut = false }: Props) {
+function eyebrowLabel(mode: 'loggedOut' | 'club' | 'authed'): string {
+  if (mode === 'loggedOut') return 'Live at the club'
+  if (mode === 'club') return 'At the club'
+  return 'Activity'
+}
+
+export function ActivityFeed({ events, activeIndex, mode, isLoggedOut = false }: Props) {
   const reduced = useReducedMotion()
+  const resolvedMode: 'loggedOut' | 'club' | 'authed' =
+    mode ?? (isLoggedOut ? 'loggedOut' : 'authed')
 
   return (
     <div
       className="relative max-h-[460px] overflow-hidden rounded-2xl border border-[#1F2937] bg-white/[0.02] px-6 pb-2 pt-6"
+      role="log"
       aria-live="polite"
       aria-atomic="false"
       aria-label="Live activity feed"
@@ -53,7 +65,7 @@ export function ActivityFeed({ events, activeIndex, isLoggedOut = false }: Props
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
         <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#6B7280] whitespace-nowrap">
-          {isLoggedOut ? 'Live at the club' : 'Activity'}
+          {eyebrowLabel(resolvedMode)}
         </p>
         <div className="flex items-center gap-1.5 text-[11px] text-[#4ADE80]">
           <span

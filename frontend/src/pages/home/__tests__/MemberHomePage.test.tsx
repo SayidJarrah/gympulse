@@ -1,142 +1,117 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
-import { MemoryRouter, useLocation } from 'react-router-dom'
+import { MemoryRouter } from 'react-router-dom'
 import { MemberHomePage } from '../MemberHomePage'
 import { useMembershipStore } from '../../../store/membershipStore'
-import type { MemberHomeClassPreviewResponse } from '../../../types/memberHome'
-import type { MembershipPlan } from '../../../types/membershipPlan'
-import type { TrainerDiscoveryResponse } from '../../../types/trainerDiscovery'
 import type { UserMembership } from '../../../types/userMembership'
-import {
-  getMemberHomeClassesPreview,
-  getMemberHomePlanTeasers,
-  getMemberHomeTrainerPreview,
-} from '../../../api/memberHome'
-import { getMyMembership } from '../../../api/memberships'
+import type { PaginatedBookingsResponse } from '../../../types/booking'
 
-vi.mock('../../../api/memberHome', () => ({
-  getMemberHomeClassesPreview: vi.fn(),
-  getMemberHomePlanTeasers: vi.fn(),
-  getMemberHomeTrainerPreview: vi.fn(),
-}))
+// ---------------------------------------------------------------------------
+// Module mocks
+// ---------------------------------------------------------------------------
 
 vi.mock('../../../api/memberships', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../../api/memberships')>()
+  return { ...actual, getMyMembership: vi.fn() }
+})
+
+vi.mock('../../../api/bookings', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../api/bookings')>()
+  return { ...actual, getMyBookings: vi.fn(), cancelBooking: vi.fn() }
+})
+
+vi.mock('../../../api/landing', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../api/landing')>()
   return {
     ...actual,
-    getMyMembership: vi.fn(),
+    fetchActivityFeed: vi.fn().mockResolvedValue([]),
+    createActivityStream: vi.fn().mockReturnValue({ close: vi.fn() }),
   }
 })
 
-vi.mock('../../../hooks/useScheduleTimeZone', () => ({
-  useScheduleTimeZone: () => 'UTC',
-}))
+// ---------------------------------------------------------------------------
+// Imported mocks
+// ---------------------------------------------------------------------------
 
-vi.mock('../../../components/layout/Navbar', () => ({
-  Navbar: () => <div data-testid="navbar" />,
-}))
+import { getMyMembership } from '../../../api/memberships'
+import { getMyBookings } from '../../../api/bookings'
 
 const mockedGetMyMembership = vi.mocked(getMyMembership)
-const mockedGetMemberHomePlanTeasers = vi.mocked(getMemberHomePlanTeasers)
-const mockedGetMemberHomeTrainerPreview = vi.mocked(getMemberHomeTrainerPreview)
-const mockedGetMemberHomeClassesPreview = vi.mocked(getMemberHomeClassesPreview)
+const mockedGetMyBookings = vi.mocked(getMyBookings)
+
+// ---------------------------------------------------------------------------
+// Fixtures
+// ---------------------------------------------------------------------------
 
 const activeMembership: UserMembership = {
   id: 'membership-1',
   userId: 'user-1',
   userEmail: 'member@example.com',
-  userFirstName: 'Daria',
-  userLastName: 'Korn',
+  userFirstName: 'Dana',
+  userLastName: 'Reeves',
   userPhone: null,
   userDateOfBirth: null,
-  userFitnessGoals: ['Strength'],
-  userPreferredClassTypes: ['Yoga'],
+  userFitnessGoals: [],
+  userPreferredClassTypes: [],
   userHasProfilePhoto: false,
   userProfilePhotoUrl: null,
   planId: 'plan-1',
-  planName: 'Monthly Plus',
-  startDate: '2026-04-01',
-  endDate: '2026-05-01',
+  planName: 'Quarterly',
+  startDate: '2026-02-01',
+  endDate: '2026-05-02',
   status: 'ACTIVE',
-  bookingsUsedThisMonth: 2,
-  maxBookingsPerMonth: 10,
-  createdAt: '2026-04-01T09:00:00Z',
+  bookingsUsedThisMonth: 4,
+  maxBookingsPerMonth: 12,
+  createdAt: '2026-02-01T09:00:00Z',
 }
 
-const teaserPlan: MembershipPlan = {
-  id: 'plan-2',
-  name: 'Starter',
-  description: 'A short route back into the club.',
-  priceInCents: 3900,
-  durationDays: 30,
-  maxBookingsPerMonth: 6,
-  status: 'ACTIVE',
-  createdAt: '2026-04-01T10:00:00Z',
-  updatedAt: '2026-04-01T10:00:00Z',
+const futureBooking = {
+  id: 'booking-1',
+  userId: 'user-1',
+  classId: 'class-1',
+  status: 'CONFIRMED' as const,
+  bookedAt: '2026-04-17T10:00:00Z',
+  cancelledAt: null,
+  className: 'Morning Flow Yoga',
+  scheduledAt: new Date(Date.now() + 2 * 3_600_000).toISOString(), // 2h from now
+  durationMin: 60,
+  trainerNames: ['Priya Mendes'],
+  classPhotoUrl: null,
+  isCancellable: true,
+  cancellationCutoffAt: new Date(Date.now() + 3_600_000).toISOString(),
 }
 
-const trainerPreview: TrainerDiscoveryResponse[] = [
-  {
-    id: 'trainer-1',
-    firstName: 'Jane',
-    lastName: 'Smith',
-    profilePhotoUrl: null,
-    specializations: ['Yoga', 'Pilates'],
-    experienceYears: 8,
-    classCount: 6,
-    isFavorited: false,
-  },
-]
-
-const classesPreview: MemberHomeClassPreviewResponse = {
-  timeZone: 'UTC',
-  rangeStartDate: '2026-04-04',
-  rangeEndDateExclusive: '2026-04-18',
-  entries: [
-    {
-      id: 'class-1',
-      name: 'Yoga Flow',
-      scheduledAt: '2026-04-05T16:00:00Z',
-      localDate: '2026-04-05',
-      durationMin: 60,
-      trainerDisplayName: 'Jane Smith',
-      classPhotoUrl: null,
-    },
-  ],
+const emptyBookings: PaginatedBookingsResponse = {
+  content: [],
+  totalElements: 0,
+  totalPages: 0,
+  number: 0,
+  size: 0,
 }
 
-function noMembershipError() {
-  return {
-    response: {
-      data: {
-        code: 'NO_ACTIVE_MEMBERSHIP',
-        error: 'No active membership found.',
-      },
-    },
-  }
+const oneBooking: PaginatedBookingsResponse = {
+  content: [futureBooking],
+  totalElements: 1,
+  totalPages: 1,
+  number: 0,
+  size: 10,
 }
 
-function LocationDisplay() {
-  const location = useLocation()
-  return <div data-testid="location">{`${location.pathname}${location.search}${location.hash}`}</div>
-}
-
-function renderPage(initialEntry = '/home') {
+function renderPage() {
   return render(
-    <MemoryRouter initialEntries={[initialEntry]}>
+    <MemoryRouter initialEntries={['/']}>
       <MemberHomePage />
-      <LocationDisplay />
     </MemoryRouter>
   )
 }
 
-describe('MemberHomePage', () => {
-  beforeEach(() => {
-    mockedGetMyMembership.mockReset()
-    mockedGetMemberHomePlanTeasers.mockReset()
-    mockedGetMemberHomeTrainerPreview.mockReset()
-    mockedGetMemberHomeClassesPreview.mockReset()
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
 
+describe('MemberHomePage (Pulse redesign)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
     useMembershipStore.setState({
       activeMembership: null,
       membershipLoading: false,
@@ -149,100 +124,113 @@ describe('MemberHomePage', () => {
       adminMembershipsLoading: false,
       adminMembershipsError: null,
     })
-
-    mockedGetMemberHomeTrainerPreview.mockResolvedValue(trainerPreview)
-    mockedGetMemberHomeClassesPreview.mockResolvedValue(classesPreview)
   })
 
-  it('renders the active state and consumes the activation banner query param', async () => {
-    mockedGetMyMembership.mockResolvedValueOnce(activeMembership)
+  it('renders the root container', async () => {
+    mockedGetMyMembership.mockResolvedValue(activeMembership)
+    mockedGetMyBookings.mockResolvedValue(emptyBookings)
 
-    renderPage('/home?membershipBanner=activated#membership')
+    renderPage()
 
-    expect(await screen.findByText('Membership activated')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Monthly Plus' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Open schedule' })).toBeInTheDocument()
+    expect(screen.getByTestId('member-home-root')).toBeInTheDocument()
+  })
+
+  it('shows welcome headline with member first name when membership is active', async () => {
+    mockedGetMyMembership.mockResolvedValue(activeMembership)
+    mockedGetMyBookings.mockResolvedValue(emptyBookings)
+
+    renderPage()
+
+    // The heading contains "Welcome back," + the first name
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
+    })
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toContain('Dana')
+  })
+
+  it('shows no-booked hero variant when member has no upcoming bookings', async () => {
+    mockedGetMyMembership.mockResolvedValue(activeMembership)
+    mockedGetMyBookings.mockResolvedValue(emptyBookings)
+
+    renderPage()
 
     await waitFor(() => {
-      expect(screen.getByTestId('location')).toHaveTextContent('/home#membership')
+      // No-booked variant headline
+      expect(screen.getByRole('heading', { level: 1 }).textContent).toContain('Get on a mat')
     })
   })
 
-  it('renders the no-membership teaser state with plans deep links', async () => {
-    mockedGetMyMembership.mockRejectedValueOnce(noMembershipError())
-    mockedGetMemberHomePlanTeasers.mockResolvedValueOnce([teaserPlan])
+  it('shows countdown hero variant when member has an upcoming booking', async () => {
+    mockedGetMyMembership.mockResolvedValue(activeMembership)
+    mockedGetMyBookings.mockResolvedValue(oneBooking)
 
     renderPage()
 
-    expect(await screen.findByRole('heading', { name: 'Activate your access' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Compare all plans' })).toHaveAttribute(
-      'href',
-      '/plans?source=home'
-    )
-    expect(screen.getByRole('link', { name: 'View plan' })).toHaveAttribute(
-      'href',
-      `/plans?source=home&highlight=${teaserPlan.id}`
-    )
-    expect(screen.queryByRole('button', { name: /Activate Starter/i })).not.toBeInTheDocument()
-  })
-
-  it('renders the no-plans-available state', async () => {
-    mockedGetMyMembership.mockRejectedValueOnce(noMembershipError())
-    mockedGetMemberHomePlanTeasers.mockResolvedValueOnce([])
-
-    renderPage()
-
-    expect(
-      await screen.findByRole('heading', { name: 'Activate your access' })
-    ).toBeInTheDocument()
-    expect(screen.getByText('No plans available right now')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Browse trainers' })).toBeInTheDocument()
-  })
-
-  it('keeps membership and classes visible when the trainer section fails', async () => {
-    mockedGetMyMembership.mockResolvedValueOnce(activeMembership)
-    mockedGetMemberHomeTrainerPreview.mockRejectedValueOnce({
-      response: {
-        data: {
-          code: 'INVALID_SORT_FIELD',
-          error: 'Invalid sort field.',
-        },
-      },
+    // "Add to calendar" button appears only in the booked hero variant
+    await waitFor(() => {
+      expect(screen.getByText('Add to calendar')).toBeInTheDocument()
     })
+    expect(screen.getByText('Cancel booking')).toBeInTheDocument()
+    expect(screen.getByText('Morning Flow Yoga starts in')).toBeInTheDocument()
+  })
+
+  it('shows plan name and ACTIVE pill in membership section', async () => {
+    mockedGetMyMembership.mockResolvedValue(activeMembership)
+    mockedGetMyBookings.mockResolvedValue(emptyBookings)
 
     renderPage()
 
-    expect(await screen.findByRole('heading', { name: 'Monthly Plus' })).toBeInTheDocument()
-    expect(screen.getByText('Trainers unavailable')).toBeInTheDocument()
-    expect(screen.getByText('Invalid sort selection. Please refresh the page.')).toBeInTheDocument()
-    expect(screen.getByText('Yoga Flow')).toBeInTheDocument()
-  })
-
-  it('keeps membership and trainers visible when the classes section fails', async () => {
-    mockedGetMyMembership.mockResolvedValueOnce(activeMembership)
-    mockedGetMemberHomeClassesPreview.mockRejectedValueOnce({
-      response: {
-        data: {
-          code: 'INVALID_TIME_ZONE',
-          error: 'Invalid time zone.',
-        },
-      },
+    await waitFor(() => {
+      expect(screen.getByText('ACTIVE')).toBeInTheDocument()
     })
-
-    renderPage()
-
-    expect(await screen.findByRole('heading', { name: 'Monthly Plus' })).toBeInTheDocument()
-    expect(screen.getByText('Classes unavailable')).toBeInTheDocument()
-    expect(screen.getByText('Could not load upcoming classes right now.')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Jane Smith' })).toBeInTheDocument()
+    // Membership section shows plan name
+    expect(screen.getByText('Quarterly')).toBeInTheDocument()
   })
 
-  it('keeps page-level horizontal overflow hidden', async () => {
-    mockedGetMyMembership.mockResolvedValueOnce(activeMembership)
+  it('shows "No sessions booked" in upcoming section when bookings list is empty', async () => {
+    mockedGetMyMembership.mockResolvedValue(activeMembership)
+    mockedGetMyBookings.mockResolvedValue(emptyBookings)
 
     renderPage()
 
-    await screen.findByRole('heading', { name: 'Monthly Plus' })
-    expect(screen.getByTestId('member-home-root')).toHaveClass('overflow-x-hidden')
+    await waitFor(() => {
+      expect(screen.getByText('No sessions booked')).toBeInTheDocument()
+    })
+  })
+
+  it('shows "Next up" pill for first booking in upcoming section', async () => {
+    mockedGetMyMembership.mockResolvedValue(activeMembership)
+    mockedGetMyBookings.mockResolvedValue(oneBooking)
+
+    renderPage()
+
+    await waitFor(() => {
+      expect(screen.getByText('Next up')).toBeInTheDocument()
+    })
+  })
+
+  it('shows stat strip bookings-left count', async () => {
+    mockedGetMyMembership.mockResolvedValue(activeMembership)
+    mockedGetMyBookings.mockResolvedValue(emptyBookings)
+
+    renderPage()
+
+    // bookingsMax - bookingsUsed = 12 - 4 = 8
+    await waitFor(() => {
+      expect(screen.getByText('BOOKINGS LEFT')).toBeInTheDocument()
+    })
+  })
+
+  it('shows membership section browse plans link when no membership is active', async () => {
+    mockedGetMyMembership.mockRejectedValue({
+      response: { data: { code: 'NO_ACTIVE_MEMBERSHIP', error: 'No active membership.' } },
+    })
+    mockedGetMyBookings.mockResolvedValue(emptyBookings)
+
+    renderPage()
+
+    await waitFor(() => {
+      expect(screen.getByText('Browse plans')).toBeInTheDocument()
+    })
   })
 })
