@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   XMarkIcon,
   ExclamationTriangleIcon,
@@ -49,6 +49,8 @@ export function ClassInstanceEditPanel({
   const [trainerError, setTrainerError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [activeTab, setActiveTab] = useState<EditPanelTab>('details')
+  const [isTrainerDropdownOpen, setIsTrainerDropdownOpen] = useState(false)
+  const trainerDropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (instance) {
@@ -59,8 +61,19 @@ export function ClassInstanceEditPanel({
       setSelectedTrainerIds(instance.trainers.map((trainer) => trainer.id))
       setTrainerError(null)
       setActiveTab('details')
+      setIsTrainerDropdownOpen(false)
     }
   }, [instance])
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (trainerDropdownRef.current && !trainerDropdownRef.current.contains(event.target as Node)) {
+        setIsTrainerDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const dateLabel = useMemo(() => {
     if (!instance) return ''
@@ -255,56 +268,63 @@ export function ClassInstanceEditPanel({
           >
             Assign Trainers
           </label>
-          <div
-            id="assign-trainers"
-            role="listbox"
-            aria-labelledby="assign-trainers-label"
-            tabIndex={0}
-            className={`min-h-[36px] rounded-md border bg-gray-900 p-2 ${
-            trainerError ? 'border-red-500/60' : 'border-gray-700'
-          }`}
-          >
-            {selectedTrainerIds.length === 0 && (
-              <div className="text-xs text-gray-500">No trainers assigned</div>
-            )}
-            <div className="flex flex-wrap gap-1">
-              {selectedTrainerIds.map((id) => {
-                const trainer = trainers.find((item) => item.id === id)
-                if (!trainer) return null
-                return (
-                  <span
-                    key={id}
-                    className="inline-flex items-center gap-1 rounded-full bg-gray-700 px-2 py-0.5 text-xs text-white"
-                  >
-                    {trainer.firstName} {trainer.lastName}
-                    <button
-                      type="button"
-                      onClick={() => toggleTrainer(id)}
-                      className="text-gray-400 hover:text-white"
-                    >
-                      <XMarkIcon className="h-3 w-3" />
-                    </button>
-                  </span>
-                )
-              })}
-            </div>
-          </div>
-          <div className="mt-2 max-h-40 overflow-y-auto rounded-md border border-gray-800">
-            {trainers.map((trainer) => {
-              const selected = selectedTrainerIds.includes(trainer.id)
-              return (
-                <button
-                  key={trainer.id}
-                  type="button"
-                  onClick={() => toggleTrainer(trainer.id)}
-                  className={`flex w-full items-center justify-between px-3 py-2 text-sm text-white hover:bg-gray-800 ${
-                    selected ? 'bg-gray-800' : ''
-                  }`}
-                >
-                  {trainer.firstName} {trainer.lastName}
-                  {selected && <ExclamationCircleIcon className="h-4 w-4 text-green-400" />}
-                </button>
+          <div ref={trainerDropdownRef} className="relative">
+            <button
+              type="button"
+              aria-haspopup="listbox"
+              aria-expanded={isTrainerDropdownOpen}
+              aria-labelledby="assign-trainers-label"
+              onClick={() => setIsTrainerDropdownOpen((prev) => !prev)}
+              className={`min-h-[36px] w-full rounded-md border bg-gray-900 p-2 text-left ${
+                trainerError ? 'border-red-500/60' : 'border-gray-700'
+              }`}
+            >
+              {selectedTrainerIds.length === 0 && (
+                <span className="text-xs text-gray-500">No trainers assigned</span>
               )}
+              <div className="flex flex-wrap gap-1">
+                {selectedTrainerIds.map((id) => {
+                  const trainer = trainers.find((item) => item.id === id)
+                  if (!trainer) return null
+                  return (
+                    <span
+                      key={id}
+                      className="inline-flex items-center gap-1 rounded-full bg-gray-700 px-2 py-0.5 text-xs text-white"
+                    >
+                      {trainer.firstName} {trainer.lastName}
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => { e.stopPropagation(); toggleTrainer(id) }}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); toggleTrainer(id) } }}
+                        className="text-gray-400 hover:text-white"
+                      >
+                        <XMarkIcon className="h-3 w-3" />
+                      </span>
+                    </span>
+                  )
+                })}
+              </div>
+            </button>
+            {isTrainerDropdownOpen && (
+              <div className="absolute z-10 mt-1 max-h-40 w-full overflow-y-auto rounded-md border border-gray-800 bg-gray-900 shadow-lg">
+                {trainers.map((trainer) => {
+                  const selected = selectedTrainerIds.includes(trainer.id)
+                  return (
+                    <button
+                      key={trainer.id}
+                      type="button"
+                      onClick={() => toggleTrainer(trainer.id)}
+                      className={`flex w-full items-center justify-between px-3 py-2 text-sm text-white hover:bg-gray-800 ${
+                        selected ? 'bg-gray-800' : ''
+                      }`}
+                    >
+                      {trainer.firstName} {trainer.lastName}
+                      {selected && <ExclamationCircleIcon className="h-4 w-4 text-green-400" />}
+                    </button>
+                  )
+                })}
+              </div>
             )}
           </div>
           {trainerError && (
