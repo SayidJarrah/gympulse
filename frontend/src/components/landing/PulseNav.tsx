@@ -48,6 +48,12 @@ export function PulseNav({ authed, userName }: Props) {
         {authed ? (
           <>
             <Link
+              to="/training"
+              className="text-[13px] font-medium tracking-[0.02em] text-[#D1D5DB] transition-colors duration-200 hover:text-white"
+            >
+              Personal Training
+            </Link>
+            <Link
               to="/membership"
               className="text-[13px] font-medium tracking-[0.02em] text-[#D1D5DB] transition-colors duration-200 hover:text-white"
             >

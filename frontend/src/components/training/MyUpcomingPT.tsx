@@ -63,6 +63,7 @@ export function MyUpcomingPT({ bookings, onCancel }: Props) {
         {bookings.map((booking) => {
           const accent = booking.trainerAccentColor ?? '#4ADE80'
           const initial = booking.trainerName.charAt(0).toUpperCase()
+          const photoUrl = booking.trainerPhotoUrl
           const countdown = formatCountdown(booking.startAt)
 
           return (
@@ -73,11 +74,13 @@ export function MyUpcomingPT({ bookings, onCancel }: Props) {
             >
               {/* Avatar */}
               <div
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[16px] font-bold text-black"
-                style={{ background: `linear-gradient(135deg, ${accent}, ${accent}bb)`, boxShadow: `0 4px 12px ${accent}40` }}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[16px] font-bold text-black overflow-hidden"
+                style={photoUrl ? {} : { background: `linear-gradient(135deg, ${accent}, ${accent}bb)`, boxShadow: `0 4px 12px ${accent}40` }}
                 aria-hidden="true"
               >
-                {initial}
+                {photoUrl ? (
+                  <img src={photoUrl} alt={booking.trainerName} className="h-full w-full object-cover" />
+                ) : initial}
               </div>
 
               {/* Session info */}

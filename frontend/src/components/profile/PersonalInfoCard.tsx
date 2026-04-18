@@ -68,12 +68,6 @@ export function PersonalInfoCard({ profile, avatarUrl, onToast }: PersonalInfoCa
   const memberSince = formatMemberSince(profile.createdAt)
   const displayName = [profile.firstName, profile.lastName].filter(Boolean).join(' ') || profile.email
 
-  const handleSaveField = async (field: keyof UpdateUserProfileRequest, value: string | null) => {
-    const req = buildPatchRequest(profile, { [field]: value || null })
-    await saveMyProfile(req)
-    onToast(`${field === 'firstName' || field === 'lastName' ? 'Name' : String(field).replace(/([A-Z])/g, ' $1')} updated.`)
-  }
-
   return (
     <div
       className="rounded-2xl p-7"
