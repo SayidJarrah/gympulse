@@ -44,7 +44,6 @@ class ActivityEventService(
         )
 
         broadcastToEmitters(event, authed = false)
-        broadcastToEmitters(event, authed = true)
 
         return event
     }

@@ -240,8 +240,7 @@ class LandingService(
 
     private fun countOnFloor(classIds: List<UUID>): Int {
         if (classIds.isEmpty()) return 0
-        return bookingRepository.countConfirmedByClassIds(classIds)
-            .sumOf { row -> (row[1] as Long).toInt() }
+        return bookingRepository.countConfirmedOrAttendedByClassIds(classIds)
     }
 
     private fun primaryTrainer(ci: ClassInstance): TrainerRefDto {

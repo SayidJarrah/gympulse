@@ -65,7 +65,7 @@ export function HeroBooked({ data, onTheFloor }: Props) {
       {/* CTA row */}
       <div className="mt-8 flex gap-3">
         <Link
-          to="/schedule"
+          to="/check-in"
           className="rounded-lg bg-green-500 px-[26px] py-[14px] text-[14px] font-bold text-[#0F0F0F] shadow-[0_8px_24px_rgba(34,197,94,0.3)] transition-all duration-[160ms] hover:brightness-[1.08]"
         >
           Check in now →

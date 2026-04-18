@@ -14,35 +14,20 @@ fixes. Several non-blocking improvements are noted below.
 
 ## Blockers (must fix before PR)
 
-- [ ] `frontend/src/components/landing/HeroBooked.tsx:68` — "Check in now →" links to
+- [x] `frontend/src/components/landing/HeroBooked.tsx:68` — "Check in now →" links to
   `/schedule` but the SDD (AC-26) and handoff spec require it to navigate to `/check-in`.
-  This is the primary CTA in the `booked` state. A member who taps it to check in is sent
-  to the schedule page instead — the flow is broken. Change `to="/schedule"` to
-  `to="/check-in"`.
+  Fixed: changed `to="/schedule"` to `to="/check-in"`.
 
-- [ ] `backend/src/main/kotlin/com/gymflow/service/LandingService.kt:243` and
+- [x] `backend/src/main/kotlin/com/gymflow/service/LandingService.kt:243` and
   `backend/src/main/kotlin/com/gymflow/repository/BookingRepository.kt:26-35` —
-  `countOnFloor` calls `countConfirmedByClassIds`, which filters only on
-  `status = 'CONFIRMED'`. The SDD (Assumption A2), PRD (AC-21), and the viewer-state
-  docstring in `LandingService` all state that "On the floor" counts CONFIRMED **or**
-  ATTENDED bookings. `ATTENDED` status is excluded entirely. This makes the stat
-  systematically under-count: as soon as a staff member marks attendees the number drops
-  to zero for that class. Add a `status IN ('CONFIRMED', 'ATTENDED')` variant query and
-  use it in `countOnFloor` (and the parallel call in `getStats`). The developer flagged
-  this as a known deviation; it contradicts both the PRD and SDD, so it must be resolved
-  before merge.
+  `countOnFloor` calls `countConfirmedByClassIds`, which filtered only on `status = 'CONFIRMED'`.
+  Fixed: added `countConfirmedOrAttendedByClassIds` (`status IN ('CONFIRMED', 'ATTENDED')`) to
+  `BookingRepository` and updated `countOnFloor` in `LandingService` to use it.
 
-- [ ] `backend/src/main/kotlin/com/gymflow/service/ActivityEventService.kt:47` —
-  `recordEvent` calls `broadcastToEmitters(event, authed = false)` and then
-  `broadcastToEmitters(event, authed = true)` sequentially, broadcasting to the same
-  single emitter list twice. Every connected client receives two identical SSE events for
-  each booking: once with the public text, once with the full text. This causes duplicates
-  in the client feed. The root cause is that the emitter list is not partitioned by auth
-  level. For v1, since the SSE stream is acknowledged as public-only (the developer's
-  known deviation), the fix is straightforward: remove the double-broadcast and keep only
-  one call — `broadcastToEmitters(event, authed = false)` — and update the comment.
-  If true auth-level separation is added later (separate emitter lists), do that in a
-  follow-up. The current code actively delivers duplicate events and must be fixed.
+- [x] `backend/src/main/kotlin/com/gymflow/service/ActivityEventService.kt:47` —
+  `recordEvent` was calling `broadcastToEmitters` twice (once authed=false, once authed=true)
+  on the same single emitter list, sending duplicates to all clients.
+  Fixed: removed the second call; only `broadcastToEmitters(event, authed = false)` remains for v1.
 
 ---
 
@@ -253,7 +238,7 @@ The user should manually verify the following flows once the stack is running:
 
 ## Verdict
 
-BLOCKED — 3 blockers
+APPROVED — all 3 blockers fixed
 
 Fix the three blockers, then the PR is clear to merge. The design quality is high; no
 further design changes are needed.

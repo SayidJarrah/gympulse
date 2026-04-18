@@ -36,6 +36,16 @@ interface BookingRepository : JpaRepository<Booking, UUID> {
 
     @Query(
         """
+        SELECT COUNT(b) FROM Booking b
+        WHERE b.classId IN :classIds
+          AND b.status IN ('CONFIRMED', 'ATTENDED')
+          AND b.deletedAt IS NULL
+        """
+    )
+    fun countConfirmedOrAttendedByClassIds(@Param("classIds") classIds: Collection<UUID>): Int
+
+    @Query(
+        """
         SELECT b FROM Booking b
         WHERE b.userId = :userId
           AND b.classId = :classId
