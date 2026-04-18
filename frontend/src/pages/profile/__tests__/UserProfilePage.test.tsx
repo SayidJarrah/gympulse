@@ -36,6 +36,7 @@ const populatedProfile: UserProfile = {
   dateOfBirth: '1994-08-12',
   fitnessGoals: ['Build strength', 'Improve mobility'],
   preferredClassTypes: ['Yoga', 'HIIT'],
+  emergencyContact: null,
   hasProfilePhoto: false,
   profilePhotoUrl: null,
   createdAt: '2026-03-29T09:00:00Z',

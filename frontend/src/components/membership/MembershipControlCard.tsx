@@ -10,18 +10,6 @@ interface MembershipControlCardProps {
 }
 
 /**
- * Formats an ISO date string "2026-05-02" to a display string "May 2".
- */
-function formatShortDate(isoDateString: string): string {
-  const date = new Date(`${isoDateString}T00:00:00Z`)
-  return date.toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    timeZone: 'UTC',
-  })
-}
-
-/**
  * Formats "2026-05-02" to "May 2, 2026".
  */
 function formatLongDate(isoDateString: string): string {

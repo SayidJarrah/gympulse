@@ -63,6 +63,10 @@ const activeMembership: UserMembership = {
   bookingsUsedThisMonth: 4,
   maxBookingsPerMonth: 12,
   createdAt: '2026-02-01T09:00:00Z',
+  price: '$120 / 90 days',
+  paymentMethod: null,
+  nextChargeCopy: '$120 on May 2',
+  autoRenew: false,
 }
 
 const futureBooking = {
