@@ -76,9 +76,10 @@ UI/UX design is owned by the external **Claude Design** project, not this repo. 
 
 **Layer 1 — Design system (slow-moving, living in this repo):**
 - `docs/design-system/README.md` — voice, visual rules, component patterns (canonical)
-- `docs/design-system/colors_and_type.css` — token values (CSS custom properties)
-- `docs/design-system/tailwind.gymflow.cjs` — Tailwind config extract
-- `docs/design-system/assets/` — logo marks, favicon
+- `docs/design-system/colors_and_type.css` — token values (CSS custom properties); imported directly by `frontend/src/index.css`
+- `docs/design-system/tailwind.gymflow.cjs` — Tailwind theme extension; loaded by `frontend/tailwind.config.js` via `createRequire`
+- `docs/design-system/tokens.ts` — TypeScript mirror of all tokens (for theme providers / CSS-in-JS)
+- `docs/design-system/assets/` — logo marks, favicon; copied to `frontend/public/assets/` for runtime serving
 - Update these together when tokens change; commit once and let the rest of the repo pick them up.
 
 **Layer 2 — Per-feature handoffs (fast-moving, dropped in per feature):**
@@ -93,7 +94,7 @@ UI/UX design is owned by the external **Claude Design** project, not this repo. 
 2. Read the feature handoff at `docs/design-system/handoffs/{slug}/`.
 3. Implement against existing React components in `frontend/src/components/`. Do not fabricate a design spec locally when the handoff is missing — halt and ask for it to be produced in the Claude Design project.
 
-**When tokens change in the Claude Design project:** pull the updated `colors_and_type.css` + `tailwind.gymflow.cjs` + assets into `docs/design-system/` as one commit. No per-feature follow-up required.
+**When tokens change in the Claude Design project:** drop the new extraction bundle into `docs/design-system/` — replace `colors_and_type.css`, `tailwind.gymflow.cjs`, `tokens.ts`, and `assets/`. Also copy updated SVGs to `frontend/public/assets/`. Commit as one chore PR. No per-feature follow-up required — `index.css` imports tokens directly and Tailwind picks up the new config on rebuild.
 
 ## Git Rules — Non-Negotiable
 - **Never commit directly to `main`** — all changes go through a feature branch and PR, no exceptions
