@@ -28,6 +28,7 @@ export const StepBooking = forwardRef<StepBookingHandle, object>((_props, ref) =
           store.setCompletedBooking(booking.id)
         } catch {
           setError('Unable to create booking. You can skip and book later.')
+          return false
         }
       } else if (mode === 'trainer' && selectedTrainerId && selectedSlot) {
         try {
@@ -39,6 +40,7 @@ export const StepBooking = forwardRef<StepBookingHandle, object>((_props, ref) =
           store.setCompletedBooking(booking.id)
         } catch {
           setError('Unable to create PT booking. You can skip and book later.')
+          return false
         }
       } else {
         // No selection — advance as skip

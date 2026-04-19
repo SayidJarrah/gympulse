@@ -68,6 +68,15 @@ None.
 No new backend endpoints, DTOs, or error codes are required. User Access Flow reuses existing
 contracts unchanged and moves the orchestration into the React app.
 
+> **Cross-reference — onboarding gate:**
+> `docs/sdd/onboarding-flow.md §4.2` documents an onboarding gate that intercepts `USER` role
+> post-login navigation. A newly-registered USER is redirected from `/home` to `/onboarding`
+> by `UserRoute` until their `onboardingCompletedAt` field is set. The sequence is:
+> login → `/home` → onboarding gate fires → `/onboarding`. This SDD documents the login
+> redirect target as `/home`, which remains correct; the gate is applied by `UserRoute`
+> downstream of the redirect. Engineers modifying login or auth routes should consult
+> `onboarding-flow.md §4.2` for the full gate behaviour.
+
 ### POST /api/v1/auth/login
 **Auth:** None.
 

@@ -2,6 +2,7 @@ import { useState, forwardRef, useImperativeHandle } from 'react'
 import { useOnboardingStore } from '../../../store/onboardingStore'
 import { updateMyProfile } from '../../../api/profile'
 
+
 const GOAL_OPTIONS = [
   'Build strength',
   'Lose weight',
@@ -38,9 +39,11 @@ export const StepPreferences = forwardRef<StepPreferencesHandle, object>((_props
   const [goals, setGoals] = useState<string[]>(store.goals)
   const [classTypes, setClassTypes] = useState<string[]>(store.classTypes)
   const [frequency, setFrequency] = useState<string>(store.frequency)
+  const [apiError, setApiError] = useState<string | null>(null)
 
   useImperativeHandle(ref, () => ({
     async submit(): Promise<boolean> {
+      setApiError(null)
       // If no selections, treat as skip (advance without API call)
       const hasSelections = goals.length > 0 || classTypes.length > 0 || frequency
       if (hasSelections) {
@@ -55,7 +58,9 @@ export const StepPreferences = forwardRef<StepPreferencesHandle, object>((_props
             emergencyContact: null,
           })
         } catch {
-          // Non-blocking: preferences are optional, continue anyway
+          // FR-4.5: if PATCH fails, show error and do not advance
+          setApiError('Unable to save preferences. Please try again.')
+          return false
         }
       }
       store.setPreferences({ goals, classTypes, frequency })
@@ -110,6 +115,10 @@ export const StepPreferences = forwardRef<StepPreferencesHandle, object>((_props
       <p className="text-[15px] max-w-[580px]" style={{ color: 'var(--color-fg-muted)', lineHeight: 1.6 }}>
         Help us tailor your GymFlow experience. You can update these any time.
       </p>
+
+      {apiError && (
+        <p className="text-sm" style={{ color: 'var(--color-error-fg)' }}>{apiError}</p>
+      )}
 
       {/* Goals */}
       <section aria-labelledby="goals-label">
@@ -186,7 +195,7 @@ function ChipButton({ label, selected, onToggle }: { label: string; selected: bo
       role="button"
       aria-pressed={selected}
       onClick={onToggle}
-      className="h-12 px-3 rounded-md text-sm font-medium transition-all duration-150"
+      className="h-12 px-3 rounded-md text-sm font-medium transition-all duration-150 flex items-center justify-center gap-1.5"
       style={{
         background: selected ? 'var(--color-primary)' : 'transparent',
         color: selected ? '#0F0F0F' : 'var(--color-fg-label)',
@@ -194,6 +203,10 @@ function ChipButton({ label, selected, onToggle }: { label: string; selected: bo
         boxShadow: selected ? '0 0 0 1px rgba(34,197,94,.3)' : 'none',
       }}
     >
+      {/* Brand mark lightning bolt icon */}
+      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0" fill="currentColor" aria-hidden="true">
+        <path d="M13 2L4.5 13.5H11L9 22L19.5 9.5H13.5L16 2Z" />
+      </svg>
       {label}
     </button>
   )

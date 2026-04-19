@@ -46,6 +46,35 @@ export const errorMessages: Record<string, string> = {
 - `useState` for local component state
 - Never use context for data that changes frequently
 
+## Zustand `persist` — key must be computed lazily
+Never compute the `persist` storage key at module evaluation time (i.e. at the top of a `create()` call, in an IIFE, or via a module-level function call). At that point the auth store has not rehydrated from `localStorage`, so user-specific keys resolve to `'anonymous'` and multiple users share one draft.
+
+Use a `StateStorage` adapter that resolves the key inside `getItem`/`setItem`/`removeItem`:
+```ts
+import { StateStorage } from 'zustand/middleware'
+
+const lazyStorage: StateStorage = {
+  getItem: () => {
+    const userId = useAuthStore.getState().user?.id ?? 'anonymous'
+    return localStorage.getItem(`gf:{store}:v1:${userId}`)
+  },
+  setItem: (_name, value) => {
+    const userId = useAuthStore.getState().user?.id ?? 'anonymous'
+    localStorage.setItem(`gf:{store}:v1:${userId}`, value)
+  },
+  removeItem: () => {
+    const userId = useAuthStore.getState().user?.id ?? 'anonymous'
+    localStorage.removeItem(`gf:{store}:v1:${userId}`)
+  },
+}
+// Then in persist config: { name: 'gf:{store}:v1', storage: lazyStorage }
+```
+
+## Never use `setTimeout` to sequence React/Zustand state updates
+`setTimeout(fn, 0)` does not guarantee execution after a React commit phase under React 18 automatic batching. Do not use it to work around state-update ordering issues (e.g. "set auth store after route guard re-renders").
+
+The correct pattern: teach the route guard to check additional store state. Example — if a Done screen must render before a redirect fires, add `&& currentStep !== 'done'` to the redirect condition in the route guard, rather than delaying the auth-store write with a timeout.
+
 ## Disabled Buttons with Tooltips
 Never use `disabled={true}` on a button that must show a tooltip (e.g. guest-state buttons).
 HTML `disabled` suppresses `title` attribute tooltip firing on touch devices and in Firefox/Safari.

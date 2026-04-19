@@ -1,20 +1,7 @@
 import { useEffect, useState } from 'react'
-import axiosInstance from '../../../api/axiosInstance'
+import { getPtTrainers, getTrainerPtAvailabilityUnbounded } from '../../../api/ptBookings'
+import type { PtTrainerSummary, TrainerAvailability } from '../../../types/ptBooking'
 import { TrainerCalendar } from './TrainerCalendar'
-
-interface Trainer {
-  id: string
-  firstName: string
-  lastName: string
-  specialisations?: string[]
-  bio?: string
-  rating?: number
-  openSlotsThisWeek?: number
-}
-
-interface Slot {
-  slotStart: string
-}
 
 interface TrainerListProps {
   selectedTrainerId: string | null
@@ -24,19 +11,17 @@ interface TrainerListProps {
 }
 
 export function TrainerList({ selectedTrainerId, selectedSlot, onSelect, onClear }: TrainerListProps) {
-  const [trainers, setTrainers] = useState<Trainer[]>([])
+  const [trainers, setTrainers] = useState<PtTrainerSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
-  const [slotsByTrainer, setSlotsByTrainer] = useState<Record<string, Slot[]>>({})
+  const [slotsByTrainer, setSlotsByTrainer] = useState<Record<string, TrainerAvailability>>({})
   const [loadingSlots, setLoadingSlots] = useState<string | null>(null)
 
   useEffect(() => {
-    axiosInstance
-      .get('/trainers/pt')
+    getPtTrainers({ page: 0, size: 6 })
       .then(res => {
-        const data = res.data
-        const list = Array.isArray(data) ? data : (data.content ?? [])
+        const list = res.content ?? []
         setTrainers(list.slice(0, 6))
       })
       .catch(() => setError('Unable to load trainers.'))
@@ -52,10 +37,10 @@ export function TrainerList({ selectedTrainerId, selectedSlot, onSelect, onClear
     if (!slotsByTrainer[id]) {
       setLoadingSlots(id)
       try {
-        const res = await axiosInstance.get(`/trainers/${id}/pt-availability`)
-        setSlotsByTrainer(prev => ({ ...prev, [id]: res.data }))
+        const availability = await getTrainerPtAvailabilityUnbounded(id)
+        setSlotsByTrainer(prev => ({ ...prev, [id]: availability }))
       } catch {
-        setSlotsByTrainer(prev => ({ ...prev, [id]: [] }))
+        setSlotsByTrainer(prev => ({ ...prev, [id]: { trainerId: id, days: [] } }))
       } finally {
         setLoadingSlots(null)
       }
@@ -72,7 +57,7 @@ export function TrainerList({ selectedTrainerId, selectedSlot, onSelect, onClear
         const isExpanded = expandedId === trainer.id
         const isSelected = selectedTrainerId === trainer.id
         const initials = `${trainer.firstName[0]}${trainer.lastName[0]}`.toUpperCase()
-        const slots = slotsByTrainer[trainer.id] ?? []
+        const availability = slotsByTrainer[trainer.id]
 
         return (
           <div
@@ -101,9 +86,9 @@ export function TrainerList({ selectedTrainerId, selectedSlot, onSelect, onClear
                 <p className="text-sm font-medium" style={{ color: 'var(--color-fg-default)' }}>
                   {trainer.firstName} {trainer.lastName}
                 </p>
-                {trainer.specialisations && trainer.specialisations.length > 0 && (
+                {trainer.specializations && trainer.specializations.length > 0 && (
                   <p className="text-xs" style={{ color: 'var(--color-fg-muted)' }}>
-                    {trainer.specialisations.slice(0, 2).join(' · ')}
+                    {trainer.specializations.slice(0, 2).join(' · ')}
                   </p>
                 )}
               </div>
@@ -148,7 +133,11 @@ export function TrainerList({ selectedTrainerId, selectedSlot, onSelect, onClear
                   <div className="text-sm" style={{ color: 'var(--color-fg-muted)' }}>Loading availability…</div>
                 ) : (
                   <TrainerCalendar
-                    slots={slots}
+                    slots={availability?.days.flatMap(d =>
+                      Object.entries(d.slots)
+                        .filter(([, status]) => status === 'available')
+                        .map(([hour]) => ({ slotStart: `${d.date}T${String(hour).padStart(2, '0')}:00:00` }))
+                    ) ?? []}
                     selectedSlot={isSelected ? selectedSlot : null}
                     onSelect={slot => {
                       if (!slot) {

@@ -22,10 +22,6 @@ function toE164(formatted: string): string {
   return `+${digits}`
 }
 
-interface StepProfileProps {
-  ref: React.Ref<StepProfileHandle>
-}
-
 export const StepProfile = forwardRef<StepProfileHandle, object>((_props, ref) => {
   const store = useOnboardingStore()
   const firstNameId = useId()
@@ -49,7 +45,22 @@ export const StepProfile = forwardRef<StepProfileHandle, object>((_props, ref) =
       if (!firstName.trim()) errs.firstName = 'First name is required'
       if (!lastName.trim()) errs.lastName = 'Last name is required'
       if (!phone.trim()) errs.phone = 'Phone number is required'
-      if (!dob) errs.dob = 'Date of birth is required'
+      if (!dob) {
+        errs.dob = 'Date of birth is required'
+      } else {
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const dobDate = new Date(dob + 'T00:00:00')
+        if (dobDate > today) {
+          errs.dob = 'Date of birth cannot be in the future'
+        } else {
+          const minDob = new Date(today)
+          minDob.setFullYear(minDob.getFullYear() - 16)
+          if (dobDate > minDob) {
+            errs.dob = 'You must be at least 16 years old to join'
+          }
+        }
+      }
       setErrors(errs)
       if (Object.keys(errs).length > 0) return false
 
@@ -101,7 +112,7 @@ export const StepProfile = forwardRef<StepProfileHandle, object>((_props, ref) =
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  const fieldClass = "w-full px-4 py-2.5 rounded-md text-sm outline-none transition-all"
+  const fieldClass = "w-full px-4 py-2.5 rounded-md text-sm outline-none transition-all focus:ring-2 focus:ring-green-500/25"
   const fieldStyle = {
     background: 'var(--color-bg-surface-2)',
     border: '1px solid var(--color-border-input)',

@@ -11,6 +11,10 @@ import type {
   TrainerScheduleResponse,
 } from '../types/ptBooking'
 
+/**
+ * Fetch the list of PT trainers for member-facing use (onboarding, trainer discovery).
+ * Uses the `/trainers/pt` endpoint without admin scope.
+ */
 export async function getPtTrainers(params: {
   specialty?: string
   page?: number
@@ -34,6 +38,17 @@ export async function getPtAvailability(
   const response = await axiosInstance.get<TrainerAvailability>(
     `/trainers/${trainerId}/pt-availability`,
     { params: { start, end } }
+  )
+  return response.data
+}
+
+/**
+ * Fetch trainer PT availability without constraining to a date range.
+ * Used in the onboarding booking step where the member just browses open slots.
+ */
+export async function getTrainerPtAvailabilityUnbounded(trainerId: string): Promise<TrainerAvailability> {
+  const response = await axiosInstance.get<TrainerAvailability>(
+    `/trainers/${trainerId}/pt-availability`
   )
   return response.data
 }

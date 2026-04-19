@@ -349,6 +349,42 @@ async function upsertQaUsersAndProfiles(): Promise<number> {
   }
 }
 
+// ── PLAN_PENDING demo row ─────────────────────────────────────────────────────
+// Inserts a single PLAN_PENDING user_memberships row for qa.user01 linked to the
+// Monthly plan. This satisfies CLAUDE.md rule that any valid status value added by
+// a migration must be exercised by the seeder (V28 added PLAN_PENDING).
+
+async function upsertPlanPendingDemoRow(emit: EmitFn): Promise<void> {
+  const client = await pgPool.connect();
+  try {
+    // Look up qa.user01 and the Monthly plan by fixed UUIDs.
+    // Fixed UUIDs are defined in qaUsers.ts and membershipPlans.ts.
+    const QA_USER01_ID = '44444444-4444-4444-4444-444444444401';
+    const MONTHLY_PLAN_ID = '22222222-2222-2222-2222-222222222202';
+
+    // Delete any existing PLAN_PENDING row for this user to keep state clean on re-seed.
+    await client.query(
+      `DELETE FROM user_memberships WHERE user_id = $1::uuid AND status = 'PLAN_PENDING'`,
+      [QA_USER01_ID],
+    );
+
+    // Insert the PLAN_PENDING row. start_date and end_date are placeholder values
+    // per SDD §2.4 (real dates set when payment activates the plan).
+    await client.query(
+      `INSERT INTO user_memberships (user_id, plan_id, status, start_date, end_date, bookings_used_this_month)
+       VALUES ($1::uuid, $2::uuid, 'PLAN_PENDING', CURRENT_DATE, CURRENT_DATE, 0)
+       ON CONFLICT DO NOTHING`,
+      [QA_USER01_ID, MONTHLY_PLAN_ID],
+    );
+
+    emit('log', { message: 'Upserted PLAN_PENDING demo row for qa.user01.' });
+  } catch (err) {
+    emit('warning', { message: `PLAN_PENDING demo row failed: ${String(err)}` });
+  } finally {
+    client.release();
+  }
+}
+
 // ── Orchestration ─────────────────────────────────────────────────────────────
 
 export async function seedReferenceData(emit: EmitFn, presetConfig: PresetConfig): Promise<void> {
@@ -361,6 +397,7 @@ export async function seedReferenceData(emit: EmitFn, presetConfig: PresetConfig
     const trainers = await upsertTrainers(presetConfig.trainers);
     const plans = await upsertMembershipPlans(presetConfig.membershipPlans);
     const qaUsers = await upsertQaUsersAndProfiles();
+    await upsertPlanPendingDemoRow(emit);
 
     const templates = v13 + v17;
     emit('log', {
