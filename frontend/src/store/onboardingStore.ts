@@ -1,6 +1,5 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
-import type { StateStorage } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
 import type { StepKey } from '../types/onboarding'
 import { useAuthStore } from './authStore'
 
@@ -77,20 +76,21 @@ const defaultState = {
 // yet, so useAuthStore.getState().user?.id is undefined. By deferring the key
 // lookup into each storage method, we guarantee the correct user ID is used the
 // first time Zustand actually reads or writes (well after auth rehydration).
-const lazyStorage: StateStorage = {
-  getItem: (_name) => {
+const lazyStorageEngine = {
+  getItem: (_name: string): string | null => {
     const userId = useAuthStore.getState().user?.id ?? 'anonymous'
     return localStorage.getItem(`gf:onboarding:v1:${userId}`)
   },
-  setItem: (_name, value) => {
+  setItem: (_name: string, value: string): void => {
     const userId = useAuthStore.getState().user?.id ?? 'anonymous'
     localStorage.setItem(`gf:onboarding:v1:${userId}`, value)
   },
-  removeItem: (_name) => {
+  removeItem: (_name: string): void => {
     const userId = useAuthStore.getState().user?.id ?? 'anonymous'
     localStorage.removeItem(`gf:onboarding:v1:${userId}`)
   },
 }
+const lazyStorage = createJSONStorage(() => lazyStorageEngine)
 
 export const useOnboardingStore = create<OnboardingState>()(
   persist(

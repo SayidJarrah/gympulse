@@ -46,6 +46,16 @@ export const errorMessages: Record<string, string> = {
 - `useState` for local component state
 - Never use context for data that changes frequently
 
+## Design token pre-flight (developer)
+
+Before writing any component that uses `var(--color-*)`, `var(--font-*)`, or any CSS custom property from the design system, verify `frontend/src/index.css` contains the `:root` token block.
+
+```bash
+grep -c 'color-primary' frontend/src/index.css   # must be > 0
+```
+
+If the block is missing, add it by inlining the contents of `docs/design-system/colors_and_type.css` into `index.css` before writing the component. CSS custom properties silently fall back to `undefined` when undefined — there is no build error, no console warning, only invisible buttons and broken layouts at runtime.
+
 ## Zustand `persist` — key must be computed lazily
 Never compute the `persist` storage key at module evaluation time (i.e. at the top of a `create()` call, in an IIFE, or via a module-level function call). At that point the auth store has not rehydrated from `localStorage`, so user-specific keys resolve to `'anonymous'` and multiple users share one draft.
 

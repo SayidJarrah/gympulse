@@ -76,6 +76,16 @@ Verify against `docs/design-system/README.md` "Visual Foundations":
 - Full-page loading spinners when a skeleton would work
 - Emoji, Unicode-as-icons — always Heroicons v2
 
+## Token Import Check (reviewer pre-flight)
+
+Before approving any PR that contains UI code using `var(--color-*)`, `var(--font-*)`, or any other CSS custom property from the design system:
+
+1. Open `frontend/src/index.css`.
+2. Confirm a `:root { --color-primary: ...; ... }` block is present.
+3. If it is absent, **block the PR** — this is a silent breakage. Every `var()` reference falls back to `undefined` (transparent or browser default) without any build error or console warning, causing invisible buttons, wrong backgrounds, and broken typography.
+
+The token block must be the inlined content of `docs/design-system/colors_and_type.css`. Do not accept a PR where the two are out of sync.
+
 ## Handoff Expectations
 
 A handoff at `docs/design-system/handoffs/{feature}/` should contain:
