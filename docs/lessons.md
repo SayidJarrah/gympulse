@@ -77,6 +77,18 @@ Correction: User pointed out the running stack was 22 hours old and therefore no
 Rule: When `/run` finds the stack already running, compare container start time against last git commit timestamp. If containers are older than the last commit, treat it as stale and rebuild before reporting success. Never report "stack is running" without confirming it reflects the current code.
 Applies when: `/run` finds ports already occupied by Docker containers.
 
+## Lesson 13 — Self-audit against the handoff before merging a feature PR
+Date: 2026-04-19
+Correction: The onboarding-flow PR was merged with 32 audit gaps — including broken core flows, a wrong CSS token that turned the shell white, and layout that diverged structurally from the handoff. A formal /audit immediately after merge found all of them, triggering a full fix cycle.
+Rule: Before merging any feature PR that includes UI, the developer must do a self-audit: (1) open the handoff spec and visually compare each screen against the running stack; (2) walk through each primary AC end-to-end in the browser; (3) confirm no CSS tokens are used that do not exist in `docs/design-system/colors_and_type.css`. If any screen looks wrong or any AC fails, fix before merging — not after.
+Applies when: Any feature PR with a design handoff at `docs/design-system/handoffs/{slug}/` before it is merged to main.
+
+## Lesson 12 — TypeScript build errors are a PR blocker, not a fix-later item
+Date: 2026-04-19
+Correction: The onboarding-flow PR merged with unused-variable TypeScript errors (`isTodo`, `num`, `StepProfileProps`) and a missing required field (`onboardingCompletedAt`) in a test fixture. These broke the Docker frontend build immediately on the next `/run`.
+Rule: Before opening or merging a PR, run `npm run build` (or `tsc --noEmit`) in the frontend directory and confirm zero TypeScript errors. A build that fails on `tsc` is not shippable — it breaks the Docker image for every developer on the next `/run`. This is not optional cleanup; it is a gate.
+Applies when: Any PR that touches TypeScript files in `frontend/src/`.
+
 ## Lesson 1 — Update review doc when blockers are fixed
 Date: 2026-04-05
 Correction: User noticed the review doc still showed blockers as `[ ]` after they had been fixed, making the PR state look blocked when it was actually clear.
