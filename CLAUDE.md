@@ -72,7 +72,11 @@ The demo seeder lives at `demo-seeder/src/` and populates realistic data for man
 
 ## Design System — Source of Truth
 
-UI/UX design is owned by the external **Claude Design** project, not this repo. We no longer generate design specs or HTML prototypes locally — `ui-ux-designer` is retired. Work flows in two layers:
+UI/UX design has two possible authors, both producing the same output shape:
+1. **Claude Design** (external project, preferred) — subject to weekly usage limits
+2. **Native `designer` agent** (`.claude/agents/designer.md`, fallback) — used when Claude Design quota is exhausted or a quick in-repo iteration is needed
+
+Either way, the canonical DNA lives in this repo and both sources must honour it. Work flows in two layers:
 
 **Layer 1 — Design system (slow-moving, living in this repo):**
 - `docs/design-system/README.md` — voice, visual rules, component patterns (canonical)
@@ -86,15 +90,21 @@ UI/UX design is owned by the external **Claude Design** project, not this repo. 
 - For each feature or redesign, a handoff package lands at `docs/design-system/handoffs/{feature-slug}/`:
   - `README.md` — the spec (overview, screens, states, interactions, data contracts, tokens, deferred items)
   - `design_reference/` — prototype bundle: HTML/JSX entry, `colors_and_type.css`, supporting modules
-- Handoffs are authored in the Claude Design project, not here. They are the input to `/deliver` Stage 2 and `/redesign`.
+- Handoffs are the input to `/deliver` Stage 2 and `/redesign`.
 - Prototypes are reference-only — they use CDN React + inline styles for convenience. Implement against the project stack (Vite, TS, Tailwind, Zustand). Port tokens verbatim.
+
+**Choosing the author:**
+- Default to **Claude Design** when weekly quota is available — it produces richer, canvas-driven iterations
+- Use the **native `designer` agent** when quota is exhausted or when the change is a DNA extension of an already-handoff'd surface
+- Never mix the two for the same handoff — pick one per slug
+- Never fabricate a spec inline inside another agent (SA, developer, reviewer) — always go through the designer step (see Lesson 10)
 
 **Before any UI change (implementation or review):**
 1. Read `docs/design-system/README.md` for voice + visual rules.
 2. Read the feature handoff at `docs/design-system/handoffs/{slug}/`.
-3. Implement against existing React components in `frontend/src/components/`. Do not fabricate a design spec locally when the handoff is missing — halt and ask for it to be produced in the Claude Design project.
+3. Implement against existing React components in `frontend/src/components/`. If the handoff is missing, halt and ask the user whether to wait for Claude Design or invoke the native `designer` agent.
 
-**When tokens change in the Claude Design project:** drop the new extraction bundle into `docs/design-system/` — replace `colors_and_type.css`, `tailwind.gymflow.cjs`, `tokens.ts`, and `assets/`. Also copy updated SVGs to `frontend/public/assets/`. Commit as one chore PR. No per-feature follow-up required — `index.css` imports tokens directly and Tailwind picks up the new config on rebuild.
+**When tokens change (either source):** drop the updated extraction bundle into `docs/design-system/` — replace `colors_and_type.css`, `tailwind.gymflow.cjs`, `tokens.ts`, and `assets/`. Also copy updated SVGs to `frontend/public/assets/`. Commit as one chore PR. No per-feature follow-up required — `index.css` imports tokens directly and Tailwind picks up the new config on rebuild.
 
 ## Git Rules — Non-Negotiable
 - **Never commit directly to `main`** — all changes go through a feature branch and PR, no exceptions
