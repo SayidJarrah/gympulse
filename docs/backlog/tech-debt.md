@@ -528,3 +528,45 @@ Feature: onboarding-flow
 Added: 2026-04-19
 Effort: S
 `MiniNav.tsx:41` emits `STEP 02 · YOUR PROFILE · 2 of 6`. The handoff specifies `STEP 03 · PREFS` (abbreviated label) with the fraction in a separate muted tone. The current output is verbose and does not match the spec's visual rhythm. Either abbreviate step labels in `ALL_STEPS` definitions, or extract the fraction into a muted `<span>` and shorten the label portion to match the compact handoff format.
+
+## TD-074 — Onboarding store should use session-scoped draft storage, not user-keyed localStorage
+Source: docs/reviews/onboarding-flow-fixes-20260419.md
+Feature: onboarding-flow
+Added: 2026-04-19
+Effort: M
+`onboardingStore.ts` persists the entire onboarding draft to `localStorage` keyed by user ID. If a user logs out and another logs in during the same browser session, the store still carries the prior user's data until the key is re-evaluated (which it is not — the name is fixed at creation time). A safer model is to persist only to `sessionStorage` (cleared on tab close / logout), or to explicitly call `store.reset()` in the logout action and re-initialize the store from the server on next mount. Either eliminates the cross-user data risk entirely.
+
+## TD-075 — `setTimeout` race in OnboardingShell should be replaced with structural fix
+Source: docs/reviews/onboarding-flow-fixes-20260419.md
+Feature: onboarding-flow
+Added: 2026-04-19
+Effort: S
+`OnboardingShell.tsx:134` uses `setTimeout(() => setOnboardingCompletedAt(ts), 0)` to delay the auth store update so the Done screen can mount before `OnboardingRoute` triggers a redirect. This is not guaranteed under React 18 concurrent mode. The structural fix is to add a `currentStep === 'done'` bypass to `OnboardingRoute` (reading the onboarding store), so the route does not redirect when the user is legitimately on the Done screen regardless of `onboardingCompletedAt`. This makes the timing hack unnecessary and the behaviour predictable.
+
+## TD-076 — Focus ring on profile inputs uses Tailwind ring, not box-shadow glow per handoff spec
+Source: docs/reviews/onboarding-flow-fixes-20260419.md
+Feature: onboarding-flow
+Added: 2026-04-19
+Effort: S
+`StepProfile.tsx:115` applies `focus:ring-2 focus:ring-green-500/25` which produces a Tailwind ring (outline shorthand). The handoff §Interactions specifies `box-shadow: 0 0 0 3px rgba(34,197,94,.25)` — a glow shadow that is more visible on dark surfaces. Replace with `focus-visible:shadow-[0_0_0_3px_rgba(34,197,94,.25)] focus-visible:outline-none` across all form inputs in the onboarding flow.
+
+## TD-077 — Booking and plan error messages lack icon prefix; violates design system voice rule
+Source: docs/reviews/onboarding-flow-fixes-20260419.md
+Feature: onboarding-flow
+Added: 2026-04-19
+Effort: S
+`StepBooking.tsx:81` and `StepMembership.tsx:92` render error messages as plain coloured text. The design system README states errors must have a visible label and icon (not rely on colour alone). Add `ExclamationCircleIcon` from `@heroicons/react/24/solid` as a prefix to all inline error paragraphs in these components.
+
+## TD-078 — TrainerList selected indicator uses Unicode checkmark instead of Heroicon
+Source: docs/reviews/onboarding-flow-fixes-20260419.md
+Feature: onboarding-flow
+Added: 2026-04-19
+Effort: S
+`TrainerList.tsx:100` renders `✓ Selected` using the Unicode U+2713 character. The design system README prohibits all Unicode-as-icons: "Unicode as icons: Never." Replace with `CheckIcon` from `@heroicons/react/24/solid` at `h-3.5 w-3.5` inline with the "Selected" text label.
+
+## TD-079 — GroupClassList and TrainerList use plain-text loading states; should use skeleton loaders
+Source: docs/reviews/onboarding-flow-fixes-20260419.md
+Feature: onboarding-flow
+Added: 2026-04-19
+Effort: M
+`GroupClassList.tsx:28` and `TrainerList.tsx:50` render "Loading classes…" / "Loading trainers…" as muted text. The design-standards skill requires a delight detail on every screen, and the Peloton/Whoop quality bar expects skeleton loaders for list content. Replace the text placeholders with `animate-pulse` skeleton rows (a `rounded-xl bg-gray-800 h-[72px]` bar per slot, 4–6 bars) to match the visual polish of the rest of the flow.
