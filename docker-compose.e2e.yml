@@ -37,7 +37,8 @@ services:
 
   frontend:
     build:
-      context: ./frontend
+      context: .
+      dockerfile: frontend/Dockerfile
     image: gymflow-frontend:e2e
     ports:
       - "3001:80"

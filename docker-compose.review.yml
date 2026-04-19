@@ -41,7 +41,8 @@ services:
 
   frontend:
     build:
-      context: ./frontend
+      context: .
+      dockerfile: frontend/Dockerfile
     image: gymflow-frontend:review
     ports:
       - "3000:80"
