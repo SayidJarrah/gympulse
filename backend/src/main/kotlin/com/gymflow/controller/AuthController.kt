@@ -5,7 +5,6 @@ import com.gymflow.dto.LoginResponse
 import com.gymflow.dto.LogoutRequest
 import com.gymflow.dto.RefreshRequest
 import com.gymflow.dto.RegisterRequest
-import com.gymflow.dto.RegisterResponse
 import com.gymflow.service.AuthService
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
@@ -22,7 +21,7 @@ class AuthController(
 ) {
 
     @PostMapping("/register")
-    fun register(@Valid @RequestBody request: RegisterRequest): ResponseEntity<RegisterResponse> {
+    fun register(@Valid @RequestBody request: RegisterRequest): ResponseEntity<LoginResponse> {
         val response = authService.register(request.email, request.password)
         return ResponseEntity.status(HttpStatus.CREATED).body(response)
     }

@@ -21,6 +21,7 @@ data class UserProfileResponse(
     val emergencyContact: EmergencyContactDto?,
     val hasProfilePhoto: Boolean,
     val profilePhotoUrl: String?,
+    val onboardingCompletedAt: OffsetDateTime?,
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime
 )

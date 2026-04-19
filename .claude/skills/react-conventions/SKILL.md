@@ -15,6 +15,7 @@ description: GymPulse React/TypeScript coding conventions. Load when writing,
 
 ## API Layer
 - All Axios calls in `src/api/` — never fetch inline in components or hooks
+- **Components must never import `axiosInstance` directly** — only API functions in `src/api/` may use it
 - Every API function is async, returns typed response directly (unwrap `.data`)
 - Let errors propagate — catch at the hook or page level, never silently swallow
 

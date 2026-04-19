@@ -7,7 +7,9 @@ import com.gymflow.dto.LoginRequest
 import com.gymflow.dto.LogoutRequest
 import com.gymflow.dto.RefreshRequest
 import com.gymflow.dto.RegisterRequest
+import com.gymflow.domain.UserProfile
 import com.gymflow.repository.RefreshTokenRepository
+import com.gymflow.repository.UserProfileRepository
 import com.gymflow.repository.UserRepository
 import com.gymflow.service.JwtService
 import org.junit.jupiter.api.Test
@@ -46,6 +48,9 @@ class AuthControllerIntegrationTest {
     @MockBean
     private lateinit var refreshTokenRepository: RefreshTokenRepository
 
+    @MockBean
+    private lateinit var userProfileRepository: UserProfileRepository
+
     @Autowired
     private lateinit var passwordEncoder: BCryptPasswordEncoder
 
@@ -58,11 +63,16 @@ class AuthControllerIntegrationTest {
 
     @Test
     fun `register - 201 on valid request`() {
-        val userId = UUID.randomUUID()
         val email = "alice@example.com"
         given(userRepository.findByEmailAndDeletedAtIsNull(email)).willReturn(null)
         given(userRepository.save(any(User::class.java))).willAnswer { invocation ->
             invocation.arguments[0] as User
+        }
+        given(userProfileRepository.save(any(UserProfile::class.java))).willAnswer { invocation ->
+            invocation.arguments[0] as UserProfile
+        }
+        given(refreshTokenRepository.save(any(RefreshToken::class.java))).willAnswer { invocation ->
+            invocation.arguments[0] as RefreshToken
         }
 
         mockMvc.perform(
@@ -71,10 +81,10 @@ class AuthControllerIntegrationTest {
                 .content(objectMapper.writeValueAsString(RegisterRequest(email, "secret99")))
         )
             .andExpect(status().isCreated)
-            .andExpect(jsonPath("$.email").value(email))
-            .andExpect(jsonPath("$.role").value("USER"))
-            .andExpect(jsonPath("$.id").exists())
-            .andExpect(jsonPath("$.createdAt").exists())
+            .andExpect(jsonPath("$.accessToken").exists())
+            .andExpect(jsonPath("$.refreshToken").exists())
+            .andExpect(jsonPath("$.tokenType").value("Bearer"))
+            .andExpect(jsonPath("$.expiresIn").exists())
     }
 
     @Test

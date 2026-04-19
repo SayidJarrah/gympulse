@@ -486,3 +486,45 @@ Feature: personal-training-booking
 Added: 2026-04-18
 Effort: S
 `PtBookingServiceTest` covers 8 paths but has no test for the `MEMBERSHIP_REQUIRED` (403) branch in `createBooking`. Add a test that mocks an inactive membership state and asserts `MembershipRequiredException` is thrown and `ptBookingRepository.save` is never called.
+
+## TD-068 — computeResumeStep skips membership/preferences steps on profile-complete resume
+Source: docs/reviews/onboarding-flow-20260419.md
+Feature: onboarding-flow
+Added: 2026-04-19
+Effort: S
+`OnboardingPage.tsx:computeResumeStep` returns `'terms'` once profile fields are present, jumping over the Membership and Booking steps. The SDD §4.4 resume computation specifies landing at `'membership'` when the profile is complete. A returning user whose last session ended at the Membership step is dropped to Final Check, bypassing plan selection. Align the function with the SDD so `'membership'` is returned when profile is complete and terms are not yet agreed.
+
+## TD-069 — Onboarding store per-user isolation does not work due to static `name` evaluation
+Source: docs/reviews/onboarding-flow-20260419.md
+Feature: onboarding-flow
+Added: 2026-04-19
+Effort: M
+`onboardingStore.ts:getStoreName()` calls `useAuthStore.getState()` at module evaluation time. The Zustand `persist` middleware reads the `name` option once on store creation; the result is almost always `'gf:onboarding:v1:anonymous'` because auth has not hydrated from localStorage yet at that point. Multiple users sharing a browser therefore share the same onboarding draft. Fix: use Zustand's `persist` `name` as a function (if supported) or re-create/rehydrate the store when the authenticated user ID changes.
+
+## TD-070 — OnboardingService.completeOnboarding findById uses opaque PK semantics
+Source: docs/reviews/onboarding-flow-20260419.md
+Feature: onboarding-flow
+Added: 2026-04-19
+Effort: S
+`OnboardingService.kt:51` calls `userProfileRepository.findById(userId)` where `userId` is the `@Id` field of `UserProfile`. Because the entity uses `user_id` as both FK and PK, the call is correct but non-obvious to future maintainers who may expect a `findByUserId` method. Add an inline comment (`// UserProfile PK is user_id — findById(userId) is correct`) to prevent future confusion and accidental refactoring.
+
+## TD-071 — "Most popular" badge on membership step determined by price rather than spec-designated plan
+Source: docs/reviews/onboarding-flow-20260419.md
+Feature: onboarding-flow
+Added: 2026-04-19
+Effort: S
+`StepMembership.tsx:26-30` assigns the "Most popular" badge to the most expensive plan. The handoff spec designates the Quarterly (mid-tier) plan as Most Popular. If a higher-priced annual or premium plan is added, the badge migrates automatically and misleads users. Resolve by adding a `featured: boolean` field to `MembershipPlan` (or using plan rank/position), or pin to the middle plan in the sorted list.
+
+## TD-072 — Custom checkbox in StepTerms uses button+role="checkbox" instead of native input
+Source: docs/reviews/onboarding-flow-20260419.md
+Feature: onboarding-flow
+Added: 2026-04-19
+Effort: S
+`StepTerms.tsx:156-165` implements the checkbox as `<button role="checkbox">` with a `<label htmlFor>` pointing to it. In several browsers `<label for>` does not trigger a `<button>` element's click handler, causing label-click to silently fail. Replace with a visually hidden `<input type="checkbox" id={id}>` and a custom indicator div as its adjacent sibling so native label association works correctly for all users including keyboard and assistive-technology users.
+
+## TD-073 — MiniNav step label not abbreviated; deviates from handoff eyebrow spec
+Source: docs/reviews/onboarding-flow-20260419.md
+Feature: onboarding-flow
+Added: 2026-04-19
+Effort: S
+`MiniNav.tsx:41` emits `STEP 02 · YOUR PROFILE · 2 of 6`. The handoff specifies `STEP 03 · PREFS` (abbreviated label) with the fraction in a separate muted tone. The current output is verbose and does not match the spec's visual rhythm. Either abbreviate step labels in `ALL_STEPS` definitions, or extract the fraction into a muted `<span>` and shorten the label portion to match the compact handoff format.

@@ -1,19 +1,90 @@
 import { useNavigate, Link } from 'react-router-dom'
 import { AuthForm } from '../../components/auth/AuthForm'
-import { useAuth } from '../../hooks/useAuth'
+import { useAuthStore } from '../../store/authStore'
+import * as authApi from '../../api/auth'
+import type { AxiosError } from 'axios'
+import type { ApiErrorResponse, AuthUser, UserRole } from '../../types/auth'
+import { useState, useCallback } from 'react'
+
+function decodeJwtPayload(token: string): AuthUser | null {
+  try {
+    const parts = token.split('.')
+    if (parts.length !== 3) return null
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+    const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4)
+    const json = atob(padded)
+    const payload = JSON.parse(json) as { sub: string; role: UserRole; email?: string }
+    return {
+      id: payload.sub,
+      email: payload.email ?? '',
+      role: payload.role,
+    }
+  } catch {
+    return null
+  }
+}
+
+function parseValidationErrors(message: string): Record<string, string> | null {
+  const parts = message.split(';').map((p) => p.trim())
+  const result: Record<string, string> = {}
+  let parsed = false
+  for (const part of parts) {
+    const colonIdx = part.indexOf(':')
+    if (colonIdx > 0) {
+      const field = part.slice(0, colonIdx).trim()
+      const msg = part.slice(colonIdx + 1).trim()
+      if (field && msg) {
+        result[field] = msg
+        parsed = true
+      }
+    }
+  }
+  return parsed ? result : null
+}
 
 export function RegisterPage() {
   const navigate = useNavigate()
-  const { register, isLoading, error, fieldErrors } = useAuth()
+  const { setTokens, setUser, setOnboardingCompletedAt } = useAuthStore()
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string> | null>(null)
 
-  const handleSubmit = async (email: string, password: string): Promise<void> => {
+  const handleSubmit = useCallback(async (email: string, password: string): Promise<void> => {
+    setIsLoading(true)
+    setError(null)
+    setFieldErrors(null)
     try {
-      await register(email, password)
-      navigate('/login')
-    } catch {
-      // Error is displayed via the error state in useAuth — no navigation on failure
+      const response = await authApi.register({ email, password })
+      // Store tokens (in memory / Zustand persist — never localStorage directly)
+      setTokens(response.accessToken, response.refreshToken)
+      // Decode JWT to get user identity
+      const decoded = decodeJwtPayload(response.accessToken)
+      if (decoded) {
+        setUser({ ...decoded, email })
+      }
+      // Mark onboarding as not complete so gate redirects correctly
+      setOnboardingCompletedAt(null)
+      navigate('/onboarding')
+    } catch (err) {
+      const axiosError = err as AxiosError<ApiErrorResponse>
+      const code = axiosError.response?.data?.code
+      const message = axiosError.response?.data?.error ?? ''
+      if (code === 'EMAIL_ALREADY_EXISTS') {
+        setError('An account with this email already exists. Please sign in instead.')
+      } else if (code === 'VALIDATION_ERROR') {
+        const parsed = parseValidationErrors(message)
+        if (parsed) {
+          setFieldErrors(parsed)
+        } else {
+          setError(message || 'Validation error.')
+        }
+      } else {
+        setError(message || 'An unexpected error occurred.')
+      }
+    } finally {
+      setIsLoading(false)
     }
-  }
+  }, [setTokens, setUser, setOnboardingCompletedAt, navigate])
 
   return (
     <div className="min-h-screen bg-[#0F0F0F] flex flex-col items-center justify-center px-4 py-12">

@@ -15,6 +15,7 @@ export interface UserProfile {
   emergencyContact: EmergencyContact | null;
   hasProfilePhoto: boolean;
   profilePhotoUrl: string | null;
+  onboardingCompletedAt: string | null; // ISO 8601 or null
   createdAt: string;
   updatedAt: string;
 }

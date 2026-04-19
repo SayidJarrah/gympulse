@@ -107,6 +107,9 @@ enum class ErrorCode {
     PT_BOOKING_NOT_FOUND,
     PT_BOOKING_NOT_ACTIVE,
 
+    // Onboarding
+    ONBOARDING_NOT_COMPLETE,
+
     // Catch-all
     INTERNAL_ERROR,
 }

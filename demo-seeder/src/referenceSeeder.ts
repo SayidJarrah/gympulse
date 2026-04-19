@@ -312,8 +312,10 @@ async function upsertQaUsersAndProfiles(): Promise<number> {
         `INSERT INTO user_profiles
            (user_id, first_name, last_name, phone,
             date_of_birth, fitness_goals, preferred_class_types,
-            emergency_contact_name, emergency_contact_phone)
-         SELECT u.id, $2, $3, $4, $5::date, $6::jsonb, $7::jsonb, $8, $9
+            emergency_contact_name, emergency_contact_phone,
+            onboarding_completed_at)
+         SELECT u.id, $2, $3, $4, $5::date, $6::jsonb, $7::jsonb, $8, $9,
+                '2026-01-01T00:00:00Z'::timestamptz
          FROM users u
          WHERE u.email = $1
          ON CONFLICT (user_id) DO UPDATE
@@ -325,6 +327,7 @@ async function upsertQaUsersAndProfiles(): Promise<number> {
                preferred_class_types   = EXCLUDED.preferred_class_types,
                emergency_contact_name  = EXCLUDED.emergency_contact_name,
                emergency_contact_phone = EXCLUDED.emergency_contact_phone,
+               onboarding_completed_at = EXCLUDED.onboarding_completed_at,
                deleted_at              = NULL`,
         [
           p.email,

@@ -2,9 +2,11 @@ package com.gymflow.service
 
 import com.gymflow.domain.RefreshToken
 import com.gymflow.domain.User
+import com.gymflow.domain.UserProfile
 import com.gymflow.dto.LoginResponse
 import com.gymflow.repository.RefreshTokenRepository
 import com.gymflow.repository.UserMembershipRepository
+import com.gymflow.repository.UserProfileRepository
 import com.gymflow.repository.UserRepository
 import io.mockk.every
 import io.mockk.mockk
@@ -26,6 +28,7 @@ class AuthServiceTest {
     private val userRepository: UserRepository = mockk()
     private val refreshTokenRepository: RefreshTokenRepository = mockk()
     private val userMembershipRepository: UserMembershipRepository = mockk()
+    private val userProfileRepository: UserProfileRepository = mockk()
     private val passwordEncoder: BCryptPasswordEncoder = BCryptPasswordEncoder(10)
     private val jwtService: JwtService = mockk()
 
@@ -33,6 +36,7 @@ class AuthServiceTest {
         userRepository = userRepository,
         refreshTokenRepository = refreshTokenRepository,
         userMembershipRepository = userMembershipRepository,
+        userProfileRepository = userProfileRepository,
         passwordEncoder = passwordEncoder,
         jwtService = jwtService,
         refreshTokenExpiryDays = 30
@@ -43,22 +47,27 @@ class AuthServiceTest {
     // -----------------------------------------------------------------------
 
     @Test
-    fun `register - happy path - returns RegisterResponse with USER role`() {
+    fun `register - happy path - returns LoginResponse with tokens`() {
         val email = "alice@example.com"
         val password = "secret99"
         val userSlot = slot<User>()
 
         every { userRepository.findByEmailAndDeletedAtIsNull(email) } returns null
         every { userRepository.save(capture(userSlot)) } answers { userSlot.captured }
+        every { userProfileRepository.save(any<UserProfile>()) } answers { firstArg() }
+        every { jwtService.generateToken(any()) } returns "mock.jwt.token"
+        every { jwtService.getExpiresInSeconds() } returns 3600L
+        every { refreshTokenRepository.save(any()) } answers { firstArg() }
 
         val response = authService.register(email, password)
 
-        assertEquals(email, response.email)
-        assertEquals("USER", response.role)
-        assertNotNull(response.id)
-        assertNotNull(response.createdAt)
-        // role is always USER regardless of what was passed
+        assertEquals("mock.jwt.token", response.accessToken)
+        assertNotNull(response.refreshToken)
+        assertEquals("Bearer", response.tokenType)
+        assertEquals(3600L, response.expiresIn)
+        assertFalse(response.hasActiveMembership)
         verify(exactly = 1) { userRepository.save(any()) }
+        verify(exactly = 1) { userProfileRepository.save(any<UserProfile>()) }
     }
 
     @Test
@@ -83,6 +92,10 @@ class AuthServiceTest {
 
         every { userRepository.findByEmailAndDeletedAtIsNull(email) } returns null
         every { userRepository.save(capture(userSlot)) } answers { userSlot.captured }
+        every { userProfileRepository.save(any<UserProfile>()) } answers { firstArg() }
+        every { jwtService.generateToken(any()) } returns "mock.jwt.token"
+        every { jwtService.getExpiresInSeconds() } returns 3600L
+        every { refreshTokenRepository.save(any()) } answers { firstArg() }
 
         authService.register(email, password)
 

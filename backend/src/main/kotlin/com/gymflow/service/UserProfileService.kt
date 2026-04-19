@@ -216,6 +216,10 @@ class UserProfileService(
             throw InvalidDateOfBirthException("Date of birth cannot be in the future")
         }
 
+        if (parsed.isAfter(LocalDate.now().minusYears(16))) {
+            throw InvalidDateOfBirthException("Member must be at least 16 years old")
+        }
+
         return parsed
     }
 
@@ -263,6 +267,7 @@ class UserProfileService(
                 emergencyContact = null,
                 hasProfilePhoto = false,
                 profilePhotoUrl = null,
+                onboardingCompletedAt = null,
                 createdAt = user.createdAt,
                 updatedAt = user.updatedAt
             )
@@ -290,6 +295,7 @@ class UserProfileService(
             emergencyContact = emergencyContact,
             hasProfilePhoto = hasProfilePhoto,
             profilePhotoUrl = if (hasProfilePhoto) "/api/v1/profile/me/photo" else null,
+            onboardingCompletedAt = profile.onboardingCompletedAt,
             createdAt = profile.createdAt,
             updatedAt = profile.updatedAt
         )

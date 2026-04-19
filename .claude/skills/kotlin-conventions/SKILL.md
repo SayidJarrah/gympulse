@@ -66,3 +66,8 @@ Never infer that no FK children exist from the entity class alone — the DB con
 Never edit a migration file (`V{N}__*.sql`) after it has been applied to any environment.
 Flyway stores the checksum on apply; editing the file causes a checksum mismatch that prevents the backend from starting.
 To fix a mistake: create a new migration `V{N+1}__fix_*.sql` instead.
+
+## DROP CONSTRAINT — Verify Name Before Writing
+Before writing `ALTER TABLE … DROP CONSTRAINT {name}`, read the Flyway migration that originally created the constraint (search all `V__*.sql` files for `ADD CONSTRAINT` on that table).
+Never guess or derive the constraint name from the table/column names — use the exact string from the original `ADD CONSTRAINT` line.
+A wrong name causes `PSQLException: constraint … does not exist` at apply time.
