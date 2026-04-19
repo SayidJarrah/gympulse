@@ -15,7 +15,6 @@ export function StepRail({ visibleSteps, currentStep, onNavigateBack }: StepRail
         {visibleSteps.map((step, idx) => {
           const isDone = idx < currentIndex
           const isCurrent = idx === currentIndex
-          const isTodo = idx > currentIndex
 
           return (
             <li key={step.key}>
@@ -62,7 +61,7 @@ function CurrentCircle({ num }: { num: number }) {
   )
 }
 
-function DoneCircle({ num }: { num: number }) {
+function DoneCircle(_: { num: number }) {
   return (
     <div
       className="flex items-center justify-center shrink-0 w-7 h-7 rounded-full"

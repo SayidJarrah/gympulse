@@ -39,6 +39,7 @@ const populatedProfile: UserProfile = {
   emergencyContact: null,
   hasProfilePhoto: false,
   profilePhotoUrl: null,
+  onboardingCompletedAt: null,
   createdAt: '2026-03-29T09:00:00Z',
   updatedAt: '2026-03-29T09:00:00Z',
 }

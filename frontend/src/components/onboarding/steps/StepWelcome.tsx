@@ -75,7 +75,7 @@ export function StepWelcome({ firstName }: StepWelcomeProps) {
 function PreviewCard({ icon, title, meta }: { icon: React.ReactNode; title: string; meta: string }) {
   return (
     <div
-      className="flex flex-col gap-3 p-6 rounded-xl transition-all duration-150 cursor-default"
+      className="flex flex-col gap-3 p-6 rounded-xl transition-all duration-150 cursor-default min-h-[240px]"
       style={{
         background: 'var(--color-bg-surface-1)',
         border: '1px solid var(--color-border-card)',

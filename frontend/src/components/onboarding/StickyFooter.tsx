@@ -33,7 +33,7 @@ export function StickyFooter({
         borderTop: '1px solid var(--color-border-card)',
       }}
     >
-      {/* Back */}
+      {/* Back — pure ghost, no border per design system spec */}
       <button
         type="button"
         onClick={onBack}
@@ -42,7 +42,6 @@ export function StickyFooter({
         style={{
           color: isFirst ? 'var(--color-fg-muted)' : 'var(--color-fg-label)',
           background: 'transparent',
-          border: '1px solid var(--color-border-card)',
         }}
       >
         ← Back
