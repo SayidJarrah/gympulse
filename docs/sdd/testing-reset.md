@@ -3,6 +3,17 @@
 ## Reference
 - Brief: docs/briefs/testing-reset.md
 - Date: 2026-04-13
+- Revised: 2026-04-19 — greenfield scenario scope; 3-step migration; onboarding / PT / class-booking integrated; admin out of scope; §4 rewritten
+
+## Revision summary (2026-04-19)
+
+Step 1 of the original plan (scaffold + baseline seed + docs) is complete. When rebasing Step 1 against `main` six days of product delivery had landed (onboarding wizard, personal-training booking, class-booking cancellation, landing / home / profile redesigns, `MemberNav`, favorites removal, design-system token extraction). The original §4 spec inventory was a one-to-one port of the existing `frontend/e2e/` suite — that assumption no longer holds. Decisions for this revision:
+
+1. **No ports.** Do not carry any test case, selector, or flow from `frontend/e2e/` into `e2e/`. Treat the new suite as greenfield.
+2. **Thin coverage, main journeys only.** Ship ≤15 scenarios covering the core member + guest user journeys. No error-permutation fans, no visual-regression harness, no edge-case sweeps.
+3. **Admin surface out of scope** for this reset. Admin flows are exercised by backend unit tests plus manual verification via the dev stack. An admin E2E spec file may be added later if the risk profile changes.
+4. **Onboarding is a first-class citizen** of the test setup. `ApiClient.registerUser()` returns a user whose onboarding is still open. Tests that need a fully onboarded member call `api.registerUserAndCompleteOnboarding()` which walks the real onboarding API (profile → complete). No test-support shortcut — completing onboarding through real endpoints gives onboarding implicit regression coverage on every run.
+5. **Migration collapses to 3 steps.** Scaffold (this PR, done) → scenarios (one PR) → deletion sweep (one PR).
 
 ## Architecture Overview
 
@@ -31,7 +42,7 @@ Layers affected:
    (the init script in `docker/postgres/init` creates `gymflow`, not `gymflow_e2e`). This is a
    latent structural defect.
 
-3. Bug tracking lives in 24+ markdown files under `docs/bugs/`. No spec prevents regression on
+3. Bug tracking lives in 20+ markdown files under `docs/bugs/`. No spec prevents regression on
    any of them. The files have no lifecycle and accumulate without bound.
 
 **After the reset:**
@@ -46,22 +57,17 @@ Layers affected:
 
 ## 1. Migration Plan
 
-Six sequential PRs. Each must merge green before the next begins.
+Three sequential PRs. Each must merge green before the next begins.
 
 | Step | Branch | Scope |
 |------|--------|-------|
-| 1 | `chore/testing-reset-step-1` | Scaffold new stacks |
-| 2 | `chore/testing-reset-step-2` | Scaffold `/e2e` package + smoke spec |
-| 3 | `chore/testing-reset-step-3` | Port specs feature-by-feature (9 specs) |
-| 4 | `chore/testing-reset-step-4` | Clean-slate specs (2 specs) |
-| 5 | `chore/testing-reset-step-5` | Deletion sweep |
-| 6 | `chore/testing-reset-step-6` | Docs and command updates |
+| 1 | `chore/testing-reset-step-1` | Scaffold new stacks, baseline seed, SDD — **this PR** |
+| 2 | `chore/testing-reset-step-2` | Scaffold `e2e/` package + write all 13 greenfield scenarios green against the new stack |
+| 3 | `chore/testing-reset-step-3` | Delete old `frontend/e2e/`, `docs/bugs/`, `docs/qa/`, `docs/gaps/seeding-consolidation.md`, `test-manifest` skill; update `/run`, `/verify`, `/deliver`, CLAUDE.md |
 
-**Risk: partial coverage window during Step 3.** For approximately 2 weeks the suite has partial
-coverage while specs are rewritten one at a time. Mitigation: port highest-risk features first
-(auth, purchase). Features not yet re-covered may use `/verify --skip-spec <name>` until their
-new spec is green in CI. In-progress product features must not be merged until their spec is
-re-covered or the developer explicitly confirms the risk.
+**Coverage gap.** Between Step 1 merge and Step 2 green there is no E2E coverage at all — the old suite still exists but is not run by `/verify` after Step 3 updates the skill. During this window (Steps 1 → 2) the old `frontend/e2e/` suite remains runnable manually via `cd frontend && npm run test:e2e`, but it is not required to be green for a feature merge. This is an intentional trade-off against the much larger cost of keeping the old suite alive while building the new one. Fast execution of Step 2 (target: same week as Step 1 merge) is the mitigation.
+
+In-progress product features during Steps 1→2 are expected to rely on backend unit tests and manual verification until the new suite is green.
 
 ---
 
@@ -203,18 +209,20 @@ gympulse/
 │   │   ├── login.ts
 │   │   └── selectors.ts
 │   ├── specs/
-│   │   ├── auth.spec.ts
-│   │   ├── membership-plans.spec.ts
+│   │   ├── landing.spec.ts
+│   │   ├── register.spec.ts
+│   │   ├── onboarding.spec.ts
+│   │   ├── login.spec.ts
+│   │   ├── plans.spec.ts
 │   │   ├── membership-purchase.spec.ts
-│   │   ├── member-home.spec.ts
-│   │   ├── trainer-discovery.spec.ts
 │   │   ├── class-schedule.spec.ts
 │   │   ├── class-booking.spec.ts
-│   │   ├── user-profile.spec.ts
-│   │   └── entity-image-management.spec.ts
+│   │   ├── personal-training.spec.ts
+│   │   ├── trainer-directory.spec.ts
+│   │   ├── profile-edit.spec.ts
+│   │   └── logout.spec.ts
 │   └── clean-slate/
-│       ├── onboarding-empty-state.spec.ts
-│       └── admin-first-install.spec.ts
+│       └── empty-state.spec.ts
 └── e2e-seed/
     ├── baseline.sql
     └── reset.sh
@@ -257,7 +265,7 @@ per-file `beforeAll` instead.
 ### 3.3 `e2e/fixtures/api-client.ts`
 
 Thin wrapper over Playwright's `APIRequestContext`. All calls go to real API endpoints — no
-direct DB access.
+direct DB access. Member-only surface; admin methods are not included (admin E2E is out of scope).
 
 **Type: `RegisterInput`**
 ```typescript
@@ -278,6 +286,7 @@ interface RegisteredUser {
   lastName: string;
   userId: string;
   accessToken: string;
+  onboardingCompletedAt: string | null;
 }
 ```
 
@@ -292,27 +301,57 @@ Methods:
 - Default `password: 'Test123!'`, `firstName: 'Test'`, `lastName: <uuid8>`
 - POST `/api/v1/auth/register`
 - `expect(res.ok()).toBeTruthy()` — fails fast if setup fails
-- Returns spread of input plus `userId: body.userId, accessToken: body.accessToken`
+- Returns spread of input plus `userId`, `accessToken`, and `onboardingCompletedAt: null`
+- The returned user is NOT onboarded. UI-level navigation after login will land on `/onboarding`.
 
-`purchasePlan(accessToken: string, planId: string): Promise<void>`
+`registerUserAndCompleteOnboarding(overrides?: Partial<RegisterInput>): Promise<RegisteredUser>`
+- Calls `registerUser(overrides)` to obtain a fresh account
+- Walks the real onboarding API to completion:
+  1. `PUT /api/v1/profile/me` with the required profile fields (`firstName`, `lastName`, `phone`, `dateOfBirth`). Uses a deterministic phone `+15550100000 + <uuid8>` and dateOfBirth `1995-01-01` so tests do not depend on randomness.
+  2. `POST /api/v1/onboarding/complete`
+- Returns the user with `onboardingCompletedAt` populated from the final profile GET (or current ISO timestamp if the server does not return it).
+- This is the default path for any test that needs a member on `/home`.
+
+`purchasePlan(accessToken: string, planId: string): Promise<string>`
 - POST `/api/v1/memberships` with `{ planId }`
 - Bearer token from `accessToken`
 - `expect(res.ok()).toBeTruthy()`
+- Returns the created `membershipId`
 
-`bookClass(accessToken: string, classInstanceId: string): Promise<void>`
+`listPlans(): Promise<Array<{ id: string; name: string }>>`
+- GET `/api/v1/plans` (public endpoint)
+- Used to resolve the baseline seed plan IDs without hardcoding the UUIDs in specs that want to look up plans by name
+
+`listClassInstances(from: string, to: string): Promise<Array<{ id: string; name: string; scheduledAt: string }>>`
+- GET `/api/v1/classes/schedule?from=...&to=...`
+- Used by class-booking specs to resolve a bookable instance ID without UI scraping
+
+`bookClass(accessToken: string, classInstanceId: string): Promise<string>`
 - POST `/api/v1/bookings` with `{ classInstanceId }`
-- Bearer token from `accessToken`
-- `expect(res.ok()).toBeTruthy()`
+- Returns the created `bookingId`
 
-`favoriteTrainer(accessToken: string, trainerId: string): Promise<void>`
-- POST `/api/v1/trainers/<trainerId>/favorite`
-- Bearer token from `accessToken`
-- `expect(res.ok()).toBeTruthy()`
+`cancelClassBooking(accessToken: string, bookingId: string): Promise<void>`
+- DELETE `/api/v1/bookings/<bookingId>` (or PATCH per current class-booking SDD)
+- Exact verb and path must match `docs/sdd/class-booking.md` §API at the time Step 2 is written
+
+`listPtTrainers(): Promise<Array<{ id: string; firstName: string; lastName: string }>>`
+- GET `/api/v1/trainers/pt`
+- Used by the PT spec to resolve a trainer ID
+
+`bookPtSession(accessToken: string, trainerId: string, startAt: string): Promise<string>`
+- POST `/api/v1/trainers/pt/bookings` with `{ trainerId, startAt }`
+- `startAt` must be an ISO 8601 UTC timestamp on the hour, ≥24h ahead, within gym open hours (6:00–22:00 UTC). The PT spec uses a helper that picks the first such slot tomorrow at 15:00 UTC.
+- Returns the created PT booking ID
 
 **Rules enforced inside `ApiClient` (never relaxed in specs):**
 - Every email must end with `@test.gympulse.local`
 - Response assertions (`expect(res.ok())`) live inside the client; specs do not re-assert setup
 - No SQL or DB calls
+
+**What is deliberately NOT in `ApiClient`:**
+- `favoriteTrainer` — the Favorites feature was removed from the product on 2026-04-16; the endpoint no longer exists
+- Any admin method (plan CRUD, class template CRUD, user lookup) — admin E2E is out of scope
+- Any `/test-support/*` helper — the real onboarding API is walked instead, so `GYMFLOW_TEST_SUPPORT_ENABLED` only gates the schema-reset path used by `reset-db.ts`
 
 ### 3.4 `e2e/fixtures/test-user.ts`
 
@@ -330,14 +369,23 @@ export interface TestUser {
 
 **Playwright fixture wiring (also in this file):**
 ```typescript
-export const test = base.extend<{ api: ApiClient; freshUser: TestUser }>({
+export const test = base.extend<{
+  api: ApiClient;
+  freshUser: TestUser;            // registered, onboarding still open — use for register/onboarding specs
+  onboardedUser: TestUser;         // registered + onboarding walked to completion — use for all other member specs
+}>({
   api: async ({ request }, use) => use(new ApiClient(request)),
   freshUser: async ({ api }, use) => use(await api.registerUser()),
+  onboardedUser: async ({ api }, use) => use(await api.registerUserAndCompleteOnboarding()),
 });
 ```
 
 All spec files in `e2e/specs/` import `{ test, expect }` from `../fixtures/test-user` instead of
 `@playwright/test` directly.
+
+Specs choose the fixture that matches the starting state:
+- `register.spec.ts`, `onboarding.spec.ts` — no fixture; they register inside the test
+- All other member-facing specs use `onboardedUser` — it skips the onboarding noise and lands the user straight on `/home` after login
 
 ### 3.5 `e2e/fixtures/reset-db.ts`
 
@@ -382,54 +430,75 @@ alongside every new spec that introduces a new testid dependency.
 
 ---
 
-## 4. Spec Inventory
+## 4. Scenario Inventory (greenfield — replaces old spec inventory)
 
-### 4.1 New-to-old mapping
+**Principle.** Do not port any test case from `frontend/e2e/`. Each scenario is the thinnest end-to-end path that proves a feature is alive in production shape. If removing the scenario would not leave a user blocked from completing the journey, the scenario does not belong in the initial set. Error permutations, negative paths beyond one representative case per spec, and pixel-level visual checks are deferred.
 
-| New spec (`e2e/specs/`) | Old spec (`frontend/e2e/`) | Port approach | Notes |
-|-------------------------|---------------------------|---------------|-------|
-| `auth.spec.ts` | `auth.spec.ts` | Rewrite | Drop `global-setup.ts` admin dependency; use `freshUser` fixture. Admin tests use env-var credentials. |
-| `membership-plans.spec.ts` | `membership-plans.spec.ts` | Rewrite | Approach D; plans come from baseline seed, not `global-setup` creation |
-| `membership-purchase.spec.ts` | `user-membership-purchase.spec.ts` | Rewrite | Renamed to match feature slug |
-| `member-home.spec.ts` | `member-home.spec.ts` | Rewrite | Approach D; `freshUser` + `purchasePlan` for active-state variants |
-| `trainer-discovery.spec.ts` | `trainer-discovery.spec.ts` | Rewrite | Trainers from baseline seed |
-| `class-schedule.spec.ts` | `group-classes-schedule-view.spec.ts` + `class-schedule.spec.ts` | Merge + rewrite | Two old specs cover overlapping territory; merge into one. Instances from baseline seed. |
-| `class-booking.spec.ts` | (no direct equivalent) | New | Booking flows were partially in `member-home`; extract to own spec |
-| `user-profile.spec.ts` | `user-profile-management.spec.ts` | Rewrite | Renamed to match SDD slug |
-| `entity-image-management.spec.ts` | `entity-image-management.spec.ts` | Rewrite | Same scope; rewrite to use `freshUser` fixture |
+**Total: 13 scenarios** — 12 in the `default` project, 1 in `clean-slate`.
 
-The old `landing-page.spec.ts` has no corresponding new spec in `e2e/specs/`. Landing page ACs
-covered by `auth.spec.ts` navigation tests (unauthenticated redirect behaviour). Dedicated
-landing-page spec is not carried forward — the page contains no authenticated state and is
-trivial to cover within the auth spec.
+### 4.1 Default project — parallel, Approach D (`e2e/specs/`)
 
-### 4.2 Clean-slate specs
+All default-project specs use the `onboardedUser` fixture unless noted. No spec may rely on the absence of data the baseline seed provides (Lesson 6).
 
-| New spec (`e2e/clean-slate/`) | Premise | Reset required because |
-|-------------------------------|---------|------------------------|
-| `onboarding-empty-state.spec.ts` | New member sees empty state on home with no plans, no trainers, no classes | Baseline seed provides trainers and class templates; only a full reset can guarantee their absence |
-| `admin-first-install.spec.ts` | Admin logs in with no reference data configured | Same: baseline seed provides reference data |
+| # | File | Journey | Fixture | Key assertions |
+|---|------|---------|---------|----------------|
+| 1 | `landing.spec.ts` | Guest visits `/`, sees hero + primary CTAs; clicking "Sign up" navigates to `/register`; clicking "Sign in" navigates to `/login` | none (guest) | URL transitions only |
+| 2 | `register.spec.ts` | Guest registers with a fresh `@test.gympulse.local` email → lands on `/onboarding` | none (creates inside test) | Post-submit URL is `/onboarding`; email appears in auth store |
+| 3 | `onboarding.spec.ts` | Fresh just-registered user completes onboarding: fill required profile fields → advance through optional steps → skip membership → skip booking → accept terms → land on `/home` | `freshUser` | Final URL is `/home`; `/profile/me` shows `onboardingCompletedAt` populated |
+| 4 | `login.spec.ts` | Two cases in one file: (a) onboarded user logs in with correct creds → `/home`; (b) onboarded user logs in with wrong password → error banner, stays on `/login` | `onboardedUser` | `/home` landing + error copy visibility |
+| 5 | `plans.spec.ts` | Onboarded user opens `/plans`, sees baseline seed plans (`Starter Monthly`, `Unlimited Monthly`), opens one plan detail | `onboardedUser` | Plan card and plan-detail render |
+| 6 | `membership-purchase.spec.ts` | Onboarded user with no active membership selects `Starter Monthly` and purchases → `/membership` shows active membership card | `onboardedUser` | Post-purchase URL; active membership visible |
+| 7 | `class-schedule.spec.ts` | Onboarded user opens `/schedule`, sees class instances for the current ISO week from baseline seed | `onboardedUser` | At least one instance visible per visible weekday in the baseline seed range |
+| 8 | `class-booking.spec.ts` | Onboarded user with active membership books an instance from `/schedule` → appears in `/profile/bookings`; then cancels → no longer appears | `onboardedUser` + `api.purchasePlan()` precondition | Booking visible → cancelled → not visible |
+| 9 | `personal-training.spec.ts` | Onboarded user with active membership opens `/training`, picks a trainer, selects an available slot ≥24h out, confirms booking → session appears on `/profile/bookings` (or PT sessions list) | `onboardedUser` + `api.purchasePlan()` precondition | PT session persisted and visible |
+| 10 | `trainer-directory.spec.ts` | Onboarded user opens `/trainers`, sees all baseline trainers, opens one trainer profile | `onboardedUser` | List count ≥3, profile page renders |
+| 11 | `profile-edit.spec.ts` | Onboarded user opens `/profile`, edits first name and phone, saves, reloads — change persists | `onboardedUser` | Post-reload field values equal edited values |
+| 12 | `logout.spec.ts` | Two cases: (a) logged-in user logs out → lands on `/`, nav shows guest CTAs; (b) after logout, visiting `/home` redirects to `/login` | `onboardedUser` | Route guard redirect; auth store cleared |
 
-### 4.3 Baseline seed content (`e2e-seed/baseline.sql`)
+### 4.2 Clean-slate project — serial, Approach C (`e2e/clean-slate/`)
+
+Only one clean-slate scenario. If the clean-slate set grows beyond three specs over time, re-examine each addition to see if the premise can be met via `ApiClient` instead (rule from §7 Guardrail 7).
+
+| # | File | Premise | Reset required because |
+|---|------|---------|------------------------|
+| 13 | `empty-state.spec.ts` | Immediately after `resetDatabase()`, a fresh user who completes registration and onboarding lands on `/home` and sees empty-state variants (no active classes, no trainers, no plans) without a crash | Baseline seed always provides plans / trainers / classes; only a full DROP + Flyway + empty-baseline run can guarantee the empty state. For this single spec, `resetDatabase()` skips re-applying `baseline.sql` and only re-runs Flyway migrations, leaving the DB at the post-migrate reference-data-free state. |
+
+### 4.3 Explicitly deferred (out of scope for initial set)
+
+Documented here so reviewers do not flag as missing:
+
+- **Admin surface** — plan CRUD, class template CRUD, scheduler, PT-session admin, user detail, attendee list. Covered by backend unit tests and manual verification via the dev stack. May gain an `admin/` spec directory later.
+- **Entity image management deep tests** (4 cases today) — subsumed by `profile-edit.spec.ts`, which uploads a photo as part of the edit flow; remove / replace / reject-invalid-type are deferred
+- **Class-schedule filter & search permutations** (the 2 128-line current spec)
+- **Membership-plan edge cases** — renewal, cancellation, double-purchase guard, plan-pending state
+- **Booking edge cases** — late-cancellation window, already-cancelled, capacity-full, overlapping bookings
+- **Password reset, email verification** — not in product scope
+- **Visual regression / screenshot diffing**
+- **Performance / load / accessibility scans**
+
+New scenarios may be added later but each addition must have a concrete user-journey or incident-driven justification, not "while we're at it."
+
+### 4.4 Baseline seed content (`e2e-seed/baseline.sql`)
 
 The baseline seed is the minimum reference data all `default` project specs assume:
-- At least 2 membership plans (names: `Starter Monthly`, `Unlimited Monthly`)
-- At least 3 trainers
-- At least 3 class templates (e.g. `HIIT Bootcamp`, `Yoga Flow`, `Spin Cycle`)
-- At least 2 rooms (`Studio A`, `Studio B`)
-- At least 5 class instances spread across the current ISO week (Monday–Friday)
+- 2 membership plans (names: `Starter Monthly`, `Unlimited Monthly`)
+- 3 trainers — reused for both group-class and PT scenarios (no separate PT seed data required; PT availability is computed dynamically by `PtBookingService` from gym hours minus overlaps)
+- 3 class templates (`HIIT Bootcamp`, `Yoga Flow`, `Spin Cycle`)
+- 2 rooms (`Studio A`, `Studio B`)
+- 10 class instances across the current ISO week Mon–Fri at 09:00 and 11:00 UTC
 
-The seed does NOT create any member users. Tests create users via `ApiClient.registerUser()`.
+The seed does NOT create any member users. Tests create users via `ApiClient.registerUser()` or `ApiClient.registerUserAndCompleteOnboarding()`.
 
-The seed uses `INSERT ... ON CONFLICT DO NOTHING` throughout so it is safe to apply against a
-DB that already has data (idempotent).
+The seed uses `INSERT ... ON CONFLICT (id) DO NOTHING` throughout. Note: this protects against PK collisions only, not against `UNIQUE(name)` / `UNIQUE(email)` collisions. In practice this is safe because the seed is only applied on a freshly initialised schema or after `reset.sh` (which drops the schema first). TD-082 tracks tightening the comment or adding secondary conflict targets.
+
+**No PT-specific seed rows.** PT booking reuses the baseline trainers. Because baseline class instances land at 09:00 and 11:00 UTC, PT specs pick a booking slot at 15:00 UTC tomorrow to avoid deterministic overlap with the group-class schedule.
 
 ---
 
-## 5. Deletion Inventory (Step 5)
+## 5. Deletion Inventory (Step 3)
 
-The following are deleted in the `chore/testing-reset-step-5` PR. Nothing is deleted before
-the replacement is green in CI.
+The following are deleted in the `chore/testing-reset-step-3` PR. Nothing is deleted before
+the 13 greenfield scenarios from Step 2 are green in CI.
 
 ### Files and directories to delete
 
@@ -465,7 +534,7 @@ The `docs/qa/` directory itself is removed once empty.
 
 **Bug docs (entire directory):**
 ```
-docs/bugs/   (all 24+ files)
+docs/bugs/   (all 20+ files)
 ```
 
 **Gap docs:**
@@ -491,7 +560,7 @@ not separately deleted.)
 ### Frontend `package.json` changes
 
 Remove `test:e2e` script and `@playwright/test` dev dependency from `frontend/package.json`
-in Step 5. Playwright is a dependency of `e2e/package.json` only after the reset.
+in Step 3. Playwright is a dependency of `e2e/package.json` only after the reset.
 
 ---
 
@@ -537,7 +606,7 @@ comment is acceptable."
 ### 6.4 `test-manifest` skill
 
 Deleted entirely. The `test-manifest` skill directory (`.claude/skills/test-manifest/`) is
-removed in Step 5.
+removed in Step 3.
 
 ### 6.5 CLAUDE.md changes
 
@@ -577,33 +646,25 @@ Add a **Testing** section with the following content:
 
 These rules apply to every PR under this reset. They are not negotiable.
 
-1. **Green before delete.** Every existing green E2E spec must be re-covered by a new spec in
-   `e2e/specs/` or `e2e/clean-slate/` before its old counterpart in `frontend/e2e/` is deleted.
-   Step 5 (deletion sweep) cannot begin until all 9 ported specs and both clean-slate specs are
-   green in CI.
+1. **Greenfield, no ports.** No test case, selector string, helper, or flow from `frontend/e2e/` is copied into `e2e/`. Step 2 writes the 13 scenarios from scratch against the new stack. This is intentional and non-negotiable: the old suite is the problem being solved, not the template.
 
-2. **No shared-seed coupling (Lesson 6).** No spec may depend on the absence of data that the
-   baseline seed provides. If a test premise requires "no X exists in the system", it belongs in
-   `clean-slate/` with `resetDatabase()`.
+2. **Green before delete.** Step 3 (deletion sweep) cannot begin until all 12 default-project scenarios and the 1 clean-slate scenario from Step 2 are green in CI.
 
-3. **Rebuild discipline (Lesson 7).** `/verify` must always rebuild containers (`--build`) before
-   running tests. This is enforced at the skill level. Manual invocations that skip `--build`
-   are not supported and must not be documented as a valid workflow.
+3. **No shared-seed coupling (Lesson 6).** No spec may depend on the absence of data that the baseline seed provides. If a test premise requires "no X exists in the system", it belongs in `clean-slate/` with `resetDatabase()`.
 
-4. **Backend unit tests untouched.** No PR under this reset modifies any file under
-   `backend/src/test/`. Backend tests are out of scope.
+4. **Rebuild discipline (Lesson 7).** `/verify` must always rebuild containers (`--build`) before running tests. This is enforced at the skill level. Manual invocations that skip `--build` are not supported and must not be documented as a valid workflow.
 
-5. **No product behaviour changes.** No PR under this reset modifies any frontend component,
-   backend controller, service, or migration. Infrastructure and test files only.
+5. **Backend unit tests untouched.** No PR under this reset modifies any file under `backend/src/test/`. Backend tests are out of scope.
 
-6. **One spec per feature.** Spec file names match the SDD slug for the feature they cover.
-   No catch-all or multi-feature spec files.
+6. **No product behaviour changes.** No PR under this reset modifies any frontend component, backend controller, service, or migration. Infrastructure and test files only.
 
-7. **Hard limit: ≤5 clean-slate specs.** If more than 5 specs require `resetDatabase()`,
-   re-examine whether the premise can instead be established via `ApiClient`. Only true
-   empty-state or first-install scenarios qualify for `clean-slate/`.
+7. **One spec per scenario, filename matches the journey.** Spec file names match the journey slug listed in §4.1 — no catch-all or multi-feature spec files. A spec should have 1–3 test cases. If a scenario grows past 3 cases it is being scope-crept; split or prune.
 
-8. **Max 7 ACs per PRD** if PRDs are written for this reset (one per migration step, 6 total).
+8. **Hard limit: ≤3 clean-slate specs.** If more than 3 specs require `resetDatabase()`, re-examine whether the premise can instead be established via `ApiClient`. Only true empty-state scenarios qualify for `clean-slate/`. (Initial set is 1.)
+
+9. **No `waitForTimeout` (Playwright anti-pattern).** Use `expect.poll`, `waitForResponse`, or explicit UI-state assertions. The old suite has multiple instances (tracked in TD-038); none may appear in the new suite.
+
+10. **Admin flows are out of scope** for this reset. No admin spec, no admin method on `ApiClient`. If an admin-surface regression slips through, it must be caught by a backend unit test or manual verification — not a new admin E2E spec in this round.
 
 ---
 
@@ -611,26 +672,19 @@ These rules apply to every PR under this reset. They are not negotiable.
 
 ### Assumptions
 
-**A1.** The baseline seed will be sufficient reference data for all `default` project specs.
-If a spec needs a trainer, plan, class template, or room that the baseline does not provide,
-the spec must either accept the baseline data as-is or use `ApiClient` to create the additional
-data (for entities where the API allows member-level or admin-level creation). This assumption is
-stated because the exact API surface for admin operations (trainer create, room create) from
-within a test has not been validated at the time of writing.
+**A1.** The baseline seed is sufficient for all 12 default-project scenarios. Admin-only operations (create room, create class template, create trainer) are **not** exercised from within any test — the initial scenario set avoids this entirely. If a future scenario requires data the baseline does not contain, add it to `baseline.sql` rather than building admin helpers in `ApiClient`.
 
-**A2.** The `GYMFLOW_TEST_SUPPORT_ENABLED` flag (already present in the current
-`docker-compose.e2e.yml` backend env) continues to control the `/test-support/e2e/cleanup`
-endpoint. The new design does not use that endpoint — cleanup is handled by the nightly
-`scripts/cleanup-test-users.sh` script for the E2E DB. The flag remains `"true"` in the e2e
-stack only, to allow the `resetDatabase()` function's schema-drop approach to work alongside any
-test-support-gated routes.
+**A2.** The `GYMFLOW_TEST_SUPPORT_ENABLED` flag (already present in the current `docker-compose.e2e.yml` backend env) continues to control the `/test-support/e2e/cleanup` endpoint. The new design does not use that endpoint for per-test cleanup. It remains `"true"` in the e2e stack only, because `resetDatabase()`'s schema-drop approach may rely on test-support-gated routes in the future and because the flag is already part of the deployment contract for the e2e stack. The baseline cleanup strategy is: nightly `scripts/cleanup-test-users.sh` for long-running local volumes; CI volumes are ephemeral and do not need it.
 
-**A3.** `docker-compose.dev.yml` retains the `demo-seeder` service and its `demo_seeder_data`
-volume. The `demo-seeder` is not modified by this reset.
+**A3.** `docker-compose.dev.yml` retains the `demo-seeder` service and its `demo_seeder_data` volume. The `demo-seeder` is not modified by this reset.
 
-**A4.** The Playwright image tag `mcr.microsoft.com/playwright:v1.58.2-jammy` is carried forward
-from the current `docker-compose.e2e.yml`. It should be updated to the version matching
-`e2e/package.json` when Step 2 sets the Playwright version in the new package.
+**A4.** The Playwright image tag `mcr.microsoft.com/playwright:v1.58.2-jammy` is carried forward from the current `docker-compose.e2e.yml`. It must be updated to the version matching `e2e/package.json` when Step 2 sets the Playwright version in the new package.
+
+**A5 (new — onboarding).** `ApiClient.registerUserAndCompleteOnboarding()` walks the real onboarding API (`PUT /api/v1/profile/me` with required fields → `POST /api/v1/onboarding/complete`). The exact payload shape and endpoint paths must match `docs/sdd/onboarding-flow.md` §API at the time Step 2 is written. If the onboarding API surface changes after this SDD is approved but before Step 2 is written, the helper must be updated before Step 2 opens a PR. This assumption is a deliberate alternative to adding a `/test-support/e2e/complete-onboarding` shortcut: walking the real flow gives onboarding implicit regression coverage on every spec that uses `onboardedUser`.
+
+**A6 (new — class-booking API).** `ApiClient.cancelClassBooking()` uses the verb and path defined by `docs/sdd/class-booking-cancellation.md` §API. If that SDD is not yet consolidated when Step 2 begins, the helper author reads the current controller code to resolve the contract and records the resolution in the SDD (per the SDD Hygiene rule in CLAUDE.md).
+
+**A7 (new — PT slot selection).** `personal-training.spec.ts` picks the first available slot at 15:00 UTC on `now + 24h` (rounded up to the nearest hour), rather than calling `GET /api/v1/trainers/pt/<id>/availability` and picking from the response. This is a simpler, deterministic path: baseline class instances land at 09:00 and 11:00 UTC, so 15:00 UTC on tomorrow's date is guaranteed to be open for any trainer. If baseline class schedule ever moves into the 14:00–16:00 UTC window, this assumption breaks — update the helper to query availability instead.
 
 ### Structural defect fixed
 

@@ -23,11 +23,11 @@ None.
   that already has data (idempotent)." That claim is not fully accurate. Either add a second
   conflict target (e.g. `ON CONFLICT (name) DO NOTHING` for class_templates, `ON CONFLICT
   (email) DO NOTHING` for trainers) or narrow the idempotency comment to state it is safe only
-  on a freshly initialised schema. Logged as TD-045.
+  on a freshly initialised schema. Logged as TD-082 (renumbered on rebase — `main` grew to TD-081).
 
 - **`scripts/cleanup-test-users.sh` — header comment says "Run weekly"; SDD Section 8 calls it
   a "nightly cleanup job".** The SDD is the source of truth. Update the script comment from
-  "Run weekly" to "Run nightly" to stay in sync. Logged as TD-046.
+  "Run weekly" to "Run nightly" to stay in sync. Logged as TD-083 (renumbered on rebase).
 
 - **`docker-compose.e2e.yml` — Playwright image tag is pinned to `v1.58.2-jammy` before the
   `e2e/` package exists.** SDD Assumption A4 acknowledges this explicitly and defers the version
