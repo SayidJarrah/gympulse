@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import type { StateStorage } from 'zustand/middleware'
 import type { StepKey } from '../types/onboarding'
 import { useAuthStore } from './authStore'
 
@@ -71,6 +72,26 @@ const defaultState = {
   notifNews: false,
 }
 
+// GAP-05 fix: lazy storage adapter that computes the per-user key at read/write
+// time — never at module load. At module evaluation, auth has not rehydrated
+// yet, so useAuthStore.getState().user?.id is undefined. By deferring the key
+// lookup into each storage method, we guarantee the correct user ID is used the
+// first time Zustand actually reads or writes (well after auth rehydration).
+const lazyStorage: StateStorage = {
+  getItem: (_name) => {
+    const userId = useAuthStore.getState().user?.id ?? 'anonymous'
+    return localStorage.getItem(`gf:onboarding:v1:${userId}`)
+  },
+  setItem: (_name, value) => {
+    const userId = useAuthStore.getState().user?.id ?? 'anonymous'
+    localStorage.setItem(`gf:onboarding:v1:${userId}`, value)
+  },
+  removeItem: (_name) => {
+    const userId = useAuthStore.getState().user?.id ?? 'anonymous'
+    localStorage.removeItem(`gf:onboarding:v1:${userId}`)
+  },
+}
+
 export const useOnboardingStore = create<OnboardingState>()(
   persist(
     (set) => ({
@@ -104,14 +125,10 @@ export const useOnboardingStore = create<OnboardingState>()(
       reset: () => set(defaultState),
     }),
     {
-      // GAP-05 fix: read user ID lazily at hydration time, not at module load.
-      // At module load the auth store has not yet rehydrated, so user?.id is
-      // undefined. Using a function means the name is resolved only when
-      // Zustand's persist middleware first reads or writes storage.
-      name: (() => {
-        const userId = useAuthStore.getState().user?.id ?? 'anonymous'
-        return `gf:onboarding:v1:${userId}`
-      })(),
+      // Static name — ignored by lazyStorage (key is computed per-user inside
+      // the adapter). Required by the persist middleware API.
+      name: 'gf:onboarding:v1',
+      storage: lazyStorage,
     }
   )
 )

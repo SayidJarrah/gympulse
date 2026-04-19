@@ -126,14 +126,12 @@ export function OnboardingShell() {
             const res = await completeOnboarding()
             const userId = user?.id ?? null
             console.info('[analytics] onboarding_completed', { userId })
-            // Advance to Done BEFORE setting onboardingCompletedAt.
-            // OnboardingRoute reads onboardingCompletedAt — if we set it first,
-            // the route guard redirects to /home before the Done screen mounts.
+            // Advance to Done first, then set onboardingCompletedAt.
+            // OnboardingRoute now checks currentStep === 'done' and skips the
+            // /home redirect while Done is rendered — so both calls can be
+            // synchronous with no setTimeout race.
             advance()
-            // Delay the auth store update so Done renders in this tick first.
-            setTimeout(() => {
-              setOnboardingCompletedAt(res.onboardingCompletedAt)
-            }, 0)
+            setOnboardingCompletedAt(res.onboardingCompletedAt)
           } catch {
             setTermsError('Unable to complete onboarding. Please try again.')
           }
