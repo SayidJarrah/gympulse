@@ -8,6 +8,7 @@ interface StickyFooterProps {
   onContinue: () => void
   continueDisabled?: boolean
   continueLoading?: boolean
+  continueRetry?: boolean
 }
 
 export function StickyFooter({
@@ -18,6 +19,7 @@ export function StickyFooter({
   onContinue,
   continueDisabled = false,
   continueLoading = false,
+  continueRetry = false,
 }: StickyFooterProps) {
   const currentIndex = visibleSteps.findIndex(s => s.key === currentStep)
   const stepDef = visibleSteps[currentIndex]
@@ -84,6 +86,8 @@ export function StickyFooter({
       >
         {continueLoading
           ? 'Saving…'
+          : continueRetry && isLast
+          ? 'Try again →'
           : isLast
           ? 'Finish onboarding →'
           : currentStep === 'welcome'

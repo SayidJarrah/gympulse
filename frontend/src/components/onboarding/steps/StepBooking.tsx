@@ -89,7 +89,17 @@ export const StepBooking = forwardRef<StepBookingHandle, object>((_props, ref) =
           <button
             key={m}
             type="button"
-            onClick={() => setMode(m)}
+            onClick={() => {
+              if (m === mode) return
+              setMode(m)
+              // Clear the opposing selection so stale data cannot leak across modes.
+              if (m === 'trainer') {
+                setSelectedClassId(null)
+              } else {
+                setSelectedTrainerId(null)
+                setSelectedSlot(null)
+              }
+            }}
             className="px-5 py-2 rounded-full text-sm font-medium transition-all duration-150"
             style={{
               background: mode === m ? 'var(--color-primary)' : 'transparent',

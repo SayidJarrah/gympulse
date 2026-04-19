@@ -1,26 +1,39 @@
 import { useState, forwardRef, useImperativeHandle } from 'react'
+import type { ComponentType } from 'react'
+import {
+  BoltIcon,
+  ScaleIcon,
+  HeartIcon,
+  TrophyIcon,
+  ArrowTrendingUpIcon,
+  PlayIcon,
+  FireIcon,
+  CubeIcon,
+} from '@heroicons/react/24/outline'
 import { useOnboardingStore } from '../../../store/onboardingStore'
 import { updateMyProfile } from '../../../api/profile'
 
+type GoalOption = { label: string; icon: ComponentType<{ className?: string; 'aria-hidden'?: boolean | 'true' | 'false' }> }
+type ClassOption = { label: string; icon: ComponentType<{ className?: string; 'aria-hidden'?: boolean | 'true' | 'false' }> }
 
-const GOAL_OPTIONS = [
-  'Build strength',
-  'Lose weight',
-  'Improve mobility',
-  'Cardio & endurance',
-  'Train for an event',
-  'Just move more',
+const GOAL_OPTIONS: GoalOption[] = [
+  { label: 'Build strength', icon: CubeIcon },
+  { label: 'Lose weight', icon: ScaleIcon },
+  { label: 'Improve mobility', icon: HeartIcon },
+  { label: 'Cardio & endurance', icon: BoltIcon },
+  { label: 'Train for an event', icon: TrophyIcon },
+  { label: 'Just move more', icon: PlayIcon },
 ]
 
-const CLASS_OPTIONS = [
-  'Yoga',
-  'HIIT',
-  'Strength',
-  'Spin',
-  'Mobility',
-  'Pilates',
-  'Boxing',
-  'Open gym',
+const CLASS_OPTIONS: ClassOption[] = [
+  { label: 'Yoga', icon: HeartIcon },
+  { label: 'HIIT', icon: BoltIcon },
+  { label: 'Strength', icon: CubeIcon },
+  { label: 'Spin', icon: FireIcon },
+  { label: 'Mobility', icon: ArrowTrendingUpIcon },
+  { label: 'Pilates', icon: HeartIcon },
+  { label: 'Boxing', icon: FireIcon },
+  { label: 'Open gym', icon: CubeIcon },
 ]
 
 const FREQUENCY_OPTIONS = [
@@ -130,12 +143,13 @@ export const StepPreferences = forwardRef<StepPreferencesHandle, object>((_props
           Your goals
         </p>
         <div className="grid grid-cols-3 gap-2" role="group" aria-label="Fitness goals">
-          {GOAL_OPTIONS.map(g => (
+          {GOAL_OPTIONS.map(({ label, icon }) => (
             <ChipButton
-              key={g}
-              label={g}
-              selected={goals.includes(g)}
-              onToggle={() => toggleGoal(g)}
+              key={label}
+              label={label}
+              icon={icon}
+              selected={goals.includes(label)}
+              onToggle={() => toggleGoal(label)}
             />
           ))}
         </div>
@@ -151,12 +165,13 @@ export const StepPreferences = forwardRef<StepPreferencesHandle, object>((_props
           Classes you're curious about
         </p>
         <div className="grid grid-cols-3 gap-2" role="group" aria-label="Preferred class types">
-          {CLASS_OPTIONS.map(c => (
+          {CLASS_OPTIONS.map(({ label, icon }) => (
             <ChipButton
-              key={c}
-              label={c}
-              selected={classTypes.includes(c)}
-              onToggle={() => toggleClass(c)}
+              key={label}
+              label={label}
+              icon={icon}
+              selected={classTypes.includes(label)}
+              onToggle={() => toggleClass(label)}
             />
           ))}
         </div>
@@ -180,6 +195,7 @@ export const StepPreferences = forwardRef<StepPreferencesHandle, object>((_props
               onToggle={() => setFrequency(prev => prev === opt.id ? '' : opt.id)}
             />
           ))}
+
         </div>
       </section>
     </div>
@@ -188,7 +204,14 @@ export const StepPreferences = forwardRef<StepPreferencesHandle, object>((_props
 
 StepPreferences.displayName = 'StepPreferences'
 
-function ChipButton({ label, selected, onToggle }: { label: string; selected: boolean; onToggle: () => void }) {
+interface ChipButtonProps {
+  label: string
+  selected: boolean
+  onToggle: () => void
+  icon?: ComponentType<{ className?: string; 'aria-hidden'?: boolean | 'true' | 'false' }>
+}
+
+function ChipButton({ label, selected, onToggle, icon: Icon }: ChipButtonProps) {
   return (
     <button
       type="button"
@@ -203,10 +226,7 @@ function ChipButton({ label, selected, onToggle }: { label: string; selected: bo
         boxShadow: selected ? '0 0 0 1px rgba(34,197,94,.3)' : 'none',
       }}
     >
-      {/* Brand mark lightning bolt icon */}
-      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0" fill="currentColor" aria-hidden="true">
-        <path d="M13 2L4.5 13.5H11L9 22L19.5 9.5H13.5L16 2Z" />
-      </svg>
+      {Icon && <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />}
       {label}
     </button>
   )

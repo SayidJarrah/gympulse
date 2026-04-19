@@ -80,6 +80,30 @@ const lazyStorage: StateStorage = {
 // Then in persist config: { name: 'gf:{store}:v1', storage: lazyStorage }
 ```
 
+## Zustand state inside React callbacks — always read fresh, never close over
+
+If a callback (event handler, step-advance function, submit handler) reads Zustand-derived values that may have been written in the **same event tick** just before the callback runs, the closed-over render value will be stale — Zustand has updated the store but React has not re-rendered yet.
+
+Rule: any callback that runs *after* a Zustand write in the same tick must read fresh state via `useXxxStore.getState()`, not via a variable captured from the render closure.
+
+```ts
+// ❌ stale — visibleSteps was computed at render time, before store.setPlan() ran
+const advance = () => {
+  const idx = visibleSteps.indexOf(currentStep) // stale closure
+  goTo(visibleSteps[idx + 1])
+}
+
+// ✅ fresh — reads live store state after the write has landed
+const advance = () => {
+  const freshPlanId = useOnboardingStore.getState().selectedPlanId
+  const freshSteps = computeVisibleSteps(freshPlanId)
+  const idx = freshSteps.indexOf(useOnboardingStore.getState().currentStep)
+  goTo(freshSteps[idx + 1])
+}
+```
+
+When reviewing multi-step wizard code: flag any `advance()` / `goTo()` / `nextStep()` callback that (a) computes the next step index and (b) reads a Zustand-derived array or value from the render closure rather than `getState()`.
+
 ## Never use `setTimeout` to sequence React/Zustand state updates
 `setTimeout(fn, 0)` does not guarantee execution after a React commit phase under React 18 automatic batching. Do not use it to work around state-update ordering issues (e.g. "set auth store after route guard re-renders").
 

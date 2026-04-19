@@ -570,3 +570,17 @@ Feature: onboarding-flow
 Added: 2026-04-19
 Effort: M
 `GroupClassList.tsx:28` and `TrainerList.tsx:50` render "Loading classes…" / "Loading trainers…" as muted text. The design-standards skill requires a delight detail on every screen, and the Peloton/Whoop quality bar expects skeleton loaders for list content. Replace the text placeholders with `animate-pulse` skeleton rows (a `rounded-xl bg-gray-800 h-[72px]` bar per slot, 4–6 bars) to match the visual polish of the rest of the flow.
+
+## TD-080 — StepPreferences apiError missing icon prefix; violates design system error pattern
+Source: docs/reviews/onboarding-flow-20260419.md
+Feature: onboarding-flow
+Added: 2026-04-19
+Effort: S
+`StepPreferences.tsx:132-134` renders the API error message as plain coloured text with no icon prefix. The design system README prohibits errors that rely on colour alone and requires a visible label plus icon. `StepProfile` was corrected in this fix pass (GAP-10), but `StepPreferences` was not included in that scope. Add `ExclamationCircleIcon` from `@heroicons/react/24/outline` as a prefix to the `apiError` paragraph in `StepPreferences`, matching the pattern established in `StepProfile`, `StepBooking`, and `StepMembership`. This item extends the scope of TD-077.
+
+## TD-081 — advance() reads currentStep from render-time store snapshot rather than getState()
+Source: docs/reviews/onboarding-flow-20260419.md
+Feature: onboarding-flow
+Added: 2026-04-19
+Effort: S
+`OnboardingShell.tsx:60` reads `store.currentStep` inside `advance()`, where `store` is the Zustand hook return captured at render time (`const store = useOnboardingStore()`, line 27). The fix for GAP-01/03/08 correctly switched `selectedPlanId` to `useOnboardingStore.getState()` to avoid a stale closure, but `currentStep` was left on the render-time snapshot. While this is low-risk in practice (currentStep does not change between button click and advance() execution in the same event loop tick), reading both values via `getState()` inside `advance()` would make the intent explicit and guard against any future concurrent-mode scenario where the hook snapshot and the live store diverge. Change line 60 to `const freshIndex = freshSteps.findIndex(s => s.key === useOnboardingStore.getState().currentStep)`.

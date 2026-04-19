@@ -1,4 +1,5 @@
 import { useRef, useState, useId, forwardRef, useImperativeHandle } from 'react'
+import { ExclamationCircleIcon } from '@heroicons/react/24/outline'
 import { useOnboardingStore } from '../../../store/onboardingStore'
 import { updateMyProfile, uploadMyProfilePhoto } from '../../../api/profile'
 
@@ -91,7 +92,9 @@ export const StepProfile = forwardRef<StepProfileHandle, object>((_props, ref) =
   }))
 
   function handlePhoneChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setPhone(formatPhone(e.target.value))
+    const formatted = formatPhone(e.target.value)
+    setPhone(formatted)
+    store.setProfileFields({ firstName, lastName, phone: formatted, dob })
   }
 
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -112,7 +115,7 @@ export const StepProfile = forwardRef<StepProfileHandle, object>((_props, ref) =
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  const fieldClass = "w-full px-4 py-2.5 rounded-md text-sm outline-none transition-all focus:ring-2 focus:ring-green-500/25"
+  const fieldClass = "w-full px-4 py-2.5 rounded-md text-sm outline-none transition-all focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(34,197,94,.25)]"
   const fieldStyle = {
     background: 'var(--color-bg-surface-2)',
     border: '1px solid var(--color-border-input)',
@@ -156,7 +159,10 @@ export const StepProfile = forwardRef<StepProfileHandle, object>((_props, ref) =
       </div>
 
       {apiError && (
-        <p className="text-sm" style={{ color: 'var(--color-error-fg)' }}>{apiError}</p>
+        <p className="flex items-center gap-1.5 text-sm" style={{ color: 'var(--color-error-fg)' }}>
+          <ExclamationCircleIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
+          {apiError}
+        </p>
       )}
 
       <div className="flex flex-col gap-5">
@@ -223,7 +229,10 @@ export const StepProfile = forwardRef<StepProfileHandle, object>((_props, ref) =
             type="text"
             autoFocus
             value={firstName}
-            onChange={e => setFirstName(e.target.value)}
+            onChange={e => {
+              setFirstName(e.target.value)
+              store.setProfileFields({ firstName: e.target.value, lastName, phone, dob })
+            }}
             required
             aria-required="true"
             className={fieldClass}
@@ -244,7 +253,10 @@ export const StepProfile = forwardRef<StepProfileHandle, object>((_props, ref) =
             id={lastNameId}
             type="text"
             value={lastName}
-            onChange={e => setLastName(e.target.value)}
+            onChange={e => {
+              setLastName(e.target.value)
+              store.setProfileFields({ firstName, lastName: e.target.value, phone, dob })
+            }}
             required
             aria-required="true"
             className={fieldClass}
@@ -286,7 +298,10 @@ export const StepProfile = forwardRef<StepProfileHandle, object>((_props, ref) =
             id={dobId}
             type="date"
             value={dob}
-            onChange={e => setDob(e.target.value)}
+            onChange={e => {
+              setDob(e.target.value)
+              store.setProfileFields({ firstName, lastName, phone, dob: e.target.value })
+            }}
             required
             aria-required="true"
             className={fieldClass}

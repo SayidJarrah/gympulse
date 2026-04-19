@@ -89,6 +89,12 @@ Correction: The onboarding-flow PR merged with unused-variable TypeScript errors
 Rule: Before opening or merging a PR, run `npm run build` (or `tsc --noEmit`) in the frontend directory and confirm zero TypeScript errors. A build that fails on `tsc` is not shippable — it breaks the Docker image for every developer on the next `/run`. This is not optional cleanup; it is a gate.
 Applies when: Any PR that touches TypeScript files in `frontend/src/`.
 
+## Lesson 14 — Wire Tailwind config and verify token namespaces on first design system drop
+Date: 2026-04-19
+Correction: The extraction bundle introduced a new Tailwind token namespace (`primary`/`accent`/`fg`/`border`) that differed from the old `tailwind.gymflow.cjs` (`brand`/`ink`/`line`). The frontend `tailwind.config.js` had an empty `extend: {}` and was never wired to the gymflow file — so Tailwind utility classes referencing design tokens silently resolved to nothing for the entire feature development cycle.
+Rule: When a design system extraction bundle is dropped into `docs/design-system/`, immediately: (1) replace `tailwind.gymflow.cjs` with the bundle version, (2) wire `frontend/tailwind.config.js` to load `gymflow.theme.extend` via `createRequire`, (3) grep the component source for Tailwind classes that use the old namespace (e.g. `bg-brand-`, `text-ink-`, `border-line-`) and update them to the new namespace. Never assume the Tailwind config is already wired — verify by searching for `gymflow` or `tailwind.gymflow` in `tailwind.config.js`.
+Applies when: Any time an extraction bundle or updated `tailwind.gymflow.cjs` is dropped into `docs/design-system/`.
+
 ## Lesson 1 — Update review doc when blockers are fixed
 Date: 2026-04-05
 Correction: User noticed the review doc still showed blockers as `[ ]` after they had been fixed, making the PR state look blocked when it was actually clear.
