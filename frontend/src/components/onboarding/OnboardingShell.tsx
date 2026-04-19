@@ -125,8 +125,12 @@ export function OnboardingShell() {
         }
 
         case 'terms': {
-          const canContinue = termsRef.current?.canContinue() ?? false
-          if (!canContinue) break
+          // Read from the store instead of the imperative ref. The layout renders
+          // two StepContent trees (desktop + mobile) sharing the same termsRef;
+          // the mobile instance's useImperativeHandle overwrites the desktop one,
+          // leaving a stale closure that always returns false. The store is the
+          // authoritative source and is kept in sync by every checkbox change.
+          if (!store.agreeTerms || !store.agreeWaiver) break
 
           // Call completeOnboarding before advancing to Done.
           // AC-44: if the call fails, show error on this step and do not advance.
