@@ -17,6 +17,12 @@ Applies when: {situation where this rule kicks in}
 
 <!-- Add lessons below this line -->
 
+## Lesson 11 — Loading states for async gate checks are blockers, not polish
+Date: 2026-04-19
+Correction: The developer skipped implementing the bootstrap loading spinner documented in SDD Assumption A6. Route guards made redirect decisions before `GET /profile/me` resolved, causing a flash redirect for every completed user on page load.
+Rule: When an SDD documents a loading state for a gate check (e.g. "show spinner until profile fetch resolves"), implement it in the same pass as the gate — not as a follow-up. Any route guard that reads async data must handle the loading case explicitly. A missing loading state is a UX blocker, not a suggestion.
+Applies when: Implementing any route guard or redirect that depends on data fetched asynchronously (auth bootstrap, profile, feature flags).
+
 ## Lesson 10 — Design is owned by the external Claude Design project, not authored in this repo
 Date: 2026-04-18
 Correction: Project switched to the Claude Design workflow. `docs/design/` (per-feature specs + `system.md` + `prototypes/`) was deleted. The `ui-ux-designer` agent was retired. Running `/deliver` or `/redesign` without a handoff now halts at the gate.
