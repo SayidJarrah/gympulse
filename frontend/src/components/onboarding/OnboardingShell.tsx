@@ -49,7 +49,16 @@ export function OnboardingShell() {
   // ─── Navigation helpers ────────────────────────────────────────────────────
 
   function advance() {
-    const nextStep = visibleSteps[currentIndex + 1]
+    // Read selectedPlanId fresh from the store to avoid a stale closure.
+    // At the point advance() is called (e.g. after StepMembership.submit()),
+    // the store has already been updated with the new planId, but the
+    // `visibleSteps` computed at render time still reflects the pre-submit
+    // state. Using getState() ensures the Booking step is included when a
+    // plan was just selected.
+    const freshPlanId = useOnboardingStore.getState().selectedPlanId
+    const freshSteps = ALL_STEPS.filter(s => !s.conditional || !!freshPlanId)
+    const freshIndex = freshSteps.findIndex(s => s.key === store.currentStep)
+    const nextStep = freshSteps[freshIndex + 1]
     if (nextStep) {
       store.setStep(nextStep.key)
     } else {
@@ -262,6 +271,7 @@ export function OnboardingShell() {
         onContinue={handleContinue}
         continueDisabled={continueDisabled}
         continueLoading={loading}
+        continueRetry={!!termsError}
       />
     </div>
   )

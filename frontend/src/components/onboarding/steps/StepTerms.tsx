@@ -1,4 +1,5 @@
 import { useState, forwardRef, useImperativeHandle, useId } from 'react'
+import { ExclamationCircleIcon } from '@heroicons/react/24/outline'
 import { useOnboardingStore } from '../../../store/onboardingStore'
 import { TermsModal } from '../TermsModal'
 
@@ -125,7 +126,10 @@ export const StepTerms = forwardRef<StepTermsHandle, StepTermsProps>(({ external
       )}
 
       {externalError && (
-        <p className="text-sm" style={{ color: 'var(--color-error-fg)' }}>{externalError}</p>
+        <p className="flex items-center gap-1.5 text-sm" style={{ color: 'var(--color-error-fg)' }}>
+          <ExclamationCircleIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
+          {externalError}
+        </p>
       )}
 
       {modal && (
