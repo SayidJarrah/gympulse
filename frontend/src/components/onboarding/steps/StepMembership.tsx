@@ -5,7 +5,7 @@ import { useOnboardingStore } from '../../../store/onboardingStore'
 import type { MembershipPlan } from '../../../types/membershipPlan'
 
 export interface StepMembershipHandle {
-  submit: () => Promise<'plan-selected' | 'skip'>
+  submit: () => Promise<'plan-selected' | 'skip' | false>
 }
 
 export const StepMembership = forwardRef<StepMembershipHandle, object>((_props, ref) => {
@@ -22,15 +22,16 @@ export const StepMembership = forwardRef<StepMembershipHandle, object>((_props, 
       .finally(() => setLoading(false))
   }, [])
 
-  // Find the "most popular" plan — the most expensive among active ones
-  const mostPopularId = plans.reduce<string | null>((best, plan) => {
-    if (!best) return plan.id
-    const bestPlan = plans.find(p => p.id === best)
-    return (bestPlan && plan.priceInCents > bestPlan.priceInCents) ? plan.id : best
-  }, null)
+  // Find the "most popular" plan — the mid-tier by price (index 1 when sorted ascending).
+  // If there are fewer than 2 plans, assign it to the first plan.
+  const mostPopularId = (() => {
+    if (plans.length === 0) return null
+    const sorted = [...plans].sort((a, b) => a.priceInCents - b.priceInCents)
+    return sorted[Math.min(1, sorted.length - 1)].id
+  })()
 
   useImperativeHandle(ref, () => ({
-    async submit(): Promise<'plan-selected' | 'skip'> {
+    async submit(): Promise<'plan-selected' | 'skip' | false> {
       if (!selectedId) {
         // No plan — clear store selection, skip booking step
         store.setPlan(null, null, null)
@@ -47,7 +48,7 @@ export const StepMembership = forwardRef<StepMembershipHandle, object>((_props, 
         return 'plan-selected'
       } catch {
         setError('Unable to select plan. Try again.')
-        return 'skip'
+        return false
       }
     }
   }))
@@ -99,8 +100,7 @@ export const StepMembership = forwardRef<StepMembershipHandle, object>((_props, 
           return (
             <div
               key={plan.id}
-              className="relative flex flex-col gap-4 p-7 rounded-xl cursor-pointer transition-all duration-150"
-              onClick={() => setSelectedId(isSelected ? null : plan.id)}
+              className="relative flex flex-col gap-4 p-7 rounded-xl transition-all duration-150"
               style={{
                 background: 'var(--color-bg-surface-1)',
                 border: `1px solid ${isSelected ? 'var(--color-primary)' : 'var(--color-border-card)'}`,
@@ -174,7 +174,7 @@ export const StepMembership = forwardRef<StepMembershipHandle, object>((_props, 
               <button
                 type="button"
                 className="w-full py-2.5 rounded-md text-sm font-semibold transition-all duration-150 mt-2"
-                onClick={e => { e.stopPropagation(); setSelectedId(isSelected ? null : plan.id) }}
+                onClick={() => setSelectedId(isSelected ? null : plan.id)}
                 style={{
                   background: isSelected ? 'var(--color-primary)' : 'transparent',
                   color: isSelected ? '#0F0F0F' : 'var(--color-fg-label)',

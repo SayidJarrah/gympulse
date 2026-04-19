@@ -1,27 +1,13 @@
-import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuthStore } from '../../../store/authStore'
 import { useOnboardingStore } from '../../../store/onboardingStore'
-import { completeOnboarding } from '../../../api/onboarding'
 
-export function StepDone() {
+interface StepDoneProps {
+  onReviewInfo: () => void
+}
+
+export function StepDone({ onReviewInfo }: StepDoneProps) {
   const navigate = useNavigate()
-  const { setOnboardingCompletedAt } = useAuthStore()
   const store = useOnboardingStore()
-  const calledRef = useRef(false)
-
-  useEffect(() => {
-    if (calledRef.current) return
-    calledRef.current = true
-
-    completeOnboarding()
-      .then(res => {
-        setOnboardingCompletedAt(res.onboardingCompletedAt)
-      })
-      .catch(() => {
-        // Idempotent — safe to ignore; user can still enter the app
-      })
-  }, [setOnboardingCompletedAt])
 
   const name = store.firstName || 'there'
 
@@ -32,11 +18,10 @@ export function StepDone() {
     >
       {/* Success circle */}
       <div
-        className="w-24 h-24 rounded-full flex items-center justify-center"
+        className="w-24 h-24 rounded-full flex items-center justify-center onboarding-pulse"
         style={{
           background: 'var(--color-primary-tint)',
           border: '2px solid var(--color-primary)',
-          animation: 'pulse 2s infinite',
         }}
       >
         <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} style={{ color: 'var(--color-primary)' }}>
@@ -98,7 +83,7 @@ export function StepDone() {
               No plan yet.{' '}
               <button
                 type="button"
-                onClick={() => navigate('/membership')}
+                onClick={() => navigate('/plans')}
                 className="underline"
                 style={{ color: 'var(--color-fg-link)' }}
               >
@@ -148,22 +133,12 @@ export function StepDone() {
       {/* Review link */}
       <button
         type="button"
-        onClick={() => store.setStep('profile')}
+        onClick={onReviewInfo}
         className="text-sm underline"
         style={{ color: 'var(--color-fg-muted)' }}
       >
         Review my info
       </button>
-
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.4); }
-          50% { box-shadow: 0 0 0 12px rgba(34,197,94,0); }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          * { animation: none !important; }
-        }
-      `}</style>
     </div>
   )
 }

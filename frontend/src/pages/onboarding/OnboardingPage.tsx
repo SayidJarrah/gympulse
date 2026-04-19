@@ -11,20 +11,23 @@ import type { StepKey } from '../../types/onboarding'
  * Otherwise we derive the furthest-reached step from the data already saved.
  */
 function computeResumeStep(store: ReturnType<typeof useOnboardingStore.getState>): StepKey {
-  // If the store already has an in-progress step, respect it
+  // AC-07: a brand-new user with no data should always start at Welcome.
+  if (!store.firstName) return 'welcome'
+
+  // If the store already has an in-progress step beyond welcome, respect it.
   if (store.currentStep && store.currentStep !== 'welcome') {
     return store.currentStep
   }
 
-  // Derive from saved data — walk forward until we hit an incomplete required step
-  if (!store.firstName || !store.lastName) return 'profile'
-  if (!store.agreeTerms || !store.agreeWaiver) {
-    // Profile done, skip preferences + membership + booking; land at terms
-    // But if plan is selected and booking not done, land at booking
-    if (store.selectedPlanId && !store.completedBookingId) return 'booking'
-    return 'terms'
+  // Derive from saved data — SDD §4.4 step sequence.
+  // Profile is complete when all four required fields are present.
+  if (!store.firstName || !store.lastName || !store.phone || !store.dob) {
+    return 'profile'
   }
-  return 'terms'
+
+  // Profile done — per SDD §4.4, resume at membership after profile completion.
+  // (Preferences are always skippable, so we don't gate on them.)
+  return 'membership'
 }
 
 export function OnboardingPage() {

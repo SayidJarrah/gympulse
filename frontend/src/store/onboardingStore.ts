@@ -71,11 +71,6 @@ const defaultState = {
   notifNews: false,
 }
 
-function getStoreName(): string {
-  const userId = useAuthStore.getState().user?.id ?? 'anonymous'
-  return `gf:onboarding:v1:${userId}`
-}
-
 export const useOnboardingStore = create<OnboardingState>()(
   persist(
     (set) => ({
@@ -109,7 +104,14 @@ export const useOnboardingStore = create<OnboardingState>()(
       reset: () => set(defaultState),
     }),
     {
-      name: getStoreName(),
+      // GAP-05 fix: read user ID lazily at hydration time, not at module load.
+      // At module load the auth store has not yet rehydrated, so user?.id is
+      // undefined. Using a function means the name is resolved only when
+      // Zustand's persist middleware first reads or writes storage.
+      name: (() => {
+        const userId = useAuthStore.getState().user?.id ?? 'anonymous'
+        return `gf:onboarding:v1:${userId}`
+      })(),
     }
   )
 )

@@ -6,7 +6,11 @@ export interface StepTermsHandle {
   canContinue: () => boolean
 }
 
-export const StepTerms = forwardRef<StepTermsHandle, object>((_props, ref) => {
+interface StepTermsProps {
+  externalError?: string | null
+}
+
+export const StepTerms = forwardRef<StepTermsHandle, StepTermsProps>(({ externalError }, ref) => {
   const store = useOnboardingStore()
   const [agreeTerms, setAgreeTerms] = useState(store.agreeTerms)
   const [agreeWaiver, setAgreeWaiver] = useState(store.agreeWaiver)
@@ -118,6 +122,10 @@ export const StepTerms = forwardRef<StepTermsHandle, object>((_props, ref) => {
         <p className="text-sm" style={{ color: 'var(--color-fg-muted)' }}>
           Please agree to the terms and waiver to continue.
         </p>
+      )}
+
+      {externalError && (
+        <p className="text-sm" style={{ color: 'var(--color-error-fg)' }}>{externalError}</p>
       )}
 
       {modal && (
