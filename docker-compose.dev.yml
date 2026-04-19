@@ -1,20 +1,19 @@
-name: gympulse-e2e
+name: gympulse-dev
 
 services:
   postgres:
     image: postgres:15
     environment:
-      POSTGRES_DB: gymflow_e2e
+      POSTGRES_DB: gymflow
       POSTGRES_USER: gymflow
       POSTGRES_PASSWORD: secret
     ports:
-      - "5433:5432"
+      - "5432:5432"
     volumes:
-      - pg_e2e_data:/var/lib/postgresql/data
+      - pg_dev_data:/var/lib/postgresql/data
       - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
-      - ./e2e-seed/baseline.sql:/docker-entrypoint-initdb.d/02-baseline.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U gymflow -d gymflow_e2e"]
+      test: ["CMD-SHELL", "pg_isready -U gymflow -d gymflow"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -22,16 +21,15 @@ services:
   backend:
     build:
       context: ./backend
-    image: gymflow-backend:e2e
+    image: gymflow-backend:dev
     ports:
-      - "8081:8080"
+      - "8080:8080"
     environment:
-      DB_URL: jdbc:postgresql://postgres:5432/gymflow_e2e
+      DB_URL: jdbc:postgresql://postgres:5432/gymflow
       DB_USER: gymflow
       DB_PASSWORD: secret
       JWT_SECRET: replace-with-a-strong-secret-key!
       JWT_EXPIRY_MS: 86400000
-      GYMFLOW_TEST_SUPPORT_ENABLED: "true"
     depends_on:
       postgres:
         condition: service_healthy
@@ -43,11 +41,10 @@ services:
 
   frontend:
     build:
-      context: .
-      dockerfile: frontend/Dockerfile
-    image: gymflow-frontend:e2e
+      context: ./frontend
+    image: gymflow-frontend:dev
     ports:
-      - "5174:80"
+      - "5173:80"
     depends_on:
       backend:
         condition: service_healthy
@@ -57,23 +54,35 @@ services:
       timeout: 5s
       retries: 6
 
-  playwright:
-    image: mcr.microsoft.com/playwright:v1.58.2-jammy
-    working_dir: /work
-    shm_size: "1gb"
+  demo-seeder:
+    build:
+      context: ./demo-seeder
+    image: gymflow-demo-seeder:dev
+    ports:
+      - "3002:3001"
     environment:
-      E2E_API_BASE: http://backend:8080/api/v1
-      E2E_BASE_URL: http://frontend:80
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: gymflow
+      DB_USER: gymflow
+      DB_PASSWORD: secret
+      GYMFLOW_API_URL: http://backend:8080/api/v1
+      DATA_DIR: /app/data
+      DEMO_PASSWORD: Demo@12345
+      ADMIN_TOKEN: review-admin-token
     volumes:
-      - ./e2e:/work
-      - playwright_node_modules:/work/node_modules
+      - demo_seeder_data:/app/data
     depends_on:
+      postgres:
+        condition: service_healthy
       backend:
         condition: service_healthy
-      frontend:
-        condition: service_healthy
-    entrypoint: ["/bin/sh", "-lc", "npm ci && npx playwright test"]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3001/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
 
 volumes:
-  pg_e2e_data:
-  playwright_node_modules:
+  pg_dev_data:
+  demo_seeder_data:

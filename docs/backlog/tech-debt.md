@@ -584,3 +584,16 @@ Feature: onboarding-flow
 Added: 2026-04-19
 Effort: S
 `OnboardingShell.tsx:60` reads `store.currentStep` inside `advance()`, where `store` is the Zustand hook return captured at render time (`const store = useOnboardingStore()`, line 27). The fix for GAP-01/03/08 correctly switched `selectedPlanId` to `useOnboardingStore.getState()` to avoid a stale closure, but `currentStep` was left on the render-time snapshot. While this is low-risk in practice (currentStep does not change between button click and advance() execution in the same event loop tick), reading both values via `getState()` inside `advance()` would make the intent explicit and guard against any future concurrent-mode scenario where the hook snapshot and the live store diverge. Change line 60 to `const freshIndex = freshSteps.findIndex(s => s.key === useOnboardingStore.getState().currentStep)`.
+## TD-082 — baseline.sql idempotency comment overstates safety against unique-name/email conflicts
+Source: docs/reviews/testing-reset-step1-20260413.md
+Feature: testing-reset
+Added: 2026-04-13
+Effort: S
+`e2e-seed/baseline.sql` uses `ON CONFLICT (id) DO NOTHING` throughout and its header comment claims the seed is "safe to apply against a DB that already has data (idempotent)." This is not fully accurate: `class_templates` has `UNIQUE (name)` and `trainers` has `UNIQUE (email)`. If a template name or trainer email already exists under a different UUID, the INSERT throws rather than silently skips. In practice this cannot occur on a fresh init or after `reset.sh` (which drops the schema first), but the comment is misleading. Either add a secondary conflict target (`ON CONFLICT (name) DO NOTHING` for class_templates; `ON CONFLICT (email) DO NOTHING` for trainers) or narrow the comment to "safe to apply on a freshly initialised schema."
+
+## TD-083 — cleanup-test-users.sh header comment says "Run weekly"; SDD says "nightly"
+Source: docs/reviews/testing-reset-step1-20260413.md
+Feature: testing-reset
+Added: 2026-04-13
+Effort: S
+`scripts/cleanup-test-users.sh` header comment reads "Run weekly on long-lived local environments." `docs/sdd/testing-reset.md` Section 8 (Nightly cleanup job) describes this as a nightly job. Update the comment to say "Run nightly" to match the SDD.
