@@ -10,8 +10,31 @@ A dark-first fitness brand design system distilled from the **GymPulse** codebas
 - **Canonical tokens:** `docs/design-system/colors_and_type.css` and `docs/design-system/tailwind.gymflow.cjs`
 - **Voice + visual rules:** this README (the canonical document)
 - **Quality bar:** `.claude/skills/design-standards/SKILL.md` — defines what "good" looks like
-- **Per-feature handoffs:** `docs/design-system/handoffs/{feature-slug}/` — each contains an HTML mock and a `spec.md`, produced in the Claude Design project
+- **Per-feature handoffs:** `docs/design-system/handoffs/{feature-slug}/` — each contains `README.md` (the spec) and `design_reference/` (prototype bundle)
 - **Stack:** Kotlin/Spring backend + React 18 + TypeScript + Vite + TailwindCSS frontend
+
+## Handoff authors
+
+Handoffs are produced by one of two sources. Both must honour this README verbatim:
+
+1. **Claude Design** (external project, preferred) — canvas-driven iteration, richer exploration. Subject to strict weekly usage limits.
+2. **Native `designer` agent** (`.claude/agents/designer.md`, fallback) — used when Claude Design quota is exhausted or the change is a DNA extension of an already-handoff'd surface. Same output shape; no visible difference downstream.
+
+The folder shape is identical across sources:
+
+```
+docs/design-system/handoffs/{slug}/
+├── README.md              # the spec
+└── design_reference/      # prototype bundle
+    ├── index.html         # React 18 + Babel CDN entry, openable in a browser
+    ├── {slug}_app.jsx     # shell + state + navigation
+    ├── {slug}_sections.jsx (or per-step files)
+    ├── components.jsx     # shared primitives (optional)
+    ├── tokens.css         # mirror of tokens used on this surface
+    └── brief.md           # verbatim copy of docs/briefs/{slug}.md
+```
+
+See existing examples — `handoffs/onboarding/` is the canonical reference for a multi-step flow; `handoffs/member-profile-redesign/` for a single-page surface.
 
 > The user may not have given you repo access. If needed, browse it with `github_get_tree`/`github_read_file` on `SayidJarrah/gympulse@main`.
 
