@@ -27,7 +27,11 @@ gympulse/
 │   ├── store/         # Zustand state
 │   ├── hooks/         # Custom hooks
 │   └── types/         # TypeScript types
-│   └── e2e/           # Playwright specs
+├── e2e/               # Playwright specs (top-level — outside frontend/)
+│   ├── package.json
+│   ├── playwright.config.ts
+│   └── specs/         # One spec per user journey
+├── e2e-seed/          # Reserved for future multi-scenario test data
 ├── docs/
 │   ├── prd/             # Per-feature requirements
 │   ├── sdd/             # Per-feature technical design
@@ -35,10 +39,26 @@ gympulse/
 │   ├── gaps/            # Audit gap reports
 │   ├── reviews/         # Post-deliver review docs
 │   ├── backlog/         # Tech debt (auto-populated by /deliver reviewer)
-│   ├── qa/              # Test manifest
 │   └── lessons.md       # Self-improvement lessons
-└── docker-compose.review.yml
+├── docker-compose.dev.yml
+└── docker-compose.e2e.yml
 ```
+
+## Testing
+
+**Two stacks:**
+- `docker-compose.dev.yml` — manual playground. Start with `/run`. Rich demo data via `demo-seeder` (ports 5432 / 8080 / 5173 / 3002). Never run Playwright against this stack.
+- `docker-compose.e2e.yml` — Playwright target. Started automatically by `/verify` with `--build`. No demo data (ports 5433 / 8081 / 5174).
+
+**Where specs live:** `e2e/specs/*.spec.ts` at the repo root. `frontend/e2e/` does not exist.
+
+**What is tested:** one happy-path scenario per feature, added on demand. No error-permutation fans, no visual regression, no admin E2E. See `docs/sdd/testing-reset.md` §4 for scope.
+
+**Rules:**
+- All test emails end with `@test.gympulse.local`. Unique per test via `crypto.randomUUID()`.
+- `/verify` always passes `--build`. Never run against a stale container (Lesson 7).
+- No `waitForTimeout`. Use `expect.poll`, `waitForResponse`, or direct UI-state assertions.
+- No markdown bug docs under `docs/bugs/`. A reproducible bug becomes a failing `test()` case that passes after the fix.
 
 ## SDD Hygiene — Non-Negotiable
 Any behavioural decision made during a conversation — redirect targets, response shapes, error messages, routing logic, field additions — must be written into `docs/sdd/{feature}.md` before the conversation ends. If no SDD section exists for the decision, add one. Do not leave decisions only in commit messages, memory, or domain skill updates.

@@ -152,7 +152,7 @@ When you need clarification:
 BUG FIX MODE
 ===============================================================================
 
-When you receive a bug brief from docs/bugs/, you are in Bug Fix Mode.
+When you receive a review doc or a failing-spec report, you are in Bug Fix Mode.
 This mode is stricter than feature mode.
 Do not treat it as general backend development.
 

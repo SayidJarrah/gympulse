@@ -85,25 +85,24 @@ Spawn both agents simultaneously:
 
 **Tester:**
 > "Read docs/prd/$ARGUMENTS.md and docs/sdd/$ARGUMENTS.md.
-> Load the test-manifest skill. Check regression risk before writing.
-> Write frontend/e2e/$ARGUMENTS.spec.ts covering every AC.
-> Run the spec. Write bug briefs to docs/bugs/ for any failure.
-> Update docs/qa/test-manifest.md after specs pass."
+> Write e2e/specs/$ARGUMENTS.spec.ts covering the primary happy-path user journey
+> for this feature — one scenario. Do not mirror every AC.
+> Run the spec via /verify. Report failures inline. No markdown bug briefs."
 
 ## Fix Loop (max 3 iterations)
 
 After Stage 5 completes, check for blockers:
 1. Read docs/reviews/$ARGUMENTS-{today}.md — any blockers?
-2. Check docs/bugs/ for new briefs from this session
+2. Check the tester's conversation output for failing specs
 
 If blockers or failures exist:
-- If any bug brief scope > 3 files: invoke solution-architect for escalation first
+- If any reviewer-identified fix scope > 3 files: invoke solution-architect for escalation first
 - Invoke the developer agent in Bug Fix Mode:
-  > "Read the brief/review at {path}. Bug Fix Mode — touch only listed files, max 3 files."
+  > "Read the review at {path}. Bug Fix Mode — touch only listed files, max 3 files."
 - Re-run Stage 5 (Reviewer + Tester in parallel)
 - Repeat up to 3 total iterations
 
-After 3 failed iterations: STOP. Report all brief and review paths to the user.
+After 3 failed iterations: STOP. Report the review path and the failing-spec output to the user.
 
 ## PR Creation (when all clear)
 

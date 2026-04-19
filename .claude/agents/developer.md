@@ -59,9 +59,9 @@ Execute in this order:
 
 ## Bug Fix Mode
 
-When given a bug brief from `docs/bugs/`:
-- Read ONLY the files listed under "Files to Change"
-- Apply ONLY the change in "Proposed Fix"
-- Touch ≤ 3 files total — if genuinely more needed, stop and update the brief
+When given a review doc or a failing spec to address:
+- Read ONLY the files identified as the fix scope
+- Apply ONLY the minimal change required
+- Touch ≤ 3 files total — if genuinely more needed, stop and escalate to the solution-architect
 - Do not refactor, rename, or improve unrelated code
-- If the fix fails: append "Fix Attempt 1" to the brief and stop
+- If the fix fails: report in-conversation with the new failure and stop

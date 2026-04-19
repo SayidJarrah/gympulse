@@ -1,34 +1,45 @@
-Run the full E2E suite against the **E2E stack** (`docker-compose.e2e.yml`).
+Run the E2E suite against the **E2E stack** (`docker-compose.e2e.yml`).
 
 > **Two stacks in this project:**
-> - **Review stack** (`docker-compose.review.yml`) — ports 5432 / 8080 / 3000 — for manual testing and PR review. Started by `/run`.
-> - **E2E stack** (`docker-compose.e2e.yml`) — ports 5433 / 8081 / 3001 — for automated tests only. Uses a dedicated `gymflow_e2e` database and has `GYMFLOW_TEST_SUPPORT_ENABLED=true`. **Self-starting** — no need to run `/run` first.
+> - **Dev stack** (`docker-compose.dev.yml`) — ports 5432 / 8080 / 5173 / 3002 — for manual testing and PR review. Started by `/run`. Never run Playwright against this stack.
+> - **E2E stack** (`docker-compose.e2e.yml`) — ports 5433 / 8081 / 5174 — Playwright target. Managed by this command. Uses a dedicated `gymflow_e2e` database and has `GYMFLOW_TEST_SUPPORT_ENABLED=true`.
+
+The E2E suite lives at `e2e/` (top-level, outside `frontend/`). It has its own `package.json` and lockfile. Currently a single scenario: `onboarding-happy-path.spec.ts` — see `docs/sdd/testing-reset.md` §4.1.
 
 ## Run Suite
 
-The E2E stack starts its own services (postgres → backend → frontend) automatically before running tests.
+`--build` is non-negotiable (Lesson 7: rebuild before running tests).
 
 ```bash
-docker compose -f docker-compose.e2e.yml run --rm playwright
+# 1. Boot the E2E stack with fresh images
+docker compose -f docker-compose.e2e.yml up -d --build
+
+# 2. Wait for backend health (up to 60s)
+for i in $(seq 1 12); do
+  curl -sf http://localhost:8081/api/v1/health > /dev/null && break
+  sleep 5
+done
+
+# 3. Install and run specs from the top-level e2e/ package
+cd e2e
+npm ci
+E2E_BASE_URL=http://localhost:5174 npx playwright test
 ```
 
-### Running a single spec directly on the host
-
-If running `npx playwright test` directly (not via Docker), the host machine may also have the **review stack** running on the default ports (8080 / 3000). Always pass the E2E stack ports explicitly:
-
+To run a single spec file:
 ```bash
-cd frontend
-E2E_BASE_URL=http://localhost:3001 E2E_API_BASE=http://localhost:8081/api/v1 \
-  npx playwright test e2e/{feature}.spec.ts --reporter=list
+cd e2e
+E2E_BASE_URL=http://localhost:5174 npx playwright test specs/onboarding-happy-path.spec.ts
 ```
 
-### After code changes — rebuild before re-running
+## After Code Changes
 
-After any source-code change, rebuild the affected container before re-running tests or results will reflect the old bundle:
+Rebuild the affected container before re-running. A stale bundle will mask fresh fixes (Lesson 7):
 
 ```bash
 # Frontend change:
 docker compose -f docker-compose.e2e.yml up -d --build frontend
+
 # Backend change:
 docker compose -f docker-compose.e2e.yml up -d --build --force-recreate backend
 ```
@@ -45,10 +56,8 @@ Confirm the container shows `Recreated` (not just `Running`) in the compose outp
 **Failures:**
 ```
 ❌ N failures:
-  - frontend/e2e/{feature}.spec.ts — "{test name}"
+  - e2e/specs/{spec-name}.spec.ts — "{test name}"
   - ...
-
-Invoke the tester agent to investigate and write bug briefs.
 ```
 
-Do not investigate or fix anything here. Tester handles investigation.
+Report failures to the user. A reproducible failure becomes a new `test()` case in an existing or new spec — not a markdown bug brief.

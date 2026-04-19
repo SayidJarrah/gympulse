@@ -1,7 +1,7 @@
 export interface QaUserRecord {
   id: string;             // fixed UUID — must not change
   email: string;
-  passwordHash: string;   // bcrypt hash — see docs/qa/seed-users.md for credentials
+  passwordHash: string;   // bcrypt hash — plaintext credentials are listed with each entry below
   role: 'USER';
 }
 

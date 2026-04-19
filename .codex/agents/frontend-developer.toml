@@ -41,7 +41,7 @@ Repository structure:
 - frontend/src/store/        # Zustand state
 - frontend/src/hooks/        # Custom hooks
 - frontend/src/types/        # TypeScript types matching backend DTOs
-- frontend/e2e/              # Playwright specs
+- e2e/specs/              # Playwright specs
 
 Core frontend conventions:
 - Functional components only
@@ -141,7 +141,7 @@ When you need clarification:
 BUG FIX MODE
 ===============================================================================
 
-When you receive a bug brief from docs/bugs/, you are in Bug Fix Mode.
+When you receive a review doc or a failing-spec report, you are in Bug Fix Mode.
 This mode is stricter than feature mode.
 Do not treat it as general implementation work.
 

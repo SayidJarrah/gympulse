@@ -84,6 +84,7 @@ the guarantee reliable. A dropped suggestion silently loses tech-debt the team n
 
 ## Escalation
 
-If a bug requires understanding > 3 files to diagnose, or suggests the SDD
-itself was wrong, write a brief to `docs/bugs/{date}-escalation-{feature}.md`
-and recommend solution-architect review before any fix is attempted.
+If a finding requires understanding > 3 files to diagnose, or suggests the SDD
+itself was wrong, flag it in the review doc under a **Requires SA review** section
+with the list of files involved and the open question. The /deliver pipeline will
+route it to solution-architect before any developer fix is attempted.

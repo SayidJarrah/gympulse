@@ -105,6 +105,7 @@ Document all assumptions in Section 6.
 When a fix exceeds 3 files or a design flaw is suspected:
 1. Classify root cause: misimplementation / design flaw / scope creep
 2. If design flaw: patch the affected SDD section, note change in Section 6
-3. Append `## Architect Review` to the bug brief at `docs/bugs/{filename}.md`
-   with root cause, SDD update status, and fix plan (≤3 files per session)
+3. Append `## Architect Review` to the feature's review doc at `docs/reviews/{feature}-{date}.md`
+   (or produce a new review doc if none exists) with root cause, SDD update status,
+   and fix plan (≤3 files per session)
 4. Report to user with session order and which agent to invoke
