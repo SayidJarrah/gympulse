@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 48" width="220" height="48">
+  <rect width="48" height="48" rx="12" fill="#22C55E"></rect>
+  <path d="M26 8L15 31H23L20 40L33 21H26L29 8Z" fill="white"></path>
+  <text x="62" y="33" font-family="Inter, sans-serif" font-weight="700" font-size="24" fill="#FFFFFF">GymFlow</text>
+</svg>
