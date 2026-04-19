@@ -132,6 +132,17 @@ All three files live in `backend/src/main/resources/db/migration/`.
 
 ## 2. Backend API Contract
 
+> **Cross-reference — onboarding-flow supersedes this section:**
+> `docs/sdd/onboarding-flow.md §2.1` documents changes to the register endpoint that were
+> introduced by the onboarding-flow feature. Specifically:
+> - The `RegisterResponse` DTO (shown below) has been **deleted** and replaced by `LoginResponse`
+>   (same five-field shape as the login response: `accessToken`, `refreshToken`, `tokenType`,
+>   `expiresIn`, `hasActiveMembership`).
+> - Registration now auto-creates an empty `user_profiles` row for the new user (FR-10.1, AC-06).
+>   Engineers reading only this SDD should be aware that a `user_profiles` row is guaranteed to
+>   exist immediately after registration — no defensive null-check is needed.
+> - The authoritative response shape for `POST /api/v1/auth/register` is in `onboarding-flow.md §2.1`.
+
 ### POST /api/v1/auth/register
 
 **Auth:** None (public)
@@ -145,6 +156,8 @@ All three files live in `backend/src/main/resources/db/migration/`.
 ```
 
 **Success Response (201):**
+> **Stale — see onboarding-flow.md §2.1 for the current shape.**
+> The shape below reflects the original auth feature only (pre-onboarding-flow).
 ```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
@@ -168,6 +181,7 @@ All three files live in `backend/src/main/resources/db/migration/`.
 3. Check if a user with the same email already exists; if so return 409 `EMAIL_ALREADY_EXISTS`.
 4. Hash the password with BCrypt (cost factor 10).
 5. Persist the `User` entity and return 201 with the `RegisterResponse` DTO.
+   (Superseded by onboarding-flow: now returns `LoginResponse` and auto-creates `user_profiles`.)
 
 ---
 
