@@ -63,30 +63,21 @@ Always check existing files in `src/main/resources/db/migration/` for the next n
 ## Error Responses
 Return `{ "error": "message", "code": "ERROR_CODE" }` — never expose stack traces or SQL.
 
-## Bug Report Workflow
+## E2E Tests
 
-E2E failures are reported as **observation reports** in `docs/bugs/`.
-These are written by the e2e-tester and contain browser/network evidence — but no root cause analysis.
+Specs live at the repo root in `e2e/specs/` — NOT under `frontend/`. Run via `/verify`. See `docs/sdd/testing-reset.md` for scope.
 
-When you receive a bug brief to investigate:
+When you receive a failing-spec report to investigate:
 
 1. **Assess first — backend bug or spec issue?**
-   - Does the API return the wrong status code or wrong response body? → **Backend bug** — fix it.
-   - Does the endpoint not exist (404) but the SDD says it should? → **Backend bug**.
-   - Does the endpoint exist and respond correctly per the SDD, but the spec expects something different? → **Spec issue**.
-   - Is the spec asserting a response format that differs from the SDD contract? → **Spec issue**.
+   - API returns wrong status or body? → **Backend bug** — fix it (≤3 files).
+   - Endpoint missing but SDD says it should exist? → **Backend bug**.
+   - Spec expects a format that differs from the SDD contract? → **Spec issue** — fix the spec at `e2e/specs/{feature}.spec.ts`.
    - Unsure? Read the SDD API contract. Implementation matches SDD → spec issue. Deviates → backend bug.
 
-2. **If backend bug:** fix the relevant service/controller/entity (≤ 3 files). Verify with a curl call.
+2. **If backend bug:** fix the relevant service/controller/entity. Verify with a curl call. Re-run the spec.
 
-3. **If spec issue:** do NOT change any backend file. Fill in the `## Spec Fix Required` section
-   at the bottom of the bug brief:
-   ```
-   Spec file: frontend/e2e/{feature}.spec.ts
-   Test name: {exact test name}
-   Change needed: {what expected value/status/field is wrong and what it should be, quoting the SDD}
-   ```
-   Then tell the user to run `/fix-spec docs/bugs/{filename}`.
+3. **If spec issue:** do NOT change any backend file. Update the spec file directly with the correct expectations, quoting the SDD.
 
 ## Updating Implementation Status
 After all endpoints are implemented and tests pass, update the **Backend** and **Tests**

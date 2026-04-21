@@ -236,7 +236,7 @@ For each friction point, ask:
 - **Human** (process correction, product judgement, recurring mistake by the operator)
   → candidate for `docs/lessons.md`
 - **Agent** (coding rule, tool behaviour, spec-writing guard, infra fact)
-  → candidate for the relevant skill (`kotlin-conventions`, `test-manifest`, `react-conventions`, etc.)
+  → candidate for the relevant skill (`kotlin-conventions`, `react-conventions`, etc.)
 
 Present the candidates to the user with a one-line "human or agent?" verdict for each.
 Do not write to `docs/lessons.md` or any skill without the user's explicit confirmation.

@@ -1,7 +1,7 @@
-Start the **review stack** (`docker-compose.review.yml`) with full health diagnostics.
+Start the **dev stack** (`docker-compose.dev.yml`) with full health diagnostics.
 
-> **Review stack only** — ports 5432 / 8080 / 3000 / 3002 — for manual testing and PR review.
-> For E2E tests use `/verify`, which manages its own dedicated E2E stack on ports 5433 / 8081 / 3001.
+> **Dev stack only** — ports 5432 / 8080 / 5173 / 3002 — for manual testing and PR review.
+> For E2E tests use `/verify`, which manages its own dedicated E2E stack on ports 5433 / 8081 / 5174.
 
 ## Pre-flight Checks
 
@@ -12,11 +12,11 @@ Run all checks before touching Docker:
 docker info > /dev/null 2>&1 && echo "Docker: ✅" || echo "Docker: ❌ NOT RUNNING — start Docker Desktop first"
 
 # Compose file exists?
-ls docker-compose.review.yml > /dev/null 2>&1 && echo "Compose file: ✅" || echo "Compose file: ❌ MISSING"
+ls docker-compose.dev.yml > /dev/null 2>&1 && echo "Compose file: ✅" || echo "Compose file: ❌ MISSING"
 
 # Ports free?
 lsof -i :8080 | grep LISTEN && echo "Port 8080: ❌ IN USE" || echo "Port 8080: ✅ free"
-lsof -i :3000 | grep LISTEN && echo "Port 3000: ❌ IN USE" || echo "Port 3000: ✅ free"
+lsof -i :5173 | grep LISTEN && echo "Port 5173: ❌ IN USE" || echo "Port 5173: ✅ free"
 lsof -i :3002 | grep LISTEN && echo "Port 3002: ❌ IN USE" || echo "Port 3002: ✅ free"
 ```
 
@@ -61,29 +61,29 @@ git diff --name-only HEAD~1 HEAD 2>/dev/null || git status --short
 
 **Backend (if needed):**
 ```bash
-docker compose -f docker-compose.review.yml build backend
+docker compose -f docker-compose.dev.yml build backend
 ```
 If fails with compilation error in code you just wrote: fix the code, retry.
 If fails for any other reason: **STOP** and report the full error.
 
 **Frontend (if needed):**
 ```bash
-docker compose -f docker-compose.review.yml build frontend
+docker compose -f docker-compose.dev.yml build frontend
 ```
 If fails with TypeScript error in code you just wrote: fix, retry.
 If fails for any other reason: **STOP** and report the full error.
 
 **Demo-seeder (if needed):**
 ```bash
-docker compose -f docker-compose.review.yml build demo-seeder
+docker compose -f docker-compose.dev.yml build demo-seeder
 ```
 If fails for any reason: **STOP** and report the full error.
 
 ## Start
 
 ```bash
-docker compose -f docker-compose.review.yml down --remove-orphans
-docker compose -f docker-compose.review.yml up -d --build
+docker compose -f docker-compose.dev.yml down --remove-orphans
+docker compose -f docker-compose.dev.yml up -d --build
 ```
 
 `--build` ensures no stale cached image is served. The FRESH path above never reaches this section, so this only runs when a rebuild was already determined to be necessary.
@@ -111,9 +111,9 @@ done
 If any health check never returns after 60s:
 
 ```bash
-docker compose -f docker-compose.review.yml logs --tail=50 backend
-docker compose -f docker-compose.review.yml logs --tail=50 frontend
-docker compose -f docker-compose.review.yml logs --tail=50 demo-seeder
+docker compose -f docker-compose.dev.yml logs --tail=50 backend
+docker compose -f docker-compose.dev.yml logs --tail=50 frontend
+docker compose -f docker-compose.dev.yml logs --tail=50 demo-seeder
 ```
 
 Classify and respond:
@@ -135,7 +135,7 @@ Report clearly and stop.
 
 ```
 ✅ Stack is running.
-   Frontend:     http://localhost:3000
+   Frontend:     http://localhost:5173
    Backend:      http://localhost:8080
    API docs:     http://localhost:8080/api/docs
    Demo-seeder:  http://localhost:3002

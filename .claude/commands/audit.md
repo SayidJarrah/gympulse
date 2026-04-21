@@ -49,14 +49,13 @@ Spawn both agents simultaneously (feature audit only):
 
 **Tester:**
 > "You are in audit mode for: $ARGUMENTS
-> Load test-manifest skill.
-> Run the existing spec for $ARGUMENTS if it exists.
-> Walk through each AC in docs/prd/$ARGUMENTS.md via Playwright MCP.
+> Run the existing spec at e2e/specs/$ARGUMENTS.spec.ts if it exists (via /verify).
+> Walk through the primary user journey for $ARGUMENTS via Playwright MCP.
 >
-> Check DOCS → CODE: which ACs have passing specs? which have no spec?
+> Check DOCS → CODE: is the primary journey covered by a passing spec?
 > Check CODE → DOCS: are there user flows in the app with no spec coverage?
 >
-> Append test findings to docs/gaps/$ARGUMENTS.md under the test coverage sections."
+> Append findings to docs/gaps/$ARGUMENTS.md under the test coverage sections."
 
 ## Gap Report Format
 

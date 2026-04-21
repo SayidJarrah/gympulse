@@ -23,7 +23,7 @@ SLUG="{feature}"
 echo "PRD:     $(ls docs/prd/$SLUG.md 2>/dev/null && echo ✅ || echo ❌)"
 echo "Handoff: $(ls -d docs/design-system/handoffs/$SLUG 2>/dev/null && echo ✅ || echo ❌)"
 echo "SDD:     $(ls docs/sdd/$SLUG.md 2>/dev/null && echo ✅ || echo ❌)"
-echo "Tests:  $(ls frontend/e2e/$SLUG.spec.ts 2>/dev/null && echo ✅ || echo ❌)"
+echo "Tests:  $(ls e2e/specs/$SLUG.spec.ts 2>/dev/null && echo ✅ || echo ❌)"
 echo "Gap:    $(ls docs/gaps/$SLUG.md 2>/dev/null && echo ⚠️  needs audit || echo —)"
 echo "Branch: $(git branch -a | grep "feature/$SLUG" | head -1 | xargs || echo no branch)"
 ```
