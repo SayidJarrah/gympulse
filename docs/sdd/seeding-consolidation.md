@@ -4,6 +4,7 @@
 - Gap report (acts as PRD): `docs/gaps/seeding-consolidation.md` — Agreed Scope (2026-04-13) is binding
 - Existing SDDs: `docs/sdd/demo-seeder-data-generation.md`, `docs/sdd/demo-seeder-credentials-and-state.md`
 - Date: 2026-04-13
+- Amended: 2026-04-21 — QA fixed-user pool removed (see §12)
 
 ## Architecture Overview
 
@@ -897,3 +898,29 @@ Section 1 currently states that `class_templates`, `trainers`, `rooms`, and `mem
 ### Note: gap report body vs agreed scope discrepancy
 
 The body of `docs/gaps/seeding-consolidation.md` classifies V13 as "KEEP in Flyway" and V17 as "SPLIT". The "Agreed Scope (2026-04-13)" section at the top overrides this with "MIGRATE to demo-seeder: V13, V16, V17 — in full". This SDD follows the Agreed Scope section, which was designated as binding at the time of this work.
+
+---
+
+## 12. Amendment (2026-04-21) — QA fixed-user pool removed
+
+### Decision
+
+The 10 fixed-UUID QA users seeded by `upsertQaUsersAndProfiles()` (emails `qa.user01..qa.user10@gymflow.local`, UUIDs `44444444-4444-4444-4444-4444444444{01..10}`) are removed. The companion `upsertPlanPendingDemoRow()` function, which depended on `qa.user01`, is also removed. The dev stack now seeds only dynamically-registered members (emails `demo.*@gym.demo`) plus the admin bootstrapped by Flyway V3/V5.
+
+### Rationale
+
+1. **E2E is now isolated.** `docker-compose.e2e.yml` provisions its own Postgres on port 5433 (`gymflow_e2e` database), so the dev stack's seed no longer influences tests. The single active spec (`e2e/specs/onboarding-happy-path.spec.ts`) registers its own user with a unique `@test.gympulse.local` email per run and has no dependency on the fixed pool.
+2. **No current spec references the fixed UUIDs.** A grep of `e2e/specs/` for `qa.user` or the `44444444-...` UUID prefix returns nothing after the testing-reset (PR #65).
+3. **The PLAN_PENDING demo row was defending a CLAUDE.md rule that no longer exists.** The rule "any valid status value added by a migration must be exercised by the seeder" is no longer in CLAUDE.md's Demo Seeder section. Backend unit tests cover `PLAN_PENDING` state transitions; the dev-stack UI can reach a `PLAN_PENDING` row through the normal signup → pick-plan flow without it being pre-seeded.
+
+### Files changed
+
+- `demo-seeder/src/data/qaUsers.ts` — deleted.
+- `demo-seeder/src/referenceSeeder.ts` — dropped `QA_USERS`/`QA_PROFILES` imports, `upsertQaUsersAndProfiles()`, `upsertPlanPendingDemoRow()`, and their call sites in `seedReferenceData()`. Log message updated to omit `QA users` count.
+- `demo-seeder/src/cleanup.ts` — dropped `deletedQaUsers` from `CleanupResult`, dropped step 11 (the `DELETE FROM users WHERE email LIKE '%@gymflow.local'` query), simplified the booking-delete WHERE clause to only match `demo.%@gym.demo` users.
+- `CLAUDE.md` — Seeded-tables table now shows `users` and `user_profiles` as owned solely by `seeder.ts → registerUsers()`. Rule 3 (fixed reference data list) no longer mentions "QA users".
+
+### Out of scope
+
+- Creating a new test-fixture mechanism to replace the QA pool for future multi-scenario E2E. When needed, the `e2e-seed/` directory (already reserved per the testing-reset SDD) is the intended home.
+- Deleting the `admin@gymflow.local` account or changing the V3/V5 bootstrap migrations. Admin remains as the sole `@gymflow.local` user in the dev DB.
