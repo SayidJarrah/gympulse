@@ -152,8 +152,21 @@ async function registerUsers(count: number, emit: EmitFn): Promise<RegisteredUse
         emit('warning', { message: `Failed to register ${email}: ${res.status} ${body}` });
         continue;
       } else {
-        const data = (await res.json()) as { id: string };
-        userId = data.id;
+        // LoginResponse does not include the user id — look it up by email.
+        const client = await pgPool.connect();
+        try {
+          const row = await client.query<{ id: string }>(
+            `SELECT id FROM users WHERE email = $1 AND deleted_at IS NULL`,
+            [email],
+          );
+          if (row.rows.length === 0) {
+            emit('warning', { message: `Registered ${email} but could not find user id` });
+            continue;
+          }
+          userId = row.rows[0].id;
+        } finally {
+          client.release();
+        }
       }
     } catch (err) {
       emit('warning', { message: `Network error registering ${email}: ${String(err)}` });
