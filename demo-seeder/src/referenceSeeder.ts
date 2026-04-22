@@ -4,7 +4,6 @@ import { V13_CLASS_TEMPLATES } from './data/classTemplatesV13';
 import { V17_CLASS_TEMPLATES } from './data/classTemplatesV17';
 import { TRAINERS } from './data/trainers';
 import { MEMBERSHIP_PLANS } from './data/membershipPlans';
-import { QA_USERS, QA_PROFILES } from './data/qaUsers';
 import type { EmitFn, PresetConfig } from './seeder';
 
 // ── Photo fetch helper ────────────────────────────────────────────────────────
@@ -290,101 +289,6 @@ async function upsertMembershipPlans(count: number): Promise<number> {
   }
 }
 
-async function upsertQaUsersAndProfiles(): Promise<number> {
-  const client = await pgPool.connect();
-  try {
-    // Users
-    for (const u of QA_USERS) {
-      await client.query(
-        `INSERT INTO users (id, email, password_hash, role)
-         VALUES ($1::uuid, $2, $3, $4)
-         ON CONFLICT (email) DO UPDATE
-           SET password_hash = EXCLUDED.password_hash,
-               role          = EXCLUDED.role,
-               deleted_at    = NULL`,
-        [u.id, u.email, u.passwordHash, u.role],
-      );
-    }
-
-    // Profiles (resolve user_id by email join)
-    for (const p of QA_PROFILES) {
-      await client.query(
-        `INSERT INTO user_profiles
-           (user_id, first_name, last_name, phone,
-            date_of_birth, fitness_goals, preferred_class_types,
-            emergency_contact_name, emergency_contact_phone,
-            onboarding_completed_at)
-         SELECT u.id, $2, $3, $4, $5::date, $6::jsonb, $7::jsonb, $8, $9,
-                '2026-01-01T00:00:00Z'::timestamptz
-         FROM users u
-         WHERE u.email = $1
-         ON CONFLICT (user_id) DO UPDATE
-           SET first_name              = EXCLUDED.first_name,
-               last_name               = EXCLUDED.last_name,
-               phone                   = EXCLUDED.phone,
-               date_of_birth           = EXCLUDED.date_of_birth,
-               fitness_goals           = EXCLUDED.fitness_goals,
-               preferred_class_types   = EXCLUDED.preferred_class_types,
-               emergency_contact_name  = EXCLUDED.emergency_contact_name,
-               emergency_contact_phone = EXCLUDED.emergency_contact_phone,
-               onboarding_completed_at = EXCLUDED.onboarding_completed_at,
-               deleted_at              = NULL`,
-        [
-          p.email,
-          p.firstName,
-          p.lastName,
-          p.phone,
-          p.dateOfBirth,
-          JSON.stringify(p.fitnessGoals),
-          JSON.stringify(p.preferredClassTypes),
-          p.emergencyContactName ?? null,
-          p.emergencyContactPhone ?? null,
-        ],
-      );
-    }
-
-    return QA_USERS.length;
-  } finally {
-    client.release();
-  }
-}
-
-// ── PLAN_PENDING demo row ─────────────────────────────────────────────────────
-// Inserts a single PLAN_PENDING user_memberships row for qa.user01 linked to the
-// Monthly plan. This satisfies CLAUDE.md rule that any valid status value added by
-// a migration must be exercised by the seeder (V28 added PLAN_PENDING).
-
-async function upsertPlanPendingDemoRow(emit: EmitFn): Promise<void> {
-  const client = await pgPool.connect();
-  try {
-    // Look up qa.user01 and the Monthly plan by fixed UUIDs.
-    // Fixed UUIDs are defined in qaUsers.ts and membershipPlans.ts.
-    const QA_USER01_ID = '44444444-4444-4444-4444-444444444401';
-    const MONTHLY_PLAN_ID = '22222222-2222-2222-2222-222222222202';
-
-    // Delete any existing PLAN_PENDING row for this user to keep state clean on re-seed.
-    await client.query(
-      `DELETE FROM user_memberships WHERE user_id = $1::uuid AND status = 'PLAN_PENDING'`,
-      [QA_USER01_ID],
-    );
-
-    // Insert the PLAN_PENDING row. start_date and end_date are placeholder values
-    // per SDD §2.4 (real dates set when payment activates the plan).
-    await client.query(
-      `INSERT INTO user_memberships (user_id, plan_id, status, start_date, end_date, bookings_used_this_month)
-       VALUES ($1::uuid, $2::uuid, 'PLAN_PENDING', CURRENT_DATE, CURRENT_DATE, 0)
-       ON CONFLICT DO NOTHING`,
-      [QA_USER01_ID, MONTHLY_PLAN_ID],
-    );
-
-    emit('log', { message: 'Upserted PLAN_PENDING demo row for qa.user01.' });
-  } catch (err) {
-    emit('warning', { message: `PLAN_PENDING demo row failed: ${String(err)}` });
-  } finally {
-    client.release();
-  }
-}
-
 // ── Orchestration ─────────────────────────────────────────────────────────────
 
 export async function seedReferenceData(emit: EmitFn, presetConfig: PresetConfig): Promise<void> {
@@ -396,12 +300,10 @@ export async function seedReferenceData(emit: EmitFn, presetConfig: PresetConfig
     const v17 = await upsertClassTemplatesV17(Math.max(0, presetConfig.classTemplates - 5), emit);
     const trainers = await upsertTrainers(presetConfig.trainers);
     const plans = await upsertMembershipPlans(presetConfig.membershipPlans);
-    const qaUsers = await upsertQaUsersAndProfiles();
-    await upsertPlanPendingDemoRow(emit);
 
     const templates = v13 + v17;
     emit('log', {
-      message: `Reference data seeded: ${rooms} rooms, ${templates} templates, ${trainers} trainers, ${plans} plans, ${qaUsers} QA users`,
+      message: `Reference data seeded: ${rooms} rooms, ${templates} templates, ${trainers} trainers, ${plans} plans`,
     });
   } catch (err) {
     emit('error', { message: `Reference data seeding failed: ${String(err)}` });

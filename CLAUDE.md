@@ -71,8 +71,8 @@ The demo seeder lives at `demo-seeder/src/` and populates realistic data for man
 
 | Table | Owner file | Notes |
 |-------|-----------|-------|
-| `users` | `referenceSeeder.ts` → `upsertQaUsersAndProfiles()` | QA fixed UUIDs |
-| `user_profiles` | `referenceSeeder.ts` + `seeder.ts` → `registerUsers()` | Both paths must match |
+| `users` | `seeder.ts` → `registerUsers()` | Dynamic members only; admin bootstrap via Flyway V3/V5 |
+| `user_profiles` | `seeder.ts` → `registerUsers()` | One row per dynamic member |
 | `trainers` | `referenceSeeder.ts` → `upsertTrainers()` | Fixed UUIDs in `data/trainers.ts` |
 | `membership_plans` | `referenceSeeder.ts` → `upsertMembershipPlans()` | Fixed in `data/membershipPlans.ts` |
 | `rooms` | `referenceSeeder.ts` → `upsertRooms()` | Fixed in `data/rooms.ts` |
@@ -86,7 +86,7 @@ The demo seeder lives at `demo-seeder/src/` and populates realistic data for man
 
 2. **Any new entity type that needs demo data requires a new seeder function** wired into `runSeeder()`. Add the table to the list above in `CLAUDE.md` at the same time.
 
-3. **Fixed reference data** (trainers, rooms, QA users, plans) lives in `demo-seeder/src/data/*.ts`. Add fields there first, then reference them in the upsert function. Fixed UUIDs must never change — they are referenced by E2E tests and QA docs.
+3. **Fixed reference data** (trainers, rooms, plans) lives in `demo-seeder/src/data/*.ts`. Add fields there first, then reference them in the upsert function. Fixed UUIDs must never change — they are referenced by QA docs and may be referenced by future E2E fixtures.
 
 4. **Dynamic demo data** (members, class instances, bookings, PT bookings) is generated in `seeder.ts`. Keep quantity proportional to preset size (`small`/`medium`/`large`).
 

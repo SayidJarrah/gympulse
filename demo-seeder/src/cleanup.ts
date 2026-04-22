@@ -10,7 +10,6 @@ export interface CleanupResult {
   deletedRooms: number;
   deletedClassTemplates: number;
   deletedMembershipPlans: number;
-  deletedQaUsers: number;
 }
 
 // Derive room names from the seeder's source-of-truth list so a change
@@ -30,12 +29,11 @@ export async function runCleanup(): Promise<CleanupResult> {
   let deletedRooms = 0;
   let deletedClassTemplates = 0;
   let deletedMembershipPlans = 0;
-  let deletedQaUsers = 0;
 
   try {
     await client.query('BEGIN');
 
-    // 0. Delete bookings referencing any demo class_instance or demo/QA user.
+    // 0. Delete bookings referencing any demo class_instance or demo user.
     //    bookings.class_id and bookings.user_id are ON DELETE RESTRICT, so they
     //    must be cleared before deleting class_instances or users.
     await client.query(
@@ -47,9 +45,7 @@ export async function runCleanup(): Promise<CleanupResult> {
            )
            OR user_id = ANY($2::uuid[])
            OR user_id IN (
-             SELECT id FROM users
-              WHERE email LIKE 'demo.%@gym.demo'
-                 OR (email LIKE '%@gymflow.local' AND email != 'admin@gymflow.local')
+             SELECT id FROM users WHERE email LIKE 'demo.%@gym.demo'
            )`,
       [classInstanceIds, userIds],
     );
@@ -128,12 +124,6 @@ export async function runCleanup(): Promise<CleanupResult> {
     );
     deletedRooms = roomsRes.rowCount ?? 0;
 
-    // 11. Delete QA users (identified by @gymflow.local domain, excluding admin)
-    const qaRes = await client.query(
-      `DELETE FROM users WHERE email LIKE '%@gymflow.local' AND email != 'admin@gymflow.local'`,
-    );
-    deletedQaUsers = qaRes.rowCount ?? 0;
-
     await client.query('COMMIT');
   } catch (err) {
     await client.query('ROLLBACK');
@@ -152,6 +142,5 @@ export async function runCleanup(): Promise<CleanupResult> {
     deletedRooms,
     deletedClassTemplates,
     deletedMembershipPlans,
-    deletedQaUsers,
   };
 }
