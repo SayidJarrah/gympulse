@@ -100,18 +100,47 @@ interface RegisteredUser {
   email: string;
   firstName: string;
   lastName: string;
+  // Captured from the register response so downstream steps (memberships) don't
+  // have to re-authenticate and pay bcrypt a second time. Null only on the
+  // un-cleaned-run fallback (409) where we reuse an existing user without a
+  // fresh token; createMemberships falls back to /auth/login in that case.
+  accessToken: string | null;
 }
 
-async function registerUsers(count: number, emit: EmitFn): Promise<RegisteredUser[]> {
-  const usedEmails = new Set<string>();
-  const registered: RegisteredUser[] = [];
+// Bounded concurrency for registration and membership creation. The per-user
+// cost is dominated by bcrypt on the backend; running in parallel lets Tomcat
+// worker threads hash concurrently instead of serializing through a single
+// in-flight request.
+const SEED_CONCURRENCY = 8;
 
+async function runInPool<T, R>(
+  items: T[],
+  concurrency: number,
+  worker: (item: T, index: number) => Promise<R | null>,
+): Promise<R[]> {
+  const results: R[] = [];
+  let cursor = 0;
+  const runners = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+    while (true) {
+      const i = cursor++;
+      if (i >= items.length) return;
+      const r = await worker(items[i], i);
+      if (r !== null) results.push(r);
+    }
+  });
+  await Promise.all(runners);
+  return results;
+}
+
+// Generate unique emails up-front so the collision-check stays single-threaded.
+// The per-user network/DB work then runs in parallel.
+function buildUserPlans(count: number): { firstName: string; lastName: string; email: string }[] {
+  const usedEmails = new Set<string>();
+  const plans: { firstName: string; lastName: string; email: string }[] = [];
   for (let i = 0; i < count; i++) {
     const firstName = faker.person.firstName().slice(0, 50);
     const lastName = faker.person.lastName().slice(0, 50);
-
-    // Build unique email
-    let baseEmail = `demo.${firstName.toLowerCase().replace(/[^a-z]/g, '')}.${lastName.toLowerCase().replace(/[^a-z]/g, '')}@gym.demo`;
+    const baseEmail = `demo.${firstName.toLowerCase().replace(/[^a-z]/g, '')}.${lastName.toLowerCase().replace(/[^a-z]/g, '')}@gym.demo`;
     let email = baseEmail;
     let counter = 2;
     while (usedEmails.has(email)) {
@@ -119,9 +148,24 @@ async function registerUsers(count: number, emit: EmitFn): Promise<RegisteredUse
       counter++;
     }
     usedEmails.add(email);
+    plans.push({ firstName, lastName, email });
+  }
+  return plans;
+}
 
-    // Register via REST API (ensures bcrypt hash)
+async function registerUsers(count: number, emit: EmitFn): Promise<RegisteredUser[]> {
+  const plans = buildUserPlans(count);
+  let completed = 0;
+
+  const registered = await runInPool<
+    { firstName: string; lastName: string; email: string },
+    RegisteredUser
+  >(plans, SEED_CONCURRENCY, async ({ firstName, lastName, email }) => {
+    // Kick off the avatar fetch in parallel with the bcrypt register call.
+    const avatarPromise = fetchAvatar(email);
+
     let userId: string;
+    let accessToken: string | null = null;
     try {
       const res = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
@@ -130,29 +174,28 @@ async function registerUsers(count: number, emit: EmitFn): Promise<RegisteredUse
       });
 
       if (res.status === 409) {
-        // Already exists from a previous un-cleaned run — retrieve existing user
         emit('warning', { message: `User ${email} already exists, skipping registration` });
-        // Still track it via email lookup so cleanup works
         const client = await pgPool.connect();
         try {
           const row = await client.query<{ id: string }>(
             `SELECT id FROM users WHERE email = $1 AND deleted_at IS NULL`,
             [email],
           );
-          if (row.rows.length > 0) {
-            userId = row.rows[0].id;
-          } else {
-            continue;
-          }
+          if (row.rows.length === 0) return null;
+          userId = row.rows[0].id;
         } finally {
           client.release();
         }
       } else if (!res.ok) {
         const body = await res.text();
         emit('warning', { message: `Failed to register ${email}: ${res.status} ${body}` });
-        continue;
+        return null;
       } else {
-        // LoginResponse does not include the user id — look it up by email.
+        // LoginResponse does not include user id, but does include accessToken —
+        // capture it to skip the redundant login in createMemberships.
+        const loginResponse = (await res.json()) as { accessToken: string };
+        accessToken = loginResponse.accessToken;
+
         const client = await pgPool.connect();
         try {
           const row = await client.query<{ id: string }>(
@@ -161,7 +204,7 @@ async function registerUsers(count: number, emit: EmitFn): Promise<RegisteredUse
           );
           if (row.rows.length === 0) {
             emit('warning', { message: `Registered ${email} but could not find user id` });
-            continue;
+            return null;
           }
           userId = row.rows[0].id;
         } finally {
@@ -170,15 +213,13 @@ async function registerUsers(count: number, emit: EmitFn): Promise<RegisteredUse
       }
     } catch (err) {
       emit('warning', { message: `Network error registering ${email}: ${String(err)}` });
-      continue;
+      return null;
     }
 
-    // Insert user profile directly
     const dob = faker.date.birthdate({ min: 22, max: 55, mode: 'age' });
     const goals = pickRandom(FITNESS_GOALS, 2, 4);
     const classTypes = pickRandom(CLASS_TYPE_PREFERENCES, 2, 3);
-    const avatar = await fetchAvatar(email);
-    // ~60% of demo users have an emergency contact on file
+    const avatar = await avatarPromise;
     const hasEc = Math.random() < 0.6;
     const ecName  = hasEc ? faker.person.fullName().slice(0, 100) : null;
     const ecPhone = hasEc ? faker.phone.number('+## ### ### ####').slice(0, 30) : null;
@@ -203,10 +244,10 @@ async function registerUsers(count: number, emit: EmitFn): Promise<RegisteredUse
     }
 
     trackUser(userId, email, firstName, lastName);
-    registered.push({ id: userId, email, firstName, lastName });
-
-    emit('progress', { step: 'users', current: registered.length, total: count });
-  }
+    completed++;
+    emit('progress', { step: 'users', current: completed, total: count });
+    return { id: userId, email, firstName, lastName, accessToken };
+  });
 
   return registered;
 }
@@ -219,27 +260,32 @@ async function createMemberships(
   planIds: { id: string; name: string }[],
   emit: EmitFn,
 ): Promise<Map<string, string>> {
-  const userPlanMap = new Map<string, string>(); // userId → planName
+  const userPlanMap = new Map<string, string>();
   const count = Math.floor(users.length * membershipPct / 100);
   const shuffled = [...users].sort(() => Math.random() - 0.5).slice(0, count);
+  let completed = 0;
 
-  for (let i = 0; i < shuffled.length; i++) {
-    const user = shuffled[i];
+  await runInPool<RegisteredUser, true>(shuffled, SEED_CONCURRENCY, async (user) => {
     const plan = planIds[Math.floor(Math.random() * planIds.length)];
 
     try {
-      const loginRes = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: user.email, password: DEMO_PASSWORD }),
-      });
+      // Prefer the accessToken captured during register. Fall back to
+      // /auth/login only for users picked up via the 409 re-use path.
+      let accessToken = user.accessToken;
+      if (!accessToken) {
+        const loginRes = await fetch(`${API_URL}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: user.email, password: DEMO_PASSWORD }),
+        });
 
-      if (!loginRes.ok) {
-        emit('warning', { message: `Cannot login as ${user.email}, skipping membership` });
-        continue;
+        if (!loginRes.ok) {
+          emit('warning', { message: `Cannot login as ${user.email}, skipping membership` });
+          return null;
+        }
+
+        accessToken = ((await loginRes.json()) as { accessToken: string }).accessToken;
       }
-
-      const { accessToken } = (await loginRes.json()) as { accessToken: string };
 
       const memberRes = await fetch(`${API_URL}/memberships`, {
         method: 'POST',
@@ -253,7 +299,7 @@ async function createMemberships(
       if (!memberRes.ok) {
         const body = await memberRes.text();
         emit('warning', { message: `Membership failed for ${user.email}: ${memberRes.status} ${body}` });
-        continue;
+        return null;
       }
 
       const membership = (await memberRes.json()) as { id: string };
@@ -262,10 +308,13 @@ async function createMemberships(
       userPlanMap.set(user.id, plan.name);
     } catch (err) {
       emit('warning', { message: `Error creating membership for ${user.email}: ${String(err)}` });
+      return null;
     }
 
-    emit('progress', { step: 'memberships', current: i + 1, total: shuffled.length });
-  }
+    completed++;
+    emit('progress', { step: 'memberships', current: completed, total: shuffled.length });
+    return true;
+  });
 
   return userPlanMap;
 }
