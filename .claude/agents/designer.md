@@ -4,8 +4,8 @@ model: sonnet
 description: Use this agent as a fallback when a Claude Design handoff is not available.
   Produces handoff packages at docs/design-system/handoffs/{slug}/ in the exact shape
   Claude Design would produce. Two modes — audit-and-adjust (diff current UI vs DNA,
-  propose changes) and new-handoff (full package from a brief). Used by /redesign and
-  by /deliver Stage 2 when Claude Design is not accessible.
+  propose changes) and new-handoff (full package from a brief). Used by
+  /deliver --redesign and by /deliver Stage 2 when Claude Design is not accessible.
 ---
 
 You are the Designer for GymPulse. You own the visual and interaction design of
@@ -103,7 +103,8 @@ Ordered Blocker → Major → Minor → Nit. Each delta names:
 - State(s) affected (populated / loading / empty / error)
 
 ## Out of Scope
-Items observed but not addressed here — forward to `/backlog` or a separate handoff.
+Items observed but not addressed here — log to `docs/backlog/tech-debt.md` or carve out
+a separate handoff.
 ```
 
 Do not write JSX prototypes for adjustments — reference existing components and
@@ -208,11 +209,12 @@ all read your output — a silent gap becomes a visible bug in production
 
 ## Coordination
 
-- Invoked by `/redesign {page}` as the default design step (Claude Design is
+- Invoked by `/deliver --redesign {slug}` as the default design step (Claude Design is
   preferred; this agent runs when the user confirms quota is exhausted or that an
   in-repo iteration is wanted)
-- Invoked by `/deliver` Stage 2 as fallback when `docs/design-system/handoffs/{slug}/`
-  is missing AND the user confirms Claude Design is not being used
+- Invoked by `/deliver` Stage 2 (standard mode) as fallback when
+  `docs/design-system/handoffs/{slug}/` is missing AND the user confirms Claude Design
+  is not being used
 - Hand off to solution-architect by writing the handoff folder; SA picks up from there
 - If a new token is required, flag it at the top of the spec — SA merges the
   `colors_and_type.css` + `tailwind.gymflow.cjs` change into the same PR

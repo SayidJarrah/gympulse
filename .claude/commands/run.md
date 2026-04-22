@@ -1,38 +1,41 @@
-Start the **dev stack** (`docker-compose.dev.yml`) with full health diagnostics.
+Start a stack with full health diagnostics. Two modes:
 
-> **Dev stack only** — ports 5432 / 8080 / 5173 / 3002 — for manual testing and PR review.
-> For E2E tests use `/verify`, which manages its own dedicated E2E stack on ports 5433 / 8081 / 5174.
+| Form | Mode | Stack | Ports | DB |
+|---|---|---|---|---|
+| `/run` | **dev** (default) | `docker-compose.dev.yml` — manual playground, demo data via `demo-seeder` | 5432 / 8080 / 5173 / 3002 | `gymflow` |
+| `/run e2e` | **e2e** | `docker-compose.e2e.yml` — Playwright target, `GYMFLOW_TEST_SUPPORT_ENABLED=true` | 5433 / 8081 / 5174 | `gymflow_e2e` |
 
-## Pre-flight Checks
+`--build` is non-negotiable in e2e mode (Lesson 7: never run Playwright against a stale
+container). Dev mode rebuilds only what changed.
 
-Run all checks before touching Docker:
+---
+
+## Mode: dev (default)
+
+Manual testing and PR review. Never run Playwright against this stack.
+
+### Pre-flight Checks
 
 ```bash
-# Docker running?
 docker info > /dev/null 2>&1 && echo "Docker: ✅" || echo "Docker: ❌ NOT RUNNING — start Docker Desktop first"
-
-# Compose file exists?
 ls docker-compose.dev.yml > /dev/null 2>&1 && echo "Compose file: ✅" || echo "Compose file: ❌ MISSING"
 
-# Ports free?
 lsof -i :8080 | grep LISTEN && echo "Port 8080: ❌ IN USE" || echo "Port 8080: ✅ free"
 lsof -i :5173 | grep LISTEN && echo "Port 5173: ❌ IN USE" || echo "Port 5173: ✅ free"
 lsof -i :3002 | grep LISTEN && echo "Port 3002: ❌ IN USE" || echo "Port 3002: ✅ free"
 ```
 
-If Docker is not running: **STOP.** Tell user to start Docker Desktop.
-If compose file missing: **STOP.** File is required.
-If a port is in use: identify the conflicting process, ask user before stopping it.
+If Docker is not running: **STOP.** Tell the user to start Docker Desktop.
+If the compose file is missing: **STOP.**
+If a port is in use: identify the conflicting process and ask the user before stopping it.
 
-## Staleness Check
+### Staleness Check
 
-If the stack is already running, check whether the containers are older than the latest commit:
+If the stack is already running, check whether containers are older than the latest commit:
 
 ```bash
-# Last git commit time (Unix timestamp)
 LAST_COMMIT=$(git log -1 --format=%ct)
 
-# Earliest container start time among backend, frontend, and demo-seeder
 CONTAINER_START=$(docker inspect --format='{{.State.StartedAt}}' gympulse-backend-1 gympulse-frontend-1 gympulse-demo-seeder-1 2>/dev/null \
   | sort | head -1 | xargs -I{} date -j -f "%Y-%m-%dT%H:%M:%S" "$(echo {} | cut -c1-19)" "+%s" 2>/dev/null \
   || echo 0)
@@ -40,11 +43,11 @@ CONTAINER_START=$(docker inspect --format='{{.State.StartedAt}}' gympulse-backen
 [ "$LAST_COMMIT" -gt "$CONTAINER_START" ] && echo "STALE" || echo "FRESH"
 ```
 
-- **STALE** — containers started before the last commit. Rebuild required. Proceed to **Detect What Changed**.
-- **FRESH** — containers are up to date. Skip to **Health Wait** to confirm the stack is healthy, then report success.
-- If containers are not running at all, proceed to **Detect What Changed**.
+- **STALE** — containers started before the last commit. Rebuild required. Proceed to *Detect What Changed*.
+- **FRESH** — containers are up to date. Skip to *Health Wait* and report success.
+- Containers not running at all → proceed to *Detect What Changed*.
 
-## Detect What Changed
+### Detect What Changed
 
 ```bash
 git diff --name-only HEAD~1 HEAD 2>/dev/null || git status --short
@@ -57,38 +60,34 @@ git diff --name-only HEAD~1 HEAD 2>/dev/null || git status --short
 | `demo-seeder/**` | Demo-seeder image only |
 | Multiple of the above, or unsure | All affected images |
 
-## Build
+### Build
 
 **Backend (if needed):**
 ```bash
 docker compose -f docker-compose.dev.yml build backend
 ```
-If fails with compilation error in code you just wrote: fix the code, retry.
-If fails for any other reason: **STOP** and report the full error.
+Compilation error in code you just wrote → fix and retry. Any other error → **STOP** and report.
 
 **Frontend (if needed):**
 ```bash
 docker compose -f docker-compose.dev.yml build frontend
 ```
-If fails with TypeScript error in code you just wrote: fix, retry.
-If fails for any other reason: **STOP** and report the full error.
+TypeScript error in code you just wrote → fix and retry. Any other error → **STOP** and report.
 
 **Demo-seeder (if needed):**
 ```bash
 docker compose -f docker-compose.dev.yml build demo-seeder
 ```
-If fails for any reason: **STOP** and report the full error.
+Any failure → **STOP** and report.
 
-## Start
+### Start
 
 ```bash
 docker compose -f docker-compose.dev.yml down --remove-orphans
 docker compose -f docker-compose.dev.yml up -d --build
 ```
 
-`--build` ensures no stale cached image is served. The FRESH path above never reaches this section, so this only runs when a rebuild was already determined to be necessary.
-
-## Health Wait (60s max)
+### Health Wait (60s max)
 
 **Backend:**
 ```bash
@@ -98,7 +97,7 @@ for i in $(seq 1 12); do
 done
 ```
 
-**Demo-seeder** (wait for backend to pass first):
+**Demo-seeder** (after backend passes):
 ```bash
 for i in $(seq 1 12); do
   curl -sf http://localhost:3002/health && echo " ✅ Demo-seeder healthy" && break || \
@@ -106,7 +105,7 @@ for i in $(seq 1 12); do
 done
 ```
 
-## Failure Diagnosis
+### Failure Diagnosis
 
 If any health check never returns after 60s:
 
@@ -116,27 +115,91 @@ docker compose -f docker-compose.dev.yml logs --tail=50 frontend
 docker compose -f docker-compose.dev.yml logs --tail=50 demo-seeder
 ```
 
-Classify and respond:
-
 | Log pattern | Classification | Recovery |
 |---|---|---|
-| `FlywayException`, `Unable to obtain connection` | Migration/DB issue | Check the latest V{N} migration file |
-| `BeanCreationException`, `NoSuchBeanDefinitionException` | Spring config issue | Check the bean name in config classes |
-| `NullPointerException` at startup | Code issue | Report full stack trace |
+| `FlywayException`, `Unable to obtain connection` | Migration/DB | Check the latest `V{N}` migration |
+| `BeanCreationException`, `NoSuchBeanDefinitionException` | Spring config | Check the bean name in config classes |
+| `NullPointerException` at startup | Code | Report the full stack trace |
 | `Connection refused` to postgres | DB not ready | Wait 10s, retry once |
-| Missing environment variable | Env issue | Check .env file |
-| nginx `[error]` | Frontend config | Report nginx error line |
-| demo-seeder `ECONNREFUSED` / seed error | Seeder startup issue | Check demo-seeder logs for seed script errors |
+| Missing environment variable | Env | Check `.env` |
+| nginx `[error]` | Frontend config | Report the nginx error line |
+| demo-seeder `ECONNREFUSED` / seed error | Seeder startup | Check demo-seeder logs |
 
 Do NOT attempt to fix infrastructure failures (Dockerfiles, compose files, env vars).
 Report clearly and stop.
 
-## Success
+### Success
 
 ```
-✅ Stack is running.
+✅ Dev stack is running.
    Frontend:     http://localhost:5173
    Backend:      http://localhost:8080
    API docs:     http://localhost:8080/api/docs
    Demo-seeder:  http://localhost:3002
 ```
+
+---
+
+## Mode: e2e
+
+Playwright target. Boots the dedicated E2E stack with `--build` and runs the suite at
+`e2e/specs/*.spec.ts`. Used by the tester agent inside `/deliver` and for ad-hoc
+post-merge runs.
+
+### Boot the E2E Stack
+
+```bash
+docker compose -f docker-compose.e2e.yml up -d --build
+
+# Wait for backend health (up to 60s)
+for i in $(seq 1 12); do
+  curl -sf http://localhost:8081/api/v1/health > /dev/null && break
+  sleep 5
+done
+```
+
+### Run the Suite
+
+```bash
+cd e2e
+npm ci
+E2E_BASE_URL=http://localhost:5174 npx playwright test
+```
+
+Single spec:
+```bash
+cd e2e
+E2E_BASE_URL=http://localhost:5174 npx playwright test specs/{spec-name}.spec.ts
+```
+
+### After Code Changes (during a fix loop)
+
+Rebuild the affected container before re-running. A stale bundle masks fresh fixes
+(Lesson 7):
+
+```bash
+# Frontend change:
+docker compose -f docker-compose.e2e.yml up -d --build frontend
+
+# Backend change:
+docker compose -f docker-compose.e2e.yml up -d --build --force-recreate backend
+```
+
+Confirm the container shows `Recreated` (not just `Running`) in the compose output.
+
+### Report
+
+**All pass:**
+```
+✅ N tests passed — suite clean.
+```
+
+**Failures:**
+```
+❌ N failures:
+  - e2e/specs/{spec-name}.spec.ts — "{test name}"
+  - ...
+```
+
+A reproducible failure becomes a new `test()` case in an existing or new spec — never a
+markdown bug brief.

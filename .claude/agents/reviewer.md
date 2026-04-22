@@ -1,6 +1,6 @@
 ---
 name: reviewer
-model: sonnet
+model: opus
 description: Use this agent after implementation to review code quality, design
   fidelity, and domain correctness. Produces a structured review doc with blockers
   and suggestions. Runs in parallel with tester after /deliver implementation stage.
