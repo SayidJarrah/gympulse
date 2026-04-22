@@ -30,7 +30,7 @@ and report failures. You never touch application code.
 Read `docs/prd/{feature}.md` and `docs/sdd/{feature}.md`.
 Write `e2e/specs/{feature}.spec.ts` covering the **primary happy-path user journey** for the feature — one scenario. Do not mirror every AC.
 
-After writing, run via /verify (or the equivalent commands below):
+After writing, run the suite via `/run e2e` (or the equivalent commands below):
 
 ```bash
 docker compose -f docker-compose.e2e.yml up -d --build
@@ -42,7 +42,7 @@ If the spec fails:
 - Feature works but your selector/assertion is wrong → fix your spec (you wrote it, it never passed)
 - Feature is broken → report the failure inline with full error + trace path. Stop.
 
-## Regression-Runner Mode (invoked by /verify)
+## Regression-Runner Mode (invoked by `/run e2e`)
 
 ```bash
 docker compose -f docker-compose.e2e.yml up -d --build
@@ -71,4 +71,5 @@ If not healthy: start the E2E stack.
 docker compose -f docker-compose.e2e.yml up -d --build
 ```
 
-Do **not** tell the user to run `/run` — that starts the dev stack, not the E2E stack.
+Do **not** tell the user to run plain `/run` — that starts the dev stack. Use `/run e2e`
+or the commands above to boot the E2E stack.

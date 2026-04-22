@@ -46,9 +46,9 @@ gympulse/
 
 ## Testing
 
-**Two stacks:**
-- `docker-compose.dev.yml` — manual playground. Start with `/run`. Rich demo data via `demo-seeder` (ports 5432 / 8080 / 5173 / 3002). Never run Playwright against this stack.
-- `docker-compose.e2e.yml` — Playwright target. Started automatically by `/verify` with `--build`. No demo data (ports 5433 / 8081 / 5174).
+**Two stacks, one command (`/run`):**
+- `docker-compose.dev.yml` — manual playground. Start with `/run` (default mode). Rich demo data via `demo-seeder` (ports 5432 / 8080 / 5173 / 3002). Never run Playwright against this stack.
+- `docker-compose.e2e.yml` — Playwright target. Start with `/run e2e`, which boots the stack with `--build` and runs the suite. No demo data (ports 5433 / 8081 / 5174).
 
 **Where specs live:** `e2e/specs/*.spec.ts` at the repo root. `frontend/e2e/` does not exist.
 
@@ -56,7 +56,7 @@ gympulse/
 
 **Rules:**
 - All test emails end with `@test.gympulse.local`. Unique per test via `crypto.randomUUID()`.
-- `/verify` always passes `--build`. Never run against a stale container (Lesson 7).
+- `/run e2e` always passes `--build`. Never run against a stale container (Lesson 7).
 - No `waitForTimeout`. Use `expect.poll`, `waitForResponse`, or direct UI-state assertions.
 - No markdown bug docs under `docs/bugs/`. A reproducible bug becomes a failing `test()` case that passes after the fix.
 
@@ -110,7 +110,7 @@ Either way, the canonical DNA lives in this repo and both sources must honour it
 - For each feature or redesign, a handoff package lands at `docs/design-system/handoffs/{feature-slug}/`:
   - `README.md` — the spec (overview, screens, states, interactions, data contracts, tokens, deferred items)
   - `design_reference/` — prototype bundle: HTML/JSX entry, `colors_and_type.css`, supporting modules
-- Handoffs are the input to `/deliver` Stage 2 and `/redesign`.
+- Handoffs are the input to `/deliver` Stage 2 and to `/deliver --redesign`.
 - Prototypes are reference-only — they use CDN React + inline styles for convenience. Implement against the project stack (Vite, TS, Tailwind, Zustand). Port tokens verbatim.
 
 **Choosing the author:**
@@ -164,16 +164,17 @@ The `.worktrees/` directory is already in `.gitignore`.
 | Playwright | `playwright` | Browser-based E2E testing |
 
 ## Commands
+
+Three pipeline commands (`/brief`, `/deliver`, `/run`). Everything else collapsed into them.
+
 | Command | When to use |
 |---------|-------------|
-| `/brief {feature}` | Start a new feature — interactive intake, saves brief to `docs/briefs/{feature}.md` |
-| `/deliver {feature}` | Run the delivery pipeline from the current stage (requires brief or audit gap report) |
-| `/redesign {page}` | Existing page needs visual/UX upgrade |
-| `/audit {feature}` | Feature is "done" but completeness is uncertain |
-| `/backlog` | View tech debt items; `/backlog {feature}` to filter; `/backlog close TD-N` to remove |
-| `/run` | Start the stack with health diagnostics |
-| `/verify` | Run full E2E suite |
-| `/status` | Reconstruct what's in flight from git + docs |
+| `/brief {slug}` | Start a new feature — interactive intake, saves brief to `docs/briefs/{slug}.md` |
+| `/deliver {slug}` | Run the standard delivery pipeline from the current stage |
+| `/deliver --audit {slug}` | Bi-directional audit — writes gap report at `docs/gaps/{slug}.md`, then resumes standard delivery |
+| `/deliver --redesign {slug}` | UI/UX redesign — handoff at `{slug}-redesign`, no tester, manual-QA checklist |
+| `/run` | Start the **dev stack** (manual playground with demo data) |
+| `/run e2e` | Start the **E2E stack** with `--build` and run the Playwright suite |
 
 ## API Conventions
 - Base URL: `/api/v1`

@@ -1,6 +1,6 @@
 ---
 name: solution-architect
-model: sonnet
+model: opus
 mcpServers:
   - postgres
 description: Use this agent to convert PRD + design handoff into an SDD. Invoke AFTER
