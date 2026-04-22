@@ -54,6 +54,24 @@ export async function runCleanup(): Promise<CleanupResult> {
       [classInstanceIds, userIds],
     );
 
+    // 0b. Delete pt_bookings referencing any demo member or seeded trainer.
+    //     pt_bookings.member_id and pt_bookings.trainer_id are ON DELETE RESTRICT,
+    //     so they must be cleared before deleting users (step 3) or trainers (step 7).
+    await client.query(
+      `DELETE FROM pt_bookings
+        WHERE member_id = ANY($1::uuid[])
+           OR member_id IN (
+             SELECT id FROM users
+              WHERE email LIKE 'demo.%@gym.demo'
+                 OR (email LIKE '%@gymflow.local' AND email != 'admin@gymflow.local')
+           )
+           OR trainer_id IN (
+             SELECT id FROM trainers
+              WHERE email LIKE '%@gymflow.local'
+           )`,
+      [userIds],
+    );
+
     // 1. Delete tracked demo class instances (cascades class_instance_trainers via ON DELETE CASCADE)
     if (classInstanceIds.length > 0) {
       const r = await client.query(
