@@ -2,7 +2,7 @@
 
 ## Blockers (must fix before PR)
 
-- [ ] `frontend/src/pages/onboarding/OnboardingPage.tsx:29-34` — After the terms-step `register` succeeds, `setTokens` + `setUser` flip `isAuthenticated` true, which (a) makes `useBootstrap` in `App.tsx` set `bootstrapLoading = true` and (b) makes `OnboardingRoute` swap `OnboardingShell` for `BootstrapSpinner`. When bootstrap resolves, `OnboardingPage` remounts and its mount effect runs `computeResumeStep` again. For the now-authenticated user with `firstName/lastName/phone/dob` populated in the store, `computeResumeStep` returns `'membership'`, overwriting the `currentStep = 'done'` that `OnboardingShell.handleContinue` had just set. `OnboardingRoute` then sees `onboardingCompletedAt !== null && currentStep !== 'done'` and redirects to `/home`. The user lands authenticated but never sees the Done screen — **AC-07 (the guest is taken through the existing `done` step)** is broken end-to-end. Fix: in `computeResumeStep`, treat `currentStep === 'done'` as authoritative (early-return `'done'`), or guard the resume override behind `currentStep !== 'done'`. Either way, `setStep` must not run when the store already says `done`.
+- [x] `frontend/src/pages/onboarding/OnboardingPage.tsx:29-34` — After the terms-step `register` succeeds, `setTokens` + `setUser` flip `isAuthenticated` true, which (a) makes `useBootstrap` in `App.tsx` set `bootstrapLoading = true` and (b) makes `OnboardingRoute` swap `OnboardingShell` for `BootstrapSpinner`. When bootstrap resolves, `OnboardingPage` remounts and its mount effect runs `computeResumeStep` again. For the now-authenticated user with `firstName/lastName/phone/dob` populated in the store, `computeResumeStep` returns `'membership'`, overwriting the `currentStep = 'done'` that `OnboardingShell.handleContinue` had just set. `OnboardingRoute` then sees `onboardingCompletedAt !== null && currentStep !== 'done'` and redirects to `/home`. The user lands authenticated but never sees the Done screen — **AC-07 (the guest is taken through the existing `done` step)** is broken end-to-end. **Fix applied in commit `2842888`**: `computeResumeStep` now early-returns `'done'` when `store.currentStep === 'done'`, so the bootstrap-spinner remount cannot override the wizard's intent. SDD §4.4 updated to document the rule. E2E spec `e2e/specs/onboarding-unified-signup.spec.ts` re-run: 1 passed.
 
 ## Suggestions (non-blocking)
 
@@ -18,4 +18,4 @@
 
 ## Verdict
 
-BLOCKED — 1 blocker
+APPROVED — 1 blocker resolved in commit `2842888`. Tester re-run: 1 passed.
