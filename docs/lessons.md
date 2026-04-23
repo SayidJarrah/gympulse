@@ -90,6 +90,12 @@ Correction: The onboarding-flow PR merged with unused-variable TypeScript errors
 Rule: Before opening or merging a PR, run `npm run build` (or `tsc --noEmit`) in the frontend directory and confirm zero TypeScript errors. A build that fails on `tsc` is not shippable — it breaks the Docker image for every developer on the next `/run`. This is not optional cleanup; it is a gate.
 Applies when: Any PR that touches TypeScript files in `frontend/src/`.
 
+## Lesson 15 — When a PRD defers a feature, name the placeholder it leaves behind
+Date: 2026-04-23
+Correction: The unified-signup PRD said "real paid-membership activation is out of scope." That correctly deferred the payment work — but it did not call out that the deferral leaves a `PLAN_PENDING` membership status in the data model that downstream callers (booking, /memberships/me) treat as "not active." The next feature (`onboarding-terms-early`) inherited a wizard that promised the user could book a class right after picking a plan, only to hit `403 MEMBERSHIP_REQUIRED` at execution time because nothing in the unified-signup spec hinted that `PLAN_PENDING` was load-bearing for booking access. Fix took an SA escalation to discover and resolve.
+Rule: When a PRD's Non-Goals section defers a feature, audit the data model for the placeholder it leaves behind (a status enum value, a nullable column, a "pending" state, a stub endpoint). Add a one-line note in Non-Goals naming the placeholder and whether downstream features can freely change its semantics or must work around it. If the placeholder is load-bearing, name the dependent surfaces explicitly so the next PRD author does not write contradictory ACs.
+Applies when: Writing or reviewing a PRD whose Non-Goals defer a backend feature with persistent state (payments, verification, activation, approval, anything that creates a "pending" record).
+
 ## Lesson 14 — Wire Tailwind config and verify token namespaces on first design system drop
 Date: 2026-04-19
 Correction: The extraction bundle introduced a new Tailwind token namespace (`primary`/`accent`/`fg`/`border`) that differed from the old `tailwind.gymflow.cjs` (`brand`/`ink`/`line`). The frontend `tailwind.config.js` had an empty `extend: {}` and was never wired to the gymflow file — so Tailwind utility classes referencing design tokens silently resolved to nothing for the entire feature development cycle.
