@@ -35,7 +35,7 @@ export function AdminSidebar() {
 
   const handleLogout = () => {
     clearAuth()
-    navigate('/login')
+    navigate('/')
   }
 
   const userInitials = user?.email

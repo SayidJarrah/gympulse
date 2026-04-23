@@ -13,7 +13,7 @@ export function Navbar() {
   const handleLogout = () => {
     resetProfile()
     clearAuth()
-    navigate('/login')
+    navigate('/')
   }
 
   useEffect(() => {
