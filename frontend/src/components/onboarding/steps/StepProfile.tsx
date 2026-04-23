@@ -43,16 +43,31 @@ export const StepProfile = forwardRef<StepProfileHandle, object>((_props, ref) =
 
   useImperativeHandle(ref, () => ({
     async submit(): Promise<boolean> {
+      // RULE: Read field values from the Zustand store, NOT from local useState.
+      // OnboardingShell renders both the desktop (lg:grid) and mobile (lg:hidden)
+      // <StepContent> trees simultaneously, sharing the same step refs. Whichever
+      // instance mounts last wins the useImperativeHandle race — and since every
+      // onChange here writes to the store, the parent re-renders both children on
+      // each keystroke, leaving ref.current pointing at the mobile instance whose
+      // local useState is empty (mobile inputs are display:none and never receive
+      // user events). Reading from the store sidesteps the race entirely. See the
+      // analogous workaround for the terms step in OnboardingShell.tsx (~line 162).
+      const s = useOnboardingStore.getState()
+      const firstNameVal = s.firstName.trim()
+      const lastNameVal = s.lastName.trim()
+      const phoneVal = s.phone.trim()
+      const dobVal = s.dob
+
       const errs: Record<string, string> = {}
-      if (!firstName.trim()) errs.firstName = 'First name is required'
-      if (!lastName.trim()) errs.lastName = 'Last name is required'
-      if (!phone.trim()) errs.phone = 'Phone number is required'
-      if (!dob) {
+      if (!firstNameVal) errs.firstName = 'First name is required'
+      if (!lastNameVal) errs.lastName = 'Last name is required'
+      if (!phoneVal) errs.phone = 'Phone number is required'
+      if (!dobVal) {
         errs.dob = 'Date of birth is required'
       } else {
         const today = new Date()
         today.setHours(0, 0, 0, 0)
-        const dobDate = new Date(dob + 'T00:00:00')
+        const dobDate = new Date(dobVal + 'T00:00:00')
         if (dobDate > today) {
           errs.dob = 'Date of birth cannot be in the future'
         } else {
@@ -80,12 +95,12 @@ export const StepProfile = forwardRef<StepProfileHandle, object>((_props, ref) =
 
         if (isAuthenticated) {
           await updateMyProfile({
-            firstName,
-            lastName,
-            phone: toE164(phone),
-            dateOfBirth: dob,
-            fitnessGoals: store.goals,
-            preferredClassTypes: store.classTypes,
+            firstName: firstNameVal,
+            lastName: lastNameVal,
+            phone: toE164(phoneVal),
+            dateOfBirth: dobVal,
+            fitnessGoals: s.goals,
+            preferredClassTypes: s.classTypes,
             emergencyContact: null,
           })
 
@@ -94,7 +109,14 @@ export const StepProfile = forwardRef<StepProfileHandle, object>((_props, ref) =
           }
         }
 
-        store.setProfileFields({ firstName, lastName, phone, dob })
+        // Normalize trimmed values back into the store so downstream steps and
+        // the terms-step combined register payload see the cleaned strings.
+        s.setProfileFields({
+          firstName: firstNameVal,
+          lastName: lastNameVal,
+          phone: phoneVal,
+          dob: dobVal,
+        })
         return true
       } catch (e: unknown) {
         const err = e as { response?: { data?: { error?: string } } }

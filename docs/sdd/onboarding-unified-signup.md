@@ -848,6 +848,38 @@ backend unit tests for the 409 path — not by E2E.
     the existing `StickyFooter.continueLoading` indicator, which is
     component-local and does not gate routing.
 
+12. **Wizard step `submit()` must read from the Zustand store, not from
+    local `useState`.** Both desktop (`<div className="hidden lg:grid">`)
+    and mobile (`<div className="lg:hidden">`) `<StepContent>` trees are
+    rendered simultaneously in `OnboardingShell`, sharing the same step
+    refs (`profileRef`, `credentialsRef`, etc.). Whichever child component
+    mounts last wins the `useImperativeHandle` race. Steps whose `onChange`
+    writes to the Zustand store (today: `StepProfile`, `StepTerms`) trigger
+    a parent re-render on every keystroke, which re-runs both children's
+    `useImperativeHandle` and leaves `ref.current` pointing at the mobile
+    instance — whose local `useState` is empty because mobile inputs are
+    `display:none` and never receive user events. To stay independent of
+    which instance the ref points to, those steps must build their submit
+    payload from `useOnboardingStore.getState()`. This pattern is already
+    used by the `terms` case in `OnboardingShell` (~line 162) and is now
+    enforced in `StepProfile.submit()`. Documented because future step
+    authors will hit the same trap.
+
+13. **`useHomePage` must guard against re-fetching `/memberships/me` after
+    `NO_ACTIVE_MEMBERSHIP`.** Surfaced by the unified-signup flow because
+    completing onboarding without selecting a plan is now a normal terminal
+    state — the user lands on `/home` with no active membership. The
+    membership store's `fetchMyMembership` handles a 404 by setting
+    `membershipErrorCode: 'NO_ACTIVE_MEMBERSHIP'` and `membershipLoading:
+    false` while leaving `activeMembership` `null`. The original
+    `useEffect` guard (`!activeMembership && !membershipLoading`) re-fired
+    on every store update because `membershipLoading` toggled `false →
+    true → false` on each retry, producing an infinite request loop
+    (50,000+ calls per minute). The guard now also checks
+    `membershipErrorCode !== 'NO_ACTIVE_MEMBERSHIP'`, short-circuiting the
+    effect after the first 404. Other error codes (e.g. `NETWORK_ERROR`)
+    still allow a retry, matching the original intent.
+
 ---
 
 ## 7. Out of Scope

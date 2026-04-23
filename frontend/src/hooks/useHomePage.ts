@@ -61,7 +61,7 @@ function daysUntil(isoDate: string): number {
 }
 
 export function useHomePage(): HomePageData {
-  const { activeMembership, membershipLoading, fetchMyMembership } = useMembershipStore()
+  const { activeMembership, membershipLoading, membershipErrorCode, fetchMyMembership } = useMembershipStore()
 
   // Club stats (onTheFloor)
   const [onTheFloor, setOnTheFloor] = useState(0)
@@ -87,12 +87,14 @@ export function useHomePage(): HomePageData {
   const [feedActiveIndex, setFeedActiveIndex] = useState(0)
   const seenIds = useRef<Set<string>>(new Set())
 
-  // Fetch membership if not yet loaded
+  // Fetch membership once. If we already learned the user has no active
+  // membership, do NOT re-fetch — the deps array would otherwise loop forever
+  // because the store's `set` calls flip membershipLoading on every retry.
   useEffect(() => {
-    if (!activeMembership && !membershipLoading) {
+    if (!activeMembership && !membershipLoading && membershipErrorCode !== 'NO_ACTIVE_MEMBERSHIP') {
       void fetchMyMembership()
     }
-  }, [activeMembership, membershipLoading, fetchMyMembership])
+  }, [activeMembership, membershipLoading, membershipErrorCode, fetchMyMembership])
 
   // Fetch viewer state for onTheFloor count + 60s poll
   useEffect(() => {
