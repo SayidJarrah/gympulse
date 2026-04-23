@@ -880,6 +880,22 @@ backend unit tests for the 409 path — not by E2E.
     effect after the first 404. Other error codes (e.g. `NETWORK_ERROR`)
     still allow a retry, matching the original intent.
 
+14. **The axios 401 interceptor must NOT redirect unauthenticated visitors
+    to `/login`.** `frontend/src/api/axiosInstance.ts` previously did
+    `window.location.href = '/login'` on any 401 when the refresh token
+    was absent — which is *always* the case for an unauthenticated guest.
+    Under unified-signup the wizard is reachable by guests, so any 401 from
+    any call (e.g. an authed endpoint accidentally invoked from a step that
+    forgot to gate on `isAuthenticated`, a stale-token race after the
+    bootstrap remount) hard-redirected the guest out of the wizard to
+    `/login` mid-flow. The interceptor now redirects only when
+    `isAuthenticated === true` (i.e. a previously-valid session has died);
+    for guests it rejects the promise silently and lets the caller decide.
+    Same rule applies to the refresh-failed branch. SDD Hygiene rule:
+    documented here so future endpoint authors know the safety net exists
+    but should still gate authed calls on `isAuthenticated` at the call
+    site (the interceptor is a backstop, not a replacement for guarding).
+
 ---
 
 ## 7. Out of Scope

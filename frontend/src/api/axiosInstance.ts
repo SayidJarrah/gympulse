@@ -90,8 +90,14 @@ axiosInstance.interceptors.response.use(
 
     if (!refreshToken) {
       isRefreshing = false
-      useAuthStore.getState().clearAuth()
-      window.location.href = '/login'
+      // Only redirect to /login when a previously-valid session has died.
+      // For unauthenticated visitors (e.g. guests in the onboarding wizard
+      // hitting an authed endpoint by accident), reject silently and let the
+      // caller decide what to do — bouncing them out of the flow is wrong.
+      if (useAuthStore.getState().isAuthenticated) {
+        useAuthStore.getState().clearAuth()
+        window.location.href = '/login'
+      }
       return Promise.reject(error)
     }
 
@@ -121,8 +127,13 @@ axiosInstance.interceptors.response.use(
     } catch (refreshError) {
       processPendingRequests(null, refreshError)
       isRefreshing = false
+      // Same rule as above: only redirect when a previously-valid session
+      // has died. Always clear auth so the dead refresh token is wiped.
+      const wasAuthenticated = useAuthStore.getState().isAuthenticated
       useAuthStore.getState().clearAuth()
-      window.location.href = '/login'
+      if (wasAuthenticated) {
+        window.location.href = '/login'
+      }
       return Promise.reject(refreshError)
     }
   }
