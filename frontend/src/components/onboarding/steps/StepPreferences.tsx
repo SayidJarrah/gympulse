@@ -13,6 +13,13 @@ import {
 import { useOnboardingStore } from '../../../store/onboardingStore'
 import { updateMyProfile } from '../../../api/profile'
 
+function toE164(formatted: string): string {
+  const digits = formatted.replace(/\D/g, '')
+  if (digits.length === 10) return `+1${digits}`
+  if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`
+  return `+${digits}`
+}
+
 type GoalOption = { label: string; icon: ComponentType<{ className?: string; 'aria-hidden'?: boolean | 'true' | 'false' }> }
 type ClassOption = { label: string; icon: ComponentType<{ className?: string; 'aria-hidden'?: boolean | 'true' | 'false' }> }
 
@@ -67,10 +74,14 @@ export const StepPreferences = forwardRef<StepPreferencesHandle, object>((_props
       // ordering and is now obsolete.
       if (hasSelections) {
         try {
+          // store.phone holds the US display format "(555) 000-0000"; the
+          // backend's phone regex requires E.164. Convert before sending or
+          // the preferences save fails with 400 even though only goals /
+          // classes were selected.
           await updateMyProfile({
             firstName: store.firstName || null,
             lastName: store.lastName || null,
-            phone: store.phone || null,
+            phone: store.phone ? toE164(store.phone) : null,
             dateOfBirth: store.dob || null,
             fitnessGoals: goals,
             preferredClassTypes: classTypes,
