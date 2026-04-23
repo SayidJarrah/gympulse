@@ -51,3 +51,21 @@ export function getPtBookingErrorMessage(code?: string, fallback?: string): stri
   if (!code) return fallback ?? 'Something went wrong. Please try again.'
   return PT_BOOKING_ERROR_MESSAGES[code] ?? fallback ?? 'Something went wrong. Please try again.'
 }
+
+// Error mapping for the unified-signup combined-payload register call
+// (SDD §4.5). EMAIL_ALREADY_EXISTS surfaces in the credentials snap-back
+// banner; the others surface inline at the terms step.
+export const REGISTER_ERROR_MESSAGES: Record<string, string> = {
+  EMAIL_ALREADY_EXISTS:
+    'This email is already registered. Enter a different email address to continue.',
+  INVALID_FIRST_NAME: 'First name is invalid. Go back and check your profile.',
+  INVALID_LAST_NAME: 'Last name is invalid. Go back and check your profile.',
+  INVALID_PHONE: 'Phone number is invalid. Go back and check your profile.',
+  INVALID_DATE_OF_BIRTH: 'Date of birth is invalid. Go back and check your profile.',
+  VALIDATION_ERROR: 'Some details are invalid. Please check the form and try again.',
+}
+
+export function getRegisterErrorMessage(code?: string, fallback?: string): string {
+  if (!code) return fallback ?? 'Something went wrong. Please try again.'
+  return REGISTER_ERROR_MESSAGES[code] ?? fallback ?? 'Something went wrong. Please try again.'
+}

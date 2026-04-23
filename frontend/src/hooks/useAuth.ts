@@ -31,7 +31,6 @@ interface UseAuthReturn {
   error: string | null;
   fieldErrors: Record<string, string> | null;
   login: (email: string, password: string) => Promise<{ hasActiveMembership: boolean }>;
-  register: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -102,35 +101,6 @@ export function useAuth(): UseAuthReturn {
     }
   }, [setTokens, setUser])
 
-  const register = useCallback(async (email: string, password: string): Promise<void> => {
-    setIsLoading(true)
-    setError(null)
-    setFieldErrors(null)
-    try {
-      await authApi.register({ email, password })
-    } catch (err) {
-      const axiosError = err as AxiosError<ApiErrorResponse>
-      const code = axiosError.response?.data?.code
-      const message = axiosError.response?.data?.error ?? ''
-      if (code === 'EMAIL_ALREADY_EXISTS') {
-        setError('An account with this email already exists. Please sign in instead.')
-      } else if (code === 'VALIDATION_ERROR') {
-        // Display field-level errors inline as the design spec requires (Flow 1 step 5c)
-        const parsed = parseValidationErrors(message)
-        if (parsed) {
-          setFieldErrors(parsed)
-        } else {
-          setError(message || 'Validation error.')
-        }
-      } else {
-        setError(message || 'An unexpected error occurred.')
-      }
-      throw err
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
-
   const logout = useCallback(async (): Promise<void> => {
     setIsLoading(true)
     setError(null)
@@ -154,7 +124,6 @@ export function useAuth(): UseAuthReturn {
     error,
     fieldErrors,
     login,
-    register,
     logout,
   }
 }

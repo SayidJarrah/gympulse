@@ -3,7 +3,7 @@ package com.gymflow.service
 import com.gymflow.domain.RefreshToken
 import com.gymflow.domain.User
 import com.gymflow.domain.UserProfile
-import com.gymflow.dto.LoginResponse
+import com.gymflow.dto.RegisterRequest
 import com.gymflow.repository.RefreshTokenRepository
 import com.gymflow.repository.UserMembershipRepository
 import com.gymflow.repository.UserProfileRepository
@@ -18,7 +18,9 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
+import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.Optional
 import java.util.UUID
@@ -29,14 +31,24 @@ class AuthServiceTest {
     private val refreshTokenRepository: RefreshTokenRepository = mockk()
     private val userMembershipRepository: UserMembershipRepository = mockk()
     private val userProfileRepository: UserProfileRepository = mockk()
+    private val photoValidationService: PhotoValidationService = mockk()
     private val passwordEncoder: BCryptPasswordEncoder = BCryptPasswordEncoder(10)
     private val jwtService: JwtService = mockk()
+
+    // Real UserProfileService so the normalisation/validation helpers exercise their
+    // actual behaviour (16-year minimum age, E.164 phone regex, length caps).
+    private val userProfileService = UserProfileService(
+        userProfileRepository = userProfileRepository,
+        userRepository = userRepository,
+        photoValidationService = photoValidationService
+    )
 
     private val authService = AuthService(
         userRepository = userRepository,
         refreshTokenRepository = refreshTokenRepository,
         userMembershipRepository = userMembershipRepository,
         userProfileRepository = userProfileRepository,
+        userProfileService = userProfileService,
         passwordEncoder = passwordEncoder,
         jwtService = jwtService,
         refreshTokenExpiryDays = 30
@@ -47,38 +59,107 @@ class AuthServiceTest {
     // -----------------------------------------------------------------------
 
     @Test
-    fun `register - happy path - returns LoginResponse with tokens`() {
+    fun `register - persists user and profile when all fields valid`() {
         val email = "alice@example.com"
         val password = "secret99"
         val userSlot = slot<User>()
+        val profileSlot = slot<UserProfile>()
 
         every { userRepository.findByEmailAndDeletedAtIsNull(email) } returns null
         every { userRepository.save(capture(userSlot)) } answers { userSlot.captured }
-        every { userProfileRepository.save(any<UserProfile>()) } answers { firstArg() }
+        every { userProfileRepository.save(capture(profileSlot)) } answers { profileSlot.captured }
         every { jwtService.generateToken(any()) } returns "mock.jwt.token"
         every { jwtService.getExpiresInSeconds() } returns 3600L
         every { refreshTokenRepository.save(any()) } answers { firstArg() }
 
-        val response = authService.register(email, password)
+        val response = authService.register(buildRegisterRequest(email = email, password = password))
 
         assertEquals("mock.jwt.token", response.accessToken)
         assertNotNull(response.refreshToken)
         assertEquals("Bearer", response.tokenType)
         assertEquals(3600L, response.expiresIn)
         assertFalse(response.hasActiveMembership)
+
+        val savedUser = userSlot.captured
+        assertEquals(email, savedUser.email)
+        assertEquals("USER", savedUser.role)
+
+        val savedProfile = profileSlot.captured
+        assertEquals(savedUser.id, savedProfile.userId)
+        assertEquals("Jane", savedProfile.firstName)
+        assertEquals("Smith", savedProfile.lastName)
+        assertEquals("+15555550100", savedProfile.phone)
+        assertEquals(LocalDate.parse("1992-04-17"), savedProfile.dateOfBirth)
+
         verify(exactly = 1) { userRepository.save(any()) }
         verify(exactly = 1) { userProfileRepository.save(any<UserProfile>()) }
+        verify(exactly = 1) { refreshTokenRepository.save(any()) }
     }
 
     @Test
-    fun `register - duplicate email - throws EmailAlreadyExistsException`() {
+    fun `register - throws EmailAlreadyExistsException when app-level pre-check hits`() {
         val email = "alice@example.com"
         val existingUser = buildUser(email = email)
 
         every { userRepository.findByEmailAndDeletedAtIsNull(email) } returns existingUser
 
         assertThrows<EmailAlreadyExistsException> {
-            authService.register(email, "password1")
+            authService.register(buildRegisterRequest(email = email))
+        }
+
+        verify(exactly = 0) { userRepository.save(any()) }
+        verify(exactly = 0) { userProfileRepository.save(any<UserProfile>()) }
+    }
+
+    @Test
+    fun `register - throws EmailAlreadyExistsException when DataIntegrityViolation caught (race)`() {
+        val email = "alice@example.com"
+
+        every { userRepository.findByEmailAndDeletedAtIsNull(email) } returns null
+        every { userRepository.save(any()) } throws DataIntegrityViolationException("uq_users_email")
+
+        assertThrows<EmailAlreadyExistsException> {
+            authService.register(buildRegisterRequest(email = email))
+        }
+
+        verify(exactly = 0) { userProfileRepository.save(any<UserProfile>()) }
+    }
+
+    @Test
+    fun `register - throws InvalidDateOfBirthException when user under 16`() {
+        val email = "alice@example.com"
+        val recent = LocalDate.now().minusYears(10).toString()
+
+        every { userRepository.findByEmailAndDeletedAtIsNull(email) } returns null
+
+        assertThrows<InvalidDateOfBirthException> {
+            authService.register(buildRegisterRequest(email = email, dateOfBirth = recent))
+        }
+
+        verify(exactly = 0) { userRepository.save(any()) }
+    }
+
+    @Test
+    fun `register - throws InvalidPhoneException when phone is malformed`() {
+        val email = "alice@example.com"
+
+        every { userRepository.findByEmailAndDeletedAtIsNull(email) } returns null
+
+        assertThrows<InvalidPhoneException> {
+            authService.register(buildRegisterRequest(email = email, phone = "not-a-phone"))
+        }
+
+        verify(exactly = 0) { userRepository.save(any()) }
+    }
+
+    @Test
+    fun `register - throws InvalidFirstNameException when first name is blank`() {
+        val email = "alice@example.com"
+
+        every { userRepository.findByEmailAndDeletedAtIsNull(email) } returns null
+
+        assertThrows<InvalidFirstNameException> {
+            authService.register(buildRegisterRequest(email = email, firstName = "   "))
         }
 
         verify(exactly = 0) { userRepository.save(any()) }
@@ -97,7 +178,7 @@ class AuthServiceTest {
         every { jwtService.getExpiresInSeconds() } returns 3600L
         every { refreshTokenRepository.save(any()) } answers { firstArg() }
 
-        authService.register(email, password)
+        authService.register(buildRegisterRequest(email = email, password = password))
 
         val savedUser = userSlot.captured
         assertFalse(savedUser.passwordHash == password, "Password must not be stored in plaintext")
@@ -299,6 +380,26 @@ class AuthServiceTest {
     // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------
+
+    private fun buildRegisterRequest(
+        email: String = "user@example.com",
+        password: String = "secret99",
+        firstName: String = "Jane",
+        lastName: String = "Smith",
+        phone: String = "+15555550100",
+        dateOfBirth: String = "1992-04-17",
+        agreeTerms: Boolean = true,
+        agreeWaiver: Boolean = true
+    ) = RegisterRequest(
+        email = email,
+        password = password,
+        firstName = firstName,
+        lastName = lastName,
+        phone = phone,
+        dateOfBirth = dateOfBirth,
+        agreeTerms = agreeTerms,
+        agreeWaiver = agreeWaiver
+    )
 
     private fun buildUser(
         id: UUID = UUID.randomUUID(),

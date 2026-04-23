@@ -1,16 +1,20 @@
 import { useRef, useState } from 'react'
+import type { AxiosError } from 'axios'
 import { useOnboardingStore } from '../../store/onboardingStore'
 import { useAuthStore } from '../../store/authStore'
-import { completeOnboarding } from '../../api/onboarding'
+import { register as authRegister } from '../../api/auth'
 import { ALL_STEPS } from '../../types/onboarding'
 import type { StepKey } from '../../types/onboarding'
+import type { ApiErrorResponse, AuthUser, UserRole, RegisterRequest } from '../../types/auth'
+import { getRegisterErrorMessage } from '../../utils/errorMessages'
 
 import { MiniNav } from './MiniNav'
 import { ProgressBar } from './ProgressBar'
 import { StepRail } from './StepRail'
 import { StickyFooter } from './StickyFooter'
 
-import { StepWelcome } from './steps/StepWelcome'
+import { StepCredentials } from './steps/StepCredentials'
+import type { StepCredentialsHandle } from './steps/StepCredentials'
 import { StepProfile } from './steps/StepProfile'
 import type { StepProfileHandle } from './steps/StepProfile'
 import { StepPreferences } from './steps/StepPreferences'
@@ -23,15 +27,44 @@ import { StepTerms } from './steps/StepTerms'
 import type { StepTermsHandle } from './steps/StepTerms'
 import { StepDone } from './steps/StepDone'
 
+// Convert a US-formatted phone string to E.164. Mirrors StepProfile's local
+// helper — the wizard collects and stores `(###) ###-####`, and the backend
+// register endpoint requires the E.164 form.
+function toE164(formatted: string): string {
+  const digits = formatted.replace(/\D/g, '')
+  if (digits.length === 10) return `+1${digits}`
+  if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`
+  return `+${digits}`
+}
+
+function decodeJwtPayload(token: string): AuthUser | null {
+  try {
+    const parts = token.split('.')
+    if (parts.length !== 3) return null
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+    const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4)
+    const json = atob(padded)
+    const payload = JSON.parse(json) as { sub: string; role: UserRole; email?: string }
+    return {
+      id: payload.sub,
+      email: payload.email ?? '',
+      role: payload.role,
+    }
+  } catch {
+    return null
+  }
+}
+
 export function OnboardingShell() {
   const store = useOnboardingStore()
   // Read currentStep fresh on every render — do not destructure into a local
   // const before branching, as that would snapshot the value at render time.
-  const { setOnboardingCompletedAt, user } = useAuthStore()
+  const { setOnboardingCompletedAt, setTokens, setUser } = useAuthStore()
   const [loading, setLoading] = useState(false)
   const [termsError, setTermsError] = useState<string | null>(null)
 
   // Step refs — only used for steps that expose an imperative handle
+  const credentialsRef = useRef<StepCredentialsHandle>(null)
   const profileRef = useRef<StepProfileHandle>(null)
   const preferencesRef = useRef<StepPreferencesHandle>(null)
   const membershipRef = useRef<StepMembershipHandle>(null)
@@ -91,8 +124,9 @@ export function OnboardingShell() {
 
     try {
       switch (currentStep) {
-        case 'welcome': {
-          advance()
+        case 'credentials': {
+          const ok = await credentialsRef.current?.submit()
+          if (ok) advance()
           break
         }
 
@@ -132,21 +166,62 @@ export function OnboardingShell() {
           // authoritative source and is kept in sync by every checkbox change.
           if (!store.agreeTerms || !store.agreeWaiver) break
 
-          // Call completeOnboarding before advancing to Done.
-          // AC-44: if the call fails, show error on this step and do not advance.
+          // Unified-signup combined-payload submission (SDD §4.4).
+          // Build the request from the wizard state, hit POST /auth/register,
+          // store tokens on success and snap back to credentials on the late
+          // EMAIL_ALREADY_EXISTS error.
+          setTermsError(null)
           try {
-            setTermsError(null)
-            const res = await completeOnboarding()
-            const userId = user?.id ?? null
-            console.info('[analytics] onboarding_completed', { userId })
-            // Advance to Done first, then set onboardingCompletedAt.
-            // OnboardingRoute now checks currentStep === 'done' and skips the
-            // /home redirect while Done is rendered — so both calls can be
-            // synchronous with no setTimeout race.
+            const fresh = useOnboardingStore.getState()
+            const req: RegisterRequest = {
+              email: fresh.email,
+              password: fresh.password,
+              firstName: fresh.firstName,
+              lastName: fresh.lastName,
+              phone: toE164(fresh.phone),
+              dateOfBirth: fresh.dob,
+              agreeTerms: fresh.agreeTerms,
+              agreeWaiver: fresh.agreeWaiver,
+            }
+            const response = await authRegister(req)
+
+            // Authenticate the just-created user.
+            setTokens(response.accessToken, response.refreshToken)
+            const decoded = decodeJwtPayload(response.accessToken)
+            if (decoded) {
+              setUser({ ...decoded, email: req.email })
+            }
+            // Mark onboarding as not yet complete so OnboardingRoute does not
+            // immediately redirect — StepDone's mount effect calls
+            // POST /onboarding/complete which will then set this to a real
+            // timestamp. Until that happens, the Done screen renders.
+            setOnboardingCompletedAt(null)
+            // Wipe the password from store + localStorage immediately on
+            // success (SDD §4.2 step 3).
+            store.clearPassword()
+
+            // Advance to Done. StepDone's mount effect will fire
+            // POST /onboarding/complete; useBootstrap will fetch the profile.
             advance()
-            setOnboardingCompletedAt(res.onboardingCompletedAt)
-          } catch {
-            setTermsError('Unable to complete onboarding. Please try again.')
+          } catch (err) {
+            const axiosError = err as AxiosError<ApiErrorResponse>
+            const code = axiosError.response?.data?.code
+            const message = axiosError.response?.data?.error
+
+            if (code === 'EMAIL_ALREADY_EXISTS') {
+              // Snap back to the credentials step with the persistent banner.
+              store.setCredentialsLateError(getRegisterErrorMessage('EMAIL_ALREADY_EXISTS'))
+              store.setStep('credentials')
+            } else if (
+              code === 'INVALID_FIRST_NAME' ||
+              code === 'INVALID_LAST_NAME' ||
+              code === 'INVALID_PHONE' ||
+              code === 'INVALID_DATE_OF_BIRTH'
+            ) {
+              setTermsError(getRegisterErrorMessage(code, message))
+            } else {
+              setTermsError(getRegisterErrorMessage(code, message))
+            }
           }
           break
         }
@@ -237,7 +312,7 @@ export function OnboardingShell() {
           <div key={currentStep} className="animate-fadeSlideIn">
             <StepContent
               currentStep={currentStep}
-              firstName={store.firstName || null}
+              credentialsRef={credentialsRef}
               profileRef={profileRef}
               preferencesRef={preferencesRef}
               membershipRef={membershipRef}
@@ -255,7 +330,7 @@ export function OnboardingShell() {
           <div key={currentStep} className="animate-fadeSlideIn">
             <StepContent
               currentStep={currentStep}
-              firstName={store.firstName || null}
+              credentialsRef={credentialsRef}
               profileRef={profileRef}
               preferencesRef={preferencesRef}
               membershipRef={membershipRef}
@@ -285,7 +360,7 @@ export function OnboardingShell() {
 
 interface StepContentProps {
   currentStep: StepKey
-  firstName: string | null
+  credentialsRef: React.RefObject<StepCredentialsHandle>
   profileRef: React.RefObject<StepProfileHandle>
   preferencesRef: React.RefObject<StepPreferencesHandle>
   membershipRef: React.RefObject<StepMembershipHandle>
@@ -296,7 +371,7 @@ interface StepContentProps {
 
 function StepContent({
   currentStep,
-  firstName,
+  credentialsRef,
   profileRef,
   preferencesRef,
   membershipRef,
@@ -305,8 +380,8 @@ function StepContent({
   termsError,
 }: StepContentProps) {
   switch (currentStep) {
-    case 'welcome':
-      return <StepWelcome firstName={firstName} />
+    case 'credentials':
+      return <StepCredentials ref={credentialsRef} />
     case 'profile':
       return <StepProfile ref={profileRef} />
     case 'preferences':

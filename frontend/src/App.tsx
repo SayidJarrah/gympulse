@@ -1,8 +1,7 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useBootstrap } from './hooks/useBootstrap'
 import { OnboardingRoute } from './components/layout/OnboardingRoute'
 import { OnboardingPage } from './pages/onboarding/OnboardingPage'
-import { RegisterPage } from './pages/auth/RegisterPage'
 import { LoginPage } from './pages/auth/LoginPage'
 import { PlansPage } from './pages/plans/PlansPage'
 import { PlanDetailPage } from './pages/plans/PlanDetailPage'
@@ -45,8 +44,9 @@ function App() {
           }
         />
 
-        {/* Auth routes */}
-        <Route path="/register" element={<RegisterPage />} />
+        {/* Auth routes — /register is a permanent redirect to the unified
+            wizard for legacy bookmarks (SDD §4.1). */}
+        <Route path="/register" element={<Navigate to="/onboarding" replace />} />
         <Route path="/login" element={<LoginPage />} />
 
         {/* Public plan routes */}

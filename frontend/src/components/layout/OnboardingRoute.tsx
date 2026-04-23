@@ -9,13 +9,17 @@ interface OnboardingRouteProps {
 
 /**
  * Guard for the /onboarding route.
- * - Not authenticated → redirect to /login
- * - Authenticated and onboarding already completed → redirect to /home
- *   EXCEPT when currentStep === 'done': the Done screen must render so the
- *   user can read it and click "Enter GymFlow →". The auth store update
- *   (onboardingCompletedAt) is set synchronously after advance(), so without
- *   this guard the route would redirect before Done ever mounts.
- * - Authenticated and onboarding not complete → render children
+ *
+ * SDD §4.1 (unified-signup):
+ * - **Guest (unauthenticated)** → render the wizard. The wizard starts at
+ *   the credentials step. The unified-signup flow makes /onboarding the
+ *   single entry point for new accounts.
+ * - **Authenticated, bootstrap loading** → spinner (Lesson 11 — never
+ *   redirect on async-derived state until the fetch resolves).
+ * - **Authenticated, onboarding complete** → /home, EXCEPT when the wizard
+ *   is currently on the Done step (lets the user read it and click "Enter
+ *   GymFlow →").
+ * - **Authenticated, onboarding incomplete** → render the wizard.
  */
 const BootstrapSpinner = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -27,10 +31,12 @@ export function OnboardingRoute({ children }: OnboardingRouteProps) {
   const { isAuthenticated, onboardingCompletedAt, bootstrapLoading } = useAuthStore()
   const currentStep = useOnboardingStore(s => s.currentStep)
 
-  if (!isAuthenticated) return <Navigate to="/login" replace />
+  // Wait for bootstrap fetch to resolve before deciding (Lesson 11).
+  // Only matters when isAuthenticated is true; for guests bootstrap never runs.
+  if (isAuthenticated && bootstrapLoading) return <BootstrapSpinner />
 
-  // Wait for bootstrap fetch to resolve before making redirect decisions
-  if (bootstrapLoading) return <BootstrapSpinner />
+  // Guest path: render the wizard (unified-signup AC-01).
+  if (!isAuthenticated) return <>{children}</>
 
   // Allow the Done screen to render — the user navigates to /home via the
   // "Enter GymFlow →" button, not via this guard. Without this exception the

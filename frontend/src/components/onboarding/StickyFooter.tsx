@@ -25,7 +25,7 @@ export function StickyFooter({
   const stepDef = visibleSteps[currentIndex]
   const isFirst = currentIndex === 0
   const isLast = currentStep === 'terms'
-  const showSkip = stepDef && !stepDef.required && currentStep !== 'welcome'
+  const showSkip = stepDef && !stepDef.required && currentStep !== 'credentials'
 
   return (
     <footer
@@ -85,13 +85,13 @@ export function StickyFooter({
         }}
       >
         {continueLoading
-          ? 'Saving…'
+          ? isLast
+            ? 'Creating account…'
+            : 'Saving…'
           : continueRetry && isLast
           ? 'Try again →'
           : isLast
           ? 'Finish onboarding →'
-          : currentStep === 'welcome'
-          ? "Let's go →"
           : 'Continue →'}
       </button>
     </footer>

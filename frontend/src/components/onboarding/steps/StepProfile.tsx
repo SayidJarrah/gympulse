@@ -1,6 +1,7 @@
 import { useRef, useState, useId, forwardRef, useImperativeHandle } from 'react'
 import { ExclamationCircleIcon } from '@heroicons/react/24/outline'
 import { useOnboardingStore } from '../../../store/onboardingStore'
+import { useAuthStore } from '../../../store/authStore'
 import { updateMyProfile, uploadMyProfilePhoto } from '../../../api/profile'
 
 export interface StepProfileHandle {
@@ -67,18 +68,30 @@ export const StepProfile = forwardRef<StepProfileHandle, object>((_props, ref) =
 
       try {
         setApiError(null)
-        await updateMyProfile({
-          firstName,
-          lastName,
-          phone: toE164(phone),
-          dateOfBirth: dob,
-          fitnessGoals: store.goals,
-          preferredClassTypes: store.classTypes,
-          emergencyContact: null,
-        })
 
-        if (photoFile) {
-          await uploadMyProfilePhoto(photoFile)
+        // Unified-signup flow: a guest moving through the wizard is NOT yet
+        // authenticated — the `users` row is only created at terms submission
+        // (SDD §4.4, AC-05). When unauthenticated, persist locally only and let
+        // the combined-payload register at terms send these fields. When the
+        // user IS authenticated (e.g. an existing user resuming onboarding),
+        // honour the original behaviour and PUT to the profile endpoint so
+        // server-side validation surfaces here rather than at terms.
+        const isAuthenticated = useAuthStore.getState().isAuthenticated
+
+        if (isAuthenticated) {
+          await updateMyProfile({
+            firstName,
+            lastName,
+            phone: toE164(phone),
+            dateOfBirth: dob,
+            fitnessGoals: store.goals,
+            preferredClassTypes: store.classTypes,
+            emergencyContact: null,
+          })
+
+          if (photoFile) {
+            await uploadMyProfilePhoto(photoFile)
+          }
         }
 
         store.setProfileFields({ firstName, lastName, phone, dob })

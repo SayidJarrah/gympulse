@@ -6,6 +6,19 @@ interface MiniNavProps {
   visibleSteps: typeof ALL_STEPS
 }
 
+// Eyebrow short-form labels per SDD §4.4 / handoff §"Mini nav step eyebrow".
+// The step rail uses the long label (`step.label`); the eyebrow uses these
+// shorter aliases.
+const EYEBROW_LABELS: Record<StepKey, string> = {
+  credentials: 'ACCOUNT',
+  profile: 'PROFILE',
+  preferences: 'PREFS',
+  membership: 'MEMBERSHIP',
+  booking: 'BOOKING',
+  terms: 'FINAL CHECK',
+  done: 'DONE',
+}
+
 export function MiniNav({ currentStep, visibleSteps }: MiniNavProps) {
   const currentIndex = visibleSteps.findIndex(s => s.key === currentStep)
   const stepDef = visibleSteps[currentIndex]
@@ -36,7 +49,7 @@ export function MiniNav({ currentStep, visibleSteps }: MiniNavProps) {
           className="text-xs font-semibold uppercase tracking-[0.22em]"
           style={{ color: 'var(--color-fg-metadata)' }}
         >
-          STEP {String(stepNum).padStart(2, '0')} · {stepDef.label.toUpperCase()} · {stepNum} of {total}
+          STEP {String(stepNum).padStart(2, '0')} · {EYEBROW_LABELS[stepDef.key]} · {stepNum} of {total}
         </p>
       )}
     </header>

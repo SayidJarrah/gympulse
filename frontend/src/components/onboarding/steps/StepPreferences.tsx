@@ -11,6 +11,7 @@ import {
   CubeIcon,
 } from '@heroicons/react/24/outline'
 import { useOnboardingStore } from '../../../store/onboardingStore'
+import { useAuthStore } from '../../../store/authStore'
 import { updateMyProfile } from '../../../api/profile'
 
 type GoalOption = { label: string; icon: ComponentType<{ className?: string; 'aria-hidden'?: boolean | 'true' | 'false' }> }
@@ -59,7 +60,13 @@ export const StepPreferences = forwardRef<StepPreferencesHandle, object>((_props
       setApiError(null)
       // If no selections, treat as skip (advance without API call)
       const hasSelections = goals.length > 0 || classTypes.length > 0 || frequency
-      if (hasSelections) {
+      // Unified-signup: an unauthenticated guest has no `users` row yet, so
+      // PUT /profile/me would 401. Persist to the local store only — the
+      // current PRD's combined-payload register at terms doesn't include
+      // preferences, so they are not lost (they remain in the wizard state and
+      // can be saved post-onboarding by the user from their profile page).
+      const isAuthenticated = useAuthStore.getState().isAuthenticated
+      if (hasSelections && isAuthenticated) {
         try {
           await updateMyProfile({
             firstName: store.firstName || null,
