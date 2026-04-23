@@ -4,9 +4,17 @@ interface StepRailProps {
   visibleSteps: StepDefinition[]
   currentStep: StepKey
   onNavigateBack: (step: StepKey) => void
+  /**
+   * SDD onboarding-terms-early §4.4 + Decision 20 — terms boundary lock.
+   * When true, done-state rows for credentials/profile/terms render as a
+   * static <div> instead of a <button> (no click handler, no tabIndex,
+   * cursor: default). Other done-state rows remain interactive. Computed by
+   * OnboardingShell as `currentStep === 'preferences' || 'membership' || 'booking'`.
+   */
+  backLocked?: boolean
 }
 
-export function StepRail({ visibleSteps, currentStep, onNavigateBack }: StepRailProps) {
+export function StepRail({ visibleSteps, currentStep, onNavigateBack, backLocked = false }: StepRailProps) {
   const currentIndex = visibleSteps.findIndex(s => s.key === currentStep)
 
   return (
@@ -32,18 +40,32 @@ export function StepRail({ visibleSteps, currentStep, onNavigateBack }: StepRail
           const isDone = idx < currentIndex
           const isCurrent = idx === currentIndex
 
+          const lockThisRow =
+            backLocked &&
+            (step.key === 'credentials' || step.key === 'profile' || step.key === 'terms')
+
           return (
             <li key={step.key}>
               {isDone ? (
-                <button
-                  type="button"
-                  onClick={() => onNavigateBack(step.key)}
-                  className="flex items-start gap-3 w-full text-left rounded-md px-2 py-1.5 transition-colors duration-150"
-                  style={{ cursor: 'pointer' }}
-                >
-                  <DoneCircle num={idx + 1} />
-                  <StepLabel step={step} state="done" />
-                </button>
+                lockThisRow ? (
+                  <div
+                    className="flex items-start gap-3 w-full text-left rounded-md px-2 py-1.5"
+                    style={{ cursor: 'default' }}
+                  >
+                    <DoneCircle num={idx + 1} />
+                    <StepLabel step={step} state="done" />
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => onNavigateBack(step.key)}
+                    className="flex items-start gap-3 w-full text-left rounded-md px-2 py-1.5 transition-colors duration-150"
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <DoneCircle num={idx + 1} />
+                    <StepLabel step={step} state="done" />
+                  </button>
+                )
               ) : (
                 <div
                   className="flex items-start gap-3 px-2 py-1.5 rounded-md"

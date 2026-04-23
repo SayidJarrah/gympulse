@@ -8,7 +8,7 @@ export interface OnboardingPlanPendingResponse {
   membershipId: string
   planId: string
   planName: string
-  status: 'PLAN_PENDING'
+  status: 'ACTIVE'
 }
 
 export interface OnboardingCompleteResponse {

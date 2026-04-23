@@ -2,7 +2,6 @@ import { useEffect, useState, forwardRef, useImperativeHandle } from 'react'
 import { getActivePlans } from '../../../api/membershipPlans'
 import { submitPlanPending } from '../../../api/onboarding'
 import { useOnboardingStore } from '../../../store/onboardingStore'
-import { useAuthStore } from '../../../store/authStore'
 import type { MembershipPlan } from '../../../types/membershipPlan'
 
 export interface StepMembershipHandle {
@@ -42,18 +41,12 @@ export const StepMembership = forwardRef<StepMembershipHandle, object>((_props, 
       const plan = plans.find(p => p.id === selectedId)
       if (!plan) return 'skip'
 
-      // Unified-signup: a guest is unauthenticated until terms — POST
-      // /onboarding/plan-pending requires auth and would 401. Persist the
-      // selection locally so the booking step appears, and skip the API call.
-      // The existing onboarding flow (authenticated user resuming) still
-      // calls plan-pending. Plan activation post-register is out of scope per
-      // PRD non-goals.
-      const isAuthenticated = useAuthStore.getState().isAuthenticated
-      if (!isAuthenticated) {
-        store.setPlan(plan.id, plan.name, plan.priceInCents)
-        return 'plan-selected'
-      }
-
+      // SDD onboarding-terms-early §4.4 + Decision 17 — under the reordered
+      // wizard the user is always authenticated by the time they reach
+      // membership (terms registers them at step 3). Always call
+      // POST /onboarding/plan-pending; the previous isAuthenticated skip-API
+      // branch was a workaround for the unified-signup ordering and is now
+      // obsolete.
       try {
         const res = await submitPlanPending({ planId: selectedId })
         store.setPlan(plan.id, plan.name, plan.priceInCents)
@@ -82,7 +75,7 @@ export const StepMembership = forwardRef<StepMembershipHandle, object>((_props, 
         className="text-xs font-semibold uppercase"
         style={{ letterSpacing: '0.22em', color: 'var(--color-primary-light)' }}
       >
-        Step 04 · Membership
+        Step 05 · Membership
       </p>
 
       <h1

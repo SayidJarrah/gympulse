@@ -53,7 +53,7 @@ export const StepTerms = forwardRef<StepTermsHandle, StepTermsProps>(({ external
         className="text-xs font-semibold uppercase"
         style={{ letterSpacing: '0.22em', color: 'var(--color-primary-light)' }}
       >
-        Step 06 · Final check
+        Step 03 · Final check
       </p>
 
       <div className="flex items-center gap-2">

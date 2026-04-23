@@ -114,3 +114,10 @@ Never use `disabled={true}` on a button that must show a tooltip (e.g. guest-sta
 HTML `disabled` suppresses `title` attribute tooltip firing on touch devices and in Firefox/Safari.
 Instead: use `aria-disabled="true"` on the button, wrap it in `<span title="...">`, and block
 clicks via `onClick={condition ? handler : undefined}` + `pointer-events-none` class.
+
+## Cross-component constants must have a single source of truth
+When a constant is rendered in two or more components (e.g. the wizard step number is shown in `MiniNav` AND in each step body's eyebrow), do not let each consumer hardcode its own copy. Per-component duplication is a future-bug magnet — the next reorder updates one location and silently leaves the other lagging, producing two contradictory values on the same screen.
+
+Extract to a single source of truth in `frontend/src/types/{domain}.ts` (or a sibling) and import from every consumer. If you find an existing duplication during unrelated work, file it as TD rather than ignoring it. The pattern that surfaced this rule: `MiniNav` derived its eyebrows from `EYEBROW_LABELS` in `types/onboarding.ts`, but each `StepX.tsx` component hardcoded its own `Step 0X · {Name}` body eyebrow — a wizard-step reorder updated the map but missed the four step files, producing "STEP 03" in the top bar and "Step 06" in the body simultaneously.
+
+Applies whenever a numeric position, label, threshold, copy string, or feature flag is rendered in more than one component.

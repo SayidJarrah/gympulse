@@ -23,7 +23,11 @@ export function StickyFooter({
 }: StickyFooterProps) {
   const currentIndex = visibleSteps.findIndex(s => s.key === currentStep)
   const stepDef = visibleSteps[currentIndex]
-  const isFirst = currentIndex === 0
+  // SDD onboarding-terms-early §4.4 + Decision 19 — Back is disabled on
+  // credentials (first step, nowhere to go back) AND on preferences (terms
+  // boundary lock — pre-account steps are unreachable in reverse). Computed
+  // inline from currentStep to keep the prop surface stable.
+  const backDisabled = currentStep === 'credentials' || currentStep === 'preferences'
   const isLast = currentStep === 'terms'
   const showSkip = stepDef && !stepDef.required && currentStep !== 'credentials'
 
@@ -39,10 +43,10 @@ export function StickyFooter({
       <button
         type="button"
         onClick={onBack}
-        disabled={isFirst}
+        disabled={backDisabled}
         className="px-5 py-2 rounded-md text-sm font-medium transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
         style={{
-          color: isFirst ? 'var(--color-fg-muted)' : 'var(--color-fg-label)',
+          color: backDisabled ? 'var(--color-fg-muted)' : 'var(--color-fg-label)',
           background: 'transparent',
         }}
       >

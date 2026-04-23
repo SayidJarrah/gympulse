@@ -74,6 +74,8 @@ Table: file path | type | purpose. New files and modified files separately.
 Pages (route → component), new components (name → location → props),
 types (full TypeScript interface), API functions (signature), Zustand additions.
 
+**When a step component has a header that mentions the step number, list BOTH the chrome (e.g. `MiniNav`) and the per-step body eyebrow in the §4 changes table.** They are independent string sources and drift independently if not enumerated. The same rule applies to any constant rendered in two surfaces (a fraction shown in two places, a label duplicated between a list view and a detail view, etc.) — explicitly enumerate every render site so the developer cannot miss one. If the constant is centralizable, propose the extraction in the same SDD section rather than enumerating duplicates indefinitely.
+
 ## 5. Task List
 
 ### → developer (backend phase)

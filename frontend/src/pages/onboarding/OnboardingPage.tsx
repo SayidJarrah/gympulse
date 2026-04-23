@@ -14,38 +14,58 @@ interface ResumeContext {
 
 /**
  * Compute which step to resume from based on persisted store state.
- * SDD §4.4: a brand-new visitor returns 'credentials'; an authenticated returning
- * user with profile data resumes wherever the existing logic decides
- * (profile / membership / etc.).
+ *
+ * SDD onboarding-terms-early §4.4 + Decision 21 — decision tree precedence
+ * (top-down, first match wins):
+ *
+ *   1. store.currentStep === 'done'                             → 'done'
+ *      (terminal-state guarantee from unified-signup §6 Decision 11; must be
+ *       the very first check or an authenticated user awaiting the
+ *       POST /onboarding/complete flip can be wrongly re-routed to 'booking'
+ *       mid-render and never fire the completion call)
+ *   2. !isAuthenticated && !store.email && !store.firstName     → 'credentials'
+ *      (brand-new unauthenticated visitor with nothing typed)
+ *   3. !isAuthenticated                                          → store.currentStep ?? 'credentials'
+ *      (unauthenticated guest with credentials/profile in store but not yet
+ *       registered — respect their persisted step so they resume mid pre-terms
+ *       section)
+ *   4. isAuthenticated && no preferences attempted               → 'preferences'
+ *      (goals/classTypes/frequency all empty — first post-terms enrichment step)
+ *   5. isAuthenticated && !selectedPlanId                        → 'membership'
+ *   6. isAuthenticated && selectedPlanId && !completedBookingId  → 'booking'
+ *   7. otherwise                                                  → 'done'
  */
 function computeResumeStep({ isAuthenticated, store }: ResumeContext): StepKey {
-  // Wizard already completed (e.g. terms-step register flipped isAuthenticated,
-  // bootstrap spinner unmounted/remounted us). 'done' is the wizard's
-  // authoritative intent under unified-signup — never override it.
+  // 1. Terminal-state guarantee — must stay at the top.
   if (store.currentStep === 'done') {
     return 'done'
   }
 
-  // Brand-new visitor: nothing typed yet — start at credentials.
+  // 2. Brand-new unauthenticated visitor.
   if (!isAuthenticated && !store.email && !store.firstName) {
     return 'credentials'
   }
 
-  // Authenticated returning user (existing onboarding flow). The credentials
-  // step is irrelevant for them — jump to the appropriate step based on data.
-  if (isAuthenticated) {
-    if (!store.firstName || !store.lastName || !store.phone || !store.dob) {
-      return 'profile'
-    }
+  // 3. Unauthenticated guest with partial pre-terms data.
+  if (!isAuthenticated) {
+    return store.currentStep ?? 'credentials'
+  }
+
+  // 4-7. Authenticated returner — walk the post-terms decision tree.
+  if (
+    store.goals.length === 0 &&
+    store.classTypes.length === 0 &&
+    !store.frequency
+  ) {
+    return 'preferences'
+  }
+  if (!store.selectedPlanId) {
     return 'membership'
   }
-
-  // Unauthenticated guest with some progress: respect their persisted step.
-  if (store.currentStep) {
-    return store.currentStep
+  if (store.selectedPlanId && !store.completedBookingId) {
+    return 'booking'
   }
-
-  return 'credentials'
+  return 'done'
 }
 
 export function OnboardingPage() {
