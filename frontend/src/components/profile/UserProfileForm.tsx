@@ -6,6 +6,7 @@ import { UserCircleIcon } from '@heroicons/react/24/outline'
 import { z } from 'zod'
 import { EntityImageField } from '../media/EntityImageField'
 import { ProfileChipInput } from './ProfileChipInput'
+import { DateField } from '../ui/DateField'
 import type { ApiErrorResponse } from '../../types/auth'
 import type { UpdateUserProfileRequest, UserProfile } from '../../types/userProfile'
 import type { ProfileFieldName } from '../../store/profileStore'
@@ -402,19 +403,20 @@ export function UserProfileForm({
           <label htmlFor="profile-date-of-birth" className="text-sm font-semibold text-gray-200">
             Date of birth
           </label>
-          <input
-            id="profile-date-of-birth"
-            type="date"
-            disabled={isSaving}
-            max={new Date().toISOString().slice(0, 10)}
-            className={`w-full rounded-xl border bg-gray-950/70 px-4 py-3 text-sm text-white transition-colors duration-200 focus:border-transparent focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-70 ${
-              errors.dateOfBirth
-                ? 'border-red-500/60 focus:ring-red-500'
-                : 'border-gray-700 focus:ring-green-500'
-            }`}
-            aria-invalid={!!errors.dateOfBirth}
-            aria-describedby={errors.dateOfBirth ? 'profile-date-of-birth-helper profile-date-of-birth-error' : 'profile-date-of-birth-helper'}
-            {...register('dateOfBirth')}
+          <Controller
+            name="dateOfBirth"
+            control={control}
+            render={({ field }) => (
+              <DateField
+                id="profile-date-of-birth"
+                value={field.value ?? ''}
+                onChange={field.onChange}
+                max={new Date().toISOString().slice(0, 10)}
+                disabled={isSaving}
+                aria-invalid={!!errors.dateOfBirth}
+                aria-describedby={errors.dateOfBirth ? 'profile-date-of-birth-helper profile-date-of-birth-error' : 'profile-date-of-birth-helper'}
+              />
+            )}
           />
           <p id="profile-date-of-birth-helper" className="text-xs text-gray-400">
             Date cannot be in the future.
