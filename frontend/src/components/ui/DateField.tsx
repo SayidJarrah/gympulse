@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useId } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect, useId } from 'react'
 import { DayPicker } from 'react-day-picker'
 import { format, parse, isValid, startOfDay } from 'date-fns'
 import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
@@ -45,6 +45,8 @@ export function DateField(props: DateFieldProps) {
   const autoId = useId()
   const id = providedId ?? autoId
   const [open, setOpen] = useState(false)
+  const [placement, setPlacement] = useState<'bottom' | 'top'>('bottom')
+  const [maxHeight, setMaxHeight] = useState<number | undefined>(undefined)
   const containerRef = useRef<HTMLDivElement>(null)
 
   const selected = parseIso(value)
@@ -66,6 +68,32 @@ export function DateField(props: DateFieldProps) {
     return () => {
       document.removeEventListener('mousedown', handleMouseDown)
       document.removeEventListener('keydown', handleKey)
+    }
+  }, [open])
+
+  useLayoutEffect(() => {
+    if (!open || !containerRef.current) return
+    const POPOVER_HEIGHT = 360
+    const MARGIN = 8
+    const compute = () => {
+      const rect = containerRef.current!.getBoundingClientRect()
+      const viewport = window.innerHeight
+      const spaceBelow = viewport - rect.bottom - MARGIN
+      const spaceAbove = rect.top - MARGIN
+      if (spaceBelow >= POPOVER_HEIGHT || spaceBelow >= spaceAbove) {
+        setPlacement('bottom')
+        setMaxHeight(Math.max(240, spaceBelow))
+      } else {
+        setPlacement('top')
+        setMaxHeight(Math.max(240, spaceAbove))
+      }
+    }
+    compute()
+    window.addEventListener('resize', compute)
+    window.addEventListener('scroll', compute, true)
+    return () => {
+      window.removeEventListener('resize', compute)
+      window.removeEventListener('scroll', compute, true)
     }
   }, [open])
 
@@ -113,11 +141,15 @@ export function DateField(props: DateFieldProps) {
       </button>
       {open && (
         <div
-          className="gf-date-popover absolute z-50 mt-2 p-3 rounded-lg"
+          className={`gf-date-popover absolute z-50 p-3 rounded-lg ${
+            placement === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'
+          }`}
           style={{
             background: 'var(--color-bg-surface-2)',
             border: '1px solid var(--color-border-card)',
             boxShadow: '0 16px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(34,197,94,0.08)',
+            maxHeight: maxHeight ? `${maxHeight}px` : undefined,
+            overflowY: 'auto',
           }}
           role="dialog"
           aria-modal="false"
