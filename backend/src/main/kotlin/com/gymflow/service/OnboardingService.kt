@@ -26,14 +26,14 @@ class OnboardingService(
 
         if (plan.status != "ACTIVE") throw PlanNotAvailableException("This plan is not available for purchase")
 
-        userMembershipRepository.deleteByUserIdAndStatus(userId, "PLAN_PENDING")
+        userMembershipRepository.deleteByUserIdAndStatus(userId, "ACTIVE")
 
         val membership = UserMembership(
             userId = userId,
             planId = plan.id,
-            status = "PLAN_PENDING",
+            status = "ACTIVE",
             startDate = LocalDate.now(),
-            endDate = LocalDate.now(),
+            endDate = LocalDate.now().plusDays(plan.durationDays.toLong()),
             bookingsUsedThisMonth = 0,
         )
         val saved = userMembershipRepository.save(membership)
@@ -42,7 +42,7 @@ class OnboardingService(
             membershipId = saved.id,
             planId = plan.id,
             planName = plan.name,
-            status = "PLAN_PENDING",
+            status = "ACTIVE",
         )
     }
 

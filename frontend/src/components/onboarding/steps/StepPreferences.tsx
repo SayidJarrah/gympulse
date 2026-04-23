@@ -102,7 +102,7 @@ export const StepPreferences = forwardRef<StepPreferencesHandle, object>((_props
         className="text-xs font-semibold uppercase"
         style={{ letterSpacing: '0.22em', color: 'var(--color-primary-light)' }}
       >
-        Step 03 · Preferences
+        Step 04 · Preferences
       </p>
 
       <div className="flex items-center gap-2">

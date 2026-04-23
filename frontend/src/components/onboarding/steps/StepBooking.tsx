@@ -58,7 +58,7 @@ export const StepBooking = forwardRef<StepBookingHandle, object>((_props, ref) =
         className="text-xs font-semibold uppercase"
         style={{ letterSpacing: '0.22em', color: 'var(--color-primary-light)' }}
       >
-        Step 05 · First booking
+        Step 06 · First booking
       </p>
 
       <h1

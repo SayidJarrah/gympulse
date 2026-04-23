@@ -660,3 +660,10 @@ Feature: onboarding-unified-signup
 Added: 2026-04-23
 Effort: S
 `onboardingStore.ts:62` sets `defaultState.currentStep = 'credentials'`, which is correct for guests but means an authenticated user whose store was reset (e.g. `clearAuth()` followed by re-login while onboarding is still incomplete) lands on a step they cannot meaningfully complete — the credentials step's submit no-ops because the user is already authenticated, and the combined-payload register would 409 immediately. `OnboardingPage.computeResumeStep` patches this at runtime, but defaulting `currentStep` based on auth state at store construction (or computing the initial value lazily on first mount) would remove the patch and the divergence between defaultState and observed runtime behaviour.
+
+## TD-093 — Step-content eyebrow strings are four hardcoded literals across four files
+Source: docs/reviews/onboarding-terms-early-20260423.md
+Feature: onboarding-terms-early
+Added: 2026-04-23
+Effort: S
+`StepPreferences.tsx:105`, `StepMembership.tsx:78`, `StepBooking.tsx:61`, and `StepTerms.tsx:56` each hardcode their on-page eyebrow as a literal `Step NN · {label}` string. Every reorder of `ALL_STEPS` requires hunting down four files and editing them in lock-step (this PR's blockers are the direct consequence). Replace with a derived value — e.g. a small `useStepEyebrow(currentStep)` hook that reads `visibleSteps`/`currentIndex` the way `MiniNav` already does, or a prop passed from `StepContent`. Bonus: the on-page eyebrow then handles the conditional `booking` step's presence the same way the MiniNav already does, instead of every step re-deriving its own number against a stale ordering.

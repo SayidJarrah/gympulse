@@ -52,13 +52,22 @@ The highest applied migration is `V28__widen_user_memberships_status_for_plan_pe
 
 ## 2. API Contracts
 
-**N/A — no contract changes.**
+**Schema changes: none. One response-value mutation on
+`POST /api/v1/onboarding/plan-pending` — see the table below.**
 
 The combined-payload `POST /api/v1/auth/register` from
-`docs/sdd/onboarding-unified-signup.md` §2.1 is unchanged in shape, validation,
-and response. Only its trigger position in the wizard moves from step 6 to
-step 3 — the request body, the success response (`LoginResponse`), and the
-error table (§3.5 of the parent SDD) are all identical.
+`docs/sdd/onboarding-unified-signup.md` §2.1 is unchanged in shape,
+validation, and response. Only its trigger position in the wizard moves
+from step 6 to step 3 — the request body, the success response
+(`LoginResponse`), and the error table (§3.5 of the parent SDD) are all
+identical.
+
+`POST /api/v1/onboarding/plan-pending` keeps its endpoint path, request
+body shape, HTTP status code, and DTO field set. The only contract-visible
+change is the value of `OnboardingPlanPendingResponse.status` — it
+returns the string `"ACTIVE"` instead of `"PLAN_PENDING"`. The frontend
+TypeScript type literal at `frontend/src/api/onboarding.ts:11` is
+narrowed to `'ACTIVE'` to match. See §3 Backend and §6 Decision 24.
 
 All other endpoints exercised by the wizard are unchanged in contract and run
 identically — the only behavioural difference is that for the post-terms
@@ -69,7 +78,7 @@ suffix they now run from a **real authenticated session** instead of returning
 |---|---|---|
 | `PUT /api/v1/profile/me` | `StepProfile` (still pre-register) | Unauthenticated guest — call is gated and skipped client-side, mirroring unified-signup SDD §4.4. |
 | `PUT /api/v1/profile/me` | `StepPreferences` (now post-register) | **Authenticated.** Always runs when there are selections. |
-| `POST /api/v1/onboarding/plan-pending` | `StepMembership` (now post-register) | **Authenticated.** Always runs when a plan is selected. |
+| `POST /api/v1/onboarding/plan-pending` | `StepMembership` (now post-register) | **Authenticated.** Always runs when a plan is selected. **Behavioural delta (this SDD):** the `UserMembership` row written by this handler now has `status = "ACTIVE"` (was `"PLAN_PENDING"`) and `endDate = LocalDate.now() + plan.durationDays` (was `LocalDate.now()`). The `OnboardingPlanPendingResponse.status` field returned to the client is now `"ACTIVE"` (was `"PLAN_PENDING"`). Endpoint path, request body, HTTP status code, and response field set are all unchanged — only the `status` string value mutates. See §3 Backend for full rationale and §6 Decision 24. |
 | `GET /api/v1/class-schedule` | `StepBooking` → `GroupClassList` (now post-register) | **Authenticated.** Returns 200 with real classes (was 401 under unified-signup). |
 | `GET /api/v1/pt/trainers` | `StepBooking` → `TrainerList` (now post-register) | **Authenticated.** Returns 200 with real trainers (was 401). |
 | `POST /api/v1/bookings` | `StepBooking` (now post-register) | **Authenticated.** Creates the booking (was 401). |
@@ -80,12 +89,127 @@ suffix they now run from a **real authenticated session** instead of returning
 
 ## 3. Backend
 
-**N/A — no backend changes.**
+### 3.1 Summary
 
-No new files, no entity changes, no DTO changes, no service-layer changes, no
-controller changes, no error-code additions. All Kotlin code under
-`backend/src/main/kotlin/com/gymflow/` remains exactly as it stands after the
-unified-signup PR.
+One service-level change: `OnboardingService.createPlanPending` (the handler
+behind `POST /api/v1/onboarding/plan-pending`) now persists the new
+`UserMembership` row with `status = "ACTIVE"` instead of `status =
+"PLAN_PENDING"`. No new files, no entity changes, no DTO changes, no
+controller changes, no error-code additions, no Flyway migration.
+
+### 3.2 Why
+
+Under this SDD the wizard's `booking` step (now position 6) runs as an
+authenticated Member. The booking endpoint is the existing
+`POST /api/v1/bookings`, which calls
+`UserMembershipRepository.findAccessibleActiveMembershipForUpdate` (filters
+on `status = 'ACTIVE'`). A `PLAN_PENDING` row does not satisfy that filter,
+so the call returns `null` and `BookingService.createBooking` throws
+`MembershipRequiredException` → `403 MEMBERSHIP_REQUIRED`.
+
+Real paid-membership activation is explicitly out of scope (PRD non-goal,
+Section 7). Today there is no payment step that flips a pending row to
+active — `PLAN_PENDING` is a placeholder for a moment that never arrives
+in the current product. Persisting `ACTIVE` immediately at plan-pending
+submission is the smallest change that lets PRD AC-04 ("Selecting a class
+or trainer slot and clicking Continue creates the booking via the
+existing endpoints") pass end-to-end and lines up with the user's stated
+intent ("in future it will be purchasing"). When real payment is added
+later, the activation moment shifts to "after payment succeeds" — the
+rename of the endpoint and its semantics is a future feature, not part of
+this SDD.
+
+See Decision 24 for the full trade-off analysis (resolution A chosen over
+B = relax booking filter, and C = defer booking).
+
+### 3.3 Files changed
+
+| File | Status | Change |
+|---|---|---|
+| `backend/src/main/kotlin/com/gymflow/service/OnboardingService.kt` | **modified** | (1) `createPlanPending` line 29: replace `userMembershipRepository.deleteByUserIdAndStatus(userId, "PLAN_PENDING")` with `userMembershipRepository.deleteByUserIdAndStatus(userId, "ACTIVE")` — same defensive pre-clean, just targeting the new persisted status so a member who re-enters the wizard and picks a different plan replaces the prior now-active row instead of stacking duplicates. (2) Line 31–38: change the `UserMembership(...)` constructor call's `status = "PLAN_PENDING"` to `status = "ACTIVE"`. (3) Line 35–36: replace `startDate = LocalDate.now(), endDate = LocalDate.now()` with `startDate = LocalDate.now(), endDate = LocalDate.now().plusDays(plan.durationDays.toLong())` so the row satisfies the `findAccessibleActiveMembershipForUpdate` predicate (`m.endDate >= today`). The `plan` reference is already in scope from line 24. (4) Line 41–46: change the `OnboardingPlanPendingResponse` literal `status = "PLAN_PENDING"` to `status = "ACTIVE"` so the response shape stays internally consistent with what was actually persisted. The DTO's `status: String` field is already a free-form string — no DTO change needed. |
+| `backend/src/main/kotlin/com/gymflow/service/UserMembershipService.kt` | **unchanged** | No change. The existing `purchaseMembership` `existsByUserIdAndStatus(userId, "ACTIVE")` guard is unaffected because the wizard does NOT call `POST /memberships`; the wizard exclusively uses `POST /onboarding/plan-pending`. A user who completes onboarding (now with an ACTIVE membership) and later visits `/plans` would correctly see "you already have a membership" via the existing `usePlansAccessGate` logic — this is the intended UX, not a regression. |
+| `backend/src/main/kotlin/com/gymflow/repository/UserMembershipRepository.kt` | **unchanged** | No change. `findAccessibleActiveMembershipForUpdate`'s `m.status = 'ACTIVE'` filter is exactly right — once we persist as `ACTIVE`, the booking flow works without any repository or query touch. |
+| `backend/src/main/kotlin/com/gymflow/domain/UserMembership.kt` | **unchanged** | No change. The entity's `status: String` field already accepts any string; the DB CHECK constraint already allows `ACTIVE` (and `PLAN_PENDING` per V28). |
+| `backend/src/main/resources/db/migration/V28__widen_user_memberships_status_for_plan_pending.sql` | **unchanged** | The CHECK constraint still permits `PLAN_PENDING` even though no code path writes that value any more. Leaving the constraint wider than needed is correct: editing an applied Flyway migration is forbidden (Kotlin Conventions §"Flyway Migrations"), and there is no need for a V29 narrowing migration — `PLAN_PENDING` is harmless dead value space. |
+
+### 3.4 Database state
+
+**No schema changes.** Confirmed via `docker exec gympulse-dev-postgres-1
+psql` against the dev DB:
+
+```
+status        | count
+--------------+-------
+ACTIVE        | 20
+PLAN_PENDING  | 1
+```
+
+The single existing `PLAN_PENDING` row is **stale demo data** from a
+prior test run before this fix. It is not consumed by any code path
+going forward (no `findByStatus('PLAN_PENDING')` call exists outside the
+defensive pre-delete in `createPlanPending`, which this SDD now retargets
+to `ACTIVE`). Forward-only fix — leave the row in place; it harmlessly
+ages out of relevance. Cleanup is not required and is intentionally not
+part of the fix to keep the change surgical.
+
+The CHECK constraint `chk_user_memberships_status` continues to permit
+both `ACTIVE` and `PLAN_PENDING`. New rows written by `createPlanPending`
+will be `ACTIVE`; the constraint accepts them without modification.
+
+### 3.5 PLAN_PENDING consumers — full audit
+
+`grep -rn "PLAN_PENDING" backend/src/main/kotlin
+backend/src/main/resources` returns exactly five hits, all confined to
+two files:
+
+| Location | What it does | Action |
+|---|---|---|
+| `OnboardingService.kt:29` | `deleteByUserIdAndStatus(userId, "PLAN_PENDING")` defensive pre-delete | **Retarget to `"ACTIVE"`** so re-entering the wizard cleans up its own prior write. |
+| `OnboardingService.kt:34` | `UserMembership(... status = "PLAN_PENDING" ...)` constructor | **Change to `"ACTIVE"`**. |
+| `OnboardingService.kt:45` | `OnboardingPlanPendingResponse(status = "PLAN_PENDING")` response literal | **Change to `"ACTIVE"`** to keep response internally consistent with what was persisted. |
+| `V28__widen_user_memberships_status_for_plan_pending.sql:7,14` | Schema permission only (comment + CHECK enum) | **No change** — Flyway migrations are immutable once applied. |
+
+There are **no admin views, billing flows, scheduled jobs, or reporting
+queries** that filter on `PLAN_PENDING`. `MembershipController`,
+`UserMembershipService`, and `UserRepository` all filter exclusively on
+`'ACTIVE' / 'CANCELLED' / 'EXPIRED'`. The PLAN_PENDING value is fully
+self-contained within `OnboardingService` — nothing else reads it, so
+the rename is safe.
+
+The frontend has three references — all cosmetic:
+
+| Location | What it does | Action |
+|---|---|---|
+| `frontend/src/api/onboarding.ts:11` | Type literal `status: 'PLAN_PENDING'` on `OnboardingPlanPendingResponse` TS interface | **Change to `status: 'ACTIVE'`** so the TS type matches the backend response shape. |
+| `frontend/src/api/onboarding.ts:22` | URL path string `'/onboarding/plan-pending'` | **Unchanged** — endpoint path is preserved (changing it would be a contract change). The endpoint name keeps its historical "plan-pending" label even though the row it writes is now ACTIVE; one-version compromise per §7. |
+| `frontend/src/store/onboardingStore.ts:31` | Field name `pendingMembershipId` | **Unchanged** — same one-version compromise. The field still holds the membership UUID; only its semantic label is now slightly misleading. Do NOT rename — renaming the store field would ripple into the persisted localStorage key (`gf:onboarding:v1:{userId}`), invalidating in-flight wizard state for users mid-onboarding. |
+| `frontend/src/components/onboarding/steps/StepMembership.tsx:47` (comment only) | Inline comment referencing the old guard | **Unchanged** — comment-only mention; no behaviour. |
+
+### 3.6 Test coverage
+
+A new `backend/src/test/kotlin/com/gymflow/service/OnboardingServiceTest.kt`
+is added (no existing onboarding service test file present — verified via
+`ls backend/src/test/kotlin/com/gymflow/service/ | grep -i onboarding`)
+covering:
+
+- `createPlanPending` persists a row with `status = "ACTIVE"` (assert via
+  `userMembershipRepository.findById(saved.membershipId)` then
+  `assertEquals("ACTIVE", row.status)`).
+- `createPlanPending` sets `endDate = startDate + plan.durationDays`
+  (regression for the date arithmetic that lets the booking filter
+  resolve the row).
+- `createPlanPending` returns an `OnboardingPlanPendingResponse` whose
+  `status` field is `"ACTIVE"`.
+- Re-entering `createPlanPending` for the same user with a different
+  `planId` deletes the prior `ACTIVE` row before writing the new one
+  (regression for the retargeted defensive pre-delete; assert that exactly
+  one `ACTIVE` row exists for the user after the second call, with the
+  second `planId`).
+
+The existing `BookingServiceTest.kt` is unchanged — it already covers
+the `MembershipRequiredException` path with a fixture that explicitly
+omits an active membership; this SDD does not change `BookingService`'s
+behaviour.
 
 ---
 
@@ -565,6 +689,84 @@ referenced and remain valid. New decisions are numbered 15+:
     identical (banner above email, focus on email input, banner clears on
     first email-input change) and no error-code or handler change is
     required.
+
+24. **In-step body eyebrows must match the new step positions.** The MiniNav
+    top-bar derives its strings from `EYEBROW_LABELS`, but each step
+    component (StepCredentials, StepProfile, StepTerms, StepPreferences,
+    StepMembership, StepBooking) hardcodes its own "Step 0X · {Name}" body
+    eyebrow. These must be updated whenever the step ordering changes.
+    Future step authors should consider extracting this to a single source
+    of truth (logged as TD).
+
+25. **`POST /onboarding/plan-pending` persists `status = "ACTIVE"` rather
+    than `"PLAN_PENDING"`; treat plan selection as activation during
+    onboarding.** Surfaced by the post-merge tester escalation: the new
+    step ordering put the booking step (now position 6) downstream of an
+    authenticated session, and `POST /api/v1/bookings` returned
+    `403 MEMBERSHIP_REQUIRED` because the wizard's plan-selection wrote a
+    `PLAN_PENDING` row that the booking endpoint's
+    `findAccessibleActiveMembershipForUpdate` filter (`status = 'ACTIVE'`)
+    correctly skipped. PRD AC-04 mandates that booking work end-to-end via
+    the existing endpoints.
+
+    **Three resolutions considered:**
+
+    - **A (chosen): Treat plan-pending as activation.** Change the persisted
+      `status` from `"PLAN_PENDING"` to `"ACTIVE"` in
+      `OnboardingService.createPlanPending`. Also set
+      `endDate = LocalDate.now() + plan.durationDays` so the row satisfies
+      the booking filter. Pros: cleanest; matches the user's stated intent
+      ("in future it will be purchasing"); the existing
+      `POST /memberships`, `GET /memberships/me`, booking, and PT booking
+      flows all work without change because they are already keyed on
+      `ACTIVE`. Cons: the `PLAN_PENDING` enum value becomes
+      provisionally-dead in the codebase (still permitted by the V28 CHECK
+      constraint, no longer written); endpoint name retains its historical
+      `plan-pending` label until a future rename.
+    - **B (rejected): Relax `BookingService.createBooking` to accept
+      `PLAN_PENDING` memberships.** Pros: minimal surface change. Cons:
+      leaks the "PLAN_PENDING is mostly active" rule across the system —
+      every future booking-related read query (PT bookings, analytics,
+      admin attendee lists) would also need the relaxation; introduces
+      an inconsistent two-status notion of "active enough to book". The
+      semantic mess outweighs the smaller diff.
+    - **C (rejected): Defer `POST /bookings` until membership is later
+      activated.** Pros: keeps backend semantics pure. Cons: requires a
+      deferred-booking infrastructure that does not exist; the wizard's
+      booking step becomes "pick a class but it won't be booked until X
+      happens" — and X never happens in this product, since real payment
+      activation is itself out of scope. Defeats the point of moving
+      terms early.
+
+    **Why A wins:** real payment activation is explicitly a project
+    non-goal (PRD §7, Out of Scope). The `PLAN_PENDING` status was always
+    a placeholder for a moment that never arrives in the current product.
+    Persisting `ACTIVE` immediately matches the actual product behaviour.
+    When real payment is added later, the activation moment shifts to
+    "after payment succeeds" and a new migration can re-introduce a
+    transient pre-active status — at that point a proper state machine +
+    migration of historical data is tractable; today, eagerly activating
+    is the honest model.
+
+    **Knock-on effect on unified-signup SDD §6 Decision 13
+    (`useHomePage` re-fetch loop guard):** the original loop fired
+    because users who completed onboarding without a plan (or with
+    `PLAN_PENDING`) hit `404 NO_ACTIVE_MEMBERSHIP` from `/memberships/me`.
+    Under this SDD, users who select a plan in the wizard now have an
+    `ACTIVE` membership immediately, so `/memberships/me` returns 200 and
+    the guard never trips for that path. Decision 13's guard
+    (`membershipErrorCode !== 'NO_ACTIVE_MEMBERSHIP'`) is **not removed**
+    — it still protects the genuine "completed onboarding, skipped plan"
+    case (PRD AC-07: skipping membership is allowed) and any other code
+    path that legitimately lands on `/home` without an active membership.
+    Removing the guard would re-introduce the 50,000-call/min loop for
+    those users.
+
+    **Stale demo row:** the dev DB held one `PLAN_PENDING` row at fix
+    time (verified via `docker exec gympulse-dev-postgres-1 psql`).
+    Forward-only fix — leaving the row in place is harmless (no code
+    reads `PLAN_PENDING` after this change) and avoids a one-off cleanup
+    migration.
 
 ---
 

@@ -75,7 +75,7 @@ export const StepMembership = forwardRef<StepMembershipHandle, object>((_props, 
         className="text-xs font-semibold uppercase"
         style={{ letterSpacing: '0.22em', color: 'var(--color-primary-light)' }}
       >
-        Step 04 · Membership
+        Step 05 · Membership
       </p>
 
       <h1
