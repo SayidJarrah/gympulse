@@ -9,11 +9,11 @@ export interface StepDefinition {
 }
 
 export const ALL_STEPS: StepDefinition[] = [
-  { key: 'credentials', label: 'Your account',   sublabel: 'REQUIRED',       required: true,  conditional: false },
-  { key: 'profile',     label: 'Your profile',   sublabel: 'REQUIRED',       required: true,  conditional: false },
-  { key: 'preferences', label: 'Preferences',    sublabel: 'OPTIONAL',       required: false, conditional: false },
-  { key: 'membership',  label: 'Membership',     sublabel: 'OPTIONAL',       required: false, conditional: false },
-  { key: 'booking',     label: 'First booking',  sublabel: 'IF PLAN CHOSEN', required: false, conditional: true  },
-  { key: 'terms',       label: 'Final check',    sublabel: 'REQUIRED',       required: true,  conditional: false },
+  { key: 'credentials', label: 'Your account',  sublabel: 'REQUIRED',       required: true,  conditional: false },
+  { key: 'profile',     label: 'Your profile',  sublabel: 'REQUIRED',       required: true,  conditional: false },
+  { key: 'terms',       label: 'Final check',   sublabel: 'REQUIRED',       required: true,  conditional: false },
+  { key: 'preferences', label: 'Preferences',   sublabel: 'OPTIONAL',       required: false, conditional: false },
+  { key: 'membership',  label: 'Membership',    sublabel: 'OPTIONAL',       required: false, conditional: false },
+  { key: 'booking',     label: 'First booking', sublabel: 'IF PLAN CHOSEN', required: false, conditional: true  },
 ]
 // 'done' is not in ALL_STEPS — it replaces the layout, not a step in the rail.

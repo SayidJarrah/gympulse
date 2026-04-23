@@ -11,7 +11,6 @@ import {
   CubeIcon,
 } from '@heroicons/react/24/outline'
 import { useOnboardingStore } from '../../../store/onboardingStore'
-import { useAuthStore } from '../../../store/authStore'
 import { updateMyProfile } from '../../../api/profile'
 
 type GoalOption = { label: string; icon: ComponentType<{ className?: string; 'aria-hidden'?: boolean | 'true' | 'false' }> }
@@ -60,13 +59,13 @@ export const StepPreferences = forwardRef<StepPreferencesHandle, object>((_props
       setApiError(null)
       // If no selections, treat as skip (advance without API call)
       const hasSelections = goals.length > 0 || classTypes.length > 0 || frequency
-      // Unified-signup: an unauthenticated guest has no `users` row yet, so
-      // PUT /profile/me would 401. Persist to the local store only — the
-      // current PRD's combined-payload register at terms doesn't include
-      // preferences, so they are not lost (they remain in the wizard state and
-      // can be saved post-onboarding by the user from their profile page).
-      const isAuthenticated = useAuthStore.getState().isAuthenticated
-      if (hasSelections && isAuthenticated) {
+      // SDD onboarding-terms-early §4.4 + Decision 17 — under the reordered
+      // wizard the user is always authenticated by the time they reach
+      // preferences (terms registers them at step 3). Always call
+      // PUT /profile/me when there are selections; the previous
+      // isAuthenticated skip-guard was a workaround for the unified-signup
+      // ordering and is now obsolete.
+      if (hasSelections) {
         try {
           await updateMyProfile({
             firstName: store.firstName || null,

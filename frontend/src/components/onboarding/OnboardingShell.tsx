@@ -79,6 +79,15 @@ export function OnboardingShell() {
   const currentStep = store.currentStep
   const currentIndex = visibleSteps.findIndex(s => s.key === currentStep)
 
+  // SDD §4.4 + Decision 20 — terms boundary lock. After the user submits terms
+  // and is on any post-terms step, the rail rows for credentials/profile/terms
+  // become non-interactive and the StickyFooter Back is disabled (computed
+  // there from currentStep, not from this flag).
+  const backLocked =
+    currentStep === 'preferences' ||
+    currentStep === 'membership' ||
+    currentStep === 'booking'
+
   // ─── Navigation helpers ────────────────────────────────────────────────────
 
   function advance() {
@@ -193,15 +202,18 @@ export function OnboardingShell() {
             }
             // Mark onboarding as not yet complete so OnboardingRoute does not
             // immediately redirect — StepDone's mount effect calls
-            // POST /onboarding/complete which will then set this to a real
-            // timestamp. Until that happens, the Done screen renders.
+            // POST /onboarding/complete (later, when the user reaches `done`)
+            // which will then set this to a real timestamp.
             setOnboardingCompletedAt(null)
             // Wipe the password from store + localStorage immediately on
             // success (SDD §4.2 step 3).
             store.clearPassword()
 
-            // Advance to Done. StepDone's mount effect will fire
-            // POST /onboarding/complete; useBootstrap will fetch the profile.
+            // Advance to the next step. With `terms` at position 3 in the
+            // reordered ALL_STEPS, advance() derives `preferences` as the next
+            // step (terms-early SDD §4.4 + Decision 16). Do not hardcode the
+            // target — the data-driven advance keeps register-at-commit
+            // semantics intact while only the position changes.
             advance()
           } catch (err) {
             const axiosError = err as AxiosError<ApiErrorResponse>
@@ -304,6 +316,7 @@ export function OnboardingShell() {
             visibleSteps={visibleSteps}
             currentStep={currentStep}
             onNavigateBack={navigateBack}
+            backLocked={backLocked}
           />
         </aside>
 
