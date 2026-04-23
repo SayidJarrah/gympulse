@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Onboarding Terms Early — Design Reference Prototype</title>
+  <link rel="stylesheet" href="colors_and_type.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--color-bg-page);
+      color: var(--color-fg-default);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+    }
+
+    /* ── State-switcher bar (reference tool, not part of production UI) ── */
+    .switcher {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: #000;
+      border-bottom: 1px solid #333;
+      font-size: 11px;
+      font-family: var(--font-sans);
+    }
+    .switcher span { color: #666; margin-right: 4px; }
+    .switcher button {
+      padding: 4px 10px;
+      border-radius: 4px;
+      border: 1px solid #444;
+      background: transparent;
+      color: #aaa;
+      font-size: 11px;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      transition: background 100ms, color 100ms;
+    }
+    .switcher button.active {
+      background: var(--color-primary);
+      color: #0F0F0F;
+      border-color: var(--color-primary);
+      font-weight: 600;
+    }
+    .switcher button:hover:not(.active) {
+      background: #222;
+      color: #fff;
+    }
+
+    /* ── Wizard shell ── */
+    .wizard-root {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      padding-top: 40px; /* offset for switcher bar */
+    }
+
+    /* Mini nav */
+    .mini-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 48px;
+      height: 72px;
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--color-border-card);
+    }
+    .logo-mark {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--color-primary);
+    }
+    .logo-mark svg { display: block; }
+    .mini-nav-eyebrow {
+      font-size: var(--text-xs);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: var(--tracking-eyebrow);
+      color: var(--color-fg-metadata);
+    }
+
+    /* Progress bar */
+    .progress-track {
+      height: 3px;
+      background: var(--color-bg-surface-2);
+      flex-shrink: 0;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--color-primary);
+      transition: width var(--duration-normal) var(--ease-out);
+    }
+
+    /* Body row (rail + content) */
+    .body-row {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Step rail */
+    .step-rail {
+      width: 260px;
+      flex-shrink: 0;
+      padding: 24px 16px 24px 48px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      border-right: 1px solid var(--color-border-card);
+      overflow-y: auto;
+    }
+    .rail-header { padding-bottom: 16px; border-bottom: 1px solid var(--color-border-card); }
+    .rail-overline {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--color-primary-light);
+      margin-bottom: 4px;
+    }
+    .rail-title {
+      font-family: var(--font-display);
+      font-size: var(--text-base);
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--color-fg-default);
+    }
+    .rail-steps { display: flex; flex-direction: column; gap: 2px; }
+
+    .rail-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 6px 8px;
+      border-radius: var(--radius-md);
+    }
+    .rail-row.current {
+      background: var(--color-bg-surface-1);
+      border: 1px solid var(--color-primary-border);
+    }
+    /* Interactive done rows get pointer cursor */
+    .rail-row.done-interactive {
+      cursor: pointer;
+      transition: background var(--duration-fast);
+    }
+    .rail-row.done-interactive:hover {
+      background: var(--color-bg-surface-2);
+    }
+    /* Non-interactive done rows (steps 1-3 after register) */
+    .rail-row.done-locked {
+      cursor: default;
+    }
+
+    /* Step circles */
+    .circle {
+      width: 28px;
+      height: 28px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .circle.current {
+      background: var(--color-primary);
+      color: #0F0F0F;
+      box-shadow: 0 0 0 4px rgba(34,197,94,.15);
+    }
+    .circle.done {
+      background: var(--color-primary);
+      color: #0F0F0F;
+    }
+    .circle.todo {
+      border: 1.5px solid var(--color-border-card);
+      color: var(--color-fg-muted);
+    }
+
+    .step-label-col { display: flex; flex-direction: column; }
+    .step-label-name {
+      font-size: var(--text-sm);
+      font-weight: 500;
+      line-height: 1.25;
+    }
+    .step-label-name.current, .step-label-name.done { color: var(--color-fg-default); }
+    .step-label-name.todo { color: var(--color-fg-muted); }
+    .step-label-sub {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: var(--tracking-eyebrow-tight);
+      margin-top: 2px;
+    }
+    .step-label-sub.current { color: var(--color-primary-light); }
+    .step-label-sub.done, .step-label-sub.todo { color: var(--color-fg-muted); }
+
+    /* Step content */
+    .step-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 48px 64px;
+    }
+    .step-inner { max-width: 560px; }
+    .step-eyebrow {
+      font-size: var(--text-xs);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: var(--tracking-eyebrow);
+      color: var(--color-primary-light);
+      margin-bottom: 12px;
+    }
+    .step-headline-row {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .step-headline {
+      font-family: var(--font-display);
+      font-size: var(--text-5xl);
+      font-weight: 700;
+      text-transform: uppercase;
+      line-height: 1;
+      color: var(--color-fg-default);
+    }
+    .req-pill {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: var(--tracking-eyebrow-tight);
+      color: var(--color-fg-muted);
+      border: 1px solid var(--color-border-card);
+      border-radius: var(--radius-md);
+      padding: 2px 8px;
+      white-space: nowrap;
+    }
+    .step-lede {
+      font-size: 15px;
+      color: var(--color-fg-label);
+      line-height: 1.6;
+      max-width: 580px;
+      margin-bottom: 36px;
+    }
+    /* Placeholder content block */
+    .content-placeholder {
+      background: var(--color-bg-surface-1);
+      border: 1px dashed var(--color-border-card);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      color: var(--color-fg-muted);
+      font-size: var(--text-sm);
+      text-align: center;
+    }
+
+    /* Sticky footer */
+    .sticky-footer {
+      position: sticky;
+      bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 48px;
+      height: 88px;
+      flex-shrink: 0;
+      background: var(--color-bg-surface-1);
+      border-top: 1px solid var(--color-border-card);
+      z-index: 10;
+    }
+    .btn-back {
+      padding: 8px 20px;
+      border-radius: var(--radius-md);
+      border: none;
+      background: transparent;
+      font-size: var(--text-sm);
+      font-weight: 500;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      transition: color var(--duration-fast);
+    }
+    .btn-back.enabled {
+      color: var(--color-fg-label);
+    }
+    .btn-back.enabled:hover {
+      color: var(--color-fg-default);
+    }
+    .btn-back.disabled {
+      color: var(--color-fg-muted);
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .btn-skip {
+      flex: 1;
+      text-align: center;
+    }
+    .btn-skip-inner {
+      background: none;
+      border: none;
+      font-size: var(--text-sm);
+      font-weight: 500;
+      font-family: var(--font-sans);
+      color: var(--color-fg-muted);
+      cursor: pointer;
+      transition: color var(--duration-fast);
+    }
+    .btn-skip-inner:hover { color: var(--color-fg-label); }
+    .btn-continue {
+      padding: 10px 24px;
+      border-radius: 9999px;
+      border: none;
+      background: var(--color-primary);
+      color: #0F0F0F;
+      font-size: var(--text-sm);
+      font-weight: 600;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      transition: background var(--duration-fast), box-shadow var(--duration-fast);
+    }
+    .btn-continue:hover {
+      background: var(--color-primary-dark);
+      box-shadow: var(--shadow-glow-primary);
+    }
+
+    /* Callout box (used to annotate the new rule in prototype) */
+    .callout {
+      margin-top: 24px;
+      background: var(--color-primary-tint, rgba(34,197,94,.10));
+      border: 1px solid var(--color-primary-border);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      font-size: var(--text-sm);
+      color: var(--color-primary-light);
+      line-height: 1.5;
+    }
+    .callout strong { color: var(--color-fg-default); }
+  </style>
+</head>
+<body>
+
+<!-- State switcher (reference tool) -->
+<div class="switcher" id="switcher">
+  <span>State:</span>
+  <button onclick="setState('credentials')" id="btn-credentials">credentials</button>
+  <button onclick="setState('profile')" id="btn-profile">profile</button>
+  <button onclick="setState('terms')" id="btn-terms">terms</button>
+  <button onclick="setState('preferences')" id="btn-preferences" class="active">
+    preferences (Back disabled — new rule)
+  </button>
+  <button onclick="setState('membership')" id="btn-membership">membership</button>
+  <button onclick="setState('booking')" id="btn-booking">booking</button>
+  <button onclick="setState('done')" id="btn-done">done</button>
+</div>
+
+<!-- Wizard shell -->
+<div class="wizard-root" id="wizard-root">
+  <!-- Mini nav -->
+  <header class="mini-nav">
+    <div class="logo-mark" aria-label="GymFlow">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="white" aria-hidden="true">
+        <path d="M13 2L4.5 13.5H11L9 22L19.5 9.5H13.5L16 2Z"/>
+      </svg>
+    </div>
+    <p class="mini-nav-eyebrow" id="nav-eyebrow">STEP 04 · PREFS · 4 of 6</p>
+  </header>
+
+  <!-- Progress bar -->
+  <div class="progress-track">
+    <div class="progress-fill" id="progress-fill" style="width: 66.6%"></div>
+  </div>
+
+  <!-- Body row -->
+  <div class="body-row">
+    <!-- Step rail -->
+    <nav class="step-rail" aria-label="Onboarding progress">
+      <div class="rail-header">
+        <p class="rail-overline">Onboarding</p>
+        <p class="rail-title">Getting you ready</p>
+      </div>
+      <ol class="rail-steps" id="rail-steps">
+        <!-- populated by JS -->
+      </ol>
+    </nav>
+
+    <!-- Step content -->
+    <main class="step-content">
+      <div class="step-inner" id="step-content-inner">
+        <!-- populated by JS -->
+      </div>
+    </main>
+  </div>
+
+  <!-- Sticky footer -->
+  <footer class="sticky-footer">
+    <button class="btn-back disabled" id="btn-back" disabled title="You're already signed in. Continue forward.">
+      ← Back
+    </button>
+    <div class="btn-skip" id="footer-skip">
+      <button class="btn-skip-inner">Skip this step</button>
+    </div>
+    <button class="btn-continue" id="btn-continue">Continue →</button>
+  </footer>
+</div>
+
+<script>
+  // ── Step definitions (new order per handoff) ──
+  const ALL_STEPS = [
+    { key: 'credentials', label: 'Your account',  sublabel: 'REQUIRED',       required: true,  conditional: false },
+    { key: 'profile',     label: 'Your profile',  sublabel: 'REQUIRED',       required: true,  conditional: false },
+    { key: 'terms',       label: 'Final check',   sublabel: 'REQUIRED',       required: true,  conditional: false },
+    { key: 'preferences', label: 'Preferences',   sublabel: 'OPTIONAL',       required: false, conditional: false },
+    { key: 'membership',  label: 'Membership',    sublabel: 'OPTIONAL',       required: false, conditional: false },
+    { key: 'booking',     label: 'First booking', sublabel: 'IF PLAN CHOSEN', required: false, conditional: true  },
+  ];
+
+  // In this prototype, assume a plan was selected so booking is visible (M=7).
+  // Toggle to false to see M=6.
+  const PLAN_SELECTED = false;
+  const visibleSteps = PLAN_SELECTED
+    ? ALL_STEPS
+    : ALL_STEPS.filter(s => s.key !== 'booking');
+
+  const EYEBROW_LABELS = {
+    credentials: 'ACCOUNT',
+    profile:     'PROFILE',
+    terms:       'FINAL CHECK',
+    preferences: 'PREFS',
+    membership:  'MEMBERSHIP',
+    booking:     'BOOKING',
+    done:        'DONE',
+  };
+
+  const STEP_CONTENT = {
+    credentials: {
+      eyebrow: 'STEP 01 · YOUR ACCOUNT',
+      headline: 'Create your account',
+      pill: 'REQUIRED',
+      lede: 'Enter your email and choose a password. Your account is created only once you complete onboarding — nothing is saved until you finish.',
+      body: 'Email and password form fields (see unified-signup handoff for full anatomy).',
+    },
+    profile: {
+      eyebrow: 'STEP 02 · YOUR PROFILE',
+      headline: 'Tell us about yourself',
+      pill: 'REQUIRED',
+      lede: 'We need a few details so we can personalise your experience and keep your account secure.',
+      body: 'First name, last name, phone, date of birth form fields.',
+    },
+    terms: {
+      eyebrow: 'STEP 03 · FINAL CHECK',
+      headline: 'Almost there',
+      pill: 'REQUIRED',
+      lede: 'Review and accept our terms of service and liability waiver. Your account is created when you click Continue.',
+      body: 'Terms of service toggle + waiver toggle.',
+    },
+    preferences: {
+      eyebrow: 'STEP 04 · PREFERENCES',
+      headline: 'What are your goals?',
+      pill: 'OPTIONAL',
+      lede: 'Tell us what you\'re training for and we\'ll tailor class recommendations. You can update this at any time.',
+      body: 'Goals selector, class type chips, training frequency picker.',
+    },
+    membership: {
+      eyebrow: 'STEP 05 · MEMBERSHIP',
+      headline: 'Choose a plan',
+      pill: 'OPTIONAL',
+      lede: 'Pick the membership plan that fits your schedule. You can change or cancel at any time.',
+      body: 'Plan cards (monthly / quarterly / annual).',
+    },
+    booking: {
+      eyebrow: 'STEP 06 · BOOKING',
+      headline: 'Book your first class',
+      pill: 'OPTIONAL',
+      lede: 'Pick a class or personal training slot to kick things off. Real class data loads here because you\'re now authenticated.',
+      body: 'Class list + trainer list from authed endpoints.',
+    },
+    done: {
+      eyebrow: '',
+      headline: 'You\'re in.',
+      pill: '',
+      lede: 'Your account is ready. Head to your dashboard to explore classes, track progress, and manage your membership.',
+      body: 'Done illustration + CTA → /home.',
+    },
+  };
+
+  let currentStep = 'preferences';
+
+  function getStepIndex(key) {
+    return visibleSteps.findIndex(s => s.key === key);
+  }
+
+  // Steps 1-3 (credentials, profile, terms) are the "guest prefix" —
+  // once the user passes terms they are locked from Back and rail click.
+  const LOCKED_STEP_KEYS = new Set(['credentials', 'profile', 'terms']);
+
+  function isBackLocked(step) {
+    // Back is disabled on step 1 (credentials, first step) and step 4 (preferences, first post-register step).
+    return step === 'credentials' || step === 'preferences';
+  }
+
+  function isAfterTerms(step) {
+    const termsIndex = getStepIndex('terms');
+    const stepIndex = getStepIndex(step);
+    return stepIndex > termsIndex;
+  }
+
+  function renderRail(step) {
+    const currentIndex = getStepIndex(step);
+    const ol = document.getElementById('rail-steps');
+    ol.innerHTML = '';
+
+    visibleSteps.forEach((s, idx) => {
+      const isDone = idx < currentIndex;
+      const isCurrent = idx === currentIndex;
+      const state = isCurrent ? 'current' : isDone ? 'done' : 'todo';
+
+      // Determine if this done row should be interactive.
+      // Steps 1-3 are locked once the user is past terms.
+      const afterTerms = isAfterTerms(step);
+      const isLockedDone = isDone && afterTerms && LOCKED_STEP_KEYS.has(s.key);
+      const isInteractiveDone = isDone && !isLockedDone;
+
+      const li = document.createElement('li');
+
+      let rowClass = 'rail-row';
+      if (isCurrent) rowClass += ' current';
+      else if (isDone && isLockedDone) rowClass += ' done-locked';
+      else if (isDone && isInteractiveDone) rowClass += ' done-interactive';
+
+      // For screen-reader purposes: done-locked rows are divs, interactive are buttons
+      const tag = isInteractiveDone ? 'button' : 'div';
+
+      const row = document.createElement(tag);
+      row.className = rowClass;
+      if (tag === 'button') {
+        row.type = 'button';
+        row.setAttribute('aria-label', `Go back to ${s.label}`);
+        row.onclick = () => setState(s.key);
+      }
+      if (isCurrent) row.setAttribute('aria-current', 'step');
+
+      // Circle
+      const circle = document.createElement('div');
+      circle.className = `circle ${state}`;
+      if (isDone) {
+        // Checkmark SVG
+        circle.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0F0F0F" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
+        </svg>`;
+      } else {
+        circle.textContent = String(idx + 1).padStart(2, '0');
+      }
+
+      // Label column
+      const labelCol = document.createElement('div');
+      labelCol.className = 'step-label-col';
+
+      const nameEl = document.createElement('span');
+      nameEl.className = `step-label-name ${state}`;
+      nameEl.textContent = s.label;
+
+      labelCol.appendChild(nameEl);
+
+      if (s.sublabel) {
+        const subEl = document.createElement('span');
+        subEl.className = `step-label-sub ${state}`;
+        subEl.textContent = s.sublabel;
+        labelCol.appendChild(subEl);
+      }
+
+      row.appendChild(circle);
+      row.appendChild(labelCol);
+      li.appendChild(row);
+      ol.appendChild(li);
+    });
+  }
+
+  function renderContent(step) {
+    const info = STEP_CONTENT[step] || STEP_CONTENT['done'];
+    const inner = document.getElementById('step-content-inner');
+
+    if (step === 'done') {
+      inner.innerHTML = `
+        <div style="text-align:center; padding-top: 48px;">
+          <div style="font-family:var(--font-display);font-size:var(--text-6xl);font-weight:700;text-transform:uppercase;color:var(--color-fg-default);margin-bottom:16px;">
+            You're in.
+          </div>
+          <p style="font-size:15px;color:var(--color-fg-label);line-height:1.6;max-width:480px;margin:0 auto 32px;">
+            ${info.lede}
+          </p>
+          <button style="padding:12px 32px;border-radius:9999px;border:none;background:var(--color-primary);color:#0F0F0F;font-size:var(--text-base);font-weight:600;cursor:pointer;font-family:var(--font-sans);">
+            Go to my dashboard →
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    let calloutHtml = '';
+    if (step === 'preferences') {
+      calloutHtml = `
+        <div class="callout">
+          <strong>New rule — Back is disabled on this step.</strong><br>
+          The terms step (step 3) just registered your account. Returning to credentials, profile, or terms is not possible from inside the wizard. Within steps 4–6, Back continues to work between adjacent steps.<br><br>
+          The footer Back button renders with <code>disabled</code>, opacity 0.4, color <code>--color-fg-muted</code>, and <code>cursor: not-allowed</code> — matching the existing treatment on the credentials step (step 1).<br><br>
+          The step rail rows for steps 1–3 (credentials, profile, terms) show the <code>done</code> visual state (green checkmark circle) but are rendered as <code>&lt;div&gt;</code> elements, not <code>&lt;button&gt;</code> elements. They have no hover affordance and no click handler.
+        </div>
+      `;
+    }
+
+    inner.innerHTML = `
+      <div class="step-eyebrow">${info.eyebrow}</div>
+      <div class="step-headline-row">
+        <h1 class="step-headline">${info.headline}</h1>
+        ${info.pill ? `<span class="req-pill">${info.pill}</span>` : ''}
+      </div>
+      <p class="step-lede">${info.lede}</p>
+      <div class="content-placeholder">${info.body} — see unified-signup handoff for full step content anatomy</div>
+      ${calloutHtml}
+    `;
+  }
+
+  function renderMiniNav(step) {
+    const idx = getStepIndex(step);
+    const total = visibleSteps.length;
+    const eyebrowEl = document.getElementById('nav-eyebrow');
+
+    if (step === 'done') {
+      eyebrowEl.textContent = '';
+      return;
+    }
+
+    const label = EYEBROW_LABELS[step] || step.toUpperCase();
+    const num = String(idx + 1).padStart(2, '0');
+    eyebrowEl.textContent = `STEP ${num} · ${label} · ${idx + 1} of ${total}`;
+  }
+
+  function renderProgressBar(step) {
+    const idx = getStepIndex(step);
+    const total = visibleSteps.length;
+    const fill = step === 'done' ? 100 : ((idx + 1) / (total + 1)) * 100;
+    document.getElementById('progress-fill').style.width = fill + '%';
+  }
+
+  function renderFooter(step) {
+    const backLocked = isBackLocked(step);
+    const btn = document.getElementById('btn-back');
+    const skipDiv = document.getElementById('footer-skip');
+    const continueBtn = document.getElementById('btn-continue');
+    const idx = getStepIndex(step);
+    const stepDef = visibleSteps[idx];
+    const isOptional = stepDef && !stepDef.required;
+
+    // Back button
+    if (backLocked) {
+      btn.className = 'btn-back disabled';
+      btn.disabled = true;
+      btn.title = "You're already signed in. Continue forward.";
+    } else if (step === 'done') {
+      btn.style.visibility = 'hidden';
+    } else {
+      btn.className = 'btn-back enabled';
+      btn.disabled = false;
+      btn.title = '';
+    }
+
+    // Skip button
+    skipDiv.style.display = 'flex';
+    skipDiv.style.justifyContent = 'center';
+    if (!isOptional || step === 'done') {
+      skipDiv.innerHTML = '';
+    } else {
+      skipDiv.innerHTML = '<button class="btn-skip-inner">Skip this step</button>';
+    }
+
+    // Continue button
+    if (step === 'done') {
+      continueBtn.style.display = 'none';
+    } else {
+      continueBtn.style.display = '';
+      continueBtn.textContent = 'Continue →';
+    }
+  }
+
+  function updateSwitcherButtons(step) {
+    document.querySelectorAll('.switcher button').forEach(b => b.classList.remove('active'));
+    const activeBtn = document.getElementById('btn-' + step);
+    if (activeBtn) activeBtn.classList.add('active');
+  }
+
+  function setState(step) {
+    currentStep = step;
+    renderRail(step);
+    renderContent(step);
+    renderMiniNav(step);
+    renderProgressBar(step);
+    renderFooter(step);
+    updateSwitcherButtons(step);
+  }
+
+  // Boot on preferences state to demonstrate the Back-disabled rule
+  setState('preferences');
+</script>
+</body>
+</html>
