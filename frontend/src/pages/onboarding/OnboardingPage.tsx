@@ -19,6 +19,13 @@ interface ResumeContext {
  * (profile / membership / etc.).
  */
 function computeResumeStep({ isAuthenticated, store }: ResumeContext): StepKey {
+  // Wizard already completed (e.g. terms-step register flipped isAuthenticated,
+  // bootstrap spinner unmounted/remounted us). 'done' is the wizard's
+  // authoritative intent under unified-signup — never override it.
+  if (store.currentStep === 'done') {
+    return 'done'
+  }
+
   // Brand-new visitor: nothing typed yet — start at credentials.
   if (!isAuthenticated && !store.email && !store.firstName) {
     return 'credentials'
@@ -33,9 +40,8 @@ function computeResumeStep({ isAuthenticated, store }: ResumeContext): StepKey {
     return 'membership'
   }
 
-  // Unauthenticated guest with some progress: respect their persisted step
-  // unless it points to 'done' (which only makes sense after auth).
-  if (store.currentStep && store.currentStep !== 'done') {
+  // Unauthenticated guest with some progress: respect their persisted step.
+  if (store.currentStep) {
     return store.currentStep
   }
 

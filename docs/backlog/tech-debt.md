@@ -597,3 +597,66 @@ Feature: testing-reset
 Added: 2026-04-13
 Effort: S
 `scripts/cleanup-test-users.sh` header comment reads "Run weekly on long-lived local environments." `docs/sdd/testing-reset.md` Section 8 (Nightly cleanup job) describes this as a nightly job. Update the comment to say "Run nightly" to match the SDD.
+
+## TD-084 — MiniNav eyebrow concatenates label and step fraction on a single line
+Source: docs/reviews/onboarding-unified-signup-20260423.md
+Feature: onboarding-unified-signup
+Added: 2026-04-23
+Effort: S
+`MiniNav.tsx:52` renders `STEP 01 · ACCOUNT · 1 of 6` as one inline string in `--color-fg-metadata`. The handoff prototype (`design_reference/index.html` lines 635-646) puts the eyebrow `STEP 01 · ACCOUNT` in `--color-primary-light` on top and the fraction `1 of 7` underneath in `--color-fg-muted` (two stacked lines). The current treatment loses both the structural separation and the primary-light accent. Restructure to two stacked elements per the handoff.
+
+## TD-085 — Required pill on the credentials step does not match handoff token spec
+Source: docs/reviews/onboarding-unified-signup-20260423.md
+Feature: onboarding-unified-signup
+Added: 2026-04-23
+Effort: S
+`StepCredentials.tsx:154-164` renders the "Required" pill with `--color-primary-light` text, `--color-primary-tint` fill, `--color-primary-border` border, and `rounded-full`. This matches the sibling `StepProfile` convention but contradicts handoff §1 / prototype `.pill-required` (lines 243-252): `--color-fg-muted` text, `1px --color-border-card` border, no fill, `--radius-md` rectangular pill. Either reconcile the credentials pill to the handoff spec or update the handoff to lock in the green-tinted sibling style — pick one to avoid drift across steps.
+
+## TD-086 — StepCredentials focus useEffect uses empty deps; snap-back without remount won't re-focus
+Source: docs/reviews/onboarding-unified-signup-20260423.md
+Feature: onboarding-unified-signup
+Added: 2026-04-23
+Effort: S
+`StepCredentials.tsx:33-42` runs the focus + scroll effect only on mount (`[]` deps with an `eslint-disable-next-line`). Today the snap-back from the terms step relies on the credentials component being unmounted (because the step switched away and back), so the mount effect happens to fire. If the user is already on the credentials step when a future code path sets `credentialsLateError` (manual back-nav before submit, error-replay scenarios), the focus + scroll behaviour will not re-fire. Add `credentialsLateError` to the deps and gate the unconditional focus path so the snap-back UX is deterministic regardless of mount lifecycle.
+
+## TD-087 — Credentials labels carry colored asterisks not in the handoff
+Source: docs/reviews/onboarding-unified-signup-20260423.md
+Feature: onboarding-unified-signup
+Added: 2026-04-23
+Effort: S
+`StepCredentials.tsx:201,246` decorate the email and password labels with `<span style={{ color: 'var(--color-error-fg)' }}>*</span>`. The handoff prototype (lines 768, 794) renders plain labels — the headline-level REQUIRED pill is the canonical "this step is mandatory" affordance, and the asterisks read as a permanent error tint on a healthy field, weakening the actual error state. Drop the asterisks across both fields.
+
+## TD-088 — StepDone may double-fire POST /onboarding/complete on bootstrap-spinner remount
+Source: docs/reviews/onboarding-unified-signup-20260423.md
+Feature: onboarding-unified-signup
+Added: 2026-04-23
+Effort: S
+`StepDone.tsx:16-35` guards the `/onboarding/complete` call with `completeFiredRef`, which is a per-mount ref. The blocker in this review (computeResumeStep override during the bootstrap spinner cycle) currently unmounts and remounts StepDone, defeating the guard. Once the blocker is fixed the remount goes away, but a belt-and-braces guard keyed on `localStorage` or on `useAuthStore`'s `onboardingCompletedAt !== null` (which the effect already short-circuits on) would harden the component against any future remount path.
+
+## TD-089 — continueRetry toggles the footer to "Try again →" for any termsError, not just retryable codes
+Source: docs/reviews/onboarding-unified-signup-20260423.md
+Feature: onboarding-unified-signup
+Added: 2026-04-23
+Effort: S
+`OnboardingShell.tsx:353` passes `continueRetry={!!termsError}` to the StickyFooter, which flips the button label from "Finish onboarding →" to "Try again →" whenever any error is set. The SDD §4.5 only describes the retry affordance for `INVALID_*` codes (snap-back already handles `EMAIL_ALREADY_EXISTS` separately and unsets termsError implicitly via the step change). Scope `continueRetry` to the codes that actually produce a recoverable retry on the same step so transient banners do not relabel the primary CTA.
+
+## TD-090 — setCredentials always bumps lastTouchedAt, extending the 24h plaintext-password window unnecessarily
+Source: docs/reviews/onboarding-unified-signup-20260423.md
+Feature: onboarding-unified-signup
+Added: 2026-04-23
+Effort: S
+`onboardingStore.ts:117-118` writes `email`, `password`, and `lastTouchedAt = Date.now()` on every `setCredentials` call, even when the user re-submits the same credentials (e.g. step navigation re-mounting StepCredentials and re-firing submit on Continue). This silently rolls forward the 24h cleanup window each time without the user actually editing credentials, leaving the password in localStorage longer than intended. Short-circuit when both args match the existing state to keep the cleanup window tied to the last *real* edit.
+
+## TD-091 — toE164 helper duplicated between StepProfile and OnboardingShell
+Source: docs/reviews/onboarding-unified-signup-20260423.md
+Feature: onboarding-unified-signup
+Added: 2026-04-23
+Effort: S
+`OnboardingShell.tsx:33-38` and `StepProfile.tsx:20` both define an identical `toE164(formatted: string): string` helper. If the wizard ever supports international numbers, both copies will need updating in lock-step. Extract to a shared `frontend/src/utils/phone.ts` (or co-locate with the existing phone formatter) so there is one source of truth for the format.
+
+## TD-092 — defaultState.currentStep = 'credentials' is wrong for an authenticated user with a reset store
+Source: docs/reviews/onboarding-unified-signup-20260423.md
+Feature: onboarding-unified-signup
+Added: 2026-04-23
+Effort: S
+`onboardingStore.ts:62` sets `defaultState.currentStep = 'credentials'`, which is correct for guests but means an authenticated user whose store was reset (e.g. `clearAuth()` followed by re-login while onboarding is still incomplete) lands on a step they cannot meaningfully complete — the credentials step's submit no-ops because the user is already authenticated, and the combined-payload register would 409 immediately. `OnboardingPage.computeResumeStep` patches this at runtime, but defaulting `currentStep` based on auth state at store construction (or computing the initial value lazily on first mount) would remove the patch and the divergence between defaultState and observed runtime behaviour.
