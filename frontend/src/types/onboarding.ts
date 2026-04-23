@@ -1,4 +1,4 @@
-export type StepKey = 'welcome' | 'profile' | 'preferences' | 'membership' | 'booking' | 'terms' | 'done'
+export type StepKey = 'credentials' | 'profile' | 'preferences' | 'membership' | 'booking' | 'terms' | 'done'
 
 export interface StepDefinition {
   key: StepKey
@@ -9,7 +9,7 @@ export interface StepDefinition {
 }
 
 export const ALL_STEPS: StepDefinition[] = [
-  { key: 'welcome',     label: 'Welcome',        sublabel: '',               required: false, conditional: false },
+  { key: 'credentials', label: 'Your account',   sublabel: 'REQUIRED',       required: true,  conditional: false },
   { key: 'profile',     label: 'Your profile',   sublabel: 'REQUIRED',       required: true,  conditional: false },
   { key: 'preferences', label: 'Preferences',    sublabel: 'OPTIONAL',       required: false, conditional: false },
   { key: 'membership',  label: 'Membership',     sublabel: 'OPTIONAL',       required: false, conditional: false },

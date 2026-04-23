@@ -1,5 +1,8 @@
+import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useOnboardingStore } from '../../../store/onboardingStore'
+import { useAuthStore } from '../../../store/authStore'
+import { completeOnboarding } from '../../../api/onboarding'
 
 interface StepDoneProps {
   onReviewInfo: () => void
@@ -8,6 +11,28 @@ interface StepDoneProps {
 export function StepDone({ onReviewInfo }: StepDoneProps) {
   const navigate = useNavigate()
   const store = useOnboardingStore()
+  const setOnboardingCompletedAt = useAuthStore(s => s.setOnboardingCompletedAt)
+  const onboardingCompletedAt = useAuthStore(s => s.onboardingCompletedAt)
+  const completeFiredRef = useRef(false)
+
+  // Fire POST /onboarding/complete once on mount, after the unified-signup
+  // register has authenticated the user. The auth store already has the
+  // tokens by this point (set in OnboardingShell.terms-case before
+  // setStep('done')). SDD §4.3 / §4.4.
+  useEffect(() => {
+    if (completeFiredRef.current) return
+    if (onboardingCompletedAt) return
+    completeFiredRef.current = true
+    completeOnboarding()
+      .then(res => {
+        setOnboardingCompletedAt(res.onboardingCompletedAt)
+      })
+      .catch(() => {
+        // Non-fatal — the user can finish from the Done screen and any later
+        // login will resume them at the right state via useBootstrap.
+      })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const name = store.firstName || 'there'
 

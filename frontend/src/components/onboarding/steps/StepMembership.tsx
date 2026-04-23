@@ -2,6 +2,7 @@ import { useEffect, useState, forwardRef, useImperativeHandle } from 'react'
 import { getActivePlans } from '../../../api/membershipPlans'
 import { submitPlanPending } from '../../../api/onboarding'
 import { useOnboardingStore } from '../../../store/onboardingStore'
+import { useAuthStore } from '../../../store/authStore'
 import type { MembershipPlan } from '../../../types/membershipPlan'
 
 export interface StepMembershipHandle {
@@ -40,6 +41,18 @@ export const StepMembership = forwardRef<StepMembershipHandle, object>((_props, 
 
       const plan = plans.find(p => p.id === selectedId)
       if (!plan) return 'skip'
+
+      // Unified-signup: a guest is unauthenticated until terms — POST
+      // /onboarding/plan-pending requires auth and would 401. Persist the
+      // selection locally so the booking step appears, and skip the API call.
+      // The existing onboarding flow (authenticated user resuming) still
+      // calls plan-pending. Plan activation post-register is out of scope per
+      // PRD non-goals.
+      const isAuthenticated = useAuthStore.getState().isAuthenticated
+      if (!isAuthenticated) {
+        store.setPlan(plan.id, plan.name, plan.priceInCents)
+        return 'plan-selected'
+      }
 
       try {
         const res = await submitPlanPending({ planId: selectedId })

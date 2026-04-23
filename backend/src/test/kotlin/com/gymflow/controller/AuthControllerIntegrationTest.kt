@@ -62,7 +62,7 @@ class AuthControllerIntegrationTest {
     // -----------------------------------------------------------------------
 
     @Test
-    fun `register - 201 on valid request`() {
+    fun `register - 201 on valid combined request`() {
         val email = "alice@example.com"
         given(userRepository.findByEmailAndDeletedAtIsNull(email)).willReturn(null)
         given(userRepository.save(any(User::class.java))).willAnswer { invocation ->
@@ -78,7 +78,7 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(
             post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(RegisterRequest(email, "secret99")))
+                .content(objectMapper.writeValueAsString(buildRegisterRequest(email = email)))
         )
             .andExpect(status().isCreated)
             .andExpect(jsonPath("$.accessToken").exists())
@@ -92,7 +92,7 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(
             post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(RegisterRequest("not-an-email", "secret99")))
+                .content(objectMapper.writeValueAsString(buildRegisterRequest(email = "not-an-email")))
         )
             .andExpect(status().isBadRequest)
             .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
@@ -103,7 +103,7 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(
             post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(RegisterRequest("alice@example.com", "short")))
+                .content(objectMapper.writeValueAsString(buildRegisterRequest(password = "short")))
         )
             .andExpect(status().isBadRequest)
             .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
@@ -114,7 +114,29 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(
             post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(RegisterRequest("alice@example.com", "thispasswordiswaytoolong")))
+                .content(objectMapper.writeValueAsString(buildRegisterRequest(password = "thispasswordiswaytoolong")))
+        )
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+    }
+
+    @Test
+    fun `register - 400 when agreeTerms is false`() {
+        mockMvc.perform(
+            post("/api/v1/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(buildRegisterRequest(agreeTerms = false)))
+        )
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+    }
+
+    @Test
+    fun `register - 400 when agreeWaiver is false`() {
+        mockMvc.perform(
+            post("/api/v1/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(buildRegisterRequest(agreeWaiver = false)))
         )
             .andExpect(status().isBadRequest)
             .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
@@ -129,7 +151,7 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(
             post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(RegisterRequest(email, "secret99")))
+                .content(objectMapper.writeValueAsString(buildRegisterRequest(email = email)))
         )
             .andExpect(status().isConflict)
             .andExpect(jsonPath("$.code").value("EMAIL_ALREADY_EXISTS"))
@@ -317,6 +339,26 @@ class AuthControllerIntegrationTest {
     // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------
+
+    private fun buildRegisterRequest(
+        email: String = "user@example.com",
+        password: String = "secret99",
+        firstName: String = "Jane",
+        lastName: String = "Smith",
+        phone: String = "+15555550100",
+        dateOfBirth: String = "1992-04-17",
+        agreeTerms: Boolean = true,
+        agreeWaiver: Boolean = true
+    ) = RegisterRequest(
+        email = email,
+        password = password,
+        firstName = firstName,
+        lastName = lastName,
+        phone = phone,
+        dateOfBirth = dateOfBirth,
+        agreeTerms = agreeTerms,
+        agreeWaiver = agreeWaiver
+    )
 
     private fun buildUser(
         id: UUID = UUID.randomUUID(),

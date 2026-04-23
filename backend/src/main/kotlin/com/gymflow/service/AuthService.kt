@@ -4,11 +4,13 @@ import com.gymflow.domain.RefreshToken
 import com.gymflow.domain.User
 import com.gymflow.domain.UserProfile
 import com.gymflow.dto.LoginResponse
+import com.gymflow.dto.RegisterRequest
 import com.gymflow.repository.RefreshTokenRepository
 import com.gymflow.repository.UserMembershipRepository
 import com.gymflow.repository.UserProfileRepository
 import com.gymflow.repository.UserRepository
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -24,6 +26,7 @@ class AuthService(
     private val refreshTokenRepository: RefreshTokenRepository,
     private val userMembershipRepository: UserMembershipRepository,
     private val userProfileRepository: UserProfileRepository,
+    private val userProfileService: UserProfileService,
     private val passwordEncoder: PasswordEncoder,
     private val jwtService: JwtService,
     @Value("\${REFRESH_TOKEN_EXPIRY_DAYS:30}") private val refreshTokenExpiryDays: Long
@@ -33,21 +36,47 @@ class AuthService(
 
     // --- Register ---
 
+    /**
+     * Combined-payload registration: creates the `users` row, the `user_profiles`
+     * row (with the mandatory profile fields populated), and the initial
+     * `refresh_tokens` row in one transaction. Called from the unified onboarding
+     * wizard at `terms`-step submission. See SDD §3.2.
+     */
     @Transactional
-    fun register(email: String, password: String): LoginResponse {
-        if (userRepository.findByEmailAndDeletedAtIsNull(email) != null) {
-            throw EmailAlreadyExistsException("An account with email '$email' already exists")
+    fun register(request: RegisterRequest): LoginResponse {
+        // Layer 1: app-level pre-check (fast common path, surfaces friendly message).
+        if (userRepository.findByEmailAndDeletedAtIsNull(request.email) != null) {
+            throw EmailAlreadyExistsException("An account with email '${request.email}' already exists")
         }
 
+        // Validate + normalise mandatory profile fields BEFORE any insert so a bad
+        // payload returns 400 without leaving a half-written transaction.
+        val firstName = userProfileService.normalizeRequiredFirstName(request.firstName)
+        val lastName = userProfileService.normalizeRequiredLastName(request.lastName)
+        val phone = userProfileService.normalizeRequiredPhone(request.phone)
+        val dob = userProfileService.parseRequiredDateOfBirth(request.dateOfBirth)
+
         val user = User(
-            email = email,
-            passwordHash = passwordEncoder.encode(password),
+            email = request.email,
+            passwordHash = passwordEncoder.encode(request.password),
             role = "USER"
         )
-        val saved = userRepository.save(user)
 
-        // Create an empty user_profiles row so the onboarding gate can check onboarding_completed_at
-        val profile = UserProfile(userId = saved.id)
+        val saved = try {
+            userRepository.save(user)
+        } catch (e: DataIntegrityViolationException) {
+            // Layer 2: race-safe DB-level guard (kotlin-conventions §"Unique Constraints").
+            throw EmailAlreadyExistsException("An account with email '${request.email}' already exists")
+        }
+
+        val profile = UserProfile(
+            userId = saved.id,
+            firstName = firstName,
+            lastName = lastName,
+            phone = phone,
+            dateOfBirth = dob
+            // fitnessGoals / preferredClassTypes default to empty MutableList in the entity.
+        )
         userProfileRepository.save(profile)
 
         val accessToken = jwtService.generateToken(saved)

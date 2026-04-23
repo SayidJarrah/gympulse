@@ -167,6 +167,38 @@ class UserProfileService(
         return Pair(name, phone)
     }
 
+    /**
+     * Validates and normalises a required first name. Throws [InvalidFirstNameException]
+     * when the input is blank or exceeds 50 characters. Used by [AuthService.register]
+     * for the combined-payload signup.
+     */
+    fun normalizeRequiredFirstName(value: String): String =
+        normalizeOptionalName(value) { InvalidFirstNameException("First name is invalid") }
+            ?: throw InvalidFirstNameException("First name is required")
+
+    /**
+     * Validates and normalises a required last name. Throws [InvalidLastNameException]
+     * when the input is blank or exceeds 50 characters. Used by [AuthService.register]
+     * for the combined-payload signup.
+     */
+    fun normalizeRequiredLastName(value: String): String =
+        normalizeOptionalName(value) { InvalidLastNameException("Last name is invalid") }
+            ?: throw InvalidLastNameException("Last name is required")
+
+    /**
+     * Validates and normalises a required E.164 phone number. Throws
+     * [InvalidPhoneException] when the input is blank or fails the E.164 regex.
+     */
+    fun normalizeRequiredPhone(value: String): String =
+        normalizePhone(value) ?: throw InvalidPhoneException("Phone is required")
+
+    /**
+     * Parses a required ISO-8601 date of birth and enforces the 16-year minimum
+     * age and not-in-the-future rules.
+     */
+    fun parseRequiredDateOfBirth(value: String): LocalDate =
+        parseDateOfBirth(value) ?: throw InvalidDateOfBirthException("Date of birth is required")
+
     private fun normalizeOptionalName(
         value: String?,
         errorFactory: () -> RuntimeException

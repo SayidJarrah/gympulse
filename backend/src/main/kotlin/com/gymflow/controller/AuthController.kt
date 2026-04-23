@@ -22,7 +22,7 @@ class AuthController(
 
     @PostMapping("/register")
     fun register(@Valid @RequestBody request: RegisterRequest): ResponseEntity<LoginResponse> {
-        val response = authService.register(request.email, request.password)
+        val response = authService.register(request)
         return ResponseEntity.status(HttpStatus.CREATED).body(response)
     }
 

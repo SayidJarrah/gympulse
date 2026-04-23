@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Onboarding Unified Signup — Design Reference</title>
+  <link rel="stylesheet" href="colors_and_type.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    /* ── Page shell ─────────────────────────────────────────── */
+    body {
+      background: var(--color-bg-page);
+      color: var(--color-fg-default);
+      font-family: var(--font-sans);
+      margin: 0;
+      min-height: 100vh;
+    }
+
+    /* ── Dev state-switcher (remove in production) ──────────── */
+    #state-switcher {
+      position: fixed;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      display: flex;
+      gap: 4px;
+      background: rgba(0,0,0,0.75);
+      border: 1px solid var(--color-border-card);
+      border-radius: var(--radius-full);
+      padding: 4px;
+      backdrop-filter: blur(8px);
+    }
+    #state-switcher button {
+      border: none;
+      border-radius: var(--radius-full);
+      padding: 5px 14px;
+      font-family: var(--font-sans);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      transition: background var(--duration-normal), color var(--duration-normal);
+      background: transparent;
+      color: var(--color-fg-muted);
+    }
+    #state-switcher button.active {
+      background: var(--color-primary);
+      color: #0F0F0F;
+    }
+    #state-switcher button:hover:not(.active) {
+      background: var(--color-bg-surface-2);
+      color: var(--color-fg-default);
+    }
+
+    /* ── Wizard layout ──────────────────────────────────────── */
+    .wizard-root {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* Mini nav */
+    .mini-nav {
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 48px;
+      border-bottom: 1px solid var(--color-border-card);
+      background: var(--color-bg-page);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .mini-nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo-mark {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--color-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .logo-mark svg { width: 20px; height: 20px; }
+    .logo-wordmark {
+      font-family: var(--font-sans);
+      font-size: var(--text-base);
+      font-weight: 700;
+      color: var(--color-fg-default);
+      letter-spacing: 0.01em;
+    }
+    .mini-nav-step {
+      text-align: right;
+    }
+    .mini-nav-eyebrow {
+      font-size: var(--text-xs);
+      font-weight: 600;
+      letter-spacing: var(--tracking-eyebrow);
+      text-transform: uppercase;
+      color: var(--color-primary-light);
+    }
+    .mini-nav-fraction {
+      font-size: var(--text-xs);
+      color: var(--color-fg-muted);
+      margin-top: 2px;
+    }
+
+    /* Progress bar */
+    .progress-bar-track {
+      height: 3px;
+      background: var(--color-bg-surface-2);
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--color-primary);
+      transition: width var(--duration-normal) var(--ease-out);
+    }
+
+    /* Main body: rail + content */
+    .wizard-body {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 48px;
+      padding: 40px 48px;
+      flex: 1;
+    }
+
+    /* Step rail */
+    .step-rail {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .step-rail-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 12px 0;
+      position: relative;
+    }
+    .step-rail-item:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 13px;
+      top: 40px;
+      bottom: 0;
+      width: 2px;
+      background: var(--color-border-card);
+    }
+    .step-rail-item.state-done::after { background: var(--color-primary-border); }
+
+    .step-numeral {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 700;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+      transition: all var(--duration-normal) var(--ease-out);
+    }
+    .step-numeral.current {
+      background: var(--color-primary);
+      color: #0F0F0F;
+      box-shadow: 0 0 0 4px rgba(34,197,94,0.15);
+    }
+    .step-numeral.done {
+      background: transparent;
+      border: 2px solid var(--color-primary-border);
+      color: var(--color-primary-light);
+    }
+    .step-numeral.todo {
+      background: transparent;
+      border: 2px solid var(--color-border-card);
+      color: var(--color-fg-muted);
+    }
+
+    .step-rail-label-group { display: flex; flex-direction: column; gap: 2px; }
+    .step-rail-label {
+      font-size: var(--text-sm);
+      font-weight: 500;
+      color: var(--color-fg-muted);
+    }
+    .step-rail-label.active { color: var(--color-fg-default); }
+    .step-rail-sublabel {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: var(--tracking-eyebrow-tight);
+      text-transform: uppercase;
+      color: var(--color-fg-muted);
+    }
+
+    /* Step content column */
+    .step-content {
+      max-width: 820px;
+      animation: stepEnter var(--duration-normal) var(--ease-out);
+    }
+    @keyframes stepEnter {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .step-content { animation: none; }
+    }
+
+    .step-eyebrow {
+      font-size: var(--text-xs);
+      font-weight: 600;
+      letter-spacing: var(--tracking-eyebrow);
+      text-transform: uppercase;
+      color: var(--color-primary-light);
+      margin-bottom: 12px;
+    }
+    .step-headline-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .step-headline {
+      font-family: var(--font-display);
+      font-size: 48px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -0.01em;
+      text-transform: uppercase;
+      color: var(--color-fg-default);
+    }
+    .pill-required {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: var(--tracking-eyebrow-tight);
+      text-transform: uppercase;
+      color: var(--color-fg-muted);
+      border: 1px solid var(--color-border-card);
+      border-radius: var(--radius-md);
+      padding: 2px 8px;
+    }
+    .step-lede {
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--color-fg-label);
+      max-width: 580px;
+      margin-bottom: 32px;
+    }
+
+    /* Form */
+    .form-credentials {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      max-width: 560px;
+    }
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .field-label {
+      font-size: var(--text-sm);
+      font-weight: 500;
+      color: var(--color-fg-label);
+    }
+    .field-input {
+      width: 100%;
+      background: var(--color-bg-surface-1);
+      border: 1px solid var(--color-border-input);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      font-family: var(--font-sans);
+      font-size: var(--text-sm);
+      color: var(--color-fg-default);
+      transition: border-color var(--duration-normal) var(--ease-out),
+                  box-shadow var(--duration-normal) var(--ease-out);
+      outline: none;
+    }
+    .field-input::placeholder { color: var(--color-fg-muted); }
+    .field-input:focus-visible {
+      border-color: var(--color-border-focus);
+      box-shadow: 0 0 0 3px rgba(34,197,94,0.25);
+    }
+    .field-input.error {
+      border-color: var(--color-error-strong);
+    }
+    .field-input.error:focus-visible {
+      box-shadow: 0 0 0 3px rgba(239,68,68,0.25);
+    }
+    .field-input.accepted {
+      border-color: var(--color-primary-border);
+    }
+
+    .password-wrapper {
+      position: relative;
+    }
+    .password-wrapper .field-input {
+      padding-right: 44px;
+    }
+    .show-hide-btn {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--color-fg-muted);
+      transition: color var(--duration-fast) var(--ease-in-out);
+    }
+    .show-hide-btn:hover { color: var(--color-fg-label); }
+    .show-hide-btn:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 2px var(--color-primary);
+      border-radius: var(--radius-md);
+    }
+    .show-hide-btn svg { width: 20px; height: 20px; }
+
+    .field-helper {
+      font-size: var(--text-xs);
+      color: var(--color-fg-muted);
+    }
+    .field-error {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: var(--text-xs);
+      color: var(--color-error-fg);
+    }
+    .field-error svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+    /* Late-error banner */
+    .late-error-banner {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      background: var(--color-error-bg);
+      border: 1px solid var(--color-error-border);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      animation: bannerAppear var(--duration-normal) var(--ease-out);
+    }
+    @keyframes bannerAppear {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .late-error-banner { animation: none; }
+    }
+    .late-error-banner svg { width: 16px; height: 16px; color: var(--color-error-fg); flex-shrink: 0; margin-top: 1px; }
+    .late-error-banner p { font-size: var(--text-sm); color: var(--color-error-fg); margin: 0; }
+
+    /* Sticky footer */
+    .sticky-footer {
+      position: sticky;
+      bottom: 0;
+      height: 88px;
+      background: var(--color-bg-surface-1);
+      border-top: 1px solid var(--color-border-card);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 48px;
+      z-index: 100;
+    }
+    .btn-ghost {
+      background: none;
+      border: 1px solid transparent;
+      border-radius: var(--radius-md);
+      padding: 10px 20px;
+      font-family: var(--font-sans);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--color-fg-muted);
+      cursor: pointer;
+      transition: background var(--duration-normal), color var(--duration-normal), border-color var(--duration-normal);
+    }
+    .btn-ghost:hover:not(:disabled) {
+      background: var(--color-bg-surface-2);
+      color: var(--color-fg-default);
+    }
+    .btn-ghost:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--color-primary);
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 12px 28px;
+      font-family: var(--font-sans);
+      font-size: var(--text-sm);
+      font-weight: 700;
+      color: #0F0F0F;
+      cursor: pointer;
+      transition: background var(--duration-normal), box-shadow var(--duration-normal);
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: var(--color-primary-dark);
+      box-shadow: var(--shadow-glow-primary);
+    }
+    .btn-primary:active:not(:disabled) {
+      background: var(--color-primary-darker);
+    }
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .btn-primary svg { width: 16px; height: 16px; }
+    .btn-primary.loading { background: rgba(34,197,94,0.4); cursor: not-allowed; }
+    .btn-primary.loading svg.spinner {
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Next-step preview (profile teaser) */
+    .next-step-preview {
+      margin-top: 40px;
+      padding-top: 32px;
+      border-top: 1px solid var(--color-border-card);
+    }
+    .next-step-preview-label {
+      font-size: var(--text-xs);
+      font-weight: 600;
+      letter-spacing: var(--tracking-eyebrow-tight);
+      text-transform: uppercase;
+      color: var(--color-fg-muted);
+      margin-bottom: 16px;
+    }
+    .next-step-cards {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      max-width: 560px;
+    }
+    .next-step-card {
+      background: var(--color-bg-surface-1);
+      border: 1px solid var(--color-border-card);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .next-step-card-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-md);
+      background: var(--color-bg-surface-2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .next-step-card-icon svg { width: 16px; height: 16px; color: var(--color-fg-muted); }
+    .next-step-card-name { font-size: var(--text-sm); font-weight: 600; color: var(--color-fg-default); }
+    .next-step-card-meta { font-size: var(--text-xs); color: var(--color-fg-muted); margin-top: 2px; }
+  </style>
+</head>
+<body>
+
+<!-- DEV-ONLY state switcher — remove in production -->
+<div id="state-switcher">
+  <button onclick="setState('empty')" id="btn-empty">Empty</button>
+  <button onclick="setState('filled')" id="btn-filled">Filled-valid</button>
+  <button onclick="setState('err-email')" id="btn-err-email">Invalid email</button>
+  <button onclick="setState('err-pw-short')" id="btn-err-pw-short">PW too short</button>
+  <button onclick="setState('err-pw-long')" id="btn-err-pw-long">PW too long</button>
+  <button onclick="setState('loading')" id="btn-loading">Loading</button>
+  <button onclick="setState('late-error')" id="btn-late-error">Late error (snap-back)</button>
+</div>
+
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+// ── SVG Icon primitives ──────────────────────────────────────
+function IconArrowRight() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+         strokeLinecap="round" strokeLinejoin="round" style={{width:16,height:16}}>
+      <path d="M5 12h14M12 5l7 7-7 7"/>
+    </svg>
+  );
+}
+function IconEye() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"
+         strokeLinecap="round" strokeLinejoin="round" style={{width:20,height:20}}>
+      <path d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/>
+      <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+    </svg>
+  );
+}
+function IconEyeSlash() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"
+         strokeLinecap="round" strokeLinejoin="round" style={{width:20,height:20}}>
+      <path d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"/>
+    </svg>
+  );
+}
+function IconExclamationCircle() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"
+         strokeLinecap="round" strokeLinejoin="round" style={{width:14,height:14}}>
+      <path d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>
+    </svg>
+  );
+}
+function IconExclamationTriangle() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"
+         strokeLinecap="round" strokeLinejoin="round" style={{width:16,height:16}}>
+      <path d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+    </svg>
+  );
+}
+function IconCheck() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+         strokeLinecap="round" strokeLinejoin="round" style={{width:14,height:14}}>
+      <path d="M4.5 12.75l6 6 9-13.5"/>
+    </svg>
+  );
+}
+function IconSpinner() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" style={{width:16,height:16}} className="spinner">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+      <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" style={{opacity:0.75}}/>
+    </svg>
+  );
+}
+function IconUser() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"
+         strokeLinecap="round" strokeLinejoin="round" style={{width:16,height:16}}>
+      <path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/>
+    </svg>
+  );
+}
+function IconCreditCard() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"
+         strokeLinecap="round" strokeLinejoin="round" style={{width:16,height:16}}>
+      <path d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/>
+    </svg>
+  );
+}
+
+// ── Step definitions ─────────────────────────────────────────
+const ALL_STEPS = [
+  { key: 'credentials', label: 'Your account',   sublabel: 'REQUIRED',                   required: true },
+  { key: 'profile',     label: 'Your profile',   sublabel: 'REQUIRED',                   required: true },
+  { key: 'preferences', label: 'Preferences',    sublabel: 'OPTIONAL',                   required: false },
+  { key: 'membership',  label: 'Membership',     sublabel: 'OPTIONAL',                   required: false },
+  { key: 'booking',     label: 'First booking',  sublabel: 'OPTIONAL · IF PLAN CHOSEN',  required: false },
+  { key: 'terms',       label: 'Final check',    sublabel: 'REQUIRED',                   required: true },
+];
+
+// State-switcher helper
+const STATE_CONFIGS = {
+  empty:       { email: '',                    password: '',  showPw: false, emailError: null, passwordError: null, loading: false, lateError: false, emailAccepted: false },
+  filled:      { email: 'alex@example.com',    password: 'SecurePass1',  showPw: false, emailError: null, passwordError: null, loading: false, lateError: false, emailAccepted: true },
+  'err-email': { email: 'not-an-email',        password: 'SecurePass1',  showPw: false, emailError: 'Please enter a valid email address.', passwordError: null, loading: false, lateError: false, emailAccepted: false },
+  'err-pw-short': { email: 'alex@example.com', password: 'short',       showPw: false, emailError: null, passwordError: 'Password must be at least 8 characters.', loading: false, lateError: false, emailAccepted: true },
+  'err-pw-long':  { email: 'alex@example.com', password: 'thispasswordiswaytoolong999', showPw: false, emailError: null, passwordError: 'Password must be at most 15 characters.', loading: false, lateError: false, emailAccepted: true },
+  loading:     { email: 'alex@example.com',    password: 'SecurePass1',  showPw: false, emailError: null, passwordError: null, loading: true,  lateError: false, emailAccepted: true },
+  'late-error':{ email: 'alex@example.com',    password: 'SecurePass1',  showPw: false, emailError: null, passwordError: null, loading: false, lateError: true,  emailAccepted: false },
+};
+
+// ── Logo ─────────────────────────────────────────────────────
+function Logo() {
+  return (
+    <div style={{display:'flex',alignItems:'center',gap:10}}>
+      <div style={{
+        width:36,height:36,borderRadius:10,
+        background:'var(--color-primary)',
+        display:'flex',alignItems:'center',justifyContent:'center',
+        flexShrink:0
+      }}>
+        <svg viewBox="0 0 24 24" style={{width:20,height:20}} aria-hidden="true">
+          <path d="M13 2L4.5 13.5H11L9 22L19.5 9.5H13.5L16 2Z" fill="white"/>
+        </svg>
+      </div>
+      <span style={{fontFamily:'var(--font-sans)',fontSize:'var(--text-base)',fontWeight:700,color:'var(--color-fg-default)'}}>
+        GymFlow
+      </span>
+    </div>
+  );
+}
+
+// ── Mini nav ─────────────────────────────────────────────────
+function MiniNav({ stepIndex, totalSteps }) {
+  const stepKey = ALL_STEPS[stepIndex]?.key ?? 'credentials';
+  const eyebrowMap = {
+    credentials: 'STEP 01 · ACCOUNT',
+    profile:     'STEP 02 · PROFILE',
+    preferences: 'STEP 03 · PREFS',
+    membership:  'STEP 04 · MEMBERSHIP',
+    booking:     'STEP 05 · BOOKING',
+    terms:       'STEP 06 · FINAL CHECK',
+  };
+  return (
+    <nav style={{
+      height:72,display:'flex',alignItems:'center',justifyContent:'space-between',
+      padding:'0 48px',borderBottom:'1px solid var(--color-border-card)',
+      background:'var(--color-bg-page)',position:'sticky',top:0,zIndex:100
+    }} aria-label="Wizard navigation">
+      <Logo />
+      <div style={{textAlign:'right'}}>
+        <div style={{
+          fontSize:'var(--text-xs)',fontWeight:600,
+          letterSpacing:'var(--tracking-eyebrow)',textTransform:'uppercase',
+          color:'var(--color-primary-light)'
+        }}>
+          {eyebrowMap[stepKey] ?? 'STEP 01 · ACCOUNT'}
+        </div>
+        <div style={{fontSize:'var(--text-xs)',color:'var(--color-fg-muted)',marginTop:2}}>
+          {stepIndex + 1} of {totalSteps}
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+// ── Progress bar ─────────────────────────────────────────────
+function ProgressBar({ fraction }) {
+  return (
+    <div style={{height:3,background:'var(--color-bg-surface-2)'}}>
+      <div style={{
+        height:'100%',background:'var(--color-primary)',
+        width:`${Math.round(fraction * 100)}%`,
+        transition:'width var(--duration-normal) var(--ease-out)'
+      }} />
+    </div>
+  );
+}
+
+// ── Step rail ────────────────────────────────────────────────
+function StepRail({ currentIndex, visibleSteps }) {
+  return (
+    <nav aria-label="Onboarding progress">
+      <ol style={{listStyle:'none',margin:0,padding:0}}>
+        {visibleSteps.map((step, idx) => {
+          const state = idx < currentIndex ? 'done' : idx === currentIndex ? 'current' : 'todo';
+          return (
+            <li key={step.key} style={{
+              display:'flex',alignItems:'flex-start',gap:14,
+              padding:'10px 0',position:'relative'
+            }}>
+              {/* Connector line */}
+              {idx < visibleSteps.length - 1 && (
+                <div style={{
+                  position:'absolute',left:13,top:38,bottom:0,width:2,
+                  background: state === 'done' ? 'var(--color-primary-border)' : 'var(--color-border-card)'
+                }} />
+              )}
+              {/* Numeral or check */}
+              <div style={{
+                width:28,height:28,borderRadius:'50%',
+                display:'flex',alignItems:'center',justifyContent:'center',
+                fontFamily:'var(--font-display)',fontSize:13,fontWeight:700,
+                flexShrink:0,zIndex:1,
+                ...(state === 'current' ? {
+                  background:'var(--color-primary)',color:'#0F0F0F',
+                  boxShadow:'0 0 0 4px rgba(34,197,94,0.15)'
+                } : state === 'done' ? {
+                  background:'transparent',
+                  border:'2px solid var(--color-primary-border)',
+                  color:'var(--color-primary-light)'
+                } : {
+                  background:'transparent',
+                  border:'2px solid var(--color-border-card)',
+                  color:'var(--color-fg-muted)'
+                })
+              }}
+                aria-current={state === 'current' ? 'step' : undefined}
+              >
+                {state === 'done' ? <IconCheck /> : idx + 1}
+              </div>
+              {/* Label group */}
+              <div style={{display:'flex',flexDirection:'column',gap:2,paddingTop:4}}>
+                <span style={{
+                  fontSize:'var(--text-sm)',fontWeight:500,
+                  color: state === 'todo' ? 'var(--color-fg-muted)' : 'var(--color-fg-default)'
+                }}>
+                  {step.label}
+                </span>
+                <span style={{
+                  fontSize:10,fontWeight:600,
+                  letterSpacing:'var(--tracking-eyebrow-tight)',
+                  textTransform:'uppercase',color:'var(--color-fg-muted)'
+                }}>
+                  {step.sublabel}
+                </span>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
+  );
+}
+
+// ── Credentials step ─────────────────────────────────────────
+function StepCredentials({ config }) {
+  const { email, password, showPw: initShowPw, emailError, passwordError, loading, lateError, emailAccepted } = config;
+  const [showPw, setShowPw] = useState(initShowPw);
+  const emailRef = useRef(null);
+
+  // Auto-focus email on late-error snap-back
+  useEffect(() => {
+    if (lateError && emailRef.current) {
+      emailRef.current.focus();
+    }
+  }, [lateError]);
+
+  return (
+    <div className="step-content" role="main">
+      <div className="step-eyebrow">STEP 01 · YOUR ACCOUNT</div>
+
+      <div className="step-headline-row">
+        <h1 className="step-headline">Create your account</h1>
+        <span className="pill-required">REQUIRED</span>
+      </div>
+
+      <p className="step-lede">
+        Enter your email and choose a password. Your account is created only once you complete onboarding — nothing is saved until you finish.
+      </p>
+
+      <form aria-label="Create your account" className="form-credentials" onSubmit={e => e.preventDefault()}>
+
+        {/* Late-error banner — only on snap-back from terms */}
+        {lateError && (
+          <div className="late-error-banner" role="alert" aria-live="assertive" id="cred-form-error">
+            <IconExclamationTriangle />
+            <p>This email is already registered. Enter a different email address to continue.</p>
+          </div>
+        )}
+
+        {/* Email field */}
+        <div className="field-group">
+          <label htmlFor="cred-email" className="field-label">Email address</label>
+          <input
+            ref={emailRef}
+            id="cred-email"
+            type="email"
+            autoComplete="email"
+            defaultValue={email}
+            placeholder="you@example.com"
+            aria-required="true"
+            aria-invalid={emailError ? 'true' : undefined}
+            aria-describedby={emailError ? 'cred-email-error' : undefined}
+            className={[
+              'field-input',
+              emailError ? 'error' : emailAccepted ? 'accepted' : ''
+            ].join(' ')}
+          />
+          {emailError && (
+            <div id="cred-email-error" className="field-error" role="alert">
+              <IconExclamationCircle />
+              {emailError}
+            </div>
+          )}
+        </div>
+
+        {/* Password field */}
+        <div className="field-group">
+          <label htmlFor="cred-password" className="field-label">Password</label>
+          <div className="password-wrapper">
+            <input
+              id="cred-password"
+              type={showPw ? 'text' : 'password'}
+              autoComplete="new-password"
+              defaultValue={password}
+              placeholder="••••••••"
+              aria-required="true"
+              aria-invalid={passwordError ? 'true' : undefined}
+              aria-describedby={passwordError
+                ? 'cred-password-error'
+                : 'cred-password-hint'}
+              className={['field-input', passwordError ? 'error' : ''].join(' ')}
+            />
+            <button
+              type="button"
+              className="show-hide-btn"
+              aria-label={showPw ? 'Hide password' : 'Show password'}
+              onClick={() => setShowPw(v => !v)}
+            >
+              {showPw ? <IconEyeSlash /> : <IconEye />}
+            </button>
+          </div>
+          {passwordError ? (
+            <div id="cred-password-error" className="field-error" role="alert">
+              <IconExclamationCircle />
+              {passwordError}
+            </div>
+          ) : (
+            <span id="cred-password-hint" className="field-helper">8–15 characters</span>
+          )}
+        </div>
+
+      </form>
+
+      {/* Next-step preview — shows visual continuity with the profile step */}
+      <div className="next-step-preview">
+        <div className="next-step-preview-label">What comes next</div>
+        <div className="next-step-cards">
+          <div className="next-step-card">
+            <div className="next-step-card-icon"><IconUser /></div>
+            <div>
+              <div className="next-step-card-name">Your profile</div>
+              <div className="next-step-card-meta">2 min · required</div>
+            </div>
+          </div>
+          <div className="next-step-card">
+            <div className="next-step-card-icon"><IconCreditCard /></div>
+            <div>
+              <div className="next-step-card-name">Membership</div>
+              <div className="next-step-card-meta">Optional</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Sticky footer ────────────────────────────────────────────
+function StickyFooter({ loading, lateError }) {
+  return (
+    <footer style={{
+      position:'sticky',bottom:0,height:88,
+      background:'var(--color-bg-surface-1)',
+      borderTop:'1px solid var(--color-border-card)',
+      display:'flex',alignItems:'center',justifyContent:'space-between',
+      padding:'0 48px',zIndex:100
+    }}>
+      <button
+        className="btn-ghost"
+        disabled
+        aria-disabled="true"
+        type="button"
+      >
+        Back
+      </button>
+      {/* Skip is not shown on credentials (required step) */}
+      <div />
+      <button
+        className={`btn-primary${loading ? ' loading' : ''}`}
+        disabled={loading}
+        type="button"
+        aria-describedby={lateError ? 'cred-form-error' : undefined}
+      >
+        {loading ? (
+          <>
+            <IconSpinner />
+            Creating account...
+          </>
+        ) : (
+          <>
+            Continue
+            <IconArrowRight />
+          </>
+        )}
+      </button>
+    </footer>
+  );
+}
+
+// ── Main app ─────────────────────────────────────────────────
+function App() {
+  const [uiState, setUiState] = useState('empty');
+  const config = STATE_CONFIGS[uiState] ?? STATE_CONFIGS.empty;
+
+  // Wire state-switcher buttons
+  useEffect(() => {
+    window.setState = (s) => setUiState(s);
+    // Mark active button
+    Object.keys(STATE_CONFIGS).forEach(k => {
+      const btn = document.getElementById('btn-' + k);
+      if (btn) btn.className = k === uiState ? 'active' : '';
+    });
+  });
+
+  const visibleSteps = ALL_STEPS.filter(s => s.key !== 'booking'); // prototype: no plan selected
+  const currentIndex = 0; // always credentials step in this reference
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',minHeight:'100vh'}}>
+      <MiniNav stepIndex={currentIndex} totalSteps={visibleSteps.length} />
+      <ProgressBar fraction={(currentIndex + 1) / visibleSteps.length} />
+
+      <div style={{
+        display:'grid',
+        gridTemplateColumns:'260px 1fr',
+        gap:48,
+        padding:'40px 48px',
+        flex:1,
+        paddingBottom:0
+      }}>
+        <StepRail currentIndex={currentIndex} visibleSteps={visibleSteps} />
+        <StepCredentials config={config} />
+      </div>
+
+      <StickyFooter loading={config.loading} lateError={config.lateError} />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

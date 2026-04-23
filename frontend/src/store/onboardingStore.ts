@@ -7,6 +7,14 @@ export interface OnboardingState {
   // Current navigation position
   currentStep: StepKey
 
+  // ─── Credentials (unified-signup) ─────────────────────────────
+  email: string                          // collected at credentials step
+  password: string                       // collected at credentials step; CLEARED on success
+  credentialsLateError: string | null    // null when clear; error banner message
+                                         // when terms-submission returned EMAIL_ALREADY_EXISTS
+  lastTouchedAt: number | null           // ms epoch — set on every credentials write;
+                                         // used for the 24h anonymous cleanup on bootstrap
+
   // Form data
   firstName: string
   lastName: string
@@ -37,6 +45,9 @@ export interface OnboardingState {
 
   // Actions
   setStep: (step: StepKey) => void
+  setCredentials: (email: string, password: string) => void
+  clearPassword: () => void
+  setCredentialsLateError: (message: string | null) => void
   setProfileFields: (fields: Partial<Pick<OnboardingState, 'firstName' | 'lastName' | 'phone' | 'dob'>>) => void
   setPreferences: (fields: Partial<Pick<OnboardingState, 'goals' | 'classTypes' | 'frequency'>>) => void
   setPlan: (planId: string | null, planName: string | null, priceInCents: number | null) => void
@@ -48,7 +59,11 @@ export interface OnboardingState {
 }
 
 const defaultState = {
-  currentStep: 'welcome' as StepKey,
+  currentStep: 'credentials' as StepKey,
+  email: '',
+  password: '',
+  credentialsLateError: null as string | null,
+  lastTouchedAt: null as number | null,
   firstName: '',
   lastName: '',
   phone: '',
@@ -99,6 +114,25 @@ export const useOnboardingStore = create<OnboardingState>()(
 
       setStep: (step) => set({ currentStep: step }),
 
+      setCredentials: (email, password) =>
+        set({ email, password, lastTouchedAt: Date.now() }),
+
+      clearPassword: () => {
+        // Zero out the password in the store; the persist middleware will write
+        // the empty value through to localStorage on the next set. We also
+        // explicitly drop the anonymous entry — once a user is authenticated,
+        // the key rotates to gf:onboarding:v1:{userId} and the anonymous draft
+        // is no longer relevant. SDD §4.2 step 3.
+        set({ password: '', lastTouchedAt: Date.now() })
+        try {
+          localStorage.removeItem('gf:onboarding:v1:anonymous')
+        } catch {
+          // localStorage may be disabled — non-fatal.
+        }
+      },
+
+      setCredentialsLateError: (message) => set({ credentialsLateError: message }),
+
       setProfileFields: (fields) => set(fields),
 
       setPreferences: (fields) => set(fields),
@@ -129,6 +163,11 @@ export const useOnboardingStore = create<OnboardingState>()(
       // the adapter). Required by the persist middleware API.
       name: 'gf:onboarding:v1',
       storage: lazyStorage,
+      // credentialsLateError is transient — never persisted. SDD §4.2.
+      partialize: (state) => {
+        const { credentialsLateError: _credentialsLateError, ...rest } = state
+        return rest as OnboardingState
+      },
     }
   )
 )

@@ -50,7 +50,7 @@ export function PulseNav({ authed, userName, landing }: Props) {
                 Log in
               </Link>
               <Link
-                to="/register"
+                to="/onboarding"
                 className="whitespace-nowrap rounded-lg bg-green-500 px-4 py-2 text-[13px] font-bold text-[#0F0F0F] transition-all duration-[160ms] hover:brightness-[1.08]"
               >
                 Join GymFlow
@@ -96,7 +96,7 @@ export function PulseNav({ authed, userName, landing }: Props) {
                 Log in
               </Link>
               <Link
-                to="/register"
+                to="/onboarding"
                 className="whitespace-nowrap rounded-lg bg-green-500 px-4 py-2 text-[13px] font-bold text-[#0F0F0F] transition-all duration-[160ms] hover:brightness-[1.08]"
               >
                 Join GymFlow
