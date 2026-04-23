@@ -1,0 +1,157 @@
+/* GymFlow-themed react-day-picker.
+ * Overrides react-day-picker v9's built-in CSS custom properties and element
+ * classes so the calendar matches the dark / bold fitness DNA defined in
+ * docs/design-system/README.md and docs/design-system/colors_and_type.css.
+ */
+
+.gf-date-popover {
+  /* v9 CSS variable overrides */
+  --rdp-accent-color: var(--color-primary);
+  --rdp-accent-background-color: var(--color-primary-tint);
+  --rdp-day_button-border-radius: 6px;
+  --rdp-day-height: 38px;
+  --rdp-day-width: 38px;
+  --rdp-day_button-height: 34px;
+  --rdp-day_button-width: 34px;
+  --rdp-selected-border: none;
+  --rdp-today-color: var(--color-primary-light);
+  --rdp-outside-opacity: 0.35;
+  --rdp-disabled-opacity: 0.25;
+  --rdp-nav_button-height: 28px;
+  --rdp-nav_button-width: 28px;
+  color: var(--color-fg-default);
+}
+
+.gf-date-popover .rdp-root {
+  margin: 0;
+}
+
+.gf-date-popover .rdp-months {
+  display: flex;
+  gap: 0;
+}
+
+.gf-date-popover .rdp-month_caption,
+.gf-date-popover .rdp-caption_label {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--color-fg-default);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.gf-date-popover .rdp-nav {
+  gap: 6px;
+}
+
+.gf-date-popover .rdp-button_previous,
+.gf-date-popover .rdp-button_next {
+  color: var(--color-fg-muted);
+  background: transparent;
+  border: 1px solid var(--color-border-card);
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.gf-date-popover .rdp-button_previous:hover,
+.gf-date-popover .rdp-button_next:hover {
+  color: var(--color-fg-default);
+  border-color: var(--color-primary);
+  background: var(--color-primary-tint);
+}
+.gf-date-popover .rdp-button_previous:focus-visible,
+.gf-date-popover .rdp-button_next:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(34,197,94,0.35);
+}
+
+.gf-date-popover .rdp-dropdowns {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.gf-date-popover .rdp-dropdown,
+.gf-date-popover .rdp-months_dropdown,
+.gf-date-popover .rdp-years_dropdown {
+  background: var(--color-bg-surface-2);
+  color: var(--color-fg-default);
+  border: 1px solid var(--color-border-card);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.gf-date-popover .rdp-dropdown:hover,
+.gf-date-popover .rdp-months_dropdown:hover,
+.gf-date-popover .rdp-years_dropdown:hover {
+  border-color: var(--color-primary);
+}
+.gf-date-popover .rdp-dropdown option,
+.gf-date-popover .rdp-months_dropdown option,
+.gf-date-popover .rdp-years_dropdown option {
+  background: var(--color-bg-surface-2);
+  color: var(--color-fg-default);
+}
+
+.gf-date-popover .rdp-weekday {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--color-fg-metadata, var(--color-fg-muted));
+  padding: 6px 0 8px;
+}
+
+.gf-date-popover .rdp-day {
+  padding: 2px;
+}
+
+.gf-date-popover .rdp-day_button {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-fg-default);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.gf-date-popover .rdp-day_button:hover:not([disabled]) {
+  background: var(--color-primary-tint);
+  border-color: var(--color-primary-border, var(--color-border-card));
+}
+.gf-date-popover .rdp-day_button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(34,197,94,0.45);
+}
+
+.gf-date-popover .rdp-today .rdp-day_button {
+  color: var(--color-primary-light);
+  border-color: var(--color-primary-border, rgba(34,197,94,0.3));
+}
+
+.gf-date-popover .rdp-selected .rdp-day_button,
+.gf-date-popover .rdp-selected .rdp-day_button:hover {
+  background: var(--color-primary);
+  color: #0F0F0F;
+  border-color: var(--color-primary);
+  font-weight: 700;
+}
+
+.gf-date-popover .rdp-outside .rdp-day_button {
+  color: var(--color-fg-muted);
+}
+
+.gf-date-popover .rdp-disabled .rdp-day_button {
+  cursor: not-allowed;
+  color: var(--color-fg-muted);
+}

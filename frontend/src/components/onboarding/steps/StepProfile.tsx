@@ -1,8 +1,9 @@
-import { useRef, useState, useId, forwardRef, useImperativeHandle } from 'react'
+import { useRef, useState, useId, useMemo, forwardRef, useImperativeHandle } from 'react'
 import { ExclamationCircleIcon } from '@heroicons/react/24/outline'
 import { useOnboardingStore } from '../../../store/onboardingStore'
 import { useAuthStore } from '../../../store/authStore'
 import { updateMyProfile, uploadMyProfilePhoto } from '../../../api/profile'
+import { DateField } from '../../ui/DateField'
 
 export interface StepProfileHandle {
   submit: () => Promise<boolean>
@@ -40,6 +41,14 @@ export const StepProfile = forwardRef<StepProfileHandle, object>((_props, ref) =
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [apiError, setApiError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Cap DOB picker at today − 16y so the calendar can't even show invalid
+  // future dates. Runtime validation below still fires on direct store edits.
+  const dobMaxIso = useMemo(() => {
+    const d = new Date()
+    d.setFullYear(d.getFullYear() - 16)
+    return d.toISOString().slice(0, 10)
+  }, [])
 
   useImperativeHandle(ref, () => ({
     async submit(): Promise<boolean> {
@@ -329,21 +338,21 @@ export const StepProfile = forwardRef<StepProfileHandle, object>((_props, ref) =
           <label htmlFor={dobId} className="text-sm font-medium" style={{ color: 'var(--color-fg-label)' }}>
             Date of birth <span style={{ color: 'var(--color-error-fg)' }}>*</span>
           </label>
-          <input
+          <DateField
             id={dobId}
-            type="date"
             value={dob}
-            onChange={e => {
-              setDob(e.target.value)
-              store.setProfileFields({ firstName, lastName, phone, dob: e.target.value })
+            onChange={next => {
+              setDob(next)
+              store.setProfileFields({ firstName, lastName, phone, dob: next })
             }}
+            max={dobMaxIso}
             required
-            aria-required="true"
-            className={fieldClass}
-            style={{ ...fieldStyle, colorScheme: 'dark' }}
+            aria-required
+            aria-invalid={!!errors.dob}
+            aria-describedby={errors.dob ? `${dobId}-error` : undefined}
           />
           {errors.dob && (
-            <p className="text-xs" style={{ color: 'var(--color-error-fg)' }}>{errors.dob}</p>
+            <p id={`${dobId}-error`} className="text-xs" style={{ color: 'var(--color-error-fg)' }}>{errors.dob}</p>
           )}
         </div>
       </div>
