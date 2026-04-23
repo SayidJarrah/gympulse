@@ -28,7 +28,7 @@ export function MemberNav() {
   const handleLogout = () => {
     resetProfile()
     clearAuth()
-    navigate('/login')
+    navigate('/')
   }
 
   const fullName = [profile?.firstName, profile?.lastName].filter(Boolean).join(' ') || user?.email.split('@')[0] || ''
