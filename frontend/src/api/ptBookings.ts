@@ -43,12 +43,20 @@ export async function getPtAvailability(
 }
 
 /**
- * Fetch trainer PT availability without constraining to a date range.
- * Used in the onboarding booking step where the member just browses open slots.
+ * Fetch trainer PT availability for a 14-day window starting today.
+ * Used in the onboarding booking step where the member browses open slots.
+ * The backend clamps the window to 14 days regardless, so passing today + 14
+ * as end is equivalent to "unbounded within the allowed horizon."
  */
 export async function getTrainerPtAvailabilityUnbounded(trainerId: string): Promise<TrainerAvailability> {
+  const today = new Date()
+  const endDate = new Date(today)
+  endDate.setDate(endDate.getDate() + 14)
+  const fmt = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
   const response = await axiosInstance.get<TrainerAvailability>(
-    `/trainers/${trainerId}/pt-availability`
+    `/trainers/${trainerId}/pt-availability`,
+    { params: { start: fmt(today), end: fmt(endDate) } }
   )
   return response.data
 }

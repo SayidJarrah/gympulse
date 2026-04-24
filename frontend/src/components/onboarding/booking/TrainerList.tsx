@@ -136,7 +136,7 @@ export function TrainerList({ selectedTrainerId, selectedSlot, onSelect, onClear
                     slots={availability?.days.flatMap(d =>
                       Object.entries(d.slots)
                         .filter(([, status]) => status === 'available')
-                        .map(([hour]) => ({ slotStart: `${d.date}T${String(hour).padStart(2, '0')}:00:00` }))
+                        .map(([hour]) => ({ slotStart: `${d.date}T${String(hour).padStart(2, '0')}:00:00+00:00` }))
                     ) ?? []}
                     selectedSlot={isSelected ? selectedSlot : null}
                     onSelect={slot => {
