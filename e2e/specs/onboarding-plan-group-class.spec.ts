@@ -186,9 +186,15 @@ test('terms-early reorder: register fires at terms, booking step runs authentica
   await page.getByRole('button', { name: /select plan/i }).first().click();
   await expect(page.getByRole('button', { name: /^selected$/i }).first()).toBeVisible();
 
-  // Wire up plan-pending response waiter before clicking Continue
+  // Wire both waiters BEFORE clicking Continue: plan-pending POST fires on the
+  // click, advances to the booking step, and StepBooking mounts and fires
+  // /class-schedule on mount. Registering the class-schedule waiter after the
+  // booking heading is visible races with the already-resolved response.
   const planPendingResponsePromise = page.waitForResponse(
     r => r.url().includes('/onboarding/plan-pending') && r.status() === 201,
+  );
+  const classScheduleResponsePromise = page.waitForResponse(
+    r => r.url().includes('/class-schedule') && r.status() === 200,
   );
 
   await page.getByRole('button', { name: /^continue/i }).click();
@@ -201,9 +207,6 @@ test('terms-early reorder: register fires at terms, booking step runs authentica
   ).toBeVisible();
 
   // GET /api/v1/class-schedule must return 200 (user is now authenticated)
-  const classScheduleResponsePromise = page.waitForResponse(
-    r => r.url().includes('/class-schedule') && r.status() === 200,
-  );
   const classScheduleResponse = await classScheduleResponsePromise;
   expect(classScheduleResponse.status()).toBe(200);
 
