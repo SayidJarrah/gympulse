@@ -165,7 +165,7 @@ The `.worktrees/` directory is already in `.gitignore`.
 
 ## Commands
 
-Three pipeline commands (`/brief`, `/deliver`, `/run`). Everything else collapsed into them.
+Pipeline commands (`/brief`, `/deliver`, `/run`, `/fix-tests`). Everything else collapsed into them.
 
 | Command | When to use |
 |---------|-------------|
@@ -175,6 +175,7 @@ Three pipeline commands (`/brief`, `/deliver`, `/run`). Everything else collapse
 | `/deliver --redesign {slug}` | UI/UX redesign — handoff at `{slug}-redesign`, no tester, manual-QA checklist |
 | `/run` | Start the **dev stack** (manual playground with demo data) |
 | `/run e2e` | Start the **E2E stack** with `--build` and run the Playwright suite |
+| `/fix-tests [spec?]` | Scoped fix loop for failing Playwright specs — no BA/SA/designer/reviewer, dev only touches ≤3 files, rebuilds container (Lesson 7), runs regression. Use after `/run e2e` reports failures and the context is narrower than a feature. |
 
 ## API Conventions
 - Base URL: `/api/v1`
