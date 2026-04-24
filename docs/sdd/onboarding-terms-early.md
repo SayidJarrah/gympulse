@@ -453,6 +453,27 @@ post-terms decision tree above does not actually depend on those fields
 (it depends on `goals`/`classTypes`/`frequency`/`selectedPlanId`/
 `completedBookingId`, all already in the persisted store).
 
+**Decision 21 amendment — server-side membership hydration for fresh browser contexts:**
+The local-store decision tree breaks when a user abandons mid-wizard (after picking a
+plan) and re-enters the wizard from a fresh browser context (cleared localStorage or
+different device). In that case, `selectedPlanId` and `goals`/`classTypes`/`frequency`
+are all at default empty values, causing rule 4 to fire and land the user at
+`'preferences'` instead of `'booking'`.
+
+Fix: `OnboardingPage.tsx` now calls `GET /memberships/me` in parallel with
+`GET /profile/me` (both inside `Promise.all`). If the membership call succeeds and the
+returned `planId` is non-null while the local store's `selectedPlanId` is null AND
+`completedBookingId` is null, the page sets `selectedPlanId` in the store and jumps
+directly to `'booking'` — bypassing `computeResumeStep` for this case. The `return`
+is taken immediately after the store writes so `computeResumeStep` is not called and
+cannot re-apply rule 4. This shortcut fires only when:
+1. User is authenticated
+2. Server has an ACTIVE membership (plan selected in a prior session)
+3. No `selectedPlanId` locally (fresh context)
+4. No `completedBookingId` locally (not yet at done)
+
+All other paths still go through `computeResumeStep` unchanged.
+
 ### 4.5 Error mapping
 
 **N/A — no new error codes.**

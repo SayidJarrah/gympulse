@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useOnboardingStore } from '../../store/onboardingStore'
 import { useAuthStore } from '../../store/authStore'
 import { getMyProfile } from '../../api/profile'
+import { getMyMembership } from '../../api/memberships'
 import { OnboardingShell } from '../../components/onboarding/OnboardingShell'
 import type { StepKey } from '../../types/onboarding'
 
@@ -84,10 +85,17 @@ export function OnboardingPage() {
     }
 
     if (isAuthenticated) {
-      // Hydrate profile data into the store so step components show existing values.
-      // If the fetch fails we just continue — step components load their own data.
-      getMyProfile()
-        .then(profile => {
+      // Hydrate profile data and server-side membership status, then compute the
+      // resume step. Membership hydration is needed for returning users in a fresh
+      // browser context where the local store is empty (selectedPlanId = null) but
+      // the server already has an ACTIVE membership — without this check, the
+      // decision tree falls through to rule 4 (preferences) instead of rule 6
+      // (booking). See SDD onboarding-terms-early §4.4 Decision 21 amendment.
+      Promise.all([
+        getMyProfile().catch(() => null),
+        getMyMembership().catch(() => null),
+      ]).then(([profile, membership]) => {
+        if (profile) {
           // Sync first/last name from server if not yet set in the onboarding store
           if (!useOnboardingStore.getState().firstName && profile.firstName) {
             useOnboardingStore.getState().setProfileFields({
@@ -101,19 +109,43 @@ export function OnboardingPage() {
           if (profile.onboardingCompletedAt) {
             setOnboardingCompletedAt(profile.onboardingCompletedAt)
           }
-        })
-        .catch(() => {
-          // Non-fatal — the step components will handle their own loads
-        })
-    }
+        }
 
-    // Restore the correct step based on persisted data
-    const resumeStep = computeResumeStep({
-      isAuthenticated,
-      store: useOnboardingStore.getState(),
-    })
-    if (resumeStep !== useOnboardingStore.getState().currentStep) {
-      useOnboardingStore.getState().setStep(resumeStep)
+        // Server-side membership hydration: if an ACTIVE membership exists on the
+        // server but selectedPlanId is not set locally (fresh context / cleared
+        // localStorage), the user has already passed preferences + membership. Jump
+        // directly to booking rather than re-running the local-state decision tree,
+        // which would incorrectly re-route to preferences (rule 4) because
+        // goals/classTypes/frequency are empty in a fresh store. Only apply when
+        // completedBookingId is also absent — if a booking was recorded the user
+        // belongs at 'done' which computeResumeStep handles correctly from store.
+        const freshStore = useOnboardingStore.getState()
+        if (membership?.planId && !freshStore.selectedPlanId && !freshStore.completedBookingId) {
+          useOnboardingStore.getState().setPlan(membership.planId, null, null)
+          if (freshStore.currentStep !== 'booking') {
+            useOnboardingStore.getState().setStep('booking')
+          }
+          return
+        }
+
+        // Restore the correct step based on persisted + server-hydrated data.
+        const resumeStep = computeResumeStep({
+          isAuthenticated,
+          store: useOnboardingStore.getState(),
+        })
+        if (resumeStep !== useOnboardingStore.getState().currentStep) {
+          useOnboardingStore.getState().setStep(resumeStep)
+        }
+      })
+    } else {
+      // Unauthenticated path — no async data needed; compute step synchronously.
+      const resumeStep = computeResumeStep({
+        isAuthenticated,
+        store: useOnboardingStore.getState(),
+      })
+      if (resumeStep !== useOnboardingStore.getState().currentStep) {
+        useOnboardingStore.getState().setStep(resumeStep)
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
