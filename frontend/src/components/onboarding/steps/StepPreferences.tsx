@@ -86,6 +86,7 @@ export const StepPreferences = forwardRef<StepPreferencesHandle, object>((_props
             fitnessGoals: goals,
             preferredClassTypes: classTypes,
             emergencyContact: null,
+            bio: null,
           })
         } catch {
           // FR-4.5: if PATCH fails, show error and do not advance

@@ -221,6 +221,7 @@ export function UserProfileForm({
         fitnessGoals: values.fitnessGoals,
         preferredClassTypes: values.preferredClassTypes,
         emergencyContact,
+        bio: profile.bio,
       })
 
       if (!queuedPhoto) {

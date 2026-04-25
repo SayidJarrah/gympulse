@@ -37,6 +37,7 @@ const populatedProfile: UserProfile = {
   fitnessGoals: ['Build strength', 'Improve mobility'],
   preferredClassTypes: ['Yoga', 'HIIT'],
   emergencyContact: null,
+  bio: null,
   hasProfilePhoto: false,
   profilePhotoUrl: null,
   onboardingCompletedAt: null,
