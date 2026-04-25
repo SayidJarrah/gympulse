@@ -1,8 +1,8 @@
 package com.gymflow.controller
 
 import com.gymflow.dto.OnboardingCompleteResponse
-import com.gymflow.dto.OnboardingPlanPendingRequest
-import com.gymflow.dto.OnboardingPlanPendingResponse
+import com.gymflow.dto.OnboardingMembershipRequest
+import com.gymflow.dto.OnboardingMembershipResponse
 import com.gymflow.service.OnboardingService
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
@@ -21,15 +21,15 @@ class OnboardingController(
     private val onboardingService: OnboardingService
 ) {
 
-    @PostMapping("/plan-pending")
+    @PostMapping("/membership")
     @PreAuthorize("hasRole('USER')")
-    fun createPlanPending(
+    fun createMembership(
         authentication: Authentication,
-        @Valid @RequestBody request: OnboardingPlanPendingRequest,
-    ): ResponseEntity<OnboardingPlanPendingResponse> {
+        @Valid @RequestBody request: OnboardingMembershipRequest,
+    ): ResponseEntity<OnboardingMembershipResponse> {
         val userId = UUID.fromString(authentication.name)
         return ResponseEntity.status(HttpStatus.CREATED)
-            .body(onboardingService.createPlanPending(userId, request.planId))
+            .body(onboardingService.createMembership(userId, request.planId))
     }
 
     @PostMapping("/complete")

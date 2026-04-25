@@ -2,7 +2,7 @@ package com.gymflow.service
 
 import com.gymflow.domain.UserMembership
 import com.gymflow.dto.OnboardingCompleteResponse
-import com.gymflow.dto.OnboardingPlanPendingResponse
+import com.gymflow.dto.OnboardingMembershipResponse
 import com.gymflow.repository.MembershipPlanRepository
 import com.gymflow.repository.UserMembershipRepository
 import com.gymflow.repository.UserProfileRepository
@@ -20,7 +20,7 @@ class OnboardingService(
 ) {
 
     @Transactional
-    fun createPlanPending(userId: UUID, planId: UUID): OnboardingPlanPendingResponse {
+    fun createMembership(userId: UUID, planId: UUID): OnboardingMembershipResponse {
         val plan = membershipPlanRepository.findById(planId)
             .orElseThrow { PlanNotFoundException("Plan not found: $planId") }
 
@@ -38,7 +38,7 @@ class OnboardingService(
         )
         val saved = userMembershipRepository.save(membership)
 
-        return OnboardingPlanPendingResponse(
+        return OnboardingMembershipResponse(
             membershipId = saved.id,
             planId = plan.id,
             planName = plan.name,

@@ -26,11 +26,11 @@ class OnboardingServiceTest {
     )
 
     // -----------------------------------------------------------------------
-    // createPlanPending — SDD §3 / Decision 25 contract
+    // createMembership — SDD §3 / Decision 25 contract
     // -----------------------------------------------------------------------
 
     @Test
-    fun `createPlanPending - persists membership row with status ACTIVE`() {
+    fun `createMembership - persists membership row with status ACTIVE`() {
         val plan = buildPlan(durationDays = 30)
         val userId = UUID.randomUUID()
         val savedSlot = slot<UserMembership>()
@@ -38,14 +38,14 @@ class OnboardingServiceTest {
         every { membershipPlanRepository.findById(plan.id) } returns Optional.of(plan)
         every { userMembershipRepository.save(capture(savedSlot)) } answers { savedSlot.captured }
 
-        service.createPlanPending(userId, plan.id)
+        service.createMembership(userId, plan.id)
 
         assertEquals("ACTIVE", savedSlot.captured.status)
         verify(exactly = 1) { userMembershipRepository.save(any()) }
     }
 
     @Test
-    fun `createPlanPending - sets endDate to startDate plus plan durationDays`() {
+    fun `createMembership - sets endDate to startDate plus plan durationDays`() {
         val plan = buildPlan(durationDays = 90)
         val userId = UUID.randomUUID()
         val savedSlot = slot<UserMembership>()
@@ -53,7 +53,7 @@ class OnboardingServiceTest {
         every { membershipPlanRepository.findById(plan.id) } returns Optional.of(plan)
         every { userMembershipRepository.save(capture(savedSlot)) } answers { savedSlot.captured }
 
-        service.createPlanPending(userId, plan.id)
+        service.createMembership(userId, plan.id)
 
         val today = LocalDate.now()
         assertEquals(today, savedSlot.captured.startDate)
@@ -61,14 +61,14 @@ class OnboardingServiceTest {
     }
 
     @Test
-    fun `createPlanPending - response status is ACTIVE`() {
+    fun `createMembership - response status is ACTIVE`() {
         val plan = buildPlan()
         val userId = UUID.randomUUID()
 
         every { membershipPlanRepository.findById(plan.id) } returns Optional.of(plan)
         every { userMembershipRepository.save(any()) } answers { firstArg() }
 
-        val response = service.createPlanPending(userId, plan.id)
+        val response = service.createMembership(userId, plan.id)
 
         assertEquals("ACTIVE", response.status)
         assertEquals(plan.id, response.planId)
@@ -76,7 +76,7 @@ class OnboardingServiceTest {
     }
 
     @Test
-    fun `createPlanPending - re-entering with a different plan deletes the prior ACTIVE row first`() {
+    fun `createMembership - re-entering with a different plan deletes the prior ACTIVE row first`() {
         val firstPlan = buildPlan(name = "Monthly Basic", durationDays = 30)
         val secondPlan = buildPlan(name = "Annual Pro", durationDays = 365)
         val userId = UUID.randomUUID()
@@ -85,8 +85,8 @@ class OnboardingServiceTest {
         every { membershipPlanRepository.findById(secondPlan.id) } returns Optional.of(secondPlan)
         every { userMembershipRepository.save(any()) } answers { firstArg() }
 
-        service.createPlanPending(userId, firstPlan.id)
-        service.createPlanPending(userId, secondPlan.id)
+        service.createMembership(userId, firstPlan.id)
+        service.createMembership(userId, secondPlan.id)
 
         // Defensive pre-delete must run on each call against the now-ACTIVE status
         // (regression for the retargeted deleteByUserIdAndStatus from PLAN_PENDING -> ACTIVE).
