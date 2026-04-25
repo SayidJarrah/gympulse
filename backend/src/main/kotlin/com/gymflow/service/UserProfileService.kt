@@ -48,6 +48,7 @@ class UserProfileService(
             InvalidPreferredClassTypesException("Preferred class types are invalid")
         }
         val (ecName, ecPhone) = validateEmergencyContact(request.emergencyContact)
+        val bio = validateBio(request.bio)
 
         val profile = userProfileRepository.findById(userId).orElse(
             UserProfile(userId = userId)
@@ -61,6 +62,7 @@ class UserProfileService(
         profile.preferredClassTypes = preferredClassTypes.toMutableList()
         profile.emergencyContactName = ecName
         profile.emergencyContactPhone = ecPhone
+        profile.bio = bio
 
         val saved = userProfileRepository.save(profile)
         return toResponse(user, saved)
@@ -165,6 +167,43 @@ class UserProfileService(
         }
 
         return Pair(name, phone)
+    }
+
+    /**
+     * Validates and normalises the bio field.
+     * - null or blank after trim → stored as null (clears bio)
+     * - length > 500 after trim → INVALID_BIO_FORMAT
+     * - contains HTML tags → INVALID_BIO_FORMAT
+     * - contains markdown link/image syntax → INVALID_BIO_FORMAT
+     * - contains control characters other than \n and \t → INVALID_BIO_FORMAT
+     */
+    private fun validateBio(value: String?): String? {
+        if (value == null) {
+            return null
+        }
+
+        val trimmed = value.trim()
+        if (trimmed.isEmpty()) {
+            return null
+        }
+
+        if (trimmed.length > 500) {
+            throw InvalidBioFormatException("Bio must be 500 characters or fewer")
+        }
+
+        if (HTML_TAG_REGEX.containsMatchIn(trimmed)) {
+            throw InvalidBioFormatException("Bio must not contain HTML tags")
+        }
+
+        if (MARKDOWN_LINK_REGEX.containsMatchIn(trimmed)) {
+            throw InvalidBioFormatException("Bio must not contain markdown links or images")
+        }
+
+        if (CONTROL_CHAR_REGEX.containsMatchIn(trimmed)) {
+            throw InvalidBioFormatException("Bio must not contain special control characters")
+        }
+
+        return trimmed
     }
 
     /**
@@ -297,6 +336,7 @@ class UserProfileService(
                 fitnessGoals = emptyList(),
                 preferredClassTypes = emptyList(),
                 emergencyContact = null,
+                bio = null,
                 hasProfilePhoto = false,
                 profilePhotoUrl = null,
                 onboardingCompletedAt = null,
@@ -325,6 +365,7 @@ class UserProfileService(
             fitnessGoals = profile.fitnessGoals.toList(),
             preferredClassTypes = profile.preferredClassTypes.toList(),
             emergencyContact = emergencyContact,
+            bio = profile.bio,
             hasProfilePhoto = hasProfilePhoto,
             profilePhotoUrl = if (hasProfilePhoto) "/api/v1/profile/me/photo" else null,
             onboardingCompletedAt = profile.onboardingCompletedAt,
@@ -341,6 +382,9 @@ class UserProfileService(
 
     companion object {
         private val PHONE_REGEX = Regex("^\\+[1-9]\\d{7,19}$")
+        private val HTML_TAG_REGEX = Regex("<[^>]+>")
+        private val MARKDOWN_LINK_REGEX = Regex("!?\\[[^\\]]*\\]\\([^)]*\\)")
+        private val CONTROL_CHAR_REGEX = Regex("[\\u0000-\\u0008\\u000B-\\u001F\\u007F]")
     }
 }
 
@@ -352,3 +396,4 @@ class InvalidDateOfBirthException(message: String) : RuntimeException(message)
 class InvalidFitnessGoalsException(message: String) : RuntimeException(message)
 class InvalidPreferredClassTypesException(message: String) : RuntimeException(message)
 class InvalidEmergencyContactException(message: String) : RuntimeException(message)
+class InvalidBioFormatException(message: String) : RuntimeException(message)

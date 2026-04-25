@@ -19,6 +19,7 @@ data class UserProfileResponse(
     val fitnessGoals: List<String>,
     val preferredClassTypes: List<String>,
     val emergencyContact: EmergencyContactDto?,
+    val bio: String?,
     val hasProfilePhoto: Boolean,
     val profilePhotoUrl: String?,
     val onboardingCompletedAt: OffsetDateTime?,

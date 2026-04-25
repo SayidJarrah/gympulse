@@ -43,6 +43,9 @@ data class UserProfile(
     @Column(name = "emergency_contact_phone")
     var emergencyContactPhone: String? = null,
 
+    @Column(name = "bio", columnDefinition = "TEXT")
+    var bio: String? = null,
+
     @Column(name = "onboarding_completed_at")
     var onboardingCompletedAt: OffsetDateTime? = null,
 

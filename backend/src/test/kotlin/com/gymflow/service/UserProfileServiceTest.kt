@@ -168,6 +168,134 @@ class UserProfileServiceTest {
         }
     }
 
+    // ─── Bio validation tests ────────────────────────────────────────────────
+
+    @Test
+    fun `updateMyProfile accepts null bio and stores null`() {
+        val user = buildUser()
+        val savedSlot = slot<UserProfile>()
+
+        every { userRepository.findById(user.id) } returns Optional.of(user)
+        every { userProfileRepository.findById(user.id) } returns Optional.empty()
+        every { userProfileRepository.save(capture(savedSlot)) } answers { savedSlot.captured }
+
+        service.updateMyProfile(user.id, UpdateUserProfileRequest(bio = null))
+
+        assertNull(savedSlot.captured.bio)
+    }
+
+    @Test
+    fun `updateMyProfile stores null when bio is empty string`() {
+        val user = buildUser()
+        val savedSlot = slot<UserProfile>()
+
+        every { userRepository.findById(user.id) } returns Optional.of(user)
+        every { userProfileRepository.findById(user.id) } returns Optional.empty()
+        every { userProfileRepository.save(capture(savedSlot)) } answers { savedSlot.captured }
+
+        service.updateMyProfile(user.id, UpdateUserProfileRequest(bio = "   "))
+
+        assertNull(savedSlot.captured.bio)
+    }
+
+    @Test
+    fun `updateMyProfile accepts normal bio text`() {
+        val user = buildUser()
+        val savedSlot = slot<UserProfile>()
+
+        every { userRepository.findById(user.id) } returns Optional.of(user)
+        every { userProfileRepository.findById(user.id) } returns Optional.empty()
+        every { userProfileRepository.save(capture(savedSlot)) } answers { savedSlot.captured }
+
+        service.updateMyProfile(user.id, UpdateUserProfileRequest(bio = "I love fitness!"))
+
+        assertEquals("I love fitness!", savedSlot.captured.bio)
+    }
+
+    @Test
+    fun `updateMyProfile trims surrounding whitespace from bio`() {
+        val user = buildUser()
+        val savedSlot = slot<UserProfile>()
+
+        every { userRepository.findById(user.id) } returns Optional.of(user)
+        every { userProfileRepository.findById(user.id) } returns Optional.empty()
+        every { userProfileRepository.save(capture(savedSlot)) } answers { savedSlot.captured }
+
+        service.updateMyProfile(user.id, UpdateUserProfileRequest(bio = "  trim me  "))
+
+        assertEquals("trim me", savedSlot.captured.bio)
+    }
+
+    @Test
+    fun `updateMyProfile accepts bio with newline and tab`() {
+        val user = buildUser()
+        val savedSlot = slot<UserProfile>()
+
+        every { userRepository.findById(user.id) } returns Optional.of(user)
+        every { userProfileRepository.findById(user.id) } returns Optional.empty()
+        every { userProfileRepository.save(capture(savedSlot)) } answers { savedSlot.captured }
+
+        service.updateMyProfile(user.id, UpdateUserProfileRequest(bio = "Line one\nLine two\tTabbed"))
+
+        assertEquals("Line one\nLine two\tTabbed", savedSlot.captured.bio)
+    }
+
+    @Test
+    fun `updateMyProfile rejects bio exceeding 500 characters`() {
+        val user = buildUser()
+
+        every { userRepository.findById(user.id) } returns Optional.of(user)
+
+        assertThrows<InvalidBioFormatException> {
+            service.updateMyProfile(user.id, UpdateUserProfileRequest(bio = "a".repeat(501)))
+        }
+    }
+
+    @Test
+    fun `updateMyProfile rejects bio with HTML tags`() {
+        val user = buildUser()
+
+        every { userRepository.findById(user.id) } returns Optional.of(user)
+
+        assertThrows<InvalidBioFormatException> {
+            service.updateMyProfile(user.id, UpdateUserProfileRequest(bio = "Hello <script>alert(1)</script>"))
+        }
+    }
+
+    @Test
+    fun `updateMyProfile rejects bio with markdown link syntax`() {
+        val user = buildUser()
+
+        every { userRepository.findById(user.id) } returns Optional.of(user)
+
+        assertThrows<InvalidBioFormatException> {
+            service.updateMyProfile(user.id, UpdateUserProfileRequest(bio = "Check [this](https://example.com)"))
+        }
+    }
+
+    @Test
+    fun `updateMyProfile rejects bio with markdown image syntax`() {
+        val user = buildUser()
+
+        every { userRepository.findById(user.id) } returns Optional.of(user)
+
+        assertThrows<InvalidBioFormatException> {
+            service.updateMyProfile(user.id, UpdateUserProfileRequest(bio = "See ![logo](https://example.com/img.png)"))
+        }
+    }
+
+    @Test
+    fun `updateMyProfile rejects bio with control characters other than newline and tab`() {
+        val user = buildUser()
+
+        every { userRepository.findById(user.id) } returns Optional.of(user)
+
+        assertThrows<InvalidBioFormatException> {
+            //  is BEL — a control character that should be rejected
+            service.updateMyProfile(user.id, UpdateUserProfileRequest(bio = "Badchar"))
+        }
+    }
+
     private fun buildUser(
         id: UUID = UUID.randomUUID(),
         email: String = "alice@example.com",
