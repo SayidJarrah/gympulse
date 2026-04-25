@@ -12,11 +12,11 @@ see `docs/architecture.md`.
 ## Auth — `auth`
 
 **Status:** active
-**Owner of:** `/login`, `/register` (legacy redirect to `/onboarding`); `authStore`; `frontend/src/pages/auth/`, `frontend/src/components/auth/`
+**Owner of:** `/login` page; `/auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout` endpoint contracts (no user-facing register page — `/register` is a permanent redirect to `/onboarding`; the registration surface lives in `onboarding`); `authStore`; `frontend/src/pages/auth/LoginPage.tsx`, `frontend/src/components/auth/`
 **Depends on:** —
 
 ### What user can do
-- A guest can register with email + password and receive auth tokens.
+- A guest navigates from `/login` to the onboarding wizard via the "Register" link; account creation happens inside `onboarding` and is owned there.
 - A guest can log in with email + password and receive an access token + refresh token.
 - An authenticated user can exchange a refresh token for a new access + refresh token (token rotation).
 - An authenticated user can log out, invalidating the submitted refresh token.
@@ -34,8 +34,7 @@ see `docs/architecture.md`.
 - The register endpoint also creates a `user_profiles` row and returns the same shape as login (tokens + expiresIn + hasActiveMembership), so the onboarding flow can authenticate immediately. (See `onboarding`.)
 
 ### Screens
-- Login page — email + password form, error banner on bad credentials.
-- Register page — kept only as a permanent redirect to `/onboarding`; the wizard's credentials step is the new signup surface.
+- Login page — email + password form, error banner on bad credentials. (No register screen — the legacy `/register` route is a permanent redirect to `/onboarding`; the wizard owns credentials capture.)
 
 ### Out of scope (deferred)
 - Password reset / forgot-password flow.
@@ -47,6 +46,7 @@ see `docs/architecture.md`.
 
 ### History
 - 2026-04-25 — initial (extracted from `docs/prd/auth.md`, `docs/sdd/auth.md`).
+- 2026-04-25 — narrowed: registration UI surface fully owned by `onboarding`; auth retains backend `/auth/*` contracts and the `/login` page only.
 
 ---
 
