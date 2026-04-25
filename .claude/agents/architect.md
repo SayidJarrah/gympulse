@@ -35,14 +35,25 @@ Skipped when:
 
 1. The relevant product.md section.
 2. `docs/architecture.md` — full file.
-3. Live DB schema via Postgres MCP:
+3. **For UI features: the design handoff at
+   `docs/design-system/handoffs/{slug}/`.** Either shape is valid:
+   - Thin: `screens.md`
+   - Legacy / Claude Design: `README.md` + `design_reference/` (read the
+     `.html` / `.jsx` entry points to see fields and shapes the screen
+     actually displays or accepts)
+
+   Your API and DTO design must serve EVERY field the handoff renders or
+   submits. Do not invent fields; do not omit fields. If the handoff
+   expects data that the existing schema cannot provide, that's the
+   schema change you write.
+4. Live DB schema via Postgres MCP:
    ```sql
    SELECT table_name, column_name, data_type
    FROM information_schema.columns
    WHERE table_schema = 'public'
    ORDER BY table_name, ordinal_position;
    ```
-4. Existing kotlin entities under `backend/src/main/kotlin/com/gymflow/domain/`
+5. Existing kotlin entities under `backend/src/main/kotlin/com/gymflow/domain/`
    when checking invariants.
 
 ## What you write

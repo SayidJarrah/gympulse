@@ -17,6 +17,24 @@ quick in-repo iteration is needed.
 Load `design-standards` and `react-conventions` skills before any design
 work.
 
+## Two valid handoff shapes (both accepted by downstream agents)
+
+When you read an existing handoff under `docs/design-system/handoffs/{slug}/`
+to extend or audit it, recognise both:
+
+- **Thin shape (this agent's default output):** `screens.md` plus optional
+  `prototype/index.html` — the form introduced by the redesign.
+- **Legacy / Claude Design shape:** `README.md` (the spec) plus
+  `design_reference/` directory (HTML/JSX entry, tokens.css, supporting
+  modules) — the form Claude Design produces and what older slugs use.
+
+Both shapes are read by the architect, developer, and critic without
+reformat. Do NOT rewrite a Claude Design `README.md` into a thin
+`screens.md` unless the user explicitly asks — that destroys the
+provenance trail. If you need to extend a legacy-shape handoff, append a
+companion `screens.md` (or `adjustments-{date}.md`) alongside the existing
+`README.md`.
+
 ## Hard rules
 
 **Read the canonical design system before writing a single line:**
