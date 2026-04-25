@@ -168,7 +168,7 @@ Base URL: `/api/v1`. Auth: `Authorization: Bearer <token>` unless noted public. 
 ### Onboarding (`onboarding`)
 | Method | Path | Auth | Notes |
 |---|---|---|---|
-| POST | `/onboarding/plan-pending` | `hasRole('USER')` | Persists chosen plan as `UserMembership` (active in current revision). |
+| POST | `/onboarding/membership` | `hasRole('USER')` | Creates an `ACTIVE` `UserMembership` for the chosen plan. |
 | POST | `/onboarding/complete` | `hasRole('USER')` | Idempotent; sets `onboardingCompletedAt`. |
 
 ### User profile (`user-profile-management`, `entity-image-management`)
