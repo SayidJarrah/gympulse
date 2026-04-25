@@ -76,6 +76,26 @@ Otherwise dispatch `architect`:
 
 Skip if `docs/design-system/handoffs/{slug}/screens.md` already exists.
 
+**Inline-screens path (extension to existing surface):** if the change is
+purely additive to a surface that is already covered by an existing handoff
+or product.md screen list — e.g. one new field on a documented profile
+card, one new button on an existing dashboard, one filter dropdown above
+an existing list — and uses established patterns (inline-edit row,
+existing button, existing layout primitives), the controller may write a
+30–100 line `screens.md` inline rather than dispatching `designer`. The
+inline screens.md must:
+
+- Name the slot in the existing surface (cite the parent handoff).
+- Specify per-state rules (populated, loading, empty, error) — one line
+  each unless something diverges from sibling fields.
+- List the tokens used (token names from `colors_and_type.css` /
+  `tailwind.gymflow.cjs`, not ad-hoc values).
+- Note any open questions; if there are several, dispatch `designer`
+  instead.
+
+If you are unsure whether a change qualifies — dispatch. Designer is
+cheap; design drift from skipping isn't.
+
 Otherwise dispatch `designer`:
 
 > New-handoff mode for {slug}.
