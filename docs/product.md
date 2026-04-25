@@ -375,19 +375,6 @@ see `docs/architecture.md`.
 
 ---
 
-## Member Home — `member-home`
-
-**Status:** sunset
-**Owner of:** —
-**Depends on:** —
-
-This was the original v1 Member Home spec (post-login destination with a flat-grid layout containing membership status, trainer carousel, and upcoming classes carousel). It has been replaced by the Pulse redesign — see `home-page-redesign`. The old `src/components/home/` flat-grid components (`MemberHomeHero`, `MembershipPrimaryCard`, `QuickActionsPanel`, `TrainerPreviewCarousel`, `ClassPreviewCarousel`, etc.) are deleted by that redesign.
-
-### History
-- 2026-04-25 — marked sunset; replaced by `home-page-redesign`.
-
----
-
 ## Home Page Redesign (Pulse) — `home-page-redesign`
 
 **Status:** active
@@ -415,6 +402,7 @@ This was the original v1 Member Home spec (post-login destination with a flat-gr
 - Shared Pulse primitives (`PulseNav`, `PulseFooter`, `AmbientWaveform`, `ActivityFeed`, `BigCountdown`, `StatsStrip`, `HeroNoBooked`) are imported from `frontend/src/components/landing/`, never duplicated into a home-specific directory.
 - No new backend endpoints; reuses `/landing/viewer-state`, `/bookings/me`, `DELETE /bookings/{id}`, `/memberships/me`, `/trainers/favorites`, `/landing/activity` + `/landing/activity/stream`.
 - Page is not horizontally scrollable at 360 px.
+- v1 flat-grid components (`MemberHomeHero`, `MembershipPrimaryCard`, `QuickActionsPanel`, `TrainerPreviewCarousel`, `ClassPreviewCarousel`) were deleted by this redesign — see archive SDD `member-home.md`.
 
 ### Screens
 - Member Home page — hero (booked or no-booked variant), stats strip, upcoming sessions, membership card, activity feed.
@@ -427,7 +415,7 @@ This was the original v1 Member Home spec (post-login destination with a flat-gr
 - Notifications, recommendations, personalised ranking.
 
 ### History
-- 2026-04-25 — initial (extracted from `docs/prd/home-page-redesign.md`, `docs/sdd/home-page-redesign.md`); supersedes `member-home`.
+- 2026-04-25 — initial (extracted from `docs/prd/home-page-redesign.md`, `docs/sdd/home-page-redesign.md`); supersedes sunset `member-home`; legacy section removed from product.md (see archive SDD).
 
 ---
 
