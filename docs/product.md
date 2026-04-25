@@ -501,21 +501,6 @@ see `docs/architecture.md`.
 
 ---
 
-## Onboarding — Unified Signup — `onboarding-unified-signup`
-
-**Status:** sunset
-**Owner of:** —
-**Depends on:** —
-
-This was the first iteration of the unified onboarding wizard, in which `terms` was the LAST mandatory step (after `preferences`, `membership`, and conditional `booking`). It has been superseded by `onboarding-terms-early`, which moves `terms` to step 3 — see that section for the active behaviour. The behavioural reason: under unified-signup ordering, the `booking` step ran while the user was still an unauthenticated guest, so member-only endpoints (`/class-schedule`, `/pt/trainers`, `/bookings`) returned 401 and the user saw "Unable to load upcoming classes" or a silent no-op.
-
-This sunset note also captures the load-bearing placeholder this feature introduced into the data model: **`PLAN_PENDING`** as a `UserMembership.status` value. This was correct for unified-signup (no real activation until the deferred payment feature ships), but downstream callers like `class-booking` and `GET /memberships/me` treated `PLAN_PENDING` as "not active." `onboarding-terms-early` resolved this by switching the persisted status to `ACTIVE` with a real `endDate = today + plan.durationDays`, on the basis that the user has now committed via terms.
-
-### History
-- 2026-04-25 — marked sunset; replaced by `onboarding-terms-early`.
-
----
-
 ## Onboarding — Terms Early — `onboarding-terms-early`
 
 **Status:** active
@@ -543,6 +528,7 @@ This sunset note also captures the load-bearing placeholder this feature introdu
 - Loading state for the bootstrap profile fetch must be implemented in the same pass as the route guard — a route guard reading async data must handle the loading case explicitly.
 - Migrating mid-flow users from the unified-signup ordering is explicitly NOT in scope — they continue under existing onboarding-flow resume logic.
 - Backend security is unchanged: no endpoint becomes public or changes shape; the structural reorder removes the need.
+- Step ordering puts `terms` at step 3 (not last). Placing `terms` after `booking`/`membership` would force the `booking` step to call member-only endpoints (`/class-schedule`, `/pt/trainers`, `/bookings`) while the user is still unauthenticated — see archive SDD `onboarding-unified-signup.md` for the regression that triggered this reorder.
 
 ### Screens
 - Onboarding page (single full-screen `/onboarding` route): Mini Nav, Progress Bar, Step Rail, content slot, sticky footer.
@@ -559,7 +545,7 @@ This sunset note also captures the load-bearing placeholder this feature introdu
 - Admin-created accounts (trainers/admins invited via backoffice) — unchanged.
 
 ### History
-- 2026-04-25 — initial (extracted from `docs/prd/onboarding-terms-early.md`, `docs/prd/onboarding-unified-signup.md`, `docs/sdd/onboarding-flow.md`, `docs/sdd/onboarding-unified-signup.md`, `docs/sdd/onboarding-terms-early.md`); supersedes `onboarding-unified-signup`.
+- 2026-04-25 — initial (extracted from `docs/prd/onboarding-terms-early.md`, `docs/prd/onboarding-unified-signup.md`, `docs/sdd/onboarding-flow.md`, `docs/sdd/onboarding-unified-signup.md`, `docs/sdd/onboarding-terms-early.md`); supersedes `onboarding-unified-signup`; legacy section removed from product.md (see archive SDD).
 
 ---
 
