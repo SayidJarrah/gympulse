@@ -132,6 +132,7 @@ class UserProfileControllerIntegrationTest {
         fitnessGoals = listOf("Build strength", "Improve mobility"),
         preferredClassTypes = listOf("Yoga", "HIIT"),
         emergencyContact = null,
+        bio = null,
         hasProfilePhoto = true,
         profilePhotoUrl = "/api/v1/profile/me/photo",
         onboardingCompletedAt = null,

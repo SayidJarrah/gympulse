@@ -13,6 +13,7 @@ export interface UserProfile {
   fitnessGoals: string[];
   preferredClassTypes: string[];
   emergencyContact: EmergencyContact | null;
+  bio: string | null;
   hasProfilePhoto: boolean;
   profilePhotoUrl: string | null;
   onboardingCompletedAt: string | null; // ISO 8601 or null
@@ -28,4 +29,5 @@ export interface UpdateUserProfileRequest {
   fitnessGoals: string[];
   preferredClassTypes: string[];
   emergencyContact: EmergencyContact | null;
+  bio: string | null;
 }

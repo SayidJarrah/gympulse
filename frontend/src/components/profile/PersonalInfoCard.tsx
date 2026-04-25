@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import type { UserProfile, UpdateUserProfileRequest } from '../../types/userProfile'
 import { useProfileStore } from '../../store/profileStore'
 import { FieldRow } from './FieldRow'
@@ -56,8 +56,200 @@ function buildPatchRequest(
     fitnessGoals: profile.fitnessGoals,
     preferredClassTypes: profile.preferredClassTypes,
     emergencyContact: profile.emergencyContact,
+    bio: profile.bio,
     ...override,
   }
+}
+
+const BIO_MAX = 500
+
+function BioFieldRow({
+  profile,
+  isSaving,
+  onToast,
+}: {
+  profile: UserProfile;
+  isSaving: boolean;
+  onToast: (msg: string) => void;
+}) {
+  const { saveMyProfile } = useProfileStore()
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [localError, setLocalError] = useState<string | null>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  const remaining = BIO_MAX - draft.length
+
+  function autosize(el: HTMLTextAreaElement) {
+    el.style.height = 'auto'
+    const lineHeight = 24 // ~1.5rem
+    const minRows = 3
+    const maxRows = 8
+    const minH = lineHeight * minRows
+    const maxH = lineHeight * maxRows
+    el.style.height = `${Math.min(Math.max(el.scrollHeight, minH), maxH)}px`
+  }
+
+  const handleEdit = () => {
+    setDraft(profile.bio ?? '')
+    setLocalError(null)
+    setEditing(true)
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus()
+        autosize(textareaRef.current)
+      }
+    }, 0)
+  }
+
+  const handleCancel = () => {
+    setEditing(false)
+    setLocalError(null)
+  }
+
+  const handleSave = async () => {
+    setSaving(true)
+    setLocalError(null)
+    await saveMyProfile({
+      firstName: profile.firstName,
+      lastName: profile.lastName,
+      phone: profile.phone,
+      dateOfBirth: profile.dateOfBirth,
+      fitnessGoals: profile.fitnessGoals,
+      preferredClassTypes: profile.preferredClassTypes,
+      emergencyContact: profile.emergencyContact,
+      bio: draft.trim() || null,
+    })
+    setSaving(false)
+    // After save, check if the store recorded a bio field error
+    const fieldErrors = useProfileStore.getState().fieldErrors
+    const bioError = fieldErrors['bio']
+    if (bioError) {
+      setLocalError(bioError)
+    } else if (useProfileStore.getState().error) {
+      setLocalError(useProfileStore.getState().error)
+    } else {
+      setEditing(false)
+      onToast('Bio updated.')
+    }
+  }
+
+  const counterColor =
+    remaining === 0
+      ? 'var(--color-error-fg, #F87171)'
+      : remaining < 50
+        ? 'var(--color-warning-fg, #FB923C)'
+        : 'var(--color-fg-metadata, #6B7280)'
+
+  return (
+    <div>
+      <div
+        className="grid items-start gap-4 py-[18px]"
+        style={{ gridTemplateColumns: '160px 1fr auto', borderTop: '1px solid rgba(255,255,255,0.05)' }}
+      >
+        {/* Label eyebrow */}
+        <div
+          className="pt-[3px] text-[11px] font-semibold uppercase tracking-[0.18em]"
+          style={{ color: 'var(--color-fg-metadata, #6B7280)' }}
+        >
+          Bio
+        </div>
+
+        {/* Value / edit area */}
+        {editing ? (
+          <div className="flex flex-col gap-1.5">
+            <textarea
+              ref={textareaRef}
+              value={draft}
+              maxLength={BIO_MAX}
+              rows={3}
+              aria-label="Bio"
+              disabled={saving || isSaving}
+              onChange={(e) => {
+                setDraft(e.target.value)
+                autosize(e.target)
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') handleCancel()
+              }}
+              className="w-full resize-none rounded-lg border border-green-500/40 bg-white/5 px-3 py-1.5 text-[15px] font-medium text-white outline-none focus:border-green-500/70 focus:ring-1 focus:ring-green-500/50 disabled:opacity-60"
+              style={{ lineHeight: '1.5rem', minHeight: '4.5rem' }}
+            />
+            <div className="flex justify-end">
+              <span
+                className="text-[11px] tabular-nums"
+                style={{ color: counterColor }}
+                aria-live="polite"
+              >
+                {draft.length} / {BIO_MAX}
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div
+            className="whitespace-pre-line text-[15px] font-medium"
+            style={{ color: profile.bio ? 'white' : undefined }}
+          >
+            {profile.bio ?? (
+              <span className="italic" style={{ color: 'var(--color-fg-muted, #9CA3AF)' }}>
+                Add a short bio
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Edit / Save + Cancel buttons */}
+        {editing ? (
+          <div className="flex items-center gap-2 pt-[3px]">
+            <button
+              type="button"
+              onClick={() => { void handleSave() }}
+              disabled={saving || isSaving}
+              className="rounded-lg border border-green-500/30 px-3 py-1.5 text-[12px] font-medium text-green-400 transition-[filter] duration-[160ms] hover:brightness-110 disabled:opacity-50"
+              style={{ padding: '6px 12px', fontSize: 12 }}
+            >
+              {saving ? 'Saving…' : 'Save'}
+            </button>
+            <button
+              type="button"
+              onClick={handleCancel}
+              disabled={saving || isSaving}
+              className="rounded-lg border border-white/10 px-3 py-1.5 text-[12px] font-medium text-gray-400 transition-[filter] duration-[160ms] hover:brightness-110 disabled:opacity-50"
+              style={{ padding: '6px 12px', fontSize: 12 }}
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={handleEdit}
+            aria-label="Edit bio"
+            className="rounded-lg px-3 py-1.5 text-[12px] font-medium transition-[filter] duration-[160ms] hover:brightness-110"
+            style={{
+              padding: '6px 12px',
+              background: 'transparent',
+              border: '1px solid rgba(255,255,255,0.1)',
+              color: 'var(--color-fg-label, #D1D5DB)',
+              borderRadius: 8,
+              fontSize: 12,
+              fontWeight: 500,
+            }}
+          >
+            Edit
+          </button>
+        )}
+      </div>
+
+      {/* Field-level error */}
+      {localError && (
+        <p className="mb-2 mt-1 text-xs text-red-400" role="alert">
+          {localError}
+        </p>
+      )}
+    </div>
+  )
 }
 
 export function PersonalInfoCard({ profile, avatarUrl, onToast }: PersonalInfoCardProps) {
@@ -230,6 +422,7 @@ export function PersonalInfoCard({ profile, avatarUrl, onToast }: PersonalInfoCa
             onToast('Emergency contact updated.')
           }}
         />
+        <BioFieldRow profile={profile} isSaving={isSaving} onToast={onToast} />
       </div>
     </div>
   )

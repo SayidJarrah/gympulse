@@ -144,7 +144,7 @@ see `docs/architecture.md`.
 
 ### What user can do
 - An authenticated user can view their own profile in one place: identity (`email` read-only), name, contact, optional fitness fields, emergency contact, and membership status block.
-- An authenticated user can update first name, last name, phone, date of birth, fitness goals, preferred class types, and emergency contact.
+- An authenticated user can update first name, last name, phone, date of birth, fitness goals, preferred class types, emergency contact, and bio.
 - An authenticated user can sign out, change password (existing password flow), and cancel their membership from the same page.
 - The profile page surfaces the active membership plan name, booking usage bar, renewal date, and price (the Membership Control card) alongside personal information.
 - (Photo upload is delivered as part of `entity-image-management`.)
@@ -154,6 +154,8 @@ see `docs/architecture.md`.
 - `email`, `role`, and `userId` are read-only at this endpoint; submitting any of them to `PUT /profile/me` returns `READ_ONLY_FIELD` (HTTP 400).
 - `GET /profile/me` returns HTTP 200 even when the caller has never saved a profile — editable fields come back as `null` or empty arrays.
 - Field validation: `firstName` / `lastName` 1–50 chars (`INVALID_FIRST_NAME` / `INVALID_LAST_NAME`); `phone` valid international format ≤ 20 chars (`INVALID_PHONE`); `dateOfBirth` valid calendar date not in the future, member must be ≥ 16 years old (`INVALID_DATE_OF_BIRTH`); `fitnessGoals` and `preferredClassTypes` ≤ 5 items each, each 1–50 chars after trim (`INVALID_FITNESS_GOALS` / `INVALID_PREFERRED_CLASS_TYPES`).
+- `bio` is optional, ≤ 500 chars after trim, plain text only — server rejects with `INVALID_BIO_FORMAT` (HTTP 400) if the value contains HTML tags (regex match `<[^>]+>`), control characters other than `\n` and `\t`, or markdown link/image syntax (`[text](url)` / `![](url)`). Submitting `null` or an empty string clears the bio. The 500-char member cap is intentional — members add brief context, while trainers (`Trainer.bio` ≤ 1000) build a public profile that drives discovery; the two `bio` fields share a name but not a contract.
+- `bio` is returned by `GET /profile/me` and updated by `PUT /profile/me` only. It is NOT included in any trainer-facing, admin, list, search, or admin user-detail endpoint (`/admin/users/{id}` or any future admin profile endpoint). Member `bio` is member-private.
 - List fields are de-duplicated case-insensitively before persistence; first-occurrence order is preserved.
 - `emergencyContact` is optional. If provided, both `name` and `phone` must be non-blank (name ≤ 100, phone ≤ 30); a partial object returns `INVALID_EMERGENCY_CONTACT`. Submitting `null` clears it.
 - Membership is not required to manage profile data — every authenticated `USER` can edit their profile.
@@ -173,9 +175,16 @@ see `docs/architecture.md`.
 - Attendance history, booking history (booking history lives on `/profile/bookings`, owned by `class-booking`), or activity timeline.
 - Audit trail or version history of profile changes.
 - Admin viewing or editing user profiles.
+- Sharing bio with other members, trainers, or admin views — bio is member-private in this version.
+- Rich text, markdown, links, mentions, hashtags, or emoji shortcuts in bio.
+- Bio in search, discovery, trainer-match, or any recommendation flow.
+- Admin moderation, profanity filtering, or content review of bio.
+- Multi-language bios or per-language fields.
+- Bio history / version log.
 
 ### History
 - 2026-04-25 — initial (extracted from `docs/prd/user-profile-management.md`, `docs/sdd/user-profile-management.md`, `docs/sdd/member-profile-redesign.md`).
+- 2026-04-25 — added `bio` field rules (≤ 500 chars, plain-text, member-private; `INVALID_BIO_FORMAT` error code; explicit exclusion from admin user-detail surfaces).
 
 ---
 

@@ -667,3 +667,31 @@ Feature: onboarding-terms-early
 Added: 2026-04-23
 Effort: S
 `StepPreferences.tsx:105`, `StepMembership.tsx:78`, `StepBooking.tsx:61`, and `StepTerms.tsx:56` each hardcode their on-page eyebrow as a literal `Step NN · {label}` string. Every reorder of `ALL_STEPS` requires hunting down four files and editing them in lock-step (this PR's blockers are the direct consequence). Replace with a derived value — e.g. a small `useStepEyebrow(currentStep)` hook that reads `visibleSteps`/`currentIndex` the way `MiniNav` already does, or a prop passed from `StepContent`. Bonus: the on-page eyebrow then handles the conditional `booking` step's presence the same way the MiniNav already does, instead of every step re-deriving its own number against a stale ordering.
+
+## TD-094 — BioFieldRow duplicates ~190 lines of FieldRow primitive instead of extending it with a multiline variant
+Source: PR feature/user-profile-bio (this branch)
+Feature: user-profile-bio
+Added: 2026-04-25
+Effort: M
+`PersonalInfoCard.tsx:66-253` defines a fresh `BioFieldRow` component that re-implements the entire FieldRow primitive (label eyebrow, edit/save/cancel buttons, save-state, escape-cancels, error pill, grid layout) just to swap the `<input>` for a `<textarea>`. The result is a ~190-line drop-in beside FieldRow.tsx, which is itself ~140 lines. Every styling tweak that should land on both fields (focus ring, button copy, disabled state, error styling) now has to be made in two places. Refactor FieldRow to accept a `multiline` prop (or a small `renderInput` slot) that switches the input element and conditionally renders the character counter, then delete BioFieldRow. Saves about 150 lines and removes the divergence trap on field-row visual tweaks.
+
+## TD-095 — BioFieldRow reads store state via getState() instead of throwing on validation error like FieldRow does
+Source: PR feature/user-profile-bio (this branch)
+Feature: user-profile-bio
+Added: 2026-04-25
+Effort: S
+`PersonalInfoCard.tsx:111-136` calls `saveMyProfile(...)` and then immediately reads `useProfileStore.getState().fieldErrors['bio']` and `useProfileStore.getState().error` to decide whether the save failed. Every other field on the card (full name, phone, DOB, emergency contact via FieldRow.tsx:40-52) follows the inverse contract: `onSave` throws on validation failure and the caller catches with try/catch. This bio-only pattern of polling Zustand state right after an `await` works today only because `set()` is synchronous before the await resolves — but it inverts the consistency the rest of the page relies on, and is brittle if the store ever batches updates or moves to async middleware. Either thread bio through the FieldRow `onSave` throws-on-error contract (preferred — comes free with TD-094), or have `saveMyProfile` re-throw a typed error the caller can catch like the other fields.
+
+## TD-096 — bio update bypasses buildPatchRequest helper that every other field uses
+Source: PR feature/user-profile-bio (this branch)
+Feature: user-profile-bio
+Added: 2026-04-25
+Effort: S
+`PersonalInfoCard.tsx:114-123` constructs the full `UpdateUserProfileRequest` inline inside `BioFieldRow.handleSave`, repeating each field name. Every other onSave in the same file (line 364, 381, 391, 408, 421) goes through `buildPatchRequest(profile, { fieldX: ... })` (line 47-62). Adding a new optional field to `UserProfile` now requires updating both `buildPatchRequest` and the inline construction in BioFieldRow. Replace the inline object with `buildPatchRequest(profile, { bio: draft.trim() || null })` so there is one place to update when the request shape changes.
+
+## TD-097 — Regex-based HTML/markdown rejection is theatre on a member-private TEXT field that React already escapes
+Source: PR feature/user-profile-bio (this branch)
+Feature: user-profile-bio
+Added: 2026-04-25
+Effort: M
+`UserProfileService.kt:172-208` blocks bio strings matching `<[^>]+>` (HTML tag), `!?\[[^\]]*\]\([^)]*\)` (markdown link/image), and most C0 control characters. The bio field is member-private (returned only to the owner via `GET /profile/me`), and the React render path uses text nodes which escape `<` and `>` automatically — there is zero XSS surface today. The regexes block legitimate plaintext inputs the user has every reason to type: `email me at <user@x>`, `<smile>`, `[goal](in progress)`, even `Goal [strength]: lift heavier <50% RPE`. The result is rejected-input UX with no security benefit: users hit "Use plain text only — no HTML, markdown, or special characters." and have no idea which character offended. Two cheaper alternatives: (a) drop the regexes and rely on React text-node escaping plus length/control-char limits, or (b) silently strip markup with a one-shot Jsoup `Safelist.none()` cleaner so the user never sees the rejection. If the regexes stay, the error message must name the offending character class so the user can fix it.

@@ -20,6 +20,7 @@ export type ProfileFieldName =
   | 'fitnessGoals'
   | 'preferredClassTypes'
   | 'emergencyContact'
+  | 'bio'
 
 type ProfileFieldErrors = Partial<Record<ProfileFieldName, string>>
 
@@ -51,6 +52,7 @@ const FIELD_ERROR_CODES: Partial<Record<string, ProfileFieldName>> = {
   INVALID_FITNESS_GOALS: 'fitnessGoals',
   INVALID_PREFERRED_CLASS_TYPES: 'preferredClassTypes',
   INVALID_EMERGENCY_CONTACT: 'emergencyContact',
+  INVALID_BIO_FORMAT: 'bio',
 }
 
 export const useProfileStore = create<ProfileState>((set) => ({

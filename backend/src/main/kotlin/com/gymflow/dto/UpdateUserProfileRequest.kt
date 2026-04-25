@@ -13,6 +13,7 @@ data class UpdateUserProfileRequest(
     val fitnessGoals: List<String>? = null,
     val preferredClassTypes: List<String>? = null,
     val emergencyContact: EmergencyContactInput? = null,
+    val bio: String? = null,
     // Read-only shadow fields — presence triggers READ_ONLY_FIELD error
     val email: String? = null,
     val userId: String? = null,

@@ -4,8 +4,8 @@ This is the canonical authoritative reference for entities, schema, API endpoint
 feature ownership. Every cross-feature reference in `docs/product.md` resolves to a
 section here.
 
-The latest applied Flyway migration version is **V28**
-(`V28__widen_user_memberships_status_for_plan_pending.sql`).
+The latest applied Flyway migration version is **V29**
+(`V29__add_bio_to_user_profiles.sql`).
 
 ---
 
@@ -47,7 +47,7 @@ JPA: `domain/UserMembership.kt` · table `user_memberships`
 ### UserProfile
 JPA: `domain/UserProfile.kt` · table `user_profiles`
 - 1:1 with `users` via `userId` PK + FK with ON DELETE CASCADE.
-- Editable: `firstName`, `lastName`, `phone`, `dateOfBirth`, `fitnessGoals` (JSONB), `preferredClassTypes` (JSONB), `emergencyContactName`, `emergencyContactPhone`, profile photo (`profilePhotoData` BYTEA + `profilePhotoMimeType`).
+- Editable: `firstName`, `lastName`, `phone`, `dateOfBirth`, `fitnessGoals` (JSONB), `preferredClassTypes` (JSONB), `emergencyContactName`, `emergencyContactPhone`, `bio` (TEXT, nullable, ≤ 500 chars, plain text only — no HTML/markdown/control characters), profile photo (`profilePhotoData` BYTEA + `profilePhotoMimeType`).
 - `onboardingCompletedAt` (nullable TIMESTAMPTZ) — set ONLY by `POST /api/v1/onboarding/complete`. Read by `UserRoute` to gate access to the app.
 - DOB validation: not in the future AND member must be ≥ 16 years old.
 - Emergency contact pair must be both-set or both-null (service-layer enforcement).
@@ -119,12 +119,13 @@ JPA: `domain/ActivityEvent.kt` · table `activity_events`
 
 ### ErrorCode
 JPA: `domain/ErrorCode.kt` (enum, no table) — typed enum of all error codes returned by `GlobalExceptionHandler`. Every code matches exactly the string used in the API contract and frontend error mappings.
+- `INVALID_BIO_FORMAT` (added V29) — returned by `PUT /profile/me` when `bio` contains HTML tags, markdown link/image syntax, or control characters other than `\n`/`\t`.
 
 ---
 
 ## 2. Schema map
 
-Latest Flyway migration: **V28**.
+Latest Flyway migration: **V29**.
 
 | Table | Owner feature(s) | FK relations | Notes |
 |---|---|---|---|
@@ -132,7 +133,7 @@ Latest Flyway migration: **V28**.
 | `refresh_tokens` | `auth` | `user_id → users.id` ON DELETE CASCADE | UNIQUE on `token_hash`. Partial index for active tokens per user. |
 | `membership_plans` | `membership-plans` | — | CHECK `status IN (ACTIVE, INACTIVE)`, CHECK price/duration > 0. Optimistic-lock `version` column. |
 | `user_memberships` | `user-membership-purchase`; `PLAN_PENDING` placeholder owned by `onboarding-terms-early` | `user_id → users.id`, `plan_id → membership_plans.id` | V28 widened `status` to `VARCHAR(20)` + extended CHECK to include `PLAN_PENDING`. Partial unique index `uidx_user_memberships_one_active_per_user (user_id) WHERE status = 'ACTIVE'`; `PLAN_PENDING` is intentionally NOT covered. CHECK `end_date >= start_date`. |
-| `user_profiles` | `user-profile-management`; photo columns shared with `entity-image-management`; `onboarding_completed_at` owned by `onboarding-terms-early` | `user_id → users.id` ON DELETE CASCADE (PK and FK) | JSONB `fitness_goals` and `preferred_class_types`. V19 added `profile_photo_data`/`mime_type` BYTEA pair. V23 added `emergency_contact_name`/`phone`. V27 added `onboarding_completed_at`. |
+| `user_profiles` | `user-profile-management`; photo columns shared with `entity-image-management`; `onboarding_completed_at` owned by `onboarding-terms-early` | `user_id → users.id` ON DELETE CASCADE (PK and FK) | JSONB `fitness_goals` and `preferred_class_types`. V19 added `profile_photo_data`/`mime_type` BYTEA pair. V23 added `emergency_contact_name`/`phone`. V27 added `onboarding_completed_at`. V29 added `bio` (TEXT, nullable, member-private — NOT exposed via admin endpoints). |
 | `trainers` | `scheduler` (CRUD), `trainer-discovery`, `personal-training-booking` | — | UNIQUE `email`. `specialisations TEXT[]`. Photo BYTEA pair (V8). V15 added `experience_years`, `accent_color`, `default_room`, etc. (Trainer Discovery). V26 added PT-related columns. Soft-delete via `deleted_at`. |
 | `rooms` | `scheduler` | — | UNIQUE `name`. CHECK `capacity >= 1`. Photo BYTEA pair (V19). |
 | `class_templates` | `scheduler`; image reused by `entity-image-management` | `room_id → rooms.id` ON DELETE SET NULL | UNIQUE `name`. CHECK on `category` and `difficulty`. `is_seeded` flag separates predefined from admin-created templates. Photo BYTEA pair. |

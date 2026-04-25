@@ -27,6 +27,7 @@ import com.gymflow.service.InvalidLastNameException
 import com.gymflow.service.InvalidPhoneException
 import com.gymflow.service.InvalidPreferredClassTypesException
 import com.gymflow.service.InvalidEmergencyContactException
+import com.gymflow.service.InvalidBioFormatException
 import com.gymflow.service.InvalidScheduleViewException
 import com.gymflow.service.InvalidSlotException
 import com.gymflow.service.InvalidStatusFilterException
@@ -342,6 +343,18 @@ class GlobalExceptionHandler {
                 ErrorResponse(
                     error = "Emergency contact requires a valid name (up to 100 characters) and phone (up to 30 characters).",
                     code = "INVALID_EMERGENCY_CONTACT"
+                )
+            )
+    }
+
+    @ExceptionHandler(InvalidBioFormatException::class)
+    fun handleInvalidBioFormat(ex: InvalidBioFormatException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(
+                ErrorResponse(
+                    error = "Use plain text only — no HTML, markdown, or special characters.",
+                    code = code(ErrorCode.INVALID_BIO_FORMAT)
                 )
             )
     }

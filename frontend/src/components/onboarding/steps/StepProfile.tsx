@@ -111,6 +111,7 @@ export const StepProfile = forwardRef<StepProfileHandle, object>((_props, ref) =
             fitnessGoals: s.goals,
             preferredClassTypes: s.classTypes,
             emergencyContact: null,
+            bio: null,
           })
 
           if (photoFile) {
