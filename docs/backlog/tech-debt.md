@@ -696,30 +696,9 @@ Added: 2026-04-25
 Effort: M
 `UserProfileService.kt:172-208` blocks bio strings matching `<[^>]+>` (HTML tag), `!?\[[^\]]*\]\([^)]*\)` (markdown link/image), and most C0 control characters. The bio field is member-private (returned only to the owner via `GET /profile/me`), and the React render path uses text nodes which escape `<` and `>` automatically — there is zero XSS surface today. The regexes block legitimate plaintext inputs the user has every reason to type: `email me at <user@x>`, `<smile>`, `[goal](in progress)`, even `Goal [strength]: lift heavier <50% RPE`. The result is rejected-input UX with no security benefit: users hit "Use plain text only — no HTML, markdown, or special characters." and have no idea which character offended. Two cheaper alternatives: (a) drop the regexes and rely on React text-node escaping plus length/control-char limits, or (b) silently strip markup with a one-shot Jsoup `Safelist.none()` cleaner so the user never sees the rejection. If the regexes stay, the error message must name the offending character class so the user can fix it.
 
-## TD-098 — Verify hasActiveMembership field in LoginResponse DTO
-Source: docs/audit-product-consolidation.md
-Feature: auth
-Added: 2026-04-25
-Effort: M
-`auth` section says `/auth/register` returns `hasActiveMembership` in the response shape. Architecture.md § 3 calls it "Combined-payload (credentials + mandatory profile + terms) signup. Creates `users` + `user_profiles` rows; returns tokens." The `hasActiveMembership` field is described in product.md but its presence in the actual `LoginResponse` DTO is not verified by the consolidation audit. Confirm in `LoginResponse.kt` that the field exists and is populated. If the field is missing, the auth section is overstating the contract and must be corrected.
+_TD-098 through TD-101 (logged 2026-04-25 from product.md consolidation audit) were resolved in PR `chore/audit-followups`:_
 
-## TD-099 — Decide canonical status of /admin/bookings endpoint
-Source: docs/audit-product-consolidation.md
-Feature: class-booking
-Added: 2026-04-25
-Effort: S
-`/admin/bookings` (admin "create booking on behalf of a member") is described in `class-booking` Out-of-scope as "may remain in code from the superseded spec but is not part of this PRD's acceptance set." Architecture.md § 3 lists it without that qualifier. Decide whether the admin endpoint is canonically supported (then promote the rule out of "Out of scope") or canonically deprecated (then mark for removal in architecture.md too). This is a product decision, not a consolidation change.
-
-## TD-100 — Evaluate renaming /onboarding/plan-pending route to reflect ACTIVE-status reality
-Source: docs/audit-product-consolidation.md
-Feature: onboarding
-Added: 2026-04-25
-Effort: S
-`/onboarding/plan-pending` endpoint is exposed by `OnboardingController.kt` (live, persisting `UserMembership`) but the active `onboarding` section says step 5 creates a `UserMembership` with `status = ACTIVE` (Lesson 15 fix). Architecture.md § 3 hedges: "Persists chosen plan as `UserMembership` (active in current revision)." Confirm whether the endpoint name `plan-pending` is now misleading (because nothing pending is created) and whether the route should be renamed in a future patch. This is naming drift between intent (route name) and behaviour (creates ACTIVE).
-
-## TD-101 — Clarify /admin/users/:id route ownership (class-booking vs cross-feature admin)
-Source: docs/audit-product-consolidation.md
-Feature: class-booking
-Added: 2026-04-25
-Effort: S
-Architecture.md § 4 lists `/admin/users/:id` as "owned by `class-booking` (per-user history view) + cross-feature admin user detail." Product.md `class-booking` owns `/profile/bookings` and lists admin per-user history as a screen but doesn't claim `/admin/users/:id` in its Owner-of line. Decide whether `class-booking` should explicitly claim that route in its Owner-of line or whether a new "admin user detail" cross-cutting section is warranted.
+- _TD-098 — closed as no-op: `LoginResponse.kt` confirmed to expose `hasActiveMembership: Boolean = false` and `AuthService` populates it on register (always false) and login (queried per user)._
+- _TD-099 — resolved: new `admin-bookings` section in product.md owns the four `AdminBookingController` endpoints + `AdminUserBookingHistoryPanel`._
+- _TD-100 — resolved: route renamed `/onboarding/plan-pending` → `/onboarding/membership`; DTOs, service method, frontend caller, and 4 e2e specs updated; product.md and architecture.md follow._
+- _TD-101 — resolved: new `admin-user-detail` section in product.md owns `/admin/users/:id` and the `AdminUserDetailPage` shell._
