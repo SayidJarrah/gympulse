@@ -2,8 +2,10 @@
 name: deliver
 description: GymPulse delivery pipeline logic. Loaded by /deliver command.
   Auto-detects the starting stage from artifact state. Runs:
-  product-author → challenger → architect (if needed) → designer (if
-  needed) → developer → critic ║ tester → PR.
+  product-author → challenger → designer (if UI work) → architect (if
+  contracts change) → developer → critic ║ tester → PR. Designer runs
+  BEFORE architect so the API contract can serve what screens actually
+  need.
 ---
 
 # GymPulse Delivery Pipeline
@@ -18,7 +20,9 @@ manual mode prompts.
 ls docs/briefs/{slug}.md         2>/dev/null && echo "Brief OK"
 grep -q "^## .* — \`{slug}\`" docs/product.md  2>/dev/null && echo "Section exists"
 ls docs/challenges/{slug}-*.md   2>/dev/null && echo "Challenge exists"
-ls docs/design-system/handoffs/{slug}/screens.md 2>/dev/null && echo "Handoff OK"
+# Handoff check — accept ANY non-empty markdown in the slug folder, not just screens.md.
+# Claude Design exports may use README.md or spec.md; legacy native designer used README.md.
+ls docs/design-system/handoffs/{slug}/*.md 2>/dev/null | head -1 && echo "Handoff OK"
 ```
 
 | State | Next stage |
@@ -29,12 +33,17 @@ ls docs/design-system/handoffs/{slug}/screens.md 2>/dev/null && echo "Handoff OK
 | challenge with verdict CONCERNS | STOP — halt for user |
 | challenge with verdict PIVOT | STOP — confirm pivot |
 | challenge with verdict PROCEED | continue |
-| section touches contracts, no architect run yet | architect |
-| section touches UI, no screens.md | designer |
+| section touches UI, handoffs folder empty/missing | designer |
+| section touches contracts, no architect run yet | architect (reads handoff if UI) |
 | ready to code | developer |
 | ready to review | critic ║ tester |
 | blockers > 0 | fix loop (≤ 2 iterations) |
 | all green | pre-PR checks → open PR |
+
+**Order matters:** designer runs BEFORE architect when UI work exists, so
+the architect's API map and DTOs serve what the screens actually need. If
+a feature is purely backend (no UI), designer is skipped and architect
+runs without handoff input.
 
 ## Stage A — product-author + challenger
 
@@ -56,25 +65,21 @@ If verdict is PROCEED → commit the section to `docs/product.md`.
 If CONCERNS → halt; user resolves with another product-author pass.
 If PIVOT → halt; ask user to confirm pivot mode.
 
-## Stage B — Architecture gate
+## Stage B — Designer gate (UI work only)
 
-Skip if the patch does NOT introduce:
-- a new entity, status, or invariant
-- a schema change
-- a new endpoint
-- a feature ownership change
-
-Otherwise dispatch `architect`:
-
-> Patch `docs/architecture.md` for the {slug} feature change.
-> Read product.md::{slug}, current architecture.md, live DB schema via
-> Postgres MCP.
-> Output: updates to Domain model / Schema map / API map / Feature map
-> sections as needed. Commit.
-
-## Stage C — Designer gate
-
-Skip if `docs/design-system/handoffs/{slug}/screens.md` already exists.
+Skip when:
+- The feature is purely backend (no new screen, no UI change).
+- A handoff already exists at `docs/design-system/handoffs/{slug}/` with
+  any non-empty markdown file. **Both shapes are accepted as valid
+  handoff:**
+  - **New thin shape:** `screens.md` (+ optional `prototype/`) produced
+    by the native `designer` agent.
+  - **Legacy / Claude Design shape:** `README.md` (the spec) +
+    `design_reference/` (HTML/JSX/tokens prototype bundle) — produced
+    by Claude Design or by the native designer before the redesign.
+  Both shapes are read by SA/architect, developer, and critic without
+  reformat. Do not require a Claude Design export to be re-shaped into
+  thin form.
 
 **Inline-screens path (extension to existing surface):** if the change is
 purely additive to a surface that is already covered by an existing handoff
@@ -101,6 +106,30 @@ Otherwise dispatch `designer`:
 > New-handoff mode for {slug}.
 > Output: `screens.md` (and optionally `prototype/index.html` if a new
 > pattern). Commit.
+
+The handoff (whichever shape) is the input that the architect reads next
+to derive the API contract.
+
+## Stage C — Architecture gate
+
+Runs AFTER designer (if UI work) so the architect knows what data the
+screens require. Skip Stage C if the patch does NOT introduce:
+- a new entity, status, or invariant
+- a schema change
+- a new endpoint
+- a feature ownership change
+
+Otherwise dispatch `architect`:
+
+> Patch `docs/architecture.md` for the {slug} feature change.
+> Read product.md::{slug}, current architecture.md, live DB schema via
+> Postgres MCP.
+> If the feature has UI: also read
+> `docs/design-system/handoffs/{slug}/` (screens.md OR README.md +
+> design_reference/) — the API/DTO contract must serve every field the
+> screens display or accept.
+> Output: updates to Domain model / Schema map / API map / Feature map
+> sections as needed. Commit.
 
 ## Stage D — Branch pre-flight
 
