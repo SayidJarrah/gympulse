@@ -701,6 +701,76 @@ see `docs/architecture.md`.
 
 ---
 
+## Admin Bookings — `admin-bookings`
+
+**Status:** active
+**Owner of:** `POST /admin/bookings`, `GET /admin/booking-members`, `GET /admin/users/{userId}/bookings`, `GET /admin/classes/{classId}/attendees`; `frontend/src/components/admin/AdminUserBookingHistoryPanel.tsx`; `frontend/src/hooks/useAdminUserBookings.ts`; `AdminBookingController.kt`
+**Depends on:** `auth`, `class-booking`, `scheduler`
+
+### What user can do
+- An admin can search the member roster by name, email, or partial UUID and pick a member to act on.
+- An admin can create a class booking on behalf of a member (operational override — e.g. front-desk booking for a member who walked in).
+- An admin can view a member's full booking history with status filters (Confirmed / Cancelled / Attended) and pagination.
+- An admin can view the attendee list for a specific class instance — name, email, booking status — for check-in or capacity audit.
+
+### Rules and invariants
+- Every endpoint requires `ROLE_ADMIN`. A member or guest hitting any of these routes returns 403.
+- `POST /admin/bookings` bypasses the membership-required check that the member-self booking endpoint enforces, but DOES respect class capacity (`CLASS_FULL` returned if the slot is at limit).
+- `GET /admin/booking-members` returns paginated `AdminBookingMemberSummaryResponse` with `hasActiveMembership` derived per row — admin sees membership state alongside identity.
+- `GET /admin/users/{userId}/bookings` is paginated (`page` / `size` / `sort`) and supports `status` filter (`CONFIRMED` / `CANCELLED` / `ATTENDED`).
+- `GET /admin/classes/{classId}/attendees` returns the per-class roster sorted by member name; cancelled bookings are included by default with status flag visible.
+- Booking history rows surface the same `BookingResponse` shape as member-facing endpoints — no admin-only fields beyond what `class-booking` already defines.
+- Admin booking actions never modify the member's notification state or trigger member-side toasts. Member side learns about an admin-created booking on their next page load.
+
+### Screens
+- Admin user booking history panel (`AdminUserBookingHistoryPanel`) — filter chips (`All` / `Confirmed` / `Cancelled` / `Attended`), paginated rows, empty-state copy, error-state retry. Hosted by `admin-user-detail` page.
+- Admin attendees panel for a class — list view with member avatar, name, status pill. (Currently consumed by `scheduler` admin views; no dedicated standalone page in v1.)
+- Admin "book on behalf" flow — member-search input, class picker, confirm dialog. Surface lives on the AdminMembershipsPage today; could grow into a dedicated /admin/bookings page if usage expands.
+
+### Out of scope (deferred)
+- Admin-side booking edit (change time / move to different class) — placeholder: cancel + recreate via `POST /admin/bookings`.
+- Bulk operations (cancel multiple, attendance batch-mark) — placeholder: per-row action only.
+- Admin notes attached to a booking (e.g. "checked in late") — placeholder: not modelled; member-facing app would need to handle this if added.
+- CSV export of attendee lists — placeholder: tied to `scheduler` import/export feature, may surface there.
+- Admin search by phone or other PII fields beyond name/email/UUID — placeholder: scope kept narrow to avoid PII fishing.
+
+### History
+- 2026-04-25 — initial section. Documents pre-existing `AdminBookingController` endpoints and `AdminUserBookingHistoryPanel` component that were unowned in product.md before this section. No code change — section captures what already shipped (resolves audit TD-099).
+
+---
+
+## Admin User Detail — `admin-user-detail`
+
+**Status:** active
+**Owner of:** `/admin/users/:id` route; `frontend/src/pages/admin/AdminUserDetailPage.tsx`
+**Depends on:** `auth`, `admin-bookings`, `entity-image-management`
+
+### What user can do
+- An admin can navigate to a specific member's detail page from the memberships list (or by UUID URL) and see member-scoped data without leaving the admin context.
+- An admin currently sees: a truncated UUID heading and the member's booking history (via `admin-bookings::AdminUserBookingHistoryPanel`).
+
+### Rules and invariants
+- Route `/admin/users/:id` is gated by `<AdminRoute>` — only `ROLE_ADMIN` resolves the page; everyone else is redirected to the login or home route per the access flow.
+- The page is intentionally a **shell** in v1: it hosts panels owned by other features rather than fetching its own composite "member-detail" data. There is NO `GET /admin/users/{id}` endpoint that returns an aggregated profile-and-booking-and-membership payload.
+- Photo display uses the existing `AdminUserProfilePhotoController` endpoint (owned by `entity-image-management`) — no admin-side profile data fetch beyond photo and bookings.
+- The page renders a minimal heading (`Member {first 8 chars of UUID}…`) plus a back link to `/admin/memberships`. No editable fields. No PII expansion.
+- The page never writes — it is read-only on member data. All admin actions on bookings live in `admin-bookings`.
+
+### Screens
+- Admin user detail page — back link to memberships list, truncated-UUID heading, booking history panel (filter chips + paginated rows from `admin-bookings`).
+
+### Out of scope (deferred)
+- Full admin profile view (name, email, contact, membership card, photo, fitness data) — placeholder: shell positioned to expand; the page's own header comment names this as future work. Requires a `GET /admin/users/{id}` summary endpoint that does NOT yet exist (only photo-only is wired). When added, the endpoint and aggregated DTO would land here.
+- Admin profile edit — placeholder: explicitly out — admin-side mutation on member profiles is governed by the same privacy boundary that `user-profile-management` enforces (only `/profile/me` is editable; admin has no edit endpoint).
+- Membership history per user (cancel/upgrade trail) — placeholder: not modelled; only current `UserMembership` row exists per user.
+- PT booking history for the member — placeholder: lives under `personal-training-booking`; not surfaced on this page in v1.
+- Activity log (last login, last booking, last profile edit) — placeholder: no activity store wired beyond `ActivityEvent` (used by `landing-page` feed).
+
+### History
+- 2026-04-25 — initial section. Documents the `/admin/users/:id` route and `AdminUserDetailPage` shell that were unowned in product.md before this section. No code change — section captures the cross-cutting admin surface that aggregates panels from other features (resolves audit TD-101).
+
+---
+
 ## E2E Testing Reset — `testing-reset`
 
 **Status:** active
