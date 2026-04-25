@@ -1,10 +1,10 @@
 import axiosInstance from './axiosInstance'
 
-export interface OnboardingPlanPendingRequest {
+export interface OnboardingMembershipRequest {
   planId: string
 }
 
-export interface OnboardingPlanPendingResponse {
+export interface OnboardingMembershipResponse {
   membershipId: string
   planId: string
   planName: string
@@ -15,11 +15,11 @@ export interface OnboardingCompleteResponse {
   onboardingCompletedAt: string // ISO 8601
 }
 
-export async function submitPlanPending(
-  req: OnboardingPlanPendingRequest
-): Promise<OnboardingPlanPendingResponse> {
-  const response = await axiosInstance.post<OnboardingPlanPendingResponse>(
-    '/onboarding/plan-pending',
+export async function submitMembership(
+  req: OnboardingMembershipRequest
+): Promise<OnboardingMembershipResponse> {
+  const response = await axiosInstance.post<OnboardingMembershipResponse>(
+    '/onboarding/membership',
     req
   )
   return response.data

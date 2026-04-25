@@ -28,7 +28,7 @@ export interface OnboardingState {
   selectedPlanId: string | null
   selectedPlanName: string | null
   selectedPlanPriceInCents: number | null
-  pendingMembershipId: string | null  // set after POST /onboarding/plan-pending succeeds
+  pendingMembershipId: string | null  // set after POST /onboarding/membership succeeds
 
   // Booking selection
   bookingMode: 'class' | 'trainer'

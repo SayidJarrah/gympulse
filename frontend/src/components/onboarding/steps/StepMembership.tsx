@@ -1,6 +1,6 @@
 import { useEffect, useState, forwardRef, useImperativeHandle } from 'react'
 import { getActivePlans } from '../../../api/membershipPlans'
-import { submitPlanPending } from '../../../api/onboarding'
+import { submitMembership } from '../../../api/onboarding'
 import { useOnboardingStore } from '../../../store/onboardingStore'
 import type { MembershipPlan } from '../../../types/membershipPlan'
 
@@ -44,11 +44,11 @@ export const StepMembership = forwardRef<StepMembershipHandle, object>((_props, 
       // SDD onboarding-terms-early §4.4 + Decision 17 — under the reordered
       // wizard the user is always authenticated by the time they reach
       // membership (terms registers them at step 3). Always call
-      // POST /onboarding/plan-pending; the previous isAuthenticated skip-API
+      // POST /onboarding/membership; the previous isAuthenticated skip-API
       // branch was a workaround for the unified-signup ordering and is now
       // obsolete.
       try {
-        const res = await submitPlanPending({ planId: selectedId })
+        const res = await submitMembership({ planId: selectedId })
         store.setPlan(plan.id, plan.name, plan.priceInCents)
         store.setPendingMembership(res.membershipId)
         return 'plan-selected'
