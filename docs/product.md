@@ -31,7 +31,7 @@ see `docs/architecture.md`.
 - Login with unknown email and login with wrong password return the same `INVALID_CREDENTIALS` response, to prevent user enumeration.
 - Email validation uses RFC 5322 basic format; password is 8–15 characters.
 - `/auth/register`, `/auth/login`, `/auth/refresh` are public. `/auth/logout` requires a valid access token. Logout is idempotent — calling it with an unknown or already-invalidated refresh token still returns 204.
-- The register endpoint also creates a `user_profiles` row and returns the same shape as login (tokens + expiresIn + hasActiveMembership), so the onboarding flow can authenticate immediately. (See `onboarding-unified-signup`, `onboarding-terms-early`.)
+- The register endpoint also creates a `user_profiles` row and returns the same shape as login (tokens + expiresIn + hasActiveMembership), so the onboarding flow can authenticate immediately. (See `onboarding`.)
 
 ### Screens
 - Login page — email + password form, error banner on bad credentials.
@@ -116,7 +116,7 @@ see `docs/architecture.md`.
 - Cancelling a non-existent or already-non-`ACTIVE` membership returns `MEMBERSHIP_NOT_ACTIVE` / `MEMBERSHIP_NOT_FOUND` / `NO_ACTIVE_MEMBERSHIP`.
 - Admins cannot create a membership on behalf of a user — activation is self-service only.
 - Status `EXPIRED` exists in the data model but the auto-expiry job is a deferred feature; the booking gate filters by `status = ACTIVE` only and does not check `endDate`.
-- Status `PLAN_PENDING` exists in the data model and is owned by `onboarding-unified-signup`/`onboarding-terms-early`; this feature does not transition into or out of `PLAN_PENDING`.
+- Status `PLAN_PENDING` exists in the data model and is owned by `onboarding`; this feature does not transition into or out of `PLAN_PENDING`.
 
 ### Screens
 - My Membership page — current plan summary with cancel action and confirmation dialog.
@@ -501,7 +501,7 @@ see `docs/architecture.md`.
 
 ---
 
-## Onboarding — Terms Early — `onboarding-terms-early`
+## Onboarding — `onboarding`
 
 **Status:** active
 **Owner of:** `/onboarding`; `onboardingStore`; `frontend/src/pages/onboarding/`, `frontend/src/components/onboarding/`
@@ -546,6 +546,7 @@ see `docs/architecture.md`.
 
 ### History
 - 2026-04-25 — initial (extracted from `docs/prd/onboarding-terms-early.md`, `docs/prd/onboarding-unified-signup.md`, `docs/sdd/onboarding-flow.md`, `docs/sdd/onboarding-unified-signup.md`, `docs/sdd/onboarding-terms-early.md`); supersedes `onboarding-unified-signup`; legacy section removed from product.md (see archive SDD).
+- 2026-04-25 — renamed from `onboarding-terms-early` to `onboarding` after deleting the sunset `onboarding-unified-signup` section.
 
 ---
 
