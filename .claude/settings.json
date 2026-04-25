@@ -10,7 +10,7 @@
     "allow": [
       "Bash(./gradlew *)",
       "Bash(npm *)",
-      "Bash(docker-compose *)",
+      "Bash(docker compose *)",
       "Bash(git status)",
       "Bash(git diff *)",
       "Bash(git log *)",
