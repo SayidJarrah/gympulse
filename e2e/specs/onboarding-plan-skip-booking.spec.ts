@@ -9,12 +9,12 @@ import { randomUUID } from 'node:crypto';
  *   membership → booking → done.
  *
  * Scenario:
- *   Guest signs up, picks a plan (plan-pending 201), then on the booking step
+ *   Guest signs up, picks a plan (membership 201), then on the booking step
  *   clicks "Skip this step" without selecting a class or trainer. Wizard advances
  *   to done and user lands on /home.
  *
  * Key assertions:
- *   - POST /onboarding/plan-pending → 201
+ *   - POST /onboarding/membership → 201
  *   - NO /api/v1/bookings request fires
  *   - NO /api/v1/pt-bookings request fires
  *   - POST /onboarding/complete → 200
@@ -114,12 +114,12 @@ test('booking step skipped: no booking request fires, lands on /home', async ({ 
   await page.getByRole('button', { name: /select plan/i }).first().click();
   await expect(page.getByRole('button', { name: /^selected$/i }).first()).toBeVisible();
 
-  // POST /onboarding/plan-pending must return 201
-  const planPendingResponsePromise = page.waitForResponse(
-    r => r.url().includes('/onboarding/plan-pending') && r.status() === 201,
+  // POST /onboarding/membership must return 201
+  const membershipResponsePromise = page.waitForResponse(
+    r => r.url().includes('/onboarding/membership') && r.status() === 201,
   );
   await page.getByRole('button', { name: /^continue/i }).click();
-  await planPendingResponsePromise;
+  await membershipResponsePromise;
 
   // ── STEP 6 — Booking — skip without selecting anything ────────────────────
   await expect(

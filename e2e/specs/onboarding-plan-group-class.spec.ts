@@ -15,7 +15,7 @@ import { randomUUID } from 'node:crypto';
  *   4. Terms step — POST /auth/register fires exactly once; wizard advances to preferences.
  *   5. Preferences step — Back button is disabled (back-lock); rail rows 1–3 are not
  *      interactive buttons (back-lock guarantee).
- *   6. Membership step — select a plan; POST /onboarding/plan-pending → 201.
+ *   6. Membership step — select a plan; POST /onboarding/membership → 201.
  *   7. Booking step (group-class mode by default) — GET /api/v1/class-schedule → 200;
  *      select first available class card; POST /api/v1/bookings → 201.
  *      Falls back to Continue-with-no-selection when no classes are available.
@@ -186,12 +186,12 @@ test('terms-early reorder: register fires at terms, booking step runs authentica
   await page.getByRole('button', { name: /select plan/i }).first().click();
   await expect(page.getByRole('button', { name: /^selected$/i }).first()).toBeVisible();
 
-  // Wire both waiters BEFORE clicking Continue: plan-pending POST fires on the
+  // Wire both waiters BEFORE clicking Continue: membership POST fires on the
   // click, advances to the booking step, and StepBooking mounts and fires
   // /class-schedule on mount. Registering the class-schedule waiter after the
   // booking heading is visible races with the already-resolved response.
-  const planPendingResponsePromise = page.waitForResponse(
-    r => r.url().includes('/onboarding/plan-pending') && r.status() === 201,
+  const membershipResponsePromise = page.waitForResponse(
+    r => r.url().includes('/onboarding/membership') && r.status() === 201,
   );
   const classScheduleResponsePromise = page.waitForResponse(
     r => r.url().includes('/class-schedule') && r.status() === 200,
@@ -199,7 +199,7 @@ test('terms-early reorder: register fires at terms, booking step runs authentica
 
   await page.getByRole('button', { name: /^continue/i }).click();
 
-  await planPendingResponsePromise;
+  await membershipResponsePromise;
 
   // ── STEP 6 — Booking (member, group-class mode) ────────────────────────────
   await expect(

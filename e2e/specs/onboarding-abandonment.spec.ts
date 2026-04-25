@@ -178,11 +178,11 @@ test('post-terms abandonment: resume via login funnels to /onboarding at booking
   await page1.getByRole('button', { name: /select plan/i }).first().click();
   await expect(page1.getByRole('button', { name: /^selected$/i }).first()).toBeVisible();
 
-  const planPendingResponsePromise = page1.waitForResponse(
-    r => r.url().includes('/onboarding/plan-pending') && r.status() === 201,
+  const membershipResponsePromise = page1.waitForResponse(
+    r => r.url().includes('/onboarding/membership') && r.status() === 201,
   );
   await page1.getByRole('button', { name: /^continue/i }).click();
-  await planPendingResponsePromise;
+  await membershipResponsePromise;
 
   // Confirm we are at the booking step, then abandon
   await expect(

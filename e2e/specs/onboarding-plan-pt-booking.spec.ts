@@ -109,11 +109,11 @@ test('PT booking mode: register fires at terms, PT booking created, lands on /ho
   await page.getByRole('button', { name: /select plan/i }).first().click();
   await expect(page.getByRole('button', { name: /^selected$/i }).first()).toBeVisible();
 
-  const planPendingResponsePromise = page.waitForResponse(
-    r => r.url().includes('/onboarding/plan-pending') && r.status() === 201,
+  const membershipResponsePromise = page.waitForResponse(
+    r => r.url().includes('/onboarding/membership') && r.status() === 201,
   );
   await page.getByRole('button', { name: /^continue/i }).click();
-  await planPendingResponsePromise;
+  await membershipResponsePromise;
 
   // ── STEP 6 — Booking (personal training mode) ─────────────────────────────
   await expect(
