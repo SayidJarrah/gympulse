@@ -375,7 +375,7 @@ see `docs/architecture.md`.
 
 ---
 
-## Home Page Redesign (Pulse) — `home-page-redesign`
+## Member Home — `member-home`
 
 **Status:** active
 **Owner of:** `/home` (authenticated members); `frontend/src/pages/home/MemberHomePage.tsx`; reuses Pulse primitives from `frontend/src/components/landing/`
@@ -416,6 +416,7 @@ see `docs/architecture.md`.
 
 ### History
 - 2026-04-25 — initial (extracted from `docs/prd/home-page-redesign.md`, `docs/sdd/home-page-redesign.md`); supersedes sunset `member-home`; legacy section removed from product.md (see archive SDD).
+- 2026-04-25 — renamed from `home-page-redesign` to `member-home` after deleting the v1 sunset section that previously held that slug.
 
 ---
 
@@ -467,7 +468,7 @@ see `docs/architecture.md`.
 
 **Status:** active
 **Owner of:** primary nav rules for authenticated `USER` accounts (no dedicated route — implemented across `MemberNav` + redirects)
-**Depends on:** `auth`, `home-page-redesign`, `membership-plans`, `user-membership-purchase`
+**Depends on:** `auth`, `member-home`, `membership-plans`, `user-membership-purchase`
 
 ### What user can do
 - An authenticated `USER` lands on `/home` after login as the primary post-login destination.
@@ -487,7 +488,7 @@ see `docs/architecture.md`.
 
 ### Screens
 - `MemberNav` (the authenticated nav strip) — owned by this feature.
-- Home membership section variants — owned jointly with `home-page-redesign`.
+- Home membership section variants — owned jointly with `member-home`.
 
 ### Out of scope (deferred)
 - Public guest-facing plans catalogue and marketing-site nav.

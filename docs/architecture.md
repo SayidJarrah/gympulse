@@ -115,7 +115,7 @@ JPA: `domain/ActivityEvent.kt` · table `activity_events`
 - Stores both `text` (authed view) and `textPublic` (anonymised "A member …" rendering); for `pr` events the public text omits the specific value.
 - Optional `actor` FK (ON DELETE SET NULL) plus denormalised `actorName` (snapshot at event time).
 - Indexed by `occurredAt DESC` to back the landing feed query and the SSE stream.
-- Owned by: `landing-page` (read + SSE). Reused by `home-page-redesign` filtered to `kind ∈ {booking, class}`.
+- Owned by: `landing-page` (read + SSE). Reused by `member-home` filtered to `kind ∈ {booking, class}`.
 
 ### ErrorCode
 JPA: `domain/ErrorCode.kt` (enum, no table) — typed enum of all error codes returned by `GlobalExceptionHandler`. Every code matches exactly the string used in the API contract and frontend error mappings.
@@ -140,7 +140,7 @@ Latest Flyway migration: **V29**.
 | `class_instances` | `scheduler` (write); `group-classes-schedule-view`, `class-booking`, `personal-training-booking` (read/checks) | `template_id → class_templates.id` ON DELETE SET NULL, `room_id → rooms.id` ON DELETE SET NULL | CHECK `type IN (GROUP, PERSONAL)`, duration ∈ [15, 240], capacity ∈ [1, 500]. CHECK `EXTRACT(MINUTE FROM scheduled_at) IN (0, 30)`. V18 added `status` for member schedule. Soft-delete via `deleted_at`. |
 | `class_instance_trainers` | `scheduler` | composite PK + ON DELETE CASCADE on both sides | M:N join. Index on `trainer_id` to back availability + conflict queries. |
 | `bookings` | `class-booking` | `user_id → users.id` ON DELETE RESTRICT, `class_id → class_instances.id` ON DELETE RESTRICT | CHECK `status IN (CONFIRMED, CANCELLED, ATTENDED)`. CHECK consistency between `cancelled_at` and `status`. **V21 dropped** the unique partial index that prevented duplicate CONFIRMED bookings — duplicates now allowed. Indexes on `(user_id, status, booked_at DESC)` and `(class_id, status)`. |
-| `activity_events` | `landing-page` (read/SSE); reused filtered by `home-page-redesign` | `actor_id → users.id` ON DELETE SET NULL | CHECK `kind IN (checkin, booking, pr, class)`. Index on `occurred_at DESC`. Stores both `text` and `text_public` for anonymised view. |
+| `activity_events` | `landing-page` (read/SSE); reused filtered by `member-home` | `actor_id → users.id` ON DELETE SET NULL | CHECK `kind IN (checkin, booking, pr, class)`. Index on `occurred_at DESC`. Stores both `text` and `text_public` for anonymised view. |
 | `pt_bookings` | `personal-training-booking` | `trainer_id → trainers.id` ON DELETE RESTRICT, `member_id → users.id` ON DELETE RESTRICT | CHECK `status IN (CONFIRMED, CANCELLED)`, CHECK `end_at > start_at`. Indexes for trainer/member status queries; partial index on `(trainer_id, start_at, end_at) WHERE status = 'CONFIRMED'` for overlap detection. |
 | `user_trainer_favorites` | `trainer-discovery` | composite PK `(user_id, trainer_id)` | Retained when membership lapses — not deleted. |
 
@@ -284,7 +284,7 @@ Base URL: `/api/v1`. Auth: `Authorization: Bearer <token>` unless noted public. 
 | GET | `/admin/pt-sessions/stats` | `hasRole('ADMIN')` |
 | GET | `/admin/pt-sessions/export` | `hasRole('ADMIN')` |
 
-### Member home / landing (`home-page-redesign`, `landing-page`)
+### Member home / landing (`member-home`, `landing-page`)
 | Method | Path | Auth |
 |---|---|---|
 | GET | `/member-home/classes-preview` | `hasRole('USER')` |
@@ -317,7 +317,7 @@ Cross-reference of routes, Zustand stores, and component directories to owner fe
 | `/login` | `auth` | |
 | `/register` | `auth` | Permanent redirect to `/onboarding` (legacy route preserved for bookmarks). |
 | `/plans`, `/plans/:id` | `membership-plans` | Public catalogue + plan detail. |
-| `/home` | `home-page-redesign` | Authenticated Member home (Pulse). |
+| `/home` | `member-home` | Authenticated Member home (Pulse). |
 | `/membership` | `user-membership-purchase` | My Membership page. |
 | `/profile` | `user-profile-management` | Personal Information + Membership Control + Account Actions. |
 | `/profile/bookings` | `class-booking` | My Bookings cabinet page. |
@@ -353,8 +353,8 @@ Cross-reference of routes, Zustand stores, and component directories to owner fe
 |---|---|
 | `auth/` | `auth` |
 | `admin/` | shared across admin views (primarily `scheduler` + `user-membership-purchase`) |
-| `home/` | `home-page-redesign` (Pulse rebuild; old `MemberHome*` components deleted) |
-| `landing/` | `landing-page` (Pulse primitives reused by `home-page-redesign`) |
+| `home/` | `member-home` (Pulse rebuild; old `MemberHome*` components deleted) |
+| `landing/` | `landing-page` (Pulse primitives reused by `member-home`) |
 | `layout/` | cross-cutting (route guards, `MemberNav`) — `MemberNav` owned by `user-access-flow` |
 | `media/` | `entity-image-management` (shared upload/preview/avatar primitives) |
 | `membership/` | `user-membership-purchase` |
@@ -374,7 +374,7 @@ Cross-reference of routes, Zustand stores, and component directories to owner fe
 |---|---|
 | `admin/` | mostly `scheduler` + `user-membership-purchase` + `class-booking` (per-user history) + `personal-training-booking` |
 | `auth/` | `auth` |
-| `home/` | `home-page-redesign` |
+| `home/` | `member-home` |
 | `landing/` | `landing-page` |
 | `membership/` | `user-membership-purchase` |
 | `onboarding/` | `onboarding-terms-early` |
