@@ -47,11 +47,20 @@ test entrypoint:
 docker compose -f docker-compose.e2e.yml up -d --build
 ```
 
-## Container rebuild after a fix
+## Container rebuild after a fix OR before first run on a feature branch
 
-After ANY code change on a fix branch, rebuild the affected E2E container
-before re-running specs. A stale Vite bundle or JVM process will mask the
-fix and cause "didn't work" false negatives.
+Two situations require a rebuild before running specs:
+
+1. **After any code change on a fix branch.** A stale Vite bundle or JVM
+   process will mask the fix and cause "didn't work" false negatives.
+2. **Before the FIRST run on a feature branch when the e2e stack was
+   already up.** If the stack was started from `main` and you switched
+   to or created a feature branch, the running containers still hold the
+   pre-feature code. Specs will fail with selector-not-found errors that
+   look like spec bugs — but the feature simply isn't built into the
+   container yet. Rebuild before running.
+
+Same commands cover both cases:
 
 ```bash
 # Frontend touched frontend/**:
@@ -59,11 +68,21 @@ docker compose -f docker-compose.e2e.yml up -d --build frontend
 
 # Backend touched backend/**:
 docker compose -f docker-compose.e2e.yml up -d --build --force-recreate backend
+
+# Both:
+docker compose -f docker-compose.e2e.yml up -d --build
 ```
 
-Confirm the compose output shows `Recreated`, not just `Running`. If
-`Running`, force the rebuild again — Docker cached and didn't pick up the
-new layer.
+Run from inside the worktree directory so Docker's build context picks
+up the feature branch's source. Confirm the compose output shows
+`Recreated`, not just `Running`. If `Running`, force the rebuild again —
+Docker cached and didn't pick up the new layer.
+
+**Triage rule when a brand-new spec fails on first run:** before debugging
+the spec, check whether the running container has the feature. Quick
+check: `docker compose -f docker-compose.e2e.yml exec frontend find
+/app/dist -newer /tmp -type f 2>/dev/null | head -5` — if nothing recent,
+rebuild. Saves time chasing fictional spec bugs.
 
 ## Pre-flight
 
