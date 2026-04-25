@@ -115,44 +115,38 @@ variable in code does not appear in the canonical files, block the PR.
 - **Hero background:** use the single approved radial-green + grid texture pattern
   from `docs/design-system/README.md` § Backgrounds; no other hero treatment
 
-## Handoff Shape (validate before and after a handoff is produced)
+## Handoff Shape
 
-Every handoff at `docs/design-system/handoffs/{slug}/` must contain:
+Lighter form. Every handoff at `docs/design-system/handoffs/{slug}/`
+contains:
 
 ```
 docs/design-system/handoffs/{slug}/
-├── README.md              # the spec
-└── design_reference/
-    ├── index.html         # React 18 + Babel CDN entry, opens in a browser without a build
-    ├── {slug}_app.jsx     # shell + state + navigation
-    ├── {slug}_sections.jsx (or per-step files)
-    ├── components.jsx     # optional shared primitives
-    ├── tokens.css         # mirror of tokens used on this surface
-    └── brief.md           # verbatim copy of docs/briefs/{slug}.md
+├── screens.md          # the textual spec — what's not in product.md
+└── prototype/          # OPTIONAL — only when introducing a new pattern
+    └── index.html
 ```
 
-If the shape is not this, halt and request a correction — do not implement from a
-malformed handoff.
+`screens.md` covers ONLY content not present in
+`docs/product.md::{slug}`:
+- Layout (ASCII diagram with metrics)
+- Per-screen detail (eyebrow, headline, fields, copy)
+- Per-state rules (populated, loading, empty, error)
+- Interactions and motion
+- Accessibility
+- Responsive breakpoints
+- Tokens used (token names, not values)
+- Open questions
 
-The spec `README.md` must contain these sections (order matches the existing
-`handoffs/onboarding/README.md` reference):
+If a section is fully covered by product.md or design-system canonical
+files, omit it.
 
-1. Overview — one paragraph
-2. Scope — in-scope + "Not in scope"
-3. Fidelity — plus explicit lofi call-outs
-4. Design DNA (inherited) — bulleted list of reused components/tokens
-5. Top-level app shape — route, auth gate, redirect, persistence
-6. Layout — ASCII diagram with metrics
-7. Screens — per-screen detail with per-state rules
-8. State schema — full TypeScript type
-9. Interactions & motion — durations, easings, reduced-motion handling
-10. Accessibility
-11. Responsive
-12. Files
-13. Open questions
-14. Benchmarks (at least one reference app per major pattern)
+`prototype/` is required ONLY when:
+- A new layout pattern with no analogue in `frontend/src/components/`
+- A novel interaction model
+- A complex multi-step flow whose state machine is non-obvious from prose
 
-Missing sections → request a correction before implementation.
+In all other cases — text-only spec referencing existing components.
 
 ## Patterns to Reject in Review
 
