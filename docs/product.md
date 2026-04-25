@@ -328,25 +328,7 @@ see `docs/architecture.md`.
 - Auto-cancelling bookings on membership expiry.
 
 ### History
-- 2026-04-25 — initial (extracted from `docs/prd/class-booking.md`, `docs/sdd/class-booking.md`); supersedes `class-booking-cancellation`.
-
----
-
-## Class Booking Cancellation — `class-booking-cancellation`
-
-**Status:** sunset
-**Owner of:** —
-**Depends on:** —
-
-This feature was the predecessor of `class-booking`. It has been superseded — see `docs/sdd/class-booking.md` "Supersedes" header. The behavioural rule changes that triggered the supersession:
-- Cancellation cutoff changed from 3 hours to 2 hours before class start.
-- The `ALREADY_BOOKED` rule and personal-conflict check were removed; duplicate and overlapping bookings are now allowed.
-- The "My Bookings" cabinet page was added as a sibling surface to the existing `MyBookingsDrawer`.
-
-The `AlreadyBookedException` class definition and its `GlobalExceptionHandler` mapping intentionally remain in code — they are still invoked by the out-of-scope admin "book on behalf of member" path inherited from this spec.
-
-### History
-- 2026-04-25 — marked sunset; replaced by `class-booking`.
+- 2026-04-25 — initial (extracted from `docs/prd/class-booking.md`, `docs/sdd/class-booking.md`); supersedes `class-booking-cancellation`; legacy section removed from product.md (see archive SDD).
 
 ---
 
