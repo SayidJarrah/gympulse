@@ -1,8 +1,37 @@
 # GymPulse — Product Specification
 
 This is the canonical living spec for every feature. One section per feature.
-Behavioural rules instead of numbered acceptance criteria. Cross-references between
-sections use slug syntax (e.g. ``Depends on: `auth`, `membership-plans` ``).
+Behavioural rules instead of numbered acceptance criteria.
+
+Each feature section MUST declare its dependencies on a line immediately
+below `**Owner of:**`:
+
+    **Depends on:** `slug-a`, `slug-b`
+
+Use `**Depends on:** —` (em dash) when the feature has no deps. Slugs must
+match an existing `## Feature — \`slug\`` header exactly. List every slug
+whose `Rules and invariants` block this feature reads, writes, or enforces
+against. The reverse map is computed — never maintain it by hand.
+`docs/product-deps.json` is generated from these lines; the
+`product-deps-check` GitHub Actions workflow fails PRs where it drifts.
+
+### When to create a new section vs extend an existing one
+
+A new feature gets its own section iff at least **2 of the following 4** are
+true:
+
+1. It owns at least one new route or top-level screen that no existing
+   slug owns.
+2. It owns at least one new persistent entity or store.
+3. It has its own user goal (not a sub-task in the flow of an existing
+   feature).
+4. Its rules do not collapse to "see the rules of `{existing-slug}` plus
+   one new bullet."
+
+Otherwise extend the most relevant existing section: add a bullet to its
+`What user can do`, an item to `Rules and invariants` if needed, and an
+entry in its `History` block. The `product-author` agent applies this
+test before drafting any new section.
 
 For domain entities, schema, API endpoints, routes, stores, and component directories,
 see `docs/architecture.md`.
