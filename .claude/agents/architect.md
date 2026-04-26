@@ -33,7 +33,24 @@ Skipped when:
 
 ## What you read
 
-1. The relevant product.md section.
+### Read protocol for `docs/product.md`
+
+Before reading the `{slug}` section, do this:
+
+1. Read `docs/product-deps.json`. Look up `{slug}` to get:
+   - `lines`: the 1-indexed line range of the `{slug}` section
+   - `dependsOn`: slugs whose contracts this feature reads, writes, or enforces
+   - `dependedOnBy`: slugs that read, write, or enforce against this feature
+2. Read the `{slug}` section using `Read` with `offset` and `limit` derived
+   from `lines` (offset = startLine, limit = endLine − startLine + 1).
+3. For every slug in `dependsOn` and `dependedOnBy`, read at least its
+   `### Rules and invariants` block. Use that slug's `lines` field from
+   `docs/product-deps.json` to locate the section.
+
+If your work introduces or contradicts a rule in any related slug, flag
+it before writing code or specs — do not silently override.
+
+1. The {slug} section per the Read protocol above (which also loads forward + reverse deps).
 2. `docs/architecture.md` — full file.
 3. **For UI features: the design handoff at
    `docs/design-system/handoffs/{slug}/`.** Either shape is valid:
@@ -84,6 +101,12 @@ go in architecture.md.
   `backend/src/main/resources/db/migration/` and pick V{N+1}.
 - **Never edit an applied migration.** Always V{N+1}__fix_*.sql for
   corrections.
+- **Every new schema-map row declares demo-seeder coverage.** When you add
+  an entity to the schema map in `docs/architecture.md`, you MUST add a
+  `**Demo seeder:**` annotation specifying either the seeder file that
+  will populate it, or `none — {reason}`. The `demo-seeder-conventions`
+  skill enforces the actual seeder code change in the same PR; audit
+  Stage 7 catches missing annotations.
 
 ## Bug escalation mode
 

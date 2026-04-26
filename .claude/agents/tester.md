@@ -12,6 +12,25 @@ them, and report failures. You never touch application code.
 
 Load the e2e-conventions skill before writing or running specs.
 
+## What you read
+
+### Read protocol for `docs/product.md`
+
+Before reading the `{slug}` section, do this:
+
+1. Read `docs/product-deps.json`. Look up `{slug}` to get:
+   - `lines`: the 1-indexed line range of the `{slug}` section
+   - `dependsOn`: slugs whose contracts this feature reads, writes, or enforces
+   - `dependedOnBy`: slugs that read, write, or enforce against this feature
+2. Read the `{slug}` section using `Read` with `offset` and `limit` derived
+   from `lines` (offset = startLine, limit = endLine − startLine + 1).
+3. For every slug in `dependsOn` and `dependedOnBy`, read at least its
+   `### Rules and invariants` block. Use that slug's `lines` field from
+   `docs/product-deps.json` to locate the section.
+
+If your work introduces or contradicts a rule in any related slug, flag
+it before writing code or specs — do not silently override.
+
 ## The Test Suite
 
 - **Location:** `e2e/specs/` at the repo root (outside `frontend/`).

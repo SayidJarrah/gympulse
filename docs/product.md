@@ -1,8 +1,37 @@
 # GymPulse — Product Specification
 
 This is the canonical living spec for every feature. One section per feature.
-Behavioural rules instead of numbered acceptance criteria. Cross-references between
-sections use slug syntax (e.g. ``Depends on: `auth`, `membership-plans` ``).
+Behavioural rules instead of numbered acceptance criteria.
+
+Each feature section MUST declare its dependencies on a line immediately
+below `**Owner of:**`:
+
+    **Depends on:** `slug-a`, `slug-b`
+
+Use `**Depends on:** —` (em dash) when the feature has no deps. Slugs must
+match an existing ``## Feature — `slug` `` header exactly. List every slug
+whose `Rules and invariants` block this feature reads, writes, or enforces
+against. The reverse map is computed — never maintain it by hand.
+`docs/product-deps.json` is generated from these lines; the
+`product-deps-check` GitHub Actions workflow fails PRs where it drifts.
+
+### When to create a new section vs extend an existing one
+
+A new feature gets its own section iff at least **2 of the following 4** are
+true:
+
+1. It owns at least one new route or top-level screen that no existing
+   slug owns.
+2. It owns at least one new persistent entity or store.
+3. It has its own user goal (not a sub-task in the flow of an existing
+   feature).
+4. Its rules do not collapse to "see the rules of `{existing-slug}` plus
+   one new bullet."
+
+Otherwise extend the most relevant existing section: add a bullet to its
+`What user can do`, an item to `Rules and invariants` if needed, and an
+entry in its `History` block. The `product-author` agent applies this
+test before drafting any new section.
 
 For domain entities, schema, API endpoints, routes, stores, and component directories,
 see `docs/architecture.md`.
@@ -286,7 +315,7 @@ see `docs/architecture.md`.
 
 **Status:** active
 **Owner of:** `/profile/bookings`; `bookingStore`; `frontend/src/pages/profile/MyBookingsPage.tsx`, booking-related components in `frontend/src/components/schedule/` (incl. `MyBookingsDrawer`)
-**Depends on:** `auth`, `user-membership-purchase`, `group-classes-schedule-view`, `scheduler`
+**Depends on:** `auth`, `membership-plans`, `user-membership-purchase`, `group-classes-schedule-view`, `scheduler`
 
 ### What user can do
 - A Member with an active membership can book a future `SCHEDULED` group class from `/schedule` while it has remaining capacity.
@@ -641,92 +670,3 @@ see `docs/architecture.md`.
 
 ### History
 - 2026-04-25 — initial (extracted from `docs/prd/entity-image-management.md`, `docs/sdd/entity-image-management.md`).
-
----
-
-## Demo Seeder — `demo-seeder`
-
-**Status:** active
-**Owner of:** the `demo-seeder/` Node/Express service on port 3001; SQLite session-tracking DB; operator dashboard at `demo-seeder/public/`; not part of the Spring Boot backend or the React app.
-**Depends on:** `auth` (uses the public `POST /api/v1/auth/register` API to create demo accounts)
-
-> Merged from three PRDs (`demo-seeder-cleanup`, `demo-seeder-credentials-and-state`, `demo-seeder-data-generation`) plus two SDDs (`seeder-presets`, `seeding-consolidation`) — they describe one operator-facing tool with three sub-surfaces (cleanup, state/credentials, generation) and two later refactors (preset config, Flyway → seeder migration).
-
-### What user can do
-- An Operator (sales / devops with direct access to port 3001) opens the dashboard and sees real-time counts: demo users, active memberships, classes this week, total class instances. The dashboard polls `GET /api/state` every 10 seconds.
-- An Operator picks a preset (`small`, `medium`, `large`) and clicks Generate. The seeder runs three sequential phases (user registration → membership creation → class schedule build) and streams progress via SSE.
-- An Operator clicks Cleanup with a valid `X-Admin-Token` header to wipe demo users, memberships, and class instances in one atomic transaction. The response reports actual deleted-row counts per entity type.
-- An Operator can browse a list of demo account credentials in the dashboard, or download all credentials as a CSV (`email`, `password`, `membership_plan`).
-- A warning banner appears when demo data already exists from a previous run (`hasData: true` and `demoUsers > 0`).
-- The Export CSV button is hidden until at least one demo user is tracked.
-
-### Rules and invariants
-- **Cleanup** is protected by `X-Admin-Token`. A missing or wrong token returns 401 and performs no DB operations. Cleanup while a generation run is in progress (`isGenerating === true`) returns 409.
-- Cleanup runs all deletions (class instances, memberships, tracked users, plus a safety-net sweep `DELETE FROM users WHERE email LIKE 'demo.%@gym.demo' AND deleted_at IS NULL`) inside a single Postgres transaction. Any error rolls everything back. The safety-net query always executes — even when SQLite has no tracked IDs.
-- After a successful cleanup commit, all rows in SQLite tables `demo_users`, `demo_memberships`, `demo_class_instances`, and `seeder_meta` are deleted.
-- Cleanup response shape: HTTP 200 with `{ deletedUsers, deletedMemberships, deletedClassInstances }`, each set to the actual Postgres `rowCount` for that statement.
-- **State and credentials endpoints are entirely read-only** with respect to the GymFlow database. No application-level authentication is required to read them.
-- `GET /api/state` returns exactly four numeric fields plus `hasData: boolean`, reflecting current DB + SQLite state at the moment of the request.
-- `GET /api/credentials` returns objects scoped to the current SQLite session — not every `demo.%@gym.demo` email in Postgres.
-- `GET /api/credentials.csv` sets `Content-Type: text/csv` and `Content-Disposition: attachment; filename="demo-credentials.csv"`. The password column value is the value of the `DEMO_PASSWORD` env var, never a hardcoded string.
-- **Generation** is single-flight: a second `GET /api/generate/stream` while `isGenerating` is true returns 409 immediately.
-- If the database has no seeded class templates or no seeded trainers (email pattern `%@gymflow.local`) after loading reference data, the stream emits an `error` event and halts before phase 1.
-- All four parameters are clamped server-side: `members ∈ [10, 50]`, `weeks ∈ [1, 4]`, `membershipPct ∈ [0, 100]`, `densityPct ∈ [10, 100]`. Out-of-range values are silently adjusted, not rejected. (Under the preset refactor — see History — these four params are removed from the external API; the preset name now derives them.)
-- Demo users are created via `POST /api/v1/auth/register` (the real public API) so passwords are bcrypt-hashed and the data path is identical to a real signup. Duplicate-email responses (HTTP 409) emit a warning and reuse the existing user id rather than aborting.
-- Class instances are assigned trainers such that no trainer holds two overlapping slots; if no free trainer is available, exactly one trainer is assigned as fallback and the run continues.
-- Before phase 1, the seeder writes a session id, ISO-8601 timestamp, and serialised config object to the SQLite `seeder_meta` table.
-- Final `done` event contains the actual count of registered users and memberships; followed by `stream_end` to close the connection.
-- **Preset refactor (2026-04-13):** the `preset ∈ {small, medium, large}` field on `SeederConfig` controls every dimension of seeding (rooms, trainers, class templates, plans, members, weeks, etc.). The legacy four query params and the "Add on top anyway" bypass are removed; the preset name is now the only external knob.
-- **Flyway-to-seeder consolidation (2026-04-13):** the demo-seeder owns all reference and demo seeding (rooms, trainers, class templates, plans, QA users, member data). Flyway is limited to schema DDL plus the admin-user bootstrap (V3 + V5). After deleting V13 / V16 / V17, `flyway repair` must be run once before the next clean startup. The E2E stack loses the data previously supplied by V13/V16/V17 — accepted breakage; a separate test strategy owns that.
-- The `demo.%@gym.demo` email pattern and the `%@gymflow.local` trainer pattern are load-bearing for cleanup and the trainer-availability precondition; do not change them silently.
-
-### Screens
-- Dashboard at `demo-seeder/public/index.html` — preset buttons, reference-data counts, dashboard log, warning banner, credentials list, Export CSV button, Cleanup button.
-
-### Out of scope (deferred)
-- Selective cleanup (deleting only users, only classes, etc.).
-- Soft-delete or archiving of demo data — cleanup is a hard delete.
-- Cleanup of trainer or room records seeded by Flyway migrations (now handled by the demo-seeder reference phase per `seeding-consolidation`).
-- Authentication or access control on state, credentials, or generate endpoints.
-- Paginating the credentials list (the maximum 50 users fits on one page).
-- Persisting the warning-banner dismissal across page reloads.
-- Member-facing UI or any application-level account for the operator.
-- Booking class instances on behalf of demo users (no `class_bookings` rows are created).
-- Automated or scheduled generation runs.
-- Test suite for the demo-seeder service itself.
-- Production data management or migration tooling.
-
-### History
-- 2026-04-25 — initial; merges three PRDs (`demo-seeder-cleanup`, `demo-seeder-credentials-and-state`, `demo-seeder-data-generation`) and two SDDs (`seeder-presets`, `seeding-consolidation`) into one feature, since they describe the same operator-facing service.
-
----
-
-## E2E Testing Reset — `testing-reset`
-
-**Status:** active
-**Owner of:** `docker-compose.dev.yml`, `docker-compose.e2e.yml`, top-level `e2e/` Playwright package, `e2e-seed/` baseline SQL; not part of `frontend/` or `backend/` source.
-**Depends on:** `demo-seeder` (dev stack only)
-
-This is an internal infrastructure feature, not a user-facing capability. There is no PRD; the brief is the scope agreement. Captured here so the canonical product spec acknowledges the surface that owns the test infrastructure.
-
-### Rules and invariants
-- Two compose stacks, one command (`/run`):
-  - `docker-compose.dev.yml` (manual playground): ports 5432 / 8080 / 5173 / 3002. Rich demo data via the `demo-seeder` service. Never run Playwright against this stack.
-  - `docker-compose.e2e.yml` (Playwright target): ports 5433 / 8081 / 5174. Separate Postgres container with its own volume. No demo data — only a baseline seed under `e2e-seed/`.
-- Specs live at `e2e/specs/*.spec.ts` at the repo root. `frontend/e2e/` does not exist.
-- One happy-path scenario per feature, added on demand. No error-permutation fans, no visual regression, no admin E2E.
-- Single greenfield baseline scenario as of 2026-04-19b: `onboarding-happy-path.spec.ts` (register → walk wizard with required profile + skip optional steps → accept terms → land on `/home`). New scenarios get added on demand, driven by incident or feature risk.
-- All test emails end with `@test.gympulse.local` and are unique per test via `crypto.randomUUID()`.
-- `/run e2e` always passes `--build`; never run against a stale container.
-- No `waitForTimeout`. Use `expect.poll`, `waitForResponse`, or direct UI-state assertions.
-- No markdown bug docs under `docs/bugs/`. A reproducible bug becomes a failing `test()` case that passes after the fix.
-- Step 2 of the migration (the cleanup PR) deletes `frontend/e2e/`, `docs/qa/`, `docs/bugs/`, the `test-manifest` skill, and every legacy reference in `.claude/`, `.codex/prompts/`, `frontend/AGENTS.md`, `backend/AGENTS.md`, `CLAUDE.md`, in the same PR as the new spec — no half-state.
-
-### Out of scope (deferred)
-- Multi-scenario suites, fixtures, helpers, `ApiClient`. Infrastructure for helper layers is deliberately deferred until a second scenario creates real demand.
-- Admin E2E coverage.
-
-### History
-- 2026-04-25 — initial (extracted from `docs/sdd/testing-reset.md`).
-
----

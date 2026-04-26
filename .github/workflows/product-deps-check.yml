@@ -1,0 +1,29 @@
+name: product-deps-check
+
+on:
+  pull_request:
+    paths:
+      - "docs/product.md"
+      - "docs/product-deps.json"
+      - "scripts/build-product-deps.mjs"
+      - "scripts/build-product-deps.test.mjs"
+      - ".github/workflows/product-deps-check.yml"
+  push:
+    branches: [main]
+    paths:
+      - "docs/product.md"
+      - "docs/product-deps.json"
+      - "scripts/build-product-deps.mjs"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Run parser tests
+        run: node --test scripts/build-product-deps.test.mjs
+      - name: Verify product-deps.json is in sync
+        run: node scripts/build-product-deps.mjs --check

@@ -90,6 +90,59 @@ Single file at `docs/gaps/{YYYY-MM-DD}.md`:
 - Patch architecture.md::Schema map for {N} schema findings
 ```
 
+### Stage 6 — Cross-section dependency drift
+
+Load `docs/product-deps.json`. For each section in `docs/product.md`:
+
+1. Slice the section's text using its `lines` range.
+2. Find every backticked slug reference (`/\`([a-z][a-z0-9-]*)\`/g`) inside
+   the body, **excluding**:
+   - the section's own slug,
+   - slugs that appear inside `**Owner of:**` or `**Depends on:**` lines
+     (declarative metadata, not behavioural references),
+   - everything below `### Out of scope` and `### History` headings until
+     the next `### ` heading or section break (these legitimately cite
+     siblings without creating a behavioural dep).
+3. Compare the resulting set against `dependsOn`. Any slug referenced in
+   the body but absent from `dependsOn` is drift.
+
+Report each drift entry as:
+
+- **Section:** `{slug}`
+- **Missing dependency:** `{referenced-slug}`
+- **Evidence line:** the `product.md` line that referenced it.
+
+Do not auto-fix — append findings to the dated gap report under a
+"Stage 6: cross-section drift" heading. The owner of the section decides
+whether to add the dep or rewrite the rule.
+
+### Stage 7 — Demo-seeder coverage drift
+
+Three checks against the auto-reflection invariant:
+
+1. **Schema-map row → annotation.** For each row in
+   `docs/architecture.md`'s schema map, verify a `**Demo seeder:**`
+   annotation exists in the Notes column. Missing annotation = drift.
+2. **Annotated owner file → exists.** For each row whose annotation cites
+   a seeder file path, verify that file exists in the working tree.
+   Citation of a missing file = drift.
+3. **Seeded-tables map ↔ schema map.** Cross-reference the
+   "Seeded tables and owner files" table at the top of
+   `.claude/skills/demo-seeder-conventions/SKILL.md` against the schema-map
+   annotations. Tables present in one but absent from the other = drift.
+
+Report each drift entry as:
+
+- **Table:** `{name}`
+- **Issue:** missing annotation / file `{path}` not found / present in
+  schema map but absent from skill map (or vice-versa).
+- **Evidence:** file path + line.
+
+Do not auto-fix — append findings to the dated gap report under a
+"Stage 7: demo-seeder coverage" heading. The architect (for missing
+annotations) or developer (for missing seeder code) closes the gap in a
+follow-up PR.
+
 ## Hard rules
 
 - **No code edits.** Pure diagnostic.

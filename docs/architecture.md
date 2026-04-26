@@ -127,24 +127,30 @@ JPA: `domain/ErrorCode.kt` (enum, no table) — typed enum of all error codes re
 
 Latest Flyway migration: **V29**.
 
+Every schema-map row carries a `**Demo seeder:**` annotation in the Notes
+column — either the path of the seeder file that populates it
+(e.g. `demo-seeder/src/referenceSeeder.ts`) or `none — {reason}` for
+internal/system tables that should not be seeded. This is enforced by
+audit Stage 7 and the `demo-seeder-conventions` skill.
+
 | Table | Owner feature(s) | FK relations | Notes |
 |---|---|---|---|
-| `users` | `auth` | — | UNIQUE on `email`. CHECK `role IN (USER, ADMIN)`. Soft-delete via `deleted_at`. Admin row seeded by V3 + V5. |
-| `refresh_tokens` | `auth` | `user_id → users.id` ON DELETE CASCADE | UNIQUE on `token_hash`. Partial index for active tokens per user. |
-| `membership_plans` | `membership-plans` | — | CHECK `status IN (ACTIVE, INACTIVE)`, CHECK price/duration > 0. Optimistic-lock `version` column. |
-| `user_memberships` | `user-membership-purchase`; `PLAN_PENDING` placeholder owned by `onboarding` | `user_id → users.id`, `plan_id → membership_plans.id` | V28 widened `status` to `VARCHAR(20)` + extended CHECK to include `PLAN_PENDING`. Partial unique index `uidx_user_memberships_one_active_per_user (user_id) WHERE status = 'ACTIVE'`; `PLAN_PENDING` is intentionally NOT covered. CHECK `end_date >= start_date`. |
-| `user_profiles` | `user-profile-management`; photo columns shared with `entity-image-management`; `onboarding_completed_at` owned by `onboarding` | `user_id → users.id` ON DELETE CASCADE (PK and FK) | JSONB `fitness_goals` and `preferred_class_types`. V19 added `profile_photo_data`/`mime_type` BYTEA pair. V23 added `emergency_contact_name`/`phone`. V27 added `onboarding_completed_at`. V29 added `bio` (TEXT, nullable, member-private — NOT exposed via admin endpoints). |
-| `trainers` | `scheduler` (CRUD), `trainer-discovery`, `personal-training-booking` | — | UNIQUE `email`. `specialisations TEXT[]`. Photo BYTEA pair (V8). V15 added `experience_years`, `accent_color`, `default_room`, etc. (Trainer Discovery). V26 added PT-related columns. Soft-delete via `deleted_at`. |
-| `rooms` | `scheduler` | — | UNIQUE `name`. CHECK `capacity >= 1`. Photo BYTEA pair (V19). |
-| `class_templates` | `scheduler`; image reused by `entity-image-management` | `room_id → rooms.id` ON DELETE SET NULL | UNIQUE `name`. CHECK on `category` and `difficulty`. `is_seeded` flag separates predefined from admin-created templates. Photo BYTEA pair. |
-| `class_instances` | `scheduler` (write); `group-classes-schedule-view`, `class-booking`, `personal-training-booking` (read/checks) | `template_id → class_templates.id` ON DELETE SET NULL, `room_id → rooms.id` ON DELETE SET NULL | CHECK `type IN (GROUP, PERSONAL)`, duration ∈ [15, 240], capacity ∈ [1, 500]. CHECK `EXTRACT(MINUTE FROM scheduled_at) IN (0, 30)`. V18 added `status` for member schedule. Soft-delete via `deleted_at`. |
-| `class_instance_trainers` | `scheduler` | composite PK + ON DELETE CASCADE on both sides | M:N join. Index on `trainer_id` to back availability + conflict queries. |
-| `bookings` | `class-booking` | `user_id → users.id` ON DELETE RESTRICT, `class_id → class_instances.id` ON DELETE RESTRICT | CHECK `status IN (CONFIRMED, CANCELLED, ATTENDED)`. CHECK consistency between `cancelled_at` and `status`. **V21 dropped** the unique partial index that prevented duplicate CONFIRMED bookings — duplicates now allowed. Indexes on `(user_id, status, booked_at DESC)` and `(class_id, status)`. |
-| `activity_events` | `landing-page` (read/SSE); reused filtered by `member-home` | `actor_id → users.id` ON DELETE SET NULL | CHECK `kind IN (checkin, booking, pr, class)`. Index on `occurred_at DESC`. Stores both `text` and `text_public` for anonymised view. |
-| `pt_bookings` | `personal-training-booking` | `trainer_id → trainers.id` ON DELETE RESTRICT, `member_id → users.id` ON DELETE RESTRICT | CHECK `status IN (CONFIRMED, CANCELLED)`, CHECK `end_at > start_at`. Indexes for trainer/member status queries; partial index on `(trainer_id, start_at, end_at) WHERE status = 'CONFIRMED'` for overlap detection. |
-| `user_trainer_favorites` | `trainer-discovery` | composite PK `(user_id, trainer_id)` | Retained when membership lapses — not deleted. |
+| `users` | `auth` | — | UNIQUE on `email`. CHECK `role IN (USER, ADMIN)`. Soft-delete via `deleted_at`. Admin row seeded by V3 + V5. **Demo seeder:** `demo-seeder/src/referenceSeeder.ts` (QA fixed-UUID users) plus `demo-seeder/src/seeder.ts` (dynamic demo members via `POST /api/v1/auth/register`). |
+| `refresh_tokens` | `auth` | `user_id → users.id` ON DELETE CASCADE | UNIQUE on `token_hash`. Partial index for active tokens per user. **Demo seeder:** none — populated indirectly through login / token-rotation flow. |
+| `membership_plans` | `membership-plans` | — | CHECK `status IN (ACTIVE, INACTIVE)`, CHECK price/duration > 0. Optimistic-lock `version` column. **Demo seeder:** `demo-seeder/src/referenceSeeder.ts`. |
+| `user_memberships` | `user-membership-purchase`; `PLAN_PENDING` placeholder owned by `onboarding` | `user_id → users.id`, `plan_id → membership_plans.id` | V28 widened `status` to `VARCHAR(20)` + extended CHECK to include `PLAN_PENDING`. Partial unique index `uidx_user_memberships_one_active_per_user (user_id) WHERE status = 'ACTIVE'`; `PLAN_PENDING` is intentionally NOT covered. CHECK `end_date >= start_date`. **Demo seeder:** `demo-seeder/src/referenceSeeder.ts` (`upsertPlanPendingDemoRow()` for qa.user01 PLAN_PENDING placeholder) + `demo-seeder/src/seeder.ts` (`createMemberships()` for ACTIVE rows on selected demo members via `POST /memberships`). |
+| `user_profiles` | `user-profile-management`; photo columns shared with `entity-image-management`; `onboarding_completed_at` owned by `onboarding` | `user_id → users.id` ON DELETE CASCADE (PK and FK) | JSONB `fitness_goals` and `preferred_class_types`. V19 added `profile_photo_data`/`mime_type` BYTEA pair. V23 added `emergency_contact_name`/`phone`. V27 added `onboarding_completed_at`. V29 added `bio` (TEXT, nullable, member-private — NOT exposed via admin endpoints). **Demo seeder:** `demo-seeder/src/referenceSeeder.ts` (QA users) + `demo-seeder/src/seeder.ts` (dynamic registrations) — both paths must populate the same fields. |
+| `trainers` | `scheduler` (CRUD), `trainer-discovery`, `personal-training-booking` | — | UNIQUE `email`. `specialisations TEXT[]`. Photo BYTEA pair (V8). V15 added `experience_years`, `accent_color`, `default_room`, etc. (Trainer Discovery). V26 added PT-related columns. Soft-delete via `deleted_at`. **Demo seeder:** `demo-seeder/src/referenceSeeder.ts` (fixed UUIDs in `data/trainers.ts`; email pattern `%@gymflow.local` is load-bearing). |
+| `rooms` | `scheduler` | — | UNIQUE `name`. CHECK `capacity >= 1`. Photo BYTEA pair (V19). **Demo seeder:** `demo-seeder/src/referenceSeeder.ts` (fixed in `data/rooms.ts`). |
+| `class_templates` | `scheduler`; image reused by `entity-image-management` | `room_id → rooms.id` ON DELETE SET NULL | UNIQUE `name`. CHECK on `category` and `difficulty`. `is_seeded` flag separates predefined from admin-created templates. Photo BYTEA pair. **Demo seeder:** `demo-seeder/src/referenceSeeder.ts` (predefined `is_seeded = TRUE` templates). |
+| `class_instances` | `scheduler` (write); `group-classes-schedule-view`, `class-booking`, `personal-training-booking` (read/checks) | `template_id → class_templates.id` ON DELETE SET NULL, `room_id → rooms.id` ON DELETE SET NULL | CHECK `type IN (GROUP, PERSONAL)`, duration ∈ [15, 240], capacity ∈ [1, 500]. CHECK `EXTRACT(MINUTE FROM scheduled_at) IN (0, 30)`. V18 added `status` for member schedule. Soft-delete via `deleted_at`. **Demo seeder:** `demo-seeder/src/seeder.ts` (`createClassInstances()`, dynamic per preset). |
+| `class_instance_trainers` | `scheduler` | composite PK + ON DELETE CASCADE on both sides | M:N join. Index on `trainer_id` to back availability + conflict queries. **Demo seeder:** `demo-seeder/src/seeder.ts` (assigned alongside class instances; no two overlapping slots per trainer). |
+| `bookings` | `class-booking` | `user_id → users.id` ON DELETE RESTRICT, `class_id → class_instances.id` ON DELETE RESTRICT | CHECK `status IN (CONFIRMED, CANCELLED, ATTENDED)`. CHECK consistency between `cancelled_at` and `status`. **V21 dropped** the unique partial index that prevented duplicate CONFIRMED bookings — duplicates now allowed. Indexes on `(user_id, status, booked_at DESC)` and `(class_id, status)`. **Demo seeder:** `demo-seeder/src/seeder.ts` (`createBookings()`, dynamic per preset). |
+| `activity_events` | `landing-page` (read/SSE); reused filtered by `member-home` | `actor_id → users.id` ON DELETE SET NULL | CHECK `kind IN (checkin, booking, pr, class)`. Index on `occurred_at DESC`. Stores both `text` and `text_public` for anonymised view. **Demo seeder:** none — emitted by backend services as side-effects of check-in / booking / class events; no direct seeder write. |
+| `pt_bookings` | `personal-training-booking` | `trainer_id → trainers.id` ON DELETE RESTRICT, `member_id → users.id` ON DELETE RESTRICT | CHECK `status IN (CONFIRMED, CANCELLED)`, CHECK `end_at > start_at`. Indexes for trainer/member status queries; partial index on `(trainer_id, start_at, end_at) WHERE status = 'CONFIRMED'` for overlap detection. **Demo seeder:** `demo-seeder/src/seeder.ts` (`createPtBookings()`, dynamic per preset). |
+| `user_trainer_favorites` | `trainer-discovery` | composite PK `(user_id, trainer_id)` | Retained when membership lapses — not deleted. **Demo seeder:** none — populated indirectly through the trainer-discovery favorites flow. |
 
-The `flyway_schema_history` table is also present (managed by Flyway itself); migrations V13, V16, V17 were retired per `seeding-consolidation` and require a one-time `flyway repair` on environments that previously applied them.
+The `flyway_schema_history` table is also present (managed by Flyway itself); migrations V13, V16, V17 were retired per `seeding-consolidation` and require a one-time `flyway repair` on environments that previously applied them. **Demo seeder:** none — Flyway internal.
 
 ---
 
@@ -298,7 +304,7 @@ Base URL: `/api/v1`. Auth: `Authorization: Bearer <token>` unless noted public. 
 |---|---|---|
 | GET | `/admin/users/{userId}/photo` | `hasRole('ADMIN')` |
 
-### Test support (`testing-reset`)
+### Test support (E2E stack — see `e2e-conventions` skill)
 | Method | Path | Auth |
 |---|---|---|
 | POST | `/test-support/e2e/cleanup` | `hasRole('ADMIN')` |

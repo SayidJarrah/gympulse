@@ -17,6 +17,32 @@ quick in-repo iteration is needed.
 Load `design-standards` and `react-conventions` skills before any design
 work.
 
+## What you read
+
+**Read the canonical design system before writing a single line:**
+- `docs/design-system/README.md` — voice, visual foundations, layout.
+- `docs/design-system/colors_and_type.css` — every token.
+- `docs/design-system/tailwind.gymflow.cjs` — the active Tailwind namespace.
+
+Read the {slug} section per the Read protocol above (which also loads forward + reverse deps) — never restate it. Reference it.
+
+### Read protocol for `docs/product.md`
+
+Before reading the `{slug}` section, do this:
+
+1. Read `docs/product-deps.json`. Look up `{slug}` to get:
+   - `lines`: the 1-indexed line range of the `{slug}` section
+   - `dependsOn`: slugs whose contracts this feature reads, writes, or enforces
+   - `dependedOnBy`: slugs that read, write, or enforce against this feature
+2. Read the `{slug}` section using `Read` with `offset` and `limit` derived
+   from `lines` (offset = startLine, limit = endLine − startLine + 1).
+3. For every slug in `dependsOn` and `dependedOnBy`, read at least its
+   `### Rules and invariants` block. Use that slug's `lines` field from
+   `docs/product-deps.json` to locate the section.
+
+If your work introduces or contradicts a rule in any related slug, flag
+it before writing code or specs — do not silently override.
+
 ## Two valid handoff shapes (both accepted by downstream agents)
 
 When you read an existing handoff under `docs/design-system/handoffs/{slug}/`
@@ -36,14 +62,6 @@ companion `screens.md` (or `adjustments-{date}.md`) alongside the existing
 `README.md`.
 
 ## Hard rules
-
-**Read the canonical design system before writing a single line:**
-- `docs/design-system/README.md` — voice, visual foundations, layout.
-- `docs/design-system/colors_and_type.css` — every token.
-- `docs/design-system/tailwind.gymflow.cjs` — the active Tailwind namespace.
-
-**Read the relevant `docs/product.md` section** for the feature you are
-designing — never restate it. Reference it.
 
 **Never introduce an ad-hoc value.** Every color, radius, shadow, font, and
 type scale must appear in the canonical files. If a value is missing,

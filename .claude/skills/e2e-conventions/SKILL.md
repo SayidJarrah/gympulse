@@ -109,3 +109,39 @@ If unhealthy: start the E2E stack via `/run e2e`.
 
 A reproducible failure becomes a new `test()` case in an existing or new
 spec — never a markdown bug brief.
+
+## E2E reset workflow
+
+Background and infrastructure rules for the test stack itself (formerly
+the `testing-reset` section of `docs/product.md`). The goal is a single
+sanctioned command (`/run e2e`) and one Playwright surface — no
+duplicate or legacy test trees.
+
+### Stack ownership
+
+The E2E stack is owned by this skill, `docker-compose.e2e.yml`, the
+top-level `e2e/` Playwright package, and the `e2e-seed/` baseline SQL.
+None of these belong to `frontend/` or `backend/`.
+
+The dev stack (`docker-compose.dev.yml`, ports 5432 / 8080 / 5173 / 3002,
+DB `gymflow`) is the manual playground seeded by `demo-seeder`. **Never
+run Playwright against the dev stack** — Playwright always targets the
+e2e stack.
+
+### Single Playwright surface
+
+- Specs live at `e2e/specs/*.spec.ts` at the repo root.
+- `frontend/e2e/` does not exist. Do not recreate it.
+- The `e2e-seed/` directory holds the baseline seed SQL applied at
+  container start; the e2e DB has no demo data beyond that.
+
+### Deliberate non-goals
+
+The following are deliberately deferred — do not add them on speculation:
+
+- Multi-scenario suites, shared fixtures, `ApiClient` helper layers.
+  Infrastructure for helpers waits until a second scenario creates real
+  demand for it.
+- Admin E2E coverage.
+- Visual-regression checks.
+- Error-permutation fans (one happy path per feature is the contract).

@@ -13,15 +13,34 @@ end-to-end in a single session: backend first, frontend second. No handoffs.
 Load kotlin-conventions and react-conventions skills before writing any
 code.
 
-## Hard rules
+## What you read
 
 **Read the source-of-truth docs fully before writing a single file:**
 
-1. `docs/product.md` section for {slug} — the user-facing contract.
+1. The {slug} section per the Read protocol above (which also loads forward + reverse deps).
 2. `docs/architecture.md` — entity invariants, schema map, API map relevant
    to this feature.
 3. `docs/design-system/handoffs/{slug}/screens.md` if UI work.
 4. `docs/design-system/README.md` and `colors_and_type.css` if UI work.
+
+### Read protocol for `docs/product.md`
+
+Before reading the `{slug}` section, do this:
+
+1. Read `docs/product-deps.json`. Look up `{slug}` to get:
+   - `lines`: the 1-indexed line range of the `{slug}` section
+   - `dependsOn`: slugs whose contracts this feature reads, writes, or enforces
+   - `dependedOnBy`: slugs that read, write, or enforce against this feature
+2. Read the `{slug}` section using `Read` with `offset` and `limit` derived
+   from `lines` (offset = startLine, limit = endLine − startLine + 1).
+3. For every slug in `dependsOn` and `dependedOnBy`, read at least its
+   `### Rules and invariants` block. Use that slug's `lines` field from
+   `docs/product-deps.json` to locate the section.
+
+If your work introduces or contradicts a rule in any related slug, flag
+it before writing code or specs — do not silently override.
+
+## Hard rules
 
 **Backend phase must complete and build cleanly before frontend phase
 starts.** Run `./gradlew test` after backend phase. Do not start frontend
