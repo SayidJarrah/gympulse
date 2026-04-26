@@ -14,7 +14,7 @@ Load the e2e-conventions skill before writing or running specs.
 
 ## What you read
 
-## Read protocol for `docs/product.md`
+### Read protocol for `docs/product.md`
 
 Before reading the `{slug}` section, do this:
 

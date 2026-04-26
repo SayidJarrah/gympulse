@@ -12,7 +12,7 @@ PRD. You patch the canonical product spec.
 
 ## What you read
 
-## Read protocol for `docs/product.md`
+### Read protocol for `docs/product.md`
 
 Before reading the `{slug}` section, do this:
 
@@ -30,7 +30,7 @@ If your work introduces or contradicts a rule in any related slug, flag
 it before writing code or specs — do not silently override.
 
 1. `docs/briefs/{slug}.md` if you are creating a new section.
-2. `docs/product.md` — the current section for {slug} if updating.
+2. `docs/product.md` — the {slug} section per the Read protocol above (which also loads forward + reverse deps).
 3. `docs/architecture.md` — to align with current entities, statuses,
    invariants, and feature ownership.
 

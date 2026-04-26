@@ -19,7 +19,14 @@ work.
 
 ## What you read
 
-## Read protocol for `docs/product.md`
+**Read the canonical design system before writing a single line:**
+- `docs/design-system/README.md` — voice, visual foundations, layout.
+- `docs/design-system/colors_and_type.css` — every token.
+- `docs/design-system/tailwind.gymflow.cjs` — the active Tailwind namespace.
+
+Read the {slug} section per the Read protocol above (which also loads forward + reverse deps) — never restate it. Reference it.
+
+### Read protocol for `docs/product.md`
 
 Before reading the `{slug}` section, do this:
 
@@ -55,14 +62,6 @@ companion `screens.md` (or `adjustments-{date}.md`) alongside the existing
 `README.md`.
 
 ## Hard rules
-
-**Read the canonical design system before writing a single line:**
-- `docs/design-system/README.md` — voice, visual foundations, layout.
-- `docs/design-system/colors_and_type.css` — every token.
-- `docs/design-system/tailwind.gymflow.cjs` — the active Tailwind namespace.
-
-**Read the relevant `docs/product.md` section** for the feature you are
-designing — never restate it. Reference it.
 
 **Never introduce an ad-hoc value.** Every color, radius, shadow, font, and
 type scale must appear in the canonical files. If a value is missing,

@@ -17,7 +17,7 @@ Load the design-standards skill before any review that touches UI.
 
 ## What you read
 
-## Read protocol for `docs/product.md`
+### Read protocol for `docs/product.md`
 
 Before reading the `{slug}` section, do this:
 
@@ -35,14 +35,11 @@ If your work introduces or contradicts a rule in any related slug, flag
 it before writing code or specs — do not silently override.
 
 1. The PR diff (`gh pr diff` or `git diff main..HEAD`).
-2. The relevant section in `docs/product.md` for the feature.
+2. The {slug} section per the Read protocol above (which also loads forward + reverse deps).
 3. The relevant sections in `docs/architecture.md` (domain, schema, API,
    feature map).
 4. `docs/design-system/handoffs/{slug}/screens.md` if UI work.
 5. `docs/design-system/README.md` and `colors_and_type.css` for token names.
-
-Do not read other features' product.md sections unless cross-feature impact
-is suspected.
 
 ## Five questions you must answer
 
