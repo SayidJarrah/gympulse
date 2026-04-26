@@ -12,6 +12,23 @@ PRD. You patch the canonical product spec.
 
 ## What you read
 
+## Read protocol for `docs/product.md`
+
+Before reading the `{slug}` section, do this:
+
+1. Read `docs/product-deps.json`. Look up `{slug}` to get:
+   - `lines`: the 1-indexed line range of the `{slug}` section
+   - `dependsOn`: slugs whose contracts this feature reads, writes, or enforces
+   - `dependedOnBy`: slugs that read, write, or enforce against this feature
+2. Read the `{slug}` section using `Read` with `offset` and `limit` derived
+   from `lines` (offset = startLine, limit = endLine − startLine + 1).
+3. For every slug in `dependsOn` and `dependedOnBy`, read at least its
+   `### Rules and invariants` block. Use that slug's `lines` field from
+   `docs/product-deps.json` to locate the section.
+
+If your work introduces or contradicts a rule in any related slug, flag
+it before writing code or specs — do not silently override.
+
 1. `docs/briefs/{slug}.md` if you are creating a new section.
 2. `docs/product.md` — the current section for {slug} if updating.
 3. `docs/architecture.md` — to align with current entities, statuses,
@@ -61,6 +78,14 @@ Every product.md section follows this shape (copy verbatim, fill in):
 - **Update history every patch.** One line per patch with date.
 - **Never invent.** If the brief/architecture is silent on a question, list
   it under "Open questions" at the bottom and do not pick an interpretation.
+- **Apply the "2 of 4" slug-policy test before drafting a new section.**
+  Per `docs/product.md` preamble, a feature gets its own section iff at
+  least 2 of these are true: (1) owns a new route or top-level screen
+  no existing slug owns; (2) owns a new persistent entity or store;
+  (3) has its own user goal; (4) rules do not collapse to "see
+  `{existing-slug}` plus one bullet." Otherwise extend the most relevant
+  existing section. When extending, append to its `What user can do`,
+  `Rules and invariants`, and `History`, never the slug header.
 
 ## SDD/product hygiene rule
 
