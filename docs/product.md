@@ -12,11 +12,11 @@ see `docs/architecture.md`.
 ## Auth — `auth`
 
 **Status:** active
-**Owner of:** `/login`, `/register` (legacy redirect to `/onboarding`); `authStore`; `frontend/src/pages/auth/`, `frontend/src/components/auth/`
+**Owner of:** `/login` page; `/auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout` endpoint contracts (no user-facing register page — `/register` is a permanent redirect to `/onboarding`; the registration surface lives in `onboarding`); `authStore`; `frontend/src/pages/auth/LoginPage.tsx`, `frontend/src/components/auth/`
 **Depends on:** —
 
 ### What user can do
-- A guest can register with email + password and receive auth tokens.
+- A guest navigates from `/login` to the onboarding wizard via the "Register" link; account creation happens inside `onboarding` and is owned there.
 - A guest can log in with email + password and receive an access token + refresh token.
 - An authenticated user can exchange a refresh token for a new access + refresh token (token rotation).
 - An authenticated user can log out, invalidating the submitted refresh token.
@@ -31,11 +31,10 @@ see `docs/architecture.md`.
 - Login with unknown email and login with wrong password return the same `INVALID_CREDENTIALS` response, to prevent user enumeration.
 - Email validation uses RFC 5322 basic format; password is 8–15 characters.
 - `/auth/register`, `/auth/login`, `/auth/refresh` are public. `/auth/logout` requires a valid access token. Logout is idempotent — calling it with an unknown or already-invalidated refresh token still returns 204.
-- The register endpoint also creates a `user_profiles` row and returns the same shape as login (tokens + expiresIn + hasActiveMembership), so the onboarding flow can authenticate immediately. (See `onboarding-unified-signup`, `onboarding-terms-early`.)
+- The register endpoint also creates a `user_profiles` row and returns the same shape as login (tokens + expiresIn + hasActiveMembership), so the onboarding flow can authenticate immediately. (See `onboarding`.)
 
 ### Screens
-- Login page — email + password form, error banner on bad credentials.
-- Register page — kept only as a permanent redirect to `/onboarding`; the wizard's credentials step is the new signup surface.
+- Login page — email + password form, error banner on bad credentials. (No register screen — the legacy `/register` route is a permanent redirect to `/onboarding`; the wizard owns credentials capture.)
 
 ### Out of scope (deferred)
 - Password reset / forgot-password flow.
@@ -47,6 +46,7 @@ see `docs/architecture.md`.
 
 ### History
 - 2026-04-25 — initial (extracted from `docs/prd/auth.md`, `docs/sdd/auth.md`).
+- 2026-04-25 — narrowed: registration UI surface fully owned by `onboarding`; auth retains backend `/auth/*` contracts and the `/login` page only.
 
 ---
 
@@ -116,7 +116,7 @@ see `docs/architecture.md`.
 - Cancelling a non-existent or already-non-`ACTIVE` membership returns `MEMBERSHIP_NOT_ACTIVE` / `MEMBERSHIP_NOT_FOUND` / `NO_ACTIVE_MEMBERSHIP`.
 - Admins cannot create a membership on behalf of a user — activation is self-service only.
 - Status `EXPIRED` exists in the data model but the auto-expiry job is a deferred feature; the booking gate filters by `status = ACTIVE` only and does not check `endDate`.
-- Status `PLAN_PENDING` exists in the data model and is owned by `onboarding-unified-signup`/`onboarding-terms-early`; this feature does not transition into or out of `PLAN_PENDING`.
+- Status `PLAN_PENDING` exists in the data model and is owned by `onboarding`; this feature does not transition into or out of `PLAN_PENDING`.
 
 ### Screens
 - My Membership page — current plan summary with cancel action and confirmation dialog.
@@ -328,25 +328,7 @@ see `docs/architecture.md`.
 - Auto-cancelling bookings on membership expiry.
 
 ### History
-- 2026-04-25 — initial (extracted from `docs/prd/class-booking.md`, `docs/sdd/class-booking.md`); supersedes `class-booking-cancellation`.
-
----
-
-## Class Booking Cancellation — `class-booking-cancellation`
-
-**Status:** sunset
-**Owner of:** —
-**Depends on:** —
-
-This feature was the predecessor of `class-booking`. It has been superseded — see `docs/sdd/class-booking.md` "Supersedes" header. The behavioural rule changes that triggered the supersession:
-- Cancellation cutoff changed from 3 hours to 2 hours before class start.
-- The `ALREADY_BOOKED` rule and personal-conflict check were removed; duplicate and overlapping bookings are now allowed.
-- The "My Bookings" cabinet page was added as a sibling surface to the existing `MyBookingsDrawer`.
-
-The `AlreadyBookedException` class definition and its `GlobalExceptionHandler` mapping intentionally remain in code — they are still invoked by the out-of-scope admin "book on behalf of member" path inherited from this spec.
-
-### History
-- 2026-04-25 — marked sunset; replaced by `class-booking`.
+- 2026-04-25 — initial (extracted from `docs/prd/class-booking.md`, `docs/sdd/class-booking.md`); supersedes `class-booking-cancellation`; legacy section removed from product.md (see archive SDD).
 
 ---
 
@@ -395,19 +377,6 @@ The `AlreadyBookedException` class definition and its `GlobalExceptionHandler` m
 
 ## Member Home — `member-home`
 
-**Status:** sunset
-**Owner of:** —
-**Depends on:** —
-
-This was the original v1 Member Home spec (post-login destination with a flat-grid layout containing membership status, trainer carousel, and upcoming classes carousel). It has been replaced by the Pulse redesign — see `home-page-redesign`. The old `src/components/home/` flat-grid components (`MemberHomeHero`, `MembershipPrimaryCard`, `QuickActionsPanel`, `TrainerPreviewCarousel`, `ClassPreviewCarousel`, etc.) are deleted by that redesign.
-
-### History
-- 2026-04-25 — marked sunset; replaced by `home-page-redesign`.
-
----
-
-## Home Page Redesign (Pulse) — `home-page-redesign`
-
 **Status:** active
 **Owner of:** `/home` (authenticated members); `frontend/src/pages/home/MemberHomePage.tsx`; reuses Pulse primitives from `frontend/src/components/landing/`
 **Depends on:** `auth`, `user-membership-purchase`, `class-booking`, `trainer-discovery`, `landing-page`, `group-classes-schedule-view`
@@ -433,6 +402,7 @@ This was the original v1 Member Home spec (post-login destination with a flat-gr
 - Shared Pulse primitives (`PulseNav`, `PulseFooter`, `AmbientWaveform`, `ActivityFeed`, `BigCountdown`, `StatsStrip`, `HeroNoBooked`) are imported from `frontend/src/components/landing/`, never duplicated into a home-specific directory.
 - No new backend endpoints; reuses `/landing/viewer-state`, `/bookings/me`, `DELETE /bookings/{id}`, `/memberships/me`, `/trainers/favorites`, `/landing/activity` + `/landing/activity/stream`.
 - Page is not horizontally scrollable at 360 px.
+- v1 flat-grid components (`MemberHomeHero`, `MembershipPrimaryCard`, `QuickActionsPanel`, `TrainerPreviewCarousel`, `ClassPreviewCarousel`) were deleted by this redesign — see archive SDD `member-home.md`.
 
 ### Screens
 - Member Home page — hero (booked or no-booked variant), stats strip, upcoming sessions, membership card, activity feed.
@@ -445,7 +415,8 @@ This was the original v1 Member Home spec (post-login destination with a flat-gr
 - Notifications, recommendations, personalised ranking.
 
 ### History
-- 2026-04-25 — initial (extracted from `docs/prd/home-page-redesign.md`, `docs/sdd/home-page-redesign.md`); supersedes `member-home`.
+- 2026-04-25 — initial (extracted from `docs/prd/home-page-redesign.md`, `docs/sdd/home-page-redesign.md`); supersedes sunset `member-home`; legacy section removed from product.md (see archive SDD).
+- 2026-04-25 — renamed from `home-page-redesign` to `member-home` after deleting the v1 sunset section that previously held that slug.
 
 ---
 
@@ -497,7 +468,7 @@ This was the original v1 Member Home spec (post-login destination with a flat-gr
 
 **Status:** active
 **Owner of:** primary nav rules for authenticated `USER` accounts (no dedicated route — implemented across `MemberNav` + redirects)
-**Depends on:** `auth`, `home-page-redesign`, `membership-plans`, `user-membership-purchase`
+**Depends on:** `auth`, `member-home`, `membership-plans`, `user-membership-purchase`
 
 ### What user can do
 - An authenticated `USER` lands on `/home` after login as the primary post-login destination.
@@ -517,7 +488,7 @@ This was the original v1 Member Home spec (post-login destination with a flat-gr
 
 ### Screens
 - `MemberNav` (the authenticated nav strip) — owned by this feature.
-- Home membership section variants — owned jointly with `home-page-redesign`.
+- Home membership section variants — owned jointly with `member-home`.
 
 ### Out of scope (deferred)
 - Public guest-facing plans catalogue and marketing-site nav.
@@ -530,22 +501,7 @@ This was the original v1 Member Home spec (post-login destination with a flat-gr
 
 ---
 
-## Onboarding — Unified Signup — `onboarding-unified-signup`
-
-**Status:** sunset
-**Owner of:** —
-**Depends on:** —
-
-This was the first iteration of the unified onboarding wizard, in which `terms` was the LAST mandatory step (after `preferences`, `membership`, and conditional `booking`). It has been superseded by `onboarding-terms-early`, which moves `terms` to step 3 — see that section for the active behaviour. The behavioural reason: under unified-signup ordering, the `booking` step ran while the user was still an unauthenticated guest, so member-only endpoints (`/class-schedule`, `/pt/trainers`, `/bookings`) returned 401 and the user saw "Unable to load upcoming classes" or a silent no-op.
-
-This sunset note also captures the load-bearing placeholder this feature introduced into the data model: **`PLAN_PENDING`** as a `UserMembership.status` value. This was correct for unified-signup (no real activation until the deferred payment feature ships), but downstream callers like `class-booking` and `GET /memberships/me` treated `PLAN_PENDING` as "not active." `onboarding-terms-early` resolved this by switching the persisted status to `ACTIVE` with a real `endDate = today + plan.durationDays`, on the basis that the user has now committed via terms.
-
-### History
-- 2026-04-25 — marked sunset; replaced by `onboarding-terms-early`.
-
----
-
-## Onboarding — Terms Early — `onboarding-terms-early`
+## Onboarding — `onboarding`
 
 **Status:** active
 **Owner of:** `/onboarding`; `onboardingStore`; `frontend/src/pages/onboarding/`, `frontend/src/components/onboarding/`
@@ -572,6 +528,7 @@ This sunset note also captures the load-bearing placeholder this feature introdu
 - Loading state for the bootstrap profile fetch must be implemented in the same pass as the route guard — a route guard reading async data must handle the loading case explicitly.
 - Migrating mid-flow users from the unified-signup ordering is explicitly NOT in scope — they continue under existing onboarding-flow resume logic.
 - Backend security is unchanged: no endpoint becomes public or changes shape; the structural reorder removes the need.
+- Step ordering puts `terms` at step 3 (not last). Placing `terms` after `booking`/`membership` would force the `booking` step to call member-only endpoints (`/class-schedule`, `/pt/trainers`, `/bookings`) while the user is still unauthenticated — see archive SDD `onboarding-unified-signup.md` for the regression that triggered this reorder.
 
 ### Screens
 - Onboarding page (single full-screen `/onboarding` route): Mini Nav, Progress Bar, Step Rail, content slot, sticky footer.
@@ -588,7 +545,8 @@ This sunset note also captures the load-bearing placeholder this feature introdu
 - Admin-created accounts (trainers/admins invited via backoffice) — unchanged.
 
 ### History
-- 2026-04-25 — initial (extracted from `docs/prd/onboarding-terms-early.md`, `docs/prd/onboarding-unified-signup.md`, `docs/sdd/onboarding-flow.md`, `docs/sdd/onboarding-unified-signup.md`, `docs/sdd/onboarding-terms-early.md`); supersedes `onboarding-unified-signup`.
+- 2026-04-25 — initial (extracted from `docs/prd/onboarding-terms-early.md`, `docs/prd/onboarding-unified-signup.md`, `docs/sdd/onboarding-flow.md`, `docs/sdd/onboarding-unified-signup.md`, `docs/sdd/onboarding-terms-early.md`); supersedes `onboarding-unified-signup`; legacy section removed from product.md (see archive SDD).
+- 2026-04-25 — renamed from `onboarding-terms-early` to `onboarding` after deleting the sunset `onboarding-unified-signup` section.
 
 ---
 
