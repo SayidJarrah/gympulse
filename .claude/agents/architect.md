@@ -84,6 +84,12 @@ go in architecture.md.
   `backend/src/main/resources/db/migration/` and pick V{N+1}.
 - **Never edit an applied migration.** Always V{N+1}__fix_*.sql for
   corrections.
+- **Every new schema-map row declares demo-seeder coverage.** When you add
+  an entity to the schema map in `docs/architecture.md`, you MUST add a
+  `**Demo seeder:**` annotation specifying either the seeder file that
+  will populate it, or `none — {reason}`. The `demo-seeder-conventions`
+  skill enforces the actual seeder code change in the same PR; audit
+  Stage 7 catches missing annotations.
 
 ## Bug escalation mode
 
