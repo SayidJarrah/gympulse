@@ -286,7 +286,7 @@ see `docs/architecture.md`.
 
 **Status:** active
 **Owner of:** `/profile/bookings`; `bookingStore`; `frontend/src/pages/profile/MyBookingsPage.tsx`, booking-related components in `frontend/src/components/schedule/` (incl. `MyBookingsDrawer`)
-**Depends on:** `auth`, `user-membership-purchase`, `group-classes-schedule-view`, `scheduler`
+**Depends on:** `auth`, `membership-plans`, `user-membership-purchase`, `group-classes-schedule-view`, `scheduler`
 
 ### What user can do
 - A Member with an active membership can book a future `SCHEDULED` group class from `/schedule` while it has remaining capacity.
