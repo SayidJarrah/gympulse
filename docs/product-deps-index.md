@@ -21,9 +21,110 @@
 - `.github/workflows/product-deps-check.yml` — CI sync check
 
 **Modified:**
-- `docs/product.md` — audit + complete `**Depends on:**` lines (most exist already); tighten the preamble convention
+- `docs/product.md` — remove `testing-reset` + `demo-seeder` sections (Task 0); audit + complete `**Depends on:**` lines (most exist already); tighten the preamble convention with the "2 of 4" slug-policy test
+- `docs/architecture.md` — schema-map column convention extended with `**Demo seeder:**` annotation
+- `.claude/skills/e2e-conventions/SKILL.md` — absorb the still-relevant rules from `testing-reset`
+- `.claude/skills/demo-seeder-conventions/SKILL.md` — absorb the still-relevant rules from `demo-seeder` (the auto-reflection invariant lives here)
 - `.claude/agents/{architect,developer,tester,critic,product-author,designer}.md` — add Read protocol block
-- `.claude/skills/audit/SKILL.md` — add Stage 6: cross-section dep drift
+- `.claude/agents/architect.md` — additional rule: every new entity in architecture.md schema map MUST declare `**Demo seeder:**` coverage (file or `none — {reason}`)
+- `.claude/agents/product-author.md` — additional rule: apply the "2 of 4" test before creating a new section
+- `.claude/skills/audit/SKILL.md` — add Stage 6 (cross-section dep drift) and Stage 7 (demo-seeder coverage)
+
+---
+
+## Task 0: Section hygiene + demo-seeder reflection guarantee
+
+This is a prerequisite to Task 1. Done first so that the deps index is generated against a clean section list. After this task, `docs/product.md` contains 14 user-facing feature sections (was 16: `testing-reset` and `demo-seeder` move to skills). `user-access-flow` stays separate from `auth` — its real deps on `member-home`, `membership-plans`, `user-membership-purchase` make merging into the no-deps `auth` section a circular smell.
+
+The auto-reflection invariant (new product entity → demo seeder coverage) survives the move: it migrates from a `product.md` section to a hard rule in (a) `architect.md` agent (when adding a schema-map row), (b) `architecture.md` schema-map convention (every row carries a `**Demo seeder:**` annotation), and (c) a new audit stage that flags drift.
+
+**Files:**
+- Modify `docs/product.md`
+- Modify `docs/architecture.md`
+- Modify `.claude/skills/e2e-conventions/SKILL.md`
+- Modify `.claude/skills/demo-seeder-conventions/SKILL.md`
+- Modify `.claude/agents/architect.md`
+
+- [ ] **Step 0.1: Migrate `testing-reset` content to `e2e-conventions` skill.**
+
+Read `docs/product.md` lines 704–end (the `testing-reset` section). Identify any rule or invariant not already covered in `.claude/skills/e2e-conventions/SKILL.md`. Append the missing rules under a new `## E2E reset workflow` heading in the skill. Discard rules that are stale or already implemented in code with no contractual surface (the section is largely process notes).
+
+- [ ] **Step 0.2: Delete the `testing-reset` section from `docs/product.md`.**
+
+Remove lines 704–end (the `## E2E Testing Reset — \`testing-reset\`` heading and its full body, including any trailing `---` separator).
+
+- [ ] **Step 0.3: Migrate `demo-seeder` content to `demo-seeder-conventions` skill.**
+
+Read `docs/product.md` lines 647–703. The skill at `.claude/skills/demo-seeder-conventions/SKILL.md` already has the seeded-tables map and migration-sync rules. Add anything from the product.md section that is not yet there — realistic-data conventions, photo-URL rules, preset-size rules. Skip duplicates.
+
+- [ ] **Step 0.4: Delete the `demo-seeder` section from `docs/product.md`.**
+
+Remove lines 647–703.
+
+- [ ] **Step 0.5: Add the auto-reflection invariant to `demo-seeder-conventions` skill.**
+
+Append to the skill's "Hard rules" section:
+
+```markdown
+N. **New product entity → demo seeder coverage.** When a new entity row
+   lands in `docs/architecture.md`'s schema map, the same PR MUST either:
+   - add a seeder function for it (and add the table to the "Seeded tables
+     and owner files" map at the top of this file), or
+   - record `**Demo seeder:** none — {reason}` on the schema-map row
+     (e.g. "internal cache table, not user-visible").
+   The audit skill's Stage 7 enforces this — drift is a blocker.
+```
+
+(Renumber if needed; the skill already has 4 hard rules, so this becomes #5.)
+
+- [ ] **Step 0.6: Extend `architecture.md` schema-map convention.**
+
+Find the schema-map preamble in `docs/architecture.md` (the explanatory text above the schema-map table). Add this convention paragraph:
+
+```markdown
+Every schema-map row carries a `**Demo seeder:**` annotation in the Notes
+column — either the path of the seeder file that populates it
+(e.g. `demo-seeder/src/referenceSeeder.ts`) or `none — {reason}` for
+internal/system tables that should not be seeded. This is enforced by
+audit Stage 7 and the `demo-seeder-conventions` skill.
+```
+
+If existing rows do not yet have the annotation, that's a separate cleanup — flag it in `docs/backlog/tech-debt.md` rather than backfilling here. (Backfill is in Task 0.9.)
+
+- [ ] **Step 0.7: Update `architect.md` agent with the entity-coverage rule.**
+
+In `.claude/agents/architect.md`, append to "Hard rules":
+
+```markdown
+- **Every new schema-map row declares demo-seeder coverage.** When you add
+  an entity to the schema map in `docs/architecture.md`, you MUST add a
+  `**Demo seeder:**` annotation specifying either the seeder file that
+  will populate it, or `none — {reason}`. The `demo-seeder-conventions`
+  skill enforces the actual seeder code change in the same PR; audit
+  Stage 7 catches missing annotations.
+```
+
+- [ ] **Step 0.8: Verify `product.md` has 14 sections.**
+
+```bash
+grep -cE '^## .* — `[a-z][a-z0-9-]*`$' docs/product.md
+```
+
+Expected: `14`.
+
+- [ ] **Step 0.9: Backfill `**Demo seeder:**` on existing schema-map rows.**
+
+Walk every row in `docs/architecture.md`'s schema map. For each, write either the seeder file path or `none — {reason}`. Cross-check against the "Seeded tables and owner files" map in `demo-seeder-conventions` skill — those rows should reference the same files.
+
+- [ ] **Step 0.10: Commit.**
+
+```bash
+git add docs/product.md docs/architecture.md \
+  .claude/skills/e2e-conventions/SKILL.md \
+  .claude/skills/demo-seeder-conventions/SKILL.md \
+  .claude/agents/architect.md
+git commit -m "chore(docs): move testing-reset + demo-seeder to skills; lock demo-seeder coverage at architecture.md"
+```
 
 ---
 
@@ -105,6 +206,24 @@ whose `Rules and invariants` block this feature reads, writes, or enforces
 against. The reverse map is computed — never maintain it by hand.
 `docs/product-deps.json` is generated from these lines; the
 `product-deps-check` GitHub Actions workflow fails PRs where it drifts.
+
+### When to create a new section vs extend an existing one
+
+A new feature gets its own section iff at least **2 of the following 4** are
+true:
+
+1. It owns at least one new route or top-level screen that no existing
+   slug owns.
+2. It owns at least one new persistent entity or store.
+3. It has its own user goal (not a sub-task in the flow of an existing
+   feature).
+4. Its rules do not collapse to "see the rules of `{existing-slug}` plus
+   one new bullet."
+
+Otherwise extend the most relevant existing section: add a bullet to its
+`What user can do`, an item to `Rules and invariants` if needed, and an
+entry in its `History` block. The `product-author` agent applies this
+test before drafting any new section.
 ```
 
 - [ ] **Step 2: Commit.**
@@ -494,6 +613,21 @@ Insert immediately after the existing `## What you read` heading in each file. W
 
 Apply identically to: `architect.md`, `developer.md`, `tester.md`, `critic.md`, `product-author.md`, `designer.md`.
 
+- [ ] **Step 2.5: Add the "2 of 4" slug-policy test to `product-author.md`.**
+
+Append to `.claude/agents/product-author.md` under "Hard rules" (or create that section if absent):
+
+```markdown
+- **Apply the "2 of 4" slug-policy test before drafting a new section.**
+  Per `docs/product.md` preamble, a feature gets its own section iff at
+  least 2 of these are true: (1) owns a new route or top-level screen
+  no existing slug owns; (2) owns a new persistent entity or store;
+  (3) has its own user goal; (4) rules do not collapse to "see
+  `{existing-slug}` plus one bullet." Otherwise extend the most relevant
+  existing section. When extending, append to its `What user can do`,
+  `Rules and invariants`, and `History`, never the slug header.
+```
+
 - [ ] **Step 3: Verify YAML frontmatter is intact in each file.**
 
 ```bash
@@ -515,11 +649,11 @@ git commit -m "chore(agents): add product-deps Read protocol to per-slug readers
 
 ---
 
-## Task 6: Audit skill — Stage 6 cross-section dep drift
+## Task 6: Audit skill — Stage 6 cross-section dep drift, Stage 7 demo-seeder coverage
 
 **Files:** Modify `.claude/skills/audit/SKILL.md`.
 
-Add a stage that catches the second failure mode the critic identified: rules in section X mentioning slug Y when Y is **not** in X's `Depends on:`.
+Stage 6 catches the failure mode the critic identified — rules in section X mentioning slug Y when Y is not in X's `Depends on:`. Stage 7 enforces the demo-seeder reflection invariant introduced in Task 0 — every schema-map row in `architecture.md` carries a `**Demo seeder:**` annotation, and every annotated owner file is reflected in the `demo-seeder-conventions` skill's seeded-tables map.
 
 - [ ] **Step 1: Append Stage 6 below the existing final stage.**
 
@@ -530,9 +664,13 @@ Load `docs/product-deps.json`. For each section in `docs/product.md`:
 
 1. Slice the section's text using its `lines` range.
 2. Find every backticked slug reference (`/\`([a-z][a-z0-9-]*)\`/g`) inside
-   the body, **excluding** the section's own slug and the slugs that
-   appear inside `**Owner of:**` or `**Depends on:**` lines (those are
-   declarative metadata, not behavioural references).
+   the body, **excluding**:
+   - the section's own slug,
+   - slugs that appear inside `**Owner of:**` or `**Depends on:**` lines
+     (declarative metadata, not behavioural references),
+   - everything below `### Out of scope` and `### History` headings until
+     the next `### ` heading or section break (these legitimately cite
+     siblings without creating a behavioural dep).
 3. Compare the resulting set against `dependsOn`. Any slug referenced in
    the body but absent from `dependsOn` is drift.
 
@@ -547,11 +685,42 @@ Do not auto-fix — append findings to the dated gap report under a
 whether to add the dep or rewrite the rule.
 ```
 
-- [ ] **Step 2: Commit.**
+- [ ] **Step 2: Append Stage 7 below Stage 6.**
+
+```markdown
+## Stage 7 — Demo-seeder coverage drift
+
+Three checks against the auto-reflection invariant:
+
+1. **Schema-map row → annotation.** For each row in
+   `docs/architecture.md`'s schema map, verify a `**Demo seeder:**`
+   annotation exists in the Notes column. Missing annotation = drift.
+2. **Annotated owner file → exists.** For each row whose annotation cites
+   a seeder file path, verify that file exists in the working tree.
+   Citation of a missing file = drift.
+3. **Seeded-tables map ↔ schema map.** Cross-reference the
+   "Seeded tables and owner files" table at the top of
+   `.claude/skills/demo-seeder-conventions/SKILL.md` against the schema-map
+   annotations. Tables present in one but absent from the other = drift.
+
+Report each drift entry as:
+
+- **Table:** `{name}`
+- **Issue:** missing annotation / file `{path}` not found / present in
+  schema map but absent from skill map (or vice-versa).
+- **Evidence:** file path + line.
+
+Do not auto-fix — append findings to the dated gap report under a
+"Stage 7: demo-seeder coverage" heading. The architect (for missing
+annotations) or developer (for missing seeder code) closes the gap in a
+follow-up PR.
+```
+
+- [ ] **Step 3: Commit.**
 
 ```bash
 git add .claude/skills/audit/SKILL.md
-git commit -m "chore(audit): add Stage 6 — cross-section dependency drift"
+git commit -m "chore(audit): add Stage 6 (dep drift) and Stage 7 (demo-seeder coverage)"
 ```
 
 ---
@@ -623,7 +792,10 @@ EOF
 
 ---
 
-## Open questions (resolve before execution)
+## Resolved decisions (2026-04-26)
 
-1. Does `audit` Stage 6 need to suppress matches inside `### Out of scope` and `### History` blocks? (Recommendation: yes — those sections legitimately cite other slugs without being behavioural deps. Encode as: skip lines after `### Out of scope` or `### History` until next `### ` heading.) Decide before implementing Task 6 Step 1.
-2. Should `challenger` and `audit` (which already read full `product.md`) also adopt the Read protocol, or is full-read still cheaper for them? (Recommendation: leave them alone — they already cover the full file; adding indirection through the JSON saves nothing.)
+1. **Section hygiene before deps-index.** `testing-reset` and `demo-seeder` move to skills (Task 0). `user-access-flow` stays separate from `auth` (its real deps on `member-home` / `membership-plans` / `user-membership-purchase` would create a circular smell if merged into the no-deps `auth` section).
+2. **Slug-policy test "2 of 4"** lives in `product.md` preamble + `product-author.md` (Tasks 2 and 5).
+3. **Demo-seeder reflection invariant** survives the section move via three anchors: `architect.md` hard rule (Task 0.7), `architecture.md` schema-map annotation convention (Task 0.6), audit Stage 7 (Task 6).
+4. **Audit Stage 6 ignores `### Out of scope` and `### History`** — those legitimately cite siblings without behavioural deps (encoded in Task 6 Step 1).
+5. **`challenger` and `audit` keep reading full `product.md`** — they already cover the file; adding JSON indirection saves nothing.
