@@ -20,7 +20,10 @@ times.
 | `trainers` | `referenceSeeder.ts` → `upsertTrainers()` | Fixed UUIDs in `data/trainers.ts` |
 | `membership_plans` | `referenceSeeder.ts` → `upsertMembershipPlans()` | Fixed in `data/membershipPlans.ts` |
 | `rooms` | `referenceSeeder.ts` → `upsertRooms()` | Fixed in `data/rooms.ts` |
+| `class_templates` | `referenceSeeder.ts` → `upsertClassTemplatesV13()` / `upsertClassTemplatesV17()` | Predefined `is_seeded = TRUE` templates |
+| `user_memberships` | `referenceSeeder.ts` → `upsertPlanPendingDemoRow()` + `seeder.ts` → `createMemberships()` | PLAN_PENDING placeholder for qa.user01; ACTIVE rows via `POST /memberships` |
 | `class_instances` | `seeder.ts` → `createClassInstances()` | Dynamic per preset |
+| `class_instance_trainers` | `seeder.ts` → `createClassInstances()` | Assigned alongside instances; no two overlapping slots per trainer |
 | `bookings` | `seeder.ts` → `createBookings()` | Dynamic per preset |
 | `pt_bookings` | `seeder.ts` → `createPtBookings()` | Dynamic per preset |
 
