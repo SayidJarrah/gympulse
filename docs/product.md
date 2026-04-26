@@ -9,7 +9,7 @@ below `**Owner of:**`:
     **Depends on:** `slug-a`, `slug-b`
 
 Use `**Depends on:** —` (em dash) when the feature has no deps. Slugs must
-match an existing `## Feature — \`slug\`` header exactly. List every slug
+match an existing ``## Feature — `slug` `` header exactly. List every slug
 whose `Rules and invariants` block this feature reads, writes, or enforces
 against. The reverse map is computed — never maintain it by hand.
 `docs/product-deps.json` is generated from these lines; the
