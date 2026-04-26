@@ -1,0 +1,197 @@
+{
+  "auth": {
+    "lines": "41-81",
+    "dependsOn": [],
+    "dependedOnBy": [
+      "class-booking",
+      "entity-image-management",
+      "group-classes-schedule-view",
+      "landing-page",
+      "member-home",
+      "membership-plans",
+      "onboarding",
+      "personal-training-booking",
+      "scheduler",
+      "trainer-discovery",
+      "user-access-flow",
+      "user-membership-purchase",
+      "user-profile-management"
+    ]
+  },
+  "class-booking": {
+    "lines": "314-363",
+    "dependsOn": [
+      "auth",
+      "membership-plans",
+      "user-membership-purchase",
+      "group-classes-schedule-view",
+      "scheduler"
+    ],
+    "dependedOnBy": [
+      "group-classes-schedule-view",
+      "landing-page",
+      "member-home",
+      "onboarding"
+    ]
+  },
+  "entity-image-management": {
+    "lines": "633-673",
+    "dependsOn": [
+      "auth",
+      "user-profile-management",
+      "scheduler",
+      "trainer-discovery"
+    ],
+    "dependedOnBy": [
+      "scheduler",
+      "trainer-discovery",
+      "user-profile-management"
+    ]
+  },
+  "group-classes-schedule-view": {
+    "lines": "272-313",
+    "dependsOn": [
+      "auth",
+      "scheduler",
+      "class-booking"
+    ],
+    "dependedOnBy": [
+      "class-booking",
+      "landing-page",
+      "member-home",
+      "onboarding"
+    ]
+  },
+  "landing-page": {
+    "lines": "452-495",
+    "dependsOn": [
+      "auth",
+      "class-booking",
+      "scheduler",
+      "group-classes-schedule-view",
+      "trainer-discovery"
+    ],
+    "dependedOnBy": [
+      "member-home"
+    ]
+  },
+  "member-home": {
+    "lines": "407-451",
+    "dependsOn": [
+      "auth",
+      "user-membership-purchase",
+      "class-booking",
+      "trainer-discovery",
+      "landing-page",
+      "group-classes-schedule-view"
+    ],
+    "dependedOnBy": [
+      "user-access-flow"
+    ]
+  },
+  "membership-plans": {
+    "lines": "82-123",
+    "dependsOn": [
+      "auth"
+    ],
+    "dependedOnBy": [
+      "class-booking",
+      "onboarding",
+      "user-access-flow",
+      "user-membership-purchase"
+    ]
+  },
+  "onboarding": {
+    "lines": "533-581",
+    "dependsOn": [
+      "auth",
+      "user-profile-management",
+      "membership-plans",
+      "user-membership-purchase",
+      "class-booking",
+      "personal-training-booking",
+      "group-classes-schedule-view"
+    ],
+    "dependedOnBy": []
+  },
+  "personal-training-booking": {
+    "lines": "582-632",
+    "dependsOn": [
+      "auth",
+      "user-membership-purchase",
+      "trainer-discovery",
+      "scheduler"
+    ],
+    "dependedOnBy": [
+      "onboarding"
+    ]
+  },
+  "scheduler": {
+    "lines": "220-271",
+    "dependsOn": [
+      "auth",
+      "entity-image-management"
+    ],
+    "dependedOnBy": [
+      "class-booking",
+      "entity-image-management",
+      "group-classes-schedule-view",
+      "landing-page",
+      "personal-training-booking",
+      "trainer-discovery"
+    ]
+  },
+  "trainer-discovery": {
+    "lines": "364-406",
+    "dependsOn": [
+      "auth",
+      "user-membership-purchase",
+      "scheduler",
+      "entity-image-management"
+    ],
+    "dependedOnBy": [
+      "entity-image-management",
+      "landing-page",
+      "member-home",
+      "personal-training-booking"
+    ]
+  },
+  "user-access-flow": {
+    "lines": "496-532",
+    "dependsOn": [
+      "auth",
+      "member-home",
+      "membership-plans",
+      "user-membership-purchase"
+    ],
+    "dependedOnBy": []
+  },
+  "user-membership-purchase": {
+    "lines": "124-167",
+    "dependsOn": [
+      "auth",
+      "membership-plans"
+    ],
+    "dependedOnBy": [
+      "class-booking",
+      "member-home",
+      "onboarding",
+      "personal-training-booking",
+      "trainer-discovery",
+      "user-access-flow",
+      "user-profile-management"
+    ]
+  },
+  "user-profile-management": {
+    "lines": "168-219",
+    "dependsOn": [
+      "auth",
+      "user-membership-purchase",
+      "entity-image-management"
+    ],
+    "dependedOnBy": [
+      "entity-image-management",
+      "onboarding"
+    ]
+  }
+}
