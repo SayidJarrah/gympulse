@@ -90,7 +90,7 @@ Single file at `docs/gaps/{YYYY-MM-DD}.md`:
 - Patch architecture.md::Schema map for {N} schema findings
 ```
 
-## Stage 6 — Cross-section dependency drift
+### Stage 6 — Cross-section dependency drift
 
 Load `docs/product-deps.json`. For each section in `docs/product.md`:
 
@@ -116,7 +116,7 @@ Do not auto-fix — append findings to the dated gap report under a
 "Stage 6: cross-section drift" heading. The owner of the section decides
 whether to add the dep or rewrite the rule.
 
-## Stage 7 — Demo-seeder coverage drift
+### Stage 7 — Demo-seeder coverage drift
 
 Three checks against the auto-reflection invariant:
 
